@@ -1,136 +1,150 @@
-# Kasukabe
+# Kasukabe — An LLM Agent Society
 
-A 314-resident town simulation built as a research instrument. Every
-resident is an LLM-backed agent with a wallet, a family, a job, a memory
-stream and a cause of death. The question it exists to answer is **which
-agents survive, and why**.
+![Python](https://img.shields.io/badge/Python_3.12-3776AB?style=flat&logo=python&logoColor=white) ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white) ![Pydantic](https://img.shields.io/badge/Pydantic_v2-E92063?style=flat&logo=pydantic&logoColor=white) ![Amazon Bedrock](https://img.shields.io/badge/Amazon_Bedrock-232F3E?style=flat&logo=amazonaws&logoColor=white) ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat&logo=sqlite&logoColor=white) ![DuckDB](https://img.shields.io/badge/DuckDB-FFF000?style=flat&logo=duckdb&logoColor=black) ![Phaser](https://img.shields.io/badge/Phaser_3-8A2BE2?style=flat&logo=javascript&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)
 
-## Start here
+## Overview
 
-**→ [`docs/HANDOVER.md`](docs/HANDOVER.md)** — the engineering handover:
-what the system is, what is finished, what is not, how to run it, and the
-sequence to a live run.
+Kasukabe is a 314-resident town simulation built as a research instrument. Every resident is an LLM-backed agent with a wallet, a family, a job, a memory stream and a cause of death. The question it exists to answer is **which agents survive, and why**.
 
-## See the village in 30 seconds
+Nobody tells the residents what to do. They are given the prices and the rules, never the strategy. Their thinking is metered in real dollars, so an agent that cannot pay for its next thought goes dormant, and an agent nobody revives dies. Whether the town invents cooperation, trade, charity, cartels or theft is the research question.
 
-The v2 township map runs entirely in the browser. No credentials, no
-database, no world server.
+The idea is inspired by Generative Agents (arXiv 2304.03442) as reference only. Kasukabe goes further with a larger population, real economic stakes, mutable politics and agents that can write their own tools.
 
-**Fastest — open it straight off disk:**
+## Key Features
 
-```bash
-open app/game/static/township-v2.html          # macOS
-xdg-open app/game/static/township-v2.html      # Linux
-```
+- **Two currencies.** Model tokens (USD) are *energy* — what an agent spends to think and act. Sim-currency is *money* — what work earns and what buys energy at the government store.
+- **A $1000 ledger with a tripwire.** Agent wallets + treasury + burned must always equal $1000, or the simulation halts.
+- **World state changes only through tool calls.** Talk never moves matter. Every tool is location-gated: you mill at the mill and vote at town hall.
+- **Self-extending agents.** A meta-tool lets agents compose new tools from existing primitives, register them at a patent office, and sell or license them.
+- **Live institutions.** Businesses, jobs, taxes, pensions, elections, courts and a government whose confidential tools pass to whoever wins the election.
+- **Cognitive poverty.** A resident at $0 goes dormant; another resident can revive them for 5,000 sim, or they die after 24 game-hours.
+- **Browser township map (v2).** An isometric village that runs fully in the browser — families, jobs, wages, homes, illnesses and deaths for all 314 residents — with no server or credentials.
+- **Evidence gate (`python -m proof`).** Runs the real system end to end with only the model replaced, and judges what the town actually did.
 
-**Or serve it** (needed for live engine positions):
-
-```bash
-cd app                                          # pyproject.toml lives here
-uv sync
-uv run uvicorn game.server:app --port 8400      # run from app/, not the root
-```
-
-Then open **<http://127.0.0.1:8400/township-v2.html>** — note there is no
-`/static/` prefix; the static files are mounted at `/`.
-
-Full instructions, troubleshooting and URL parameters: [`docs/HANDOVER.md`
-§1](docs/HANDOVER.md).
-
-## Running it
-
-### Prerequisites
-
-```bash
-cd app    && uv sync      # the simulation, broker, viewer, console
-cd engine && uv sync      # the agent engine - its own project, its own venv
-```
-
-Everything below runs **from `app/`**, not the repo root: `pyproject.toml`
-lives there and sets `pythonpath = ["."]`.
-
-A live run also needs AWS credentials in `app/.env` (`AWS_ACCESS_KEY_ID`,
-`AWS_SECRET_ACCESS_KEY`, `AWS_REGION`) and at least one Bedrock inference
-profile in `BEDROCK_INFERENCE_PROFILES`. **Nothing in this section except a
-live run costs money.**
+## How It Works
 
 ### The services
 
-| Service | Port | Run with |
+| Service | Port | Role |
 |---|---|---|
-| world | 8100 | `cd app && make run-world` |
-| broker | 8200 | `cd app && make run-broker` |
-| console | 8300 | `cd app && make run-console` |
-| game (viewer) | 8400 | `cd app && make run-game` |
+| world | 8100 | The simulation: ticks, agents, ledger, map, tools |
+| broker | 8200 | Bedrock gateway — the only package allowed to call AWS |
+| console | 8300 | Operator console |
+| game | 8400 | Viewer server, including the township map |
 
-### A run
+A tick is 10 game-minutes, 144 ticks make a game-day. On each tick a resident's turn goes through the broker to Amazon Bedrock, comes back as tool calls, and the world applies them under the location gates and the ledger invariant. Every call is traced, so the trace store is a complete causal record of the world. The research jobs export it per game-day to Parquet through DuckDB.
+
+### The evidence gate
+
+Unit tests can be green while a feature is never reached. `proof` closes that gap. It answers each claim with one of three verdicts — **proven**, **unproven** or **failed** — and an unproven claim is never scored as a pass. It works as a ratchet: nothing proven may stop being proven, and nothing may newly fail.
+
+### The specifications
+
+`DESIGN.md`, `ROADMAP.md` and the other root documents are cited by name and section number from inside the source code — `DESIGN.md` alone by 239 files. Do not move or rename them.
+
+## Results / Highlights
+
+- **314 residents** on the v2 map, **250** of them genesis residents with full biographies.
+- Evidence gate: **236 claims judged — 177 proven, 59 unproven, 0 failed**, in 23.4 seconds and with no model calls. See [`docs/proof/FINDINGS.md`](docs/proof/FINDINGS.md).
+- About **5,200 tests** in the app suite, plus the engine's own suite.
+- Every resident turn is a metered Bedrock call, capped by `SPEND_CAP_USD` and `KASUKABE_BUDGET_CAP_CENTS`.
+
+## Tech Stack
+
+- **Language:** Python 3.12
+- **Backend:** FastAPI, Uvicorn, Pydantic v2, WebSockets, httpx
+- **Models:** Amazon Bedrock via boto3
+- **Data:** SQLite trace store, DuckDB and Parquet for research exports
+- **Agent engine:** vendored engine with aiosqlite and sqlite-vec memory
+- **Frontend:** HTML, CSS, JavaScript, Phaser 3, Smallville Ville tileset (Apache-2.0)
+- **Infrastructure:** Docker, Firecracker microVMs, Caddy, systemd
+- **Tooling:** uv, pytest, Make
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.12 and [uv](https://docs.astral.sh/uv/)
+- For a live run only: AWS credentials and at least one Bedrock inference profile
+
+### Installation
+
+```bash
+git clone https://github.com/DCode-v05/Kasukabe.git
+cd Kasukabe
+cd app    && uv sync      # simulation, broker, viewer, console
+cd ../engine && uv sync   # the agent engine — its own project and venv
+```
+
+For a live run, put `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` and `BEDROCK_INFERENCE_PROFILES` in `app/.env`.
+
+### Running
+
+**See the village in 30 seconds** — open `app/game/static/township-v2.html` straight from disk. No server needed.
+
+**Serve it** (needed for live engine positions):
+
+```bash
+cd app
+uv run uvicorn game.server:app --port 8400
+```
+
+Then open <http://127.0.0.1:8400/township-v2.html> (no `/static/` prefix).
+
+**A live run** (spends real money — check the spend caps first):
 
 ```bash
 cd app
 python -m world.run_genesis --world-mode embedded
 ```
 
-The embedded mode is what every launcher uses: the runner hosts the world
-itself and drives the tick loop. **A run spends real money** — every
-resident turn is a metered Bedrock call — so check `SPEND_CAP_USD` and
-`KASUKABE_BUDGET_CAP_CENTS` before starting one.
+Everything runs from `app/`, not the repo root.
 
-### The evidence gate
+## Usage
+
+- Open the township map to watch the town: search residents, open place and profile cards, zoom, take roofs off, switch to night.
+- Start individual services with `make run-world`, `make run-broker`, `make run-console` and `make run-game` from `app/`.
+- Run the evidence gate — it costs nothing and makes no model calls:
 
 ```bash
 cd app
 python -m proof                    # the whole gate, about 2.5 minutes
 python -m proof --show failed      # only what failed
-python -m proof --skip stories     # fast loop (stories boot a real town each)
-python -m proof --update-baseline  # accept the current state as the lock
+python -m proof --skip stories     # fast loop
 ```
 
-`proof` runs the real system end to end with **only the model replaced**,
-and judges what the town actually did — never what the source says. It
-answers `proven` / `unproven` / `failed`, and `unproven` is never scored
-as a pass. Costs nothing; makes no model calls.
+- Run the tests with `uv run pytest` in `app/` and in `engine/`.
+- For the full picture — what is finished, what is not, and the path to a live run — read [`docs/HANDOVER.md`](docs/HANDOVER.md).
 
-It is a **ratchet, not a target**: nothing that was proven may stop being
-proven, and nothing may newly fail. Known failures are recorded in
-`app/proof/baseline.json` and written up in
-[`docs/proof/FINDINGS.md`](docs/proof/FINDINGS.md).
+## Project Structure
 
-### Tests
-
-```bash
-cd app    && uv run pytest    # ~5,200 tests, about 54 minutes
-cd engine && uv run pytest    # the engine and its seam
+```
+Kasukabe/
+├── app/
+│   ├── world/            # The simulation — ticks, agents, ledger, map, tools
+│   ├── broker/           # Bedrock gateway; the only package that imports boto3
+│   ├── game/             # Viewer server and the township map (static/township-v2.html)
+│   │   └── console/      # Operator console
+│   ├── research/         # Offline measurement over the trace store
+│   ├── proof/            # The evidence gate and its baseline
+│   ├── infra/            # Firecracker microVMs, Caddy, systemd, runbook
+│   └── tests/
+├── engine/               # Vendored agent engine (partly frozen — see ROADMAP.md Law 1)
+├── infra/                # Ops paperwork: quota request, launch workflows
+├── docs/                 # Handover, proof findings, specs, decisions, run reports
+├── DESIGN.md             # The world, economy and rules — cited from the source code
+├── ROADMAP.md
+└── README.md
 ```
 
-## Layout
+---
 
-| Path | What it is |
-|---|---|
-| `app/world/` | The simulation — ticks, agents, ledger, map, tools. |
-| `app/broker/` | Bedrock gateway. The only package that may `import boto3`. |
-| `app/game/` | The viewer and its server, including the township map. |
-| `app/game/console/` | The operator console. |
-| `app/research/` | Offline measurement over the trace store. |
-| `app/infra/` | Deployment: Firecracker microVM supervision, Caddy, systemd, runbook. |
-| `infra/` (root) | Ops paperwork — quota request, phase-2 launch workflows. Not imported by anything. |
-| `engine/` | The vendored agent engine. Partly frozen — see `ROADMAP.md` Law 1. |
-| `smallville/` | Vendored Ville map assets (Apache-2.0). |
-| `docs/` | Handover doc and archived artifacts. |
+## Contact
 
-## The specifications
+<table>
+  <tr><td><b>Portfolio:</b> <a href="https://www.denistan.me">Denistan</a></td><td><b>LinkedIn:</b> <a href="https://www.linkedin.com/in/denistanb">denistanb</a></td></tr>
+  <tr><td><b>GitHub:</b> <a href="https://github.com/DCode-v05">DCode-v05</a></td><td><b>LeetCode:</b> <a href="https://leetcode.com/u/Denistan_B">Denistan_B</a></td></tr>
+  <tr><td colspan="2" align="center"><b>Email:</b> <a href="mailto:denistanb05@gmail.com">denistanb05@gmail.com</a></td></tr>
+</table>
 
-These are cited **by name and section number from inside the source code** —
-`DESIGN.md` alone is referenced by 239 source files. **Do not move or rename
-them.**
-
-`DESIGN.md` · `ROADMAP.md` · `WORK_SPLIT.md` · `COGNITION_DELIVERY.md` ·
-`AGENT_LIFE_FRAMEWORK.md` · `IMPLEMENTATION_LOG.md` · `RESEARCH_NOTES.md` ·
-`app/STATUS.md` · `app/CONVENTIONS.md`
-
-## Further reading
-
-Engineering handover: [`docs/HANDOVER.md`](docs/HANDOVER.md).
-What the town has actually been proven to do:
-[`docs/proof/FINDINGS.md`](docs/proof/FINDINGS.md).
-Edits made inside the frozen engine:
-[`docs/decisions/LAW-1-MANIFEST.md`](docs/decisions/LAW-1-MANIFEST.md).
+Made with ❤️ by **Denistan B**
