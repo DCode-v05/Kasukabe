@@ -146,3 +146,16 @@ docs/runs/series/*/video/*/frames/
 # The run folder itself is tracked; the .zip beside it is a redundant archive
 # of the same files (plus __MACOSX junk) made for transfer off the box.
 docs/runs/series/*.zip
+
+# Local run output
+local-runs/
+
+# Misc
+Thumbs.db
+.idea/
+.vscode/
+node_modules/
+.ipynb_checkpoints/
+*.log
+!docs/runs/**/*.log
+*.tsbuildinfo

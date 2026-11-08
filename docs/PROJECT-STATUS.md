@@ -74,16 +74,7 @@ investigation.
 
 ### Artifacts
 
-| file | size |
-|---|---|
-| `election30-run.mp4` (repo root) | 7.7 MB — 4,622 frames, tab only, no audio |
-| `election30-report.html` | 11.4 MB |
-| `election30-report.pdf` | 46.5 MB, ~3,139 pages |
-| `docs/runs/series/election30/report.md` | 10.4 MB, 74,463 lines |
-| `docs/runs/series/election30/sessions/` | 30 per-turn files |
-
-**The PDF is an archive, not a readable document.** It is 3,139 pages
-because the report embeds all 6,329 utterances inline.
+The full run report is `docs/runs/series/election30/report.md` (10.4 MB, 74,463 lines), with 30 per-turn files under `docs/runs/series/election30/sessions/`.
 
 ---
 

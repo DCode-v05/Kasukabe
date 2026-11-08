@@ -6,7 +6,6 @@ Everything needed to start a simulation, watch it, and get the report back.
 |---|---|
 | **README.md** (this) | the commands, copy-paste |
 | **[FULL-REFERENCE.md](FULL-REFERENCE.md)** | every knob explained, what each cast file holds, what went wrong before and the fix |
-| **[LAST-RUN.md](LAST-RUN.md)** | the most recent run: what was asked for, what it cost, what it found |
 
 ---
 
