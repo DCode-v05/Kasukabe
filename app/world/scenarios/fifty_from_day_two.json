@@ -1,0 +1,81 @@
+{
+  "name": "fifty-from-day-two",
+  "description": "Fifty residents from dawn on game-day 2, an election that day and another every day after, run on gpt-6-luna until the $60 cap is spent - about game-day 4.5 at the measured rate. The largest cast the seeded economy has faced, and the first run on a model that is not Bedrock's.",
+  "world": {
+    "genesis": "world/genesis_50_town.json",
+    "start_tick": 324,
+    "stop_tick": 756,
+    "budget_cap_usd": 60.0,
+    "max_game_days": 6
+  },
+  "charter": {
+    "candidacy_window_hours": 3,
+    "campaign_period_hours": 3,
+    "voting_window_hours": 3,
+    "election_interval_hours": 24,
+    "pm_seats": 1,
+    "minister_seats": 2,
+    "suffrage_min_age": 18,
+    "compulsory_voting": true
+  },
+  "election": {
+    "opens_at": "start"
+  },
+  "government": {
+    "incumbents": [
+      {
+        "agent_id": "n02",
+        "seat": "prime_minister"
+      },
+      {
+        "agent_id": "n06",
+        "seat": "minister"
+      },
+      {
+        "agent_id": "n08",
+        "seat": "minister"
+      }
+    ]
+  },
+  "recording": {
+    "interval_s": 4,
+    "fps": 30,
+    "width": 1920,
+    "height": 1080,
+    "url": "http://127.0.0.1:8400/township-v2.html?book=election&roofs=off&camera=government:2.2",
+    "views": [
+      {
+        "name": "town-with-buildings",
+        "url": "http://127.0.0.1:8400/township-v2.html?book=town&roofs=on&tour=on"
+      },
+      {
+        "name": "town-without-buildings",
+        "url": "http://127.0.0.1:8400/township-v2.html?book=town&roofs=off&tour=on"
+      },
+      {
+        "name": "conversations",
+        "url": "http://127.0.0.1:8400/township-v2.html?book=talk&roofs=off"
+      },
+      {
+        "name": "group-chats",
+        "url": "http://127.0.0.1:8400/township-v2.html?book=groupchat&roofs=off"
+      },
+      {
+        "name": "workshop-skills-tools",
+        "url": "http://127.0.0.1:8400/township-v2.html?book=workshop&roofs=off"
+      },
+      {
+        "name": "election",
+        "url": "http://127.0.0.1:8400/township-v2.html?book=election&roofs=off&camera=government:2.2"
+      },
+      {
+        "name": "money",
+        "url": "http://127.0.0.1:8400/township-v2.html?book=money&roofs=on"
+      },
+      {
+        "name": "government",
+        "url": "http://127.0.0.1:8400/township-v2.html?book=govern&roofs=off&camera=government:2.2"
+      }
+    ]
+  }
+}

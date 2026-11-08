@@ -1,0 +1,29 @@
+
+==================================================================
+RUN data/final3.db
+==================================================================
+calls 424  ok 424  spend $2.37  last tick 0
+utterances 54
+
+GATE                      VALUE               RESULT
+G1 reply rate             9/28 = 32%          FAIL
+G2 exchanges 4+ turns     2                   FAIL
+G3 group (3+ speakers)    3                   PASS
+G4 settlements            2                   PASS
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        282/355 = 79%       PASS
+
+tool calls: {'world_move': 72, 'world_look_around': 58, 'world_say': 56, 'world_rest': 23, 'world_harvest': 13, 'world_eat': 12, 'world_cook': 10, 'world_find_people': 10, 'world_list_places': 7, 'world_describe_place': 6, 'world_describe_primitives': 6, 'world_buy': 4}
+
+largest gathering: 6 speakers at home:h_field, ticks 37-53
+   Liora Thorne -> aloud: Hey. Can I ask you something? You've got a minute before we head out?
+   Liora Thorne -> Marta Thorne: Marta, do you have anything I could take for lunch? I'm heading to college and I've got nothing.
+   Marta Thorne -> Wren Thorne: Wren. The barley—how's it standing this morning? And have you seen Bram about? He was quiet when he passed yes
+   Idris Thorne -> Wren Thorne: Off to the trees.
+   Ainsley Holloway -> Marta Thorne: Good morning, Marta. The boy's hungry at home and I've come to buy what you have. What do you have fresh this 
+   Marta Thorne -> Wren Thorne: Wren. That copper seam Bram sank his assay fee into—have you heard him speak of it? Does he carry it heavy, or
+
+settlement: Ainsley Holloway said 50, paid at tick 38
+
+FAILED: G1 reply rate, G2 exchanges 4+ turns
+

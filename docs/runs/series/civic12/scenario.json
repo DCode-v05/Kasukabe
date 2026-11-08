@@ -1,0 +1,46 @@
+{
+  "name": "a-civic-day-12",
+  "description": "Twelve residents, a government sitting from the first tick and told so in its own perception, an election inside the day, and a day boundary at the end. Built to find out which of the fifty-three never-called verbs a resident reaches for once it is told the verb is its own.",
+
+  "world": {
+    "genesis": "world/genesis_12_funded.json",
+    "start_tick": 36,
+    "stop_tick": 150,
+    "budget_cap_usd": 25.0,
+    "max_game_days": 2
+  },
+
+  "charter": {
+    "candidacy_window_hours": 4,
+    "campaign_period_hours": 4,
+    "voting_window_hours": 4,
+    "election_interval_hours": 24,
+    "pm_seats": 1,
+    "minister_seats": 2,
+    "suffrage_min_age": 18
+  },
+
+  "election": {
+    "opens_at": "start"
+  },
+
+  "government": {
+    "incumbents": [
+      {"agent_id": "a0047", "seat": "prime_minister"},
+      {"agent_id": "a0090", "seat": "minister"},
+      {"agent_id": "a0042", "seat": "minister"}
+    ]
+  },
+
+  "recording": {
+    "url": "http://127.0.0.1:8400/township-v2.html?book=election&roofs=off&camera=government:2.2",
+    "interval_s": 2,
+    "fps": 30,
+    "width": 1920,
+    "height": 1080
+  },
+
+  "report": {
+    "out": "../docs/runs/series/civic12"
+  }
+}

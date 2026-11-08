@@ -1,0 +1,12 @@
+{
+  "name": "writer",
+  "version": "1.0.0",
+  "is_latest": true,
+  "type": "creative",
+  "capabilities": ["writing", "editing", "formatting", "tone_adaptation", "content_structuring"],
+  "config": {
+    "default_tools": [],
+    "default_skills": ["summarizer", "email_composer", "translator"]
+  },
+  "description": "Activate for drafting, editing, polishing, or rewriting any text content. Triggers: 'write', 'draft', 'compose', 'edit this', 'rewrite', 'polish', 'make this clearer', 'translate to'."
+}

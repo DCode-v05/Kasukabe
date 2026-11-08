@@ -1,0 +1,51 @@
+Traceback (most recent call last):
+  File "/Users/sharan/Downloads/kasukabe/app/.venv/lib/python3.12/site-packages/websockets/legacy/protocol.py", line 953, in transfer_data
+    message = await selfTraceback (most recent call last):
+  File "/Users/sharan/Downloads/kasukabe/app/.venv/lib/python3.12/site-packages/websockets/legacy/protocol.py", line 953, in transfer_data
+    message = await self.read_message()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sharan/Downloads/kasukabe/app/.venv/lib/python3.12/site-packages/websockets/legacy/protocol.py", line 1023, in read_message
+    frame = await self.read_data_frame(max_size=self.max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sharan/Downloads/kasukabe/app/.venv/lib/python3.12/site-packages/websockets/legacy/protocol.py", line 1098, in read_data_frame
+    frame = await self.read_frame(max_size)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sharan/Downloads/kasukabe/app/.venv/lib/python3.12/site-packages/websockets/legacy/protocol.py", line 1155, in read_frame
+    frame = await Frame.read(
+            ^^^^^^^^^^^^^^^^^
+  File "/Users/sharan/Downloads/kasukabe/app/.venv/lib/python3.12/site-packages/websockets/legacy/framing.py", line 70, in read
+    data = await reader(2)
+           ^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/streams.py", line 750, in readexactly
+    raise exceptions.IncompleteReadError(incomplete, n)
+asyncio.exceptions.IncompleteReadError: 0 bytes read on a total of 2 expected bytes
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/sharan/Downloads/kasukabe/app/scripts/record_ui.py", line 247, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/Users/sharan/Downloads/kasukabe/app/scripts/record_ui.py", line 243, in main
+    return asyncio.run(record(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/sharan/Downloads/kasukabe/app/scripts/record_ui.py", line 199, in record
+    shot = await page.call("Page.captureScreenshot", format="jpeg", quality=args.quality)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sharan/Downloads/kasukabe/app/scripts/record_ui.py", line 140, in call
+    message = json.loads(await self.ws.recv())
+                         ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sharan/Downloads/kasukabe/app/.venv/lib/python3.12/site-packages/websockets/legacy/protocol.py", line 562, in recv
+    await self.ensure_open()
+  File "/Users/sharan/Downloads/kasukabe/app/.venv/lib/python3.12/site-packages/websockets/legacy/protocol.py", line 929, in ensure_open
+    raise self.connection_closed_exc()
+websockets.exceptions.ConnectionClosedError: no close frame received or sent

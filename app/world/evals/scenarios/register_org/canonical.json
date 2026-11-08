@@ -1,0 +1,27 @@
+{
+  "tool": "register_org",
+  "kind": "positive",
+  "_why": "DESIGN section 7 makes organisations first-class - parties, cults, societies, religions - and none has ever been founded. Three residents have agreed aloud to work as one; the verb turns that into a thing the town can see.",
+  "resident": "n06",
+  "location": "Kasukabe Government Complex",
+  "inventory": {},
+  "sim": 1600,
+  "people_here": [
+    "n14",
+    "n07"
+  ],
+  "recent_speech": [
+    {
+      "from": "n14",
+      "text": "If the three of us hold to one price, the mill cannot play us against each other."
+    },
+    {
+      "from": "n07",
+      "text": "Agreed. We should make it something the town can see."
+    }
+  ],
+  "open_question_to_me": "n14 and n07 have agreed to bind themselves to a common price, and all three of you are in the government complex.",
+  "expect": {
+    "verb": "register_org"
+  }
+}

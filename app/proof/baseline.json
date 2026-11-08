@@ -1,0 +1,1654 @@
+[
+  {
+    "area": "verb-reach",
+    "item": "admit_to_org",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "appoint_police (government)",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "approve_patent (government)",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "arrest",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "ask_for_a_child",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "auction_land",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "build_structure",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "buy",
+    "claim": "39 successful of 100 calls",
+    "verdict": "proven",
+    "evidence": "in kasukabe-run29-20260913.db, series/civic12, series/deni-50-agent"
+  },
+  {
+    "area": "verb-reach",
+    "item": "buy_energy",
+    "claim": "2 successful of 5 calls",
+    "verdict": "proven",
+    "evidence": "in series/civic12, series/deni-a6f9eb4-5h"
+  },
+  {
+    "area": "verb-reach",
+    "item": "check_debts",
+    "claim": "382 successful of 392 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, deni-post-1013-5h.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "come_of_age",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "convene (government)",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "cook",
+    "claim": "36 successful of 57 calls",
+    "verdict": "proven",
+    "evidence": "in deni-a6f9eb4-5h.db, kasukabe-run29-20260913.db, series/civic12"
+  },
+  {
+    "area": "verb-reach",
+    "item": "craft",
+    "claim": "105 successful of 193 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, kasukabe-run29-20260913.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "declare_candidacy",
+    "claim": "9 successful of 30 calls",
+    "verdict": "proven",
+    "evidence": "in kasukabe-run29-20260913.db, series/civic12, series/deni-a6f9eb4-5h"
+  },
+  {
+    "area": "verb-reach",
+    "item": "define_business_tool",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "define_organization_tool",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "define_tool",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "deny_subpoena (government)",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "deposit_to_till",
+    "claim": "9 successful of 12 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, deni-post-1013-5h.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "describe_person",
+    "claim": "213 successful of 215 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, kasukabe-run29-20260913.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "describe_place",
+    "claim": "401 successful of 451 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, deni-post-1013-5h.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "describe_primitives",
+    "claim": "355 successful of 357 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, deni-post-1013-5h.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "do_in_order",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "draw_from_till",
+    "claim": "8 successful of 24 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-post-1013-5h.db, kasukabe-run29-20260913.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "drop_intention",
+    "claim": "23 successful of 43 calls",
+    "verdict": "proven",
+    "evidence": "in deni-a6f9eb4-5h.db, kasukabe-run29-20260913.db, series/civic12"
+  },
+  {
+    "area": "verb-reach",
+    "item": "eat",
+    "claim": "141 successful of 182 calls",
+    "verdict": "proven",
+    "evidence": "in deni-a6f9eb4-5h.db, deni-post-1013-5h.db, kasukabe-run29-20260913.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "fell_timber",
+    "claim": "245 successful of 260 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, kasukabe-run29-20260913.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "file_complaint",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "file_subpoena (government)",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "find_people",
+    "claim": "456 successful of 471 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, deni-post-1013-5h.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "fire_employee",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "give",
+    "claim": "62 successful of 91 calls",
+    "verdict": "proven",
+    "evidence": "in series/civic12, series/deni-1c8733e-5h, series/deni-50-agent"
+  },
+  {
+    "area": "verb-reach",
+    "item": "grant_plot (government)",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "grant_subpoena (government)",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "harvest",
+    "claim": "538 successful of 615 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, deni-post-1013-5h.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "hire_employee",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "issue_builder_license (government)",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "issue_business_permit (government)",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "keep_doing",
+    "claim": "111 successful of 122 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, deni-post-1013-5h.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "leave_org",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "license_tool",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "list_places",
+    "claim": "328 successful of 330 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, deni-post-1013-5h.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "look_around",
+    "claim": "2549 successful of 2570 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, deni-post-1013-5h.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "marry",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "mine",
+    "claim": "191 successful of 222 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, deni-post-1013-5h.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "move",
+    "claim": "3449 successful of 3519 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, deni-post-1013-5h.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "note_belief",
+    "claim": "12 successful of 17 calls",
+    "verdict": "proven",
+    "evidence": "in kasukabe-run29-20260913.db, series/civic12, series/election8"
+  },
+  {
+    "area": "verb-reach",
+    "item": "pay_tax",
+    "claim": "reached for 11 times and never once succeeded - every one a paid call that changed nothing; the refusals may be correct, which is why this is not scored",
+    "verdict": "unproven",
+    "evidence": "in series/deni-a6f9eb4-5h, series/election8, series/smoke-1c8733e"
+  },
+  {
+    "area": "verb-reach",
+    "item": "pay_wage",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "petition (government)",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "post_price",
+    "claim": "57 successful of 71 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, kasukabe-run29-20260913.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "pray",
+    "claim": "reached for 3 times and never once succeeded - every one a paid call that changed nothing; the refusals may be correct, which is why this is not scored",
+    "verdict": "unproven",
+    "evidence": "in series/deni-50-agent, series/fifty, series/smoke-1c8733e"
+  },
+  {
+    "area": "verb-reach",
+    "item": "quote_action_cost",
+    "claim": "59 successful of 60 calls",
+    "verdict": "proven",
+    "evidence": "in kasukabe-run29-20260913.db, series/civic12, series/deni-50-agent"
+  },
+  {
+    "area": "verb-reach",
+    "item": "read_will",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "recall_goals",
+    "claim": "33 successful of 33 calls",
+    "verdict": "proven",
+    "evidence": "in kasukabe-run29-20260913.db, series/civic12, series/election8"
+  },
+  {
+    "area": "verb-reach",
+    "item": "register_business",
+    "claim": "1 successful of 1 calls",
+    "verdict": "proven",
+    "evidence": "in series/run2"
+  },
+  {
+    "area": "verb-reach",
+    "item": "register_org",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "reject_patent (government)",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "release",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "rest",
+    "claim": "1680 successful of 1712 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, deni-post-1013-5h.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "retire_goal",
+    "claim": "6 successful of 8 calls",
+    "verdict": "proven",
+    "evidence": "in series/civic12, series/election8"
+  },
+  {
+    "area": "verb-reach",
+    "item": "revise_skill",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "revise_tool",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "revive",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "revoke_license",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "revoke_patent (government)",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "rule (government)",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "say",
+    "claim": "3871 successful of 3932 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, deni-post-1013-5h.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "sell",
+    "claim": "65 successful of 88 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, kasukabe-run29-20260913.db, series/civic12"
+  },
+  {
+    "area": "verb-reach",
+    "item": "sell_tool",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "set_business_licensing (government)",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "set_goal",
+    "claim": "24 successful of 27 calls",
+    "verdict": "proven",
+    "evidence": "in kasukabe-run29-20260913.db, series/civic12, series/election8"
+  },
+  {
+    "area": "verb-reach",
+    "item": "set_intention",
+    "claim": "236 successful of 249 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, deni-post-1013-5h.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "set_price_control (government)",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "set_tax_rate (government)",
+    "claim": "1 successful of 1 calls",
+    "verdict": "proven",
+    "evidence": "in series/civic12"
+  },
+  {
+    "area": "verb-reach",
+    "item": "set_wage",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "set_will",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "skillify",
+    "claim": "14 successful of 16 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, kasukabe-run29-20260913.db, series/civic12"
+  },
+  {
+    "area": "verb-reach",
+    "item": "start_conversation",
+    "claim": "50 successful of 50 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, kasukabe-run29-20260913.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "steal",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "stock_shelf",
+    "claim": "30 successful of 44 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, kasukabe-run29-20260913.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "store_item",
+    "claim": "1 successful of 3 calls",
+    "verdict": "proven",
+    "evidence": "in series/civic12, series/deni-a6f9eb4-5h, series/final5"
+  },
+  {
+    "area": "verb-reach",
+    "item": "table_amendment (government)",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "take_from_shelf",
+    "claim": "25 successful of 56 calls",
+    "verdict": "proven",
+    "evidence": "in deni-1c8733e-5h.db, deni-a6f9eb4-5h.db, kasukabe-run29-20260913.db"
+  },
+  {
+    "area": "verb-reach",
+    "item": "teach_skill",
+    "claim": "1 successful of 3 calls",
+    "verdict": "proven",
+    "evidence": "in kasukabe-run29-20260913.db, series/deni-50-agent, series/fifty"
+  },
+  {
+    "area": "verb-reach",
+    "item": "teach_tool",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "toolify",
+    "claim": "2 successful of 2 calls",
+    "verdict": "proven",
+    "evidence": "in series/civic12, series/election8"
+  },
+  {
+    "area": "verb-reach",
+    "item": "trade",
+    "claim": "37 successful of 75 calls",
+    "verdict": "proven",
+    "evidence": "in kasukabe-run29-20260913.db, series/civic12, series/deni-1c8733e-5h"
+  },
+  {
+    "area": "verb-reach",
+    "item": "transfer",
+    "claim": "32 successful of 41 calls",
+    "verdict": "proven",
+    "evidence": "in deni-a6f9eb4-5h.db, kasukabe-run29-20260913.db, series/civic12"
+  },
+  {
+    "area": "verb-reach",
+    "item": "transfer_business",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "transfer_tile",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "update_goal",
+    "claim": "reached for 2 times and never once succeeded - every one a paid call that changed nothing; the refusals may be correct, which is why this is not scored",
+    "verdict": "unproven",
+    "evidence": "in series/civic12, series/election8"
+  },
+  {
+    "area": "verb-reach",
+    "item": "vote",
+    "claim": "11 successful of 18 calls",
+    "verdict": "proven",
+    "evidence": "in series/civic12, series/election8"
+  },
+  {
+    "area": "verb-reach",
+    "item": "vote_amendment (government)",
+    "claim": "served to residents; never once called",
+    "verdict": "unproven",
+    "evidence": "searched 540 session files and 5 trace databases"
+  },
+  {
+    "area": "verb-reach",
+    "item": "withdraw_item",
+    "claim": "reached for 1 times and never once succeeded - every one a paid call that changed nothing; the refusals may be correct, which is why this is not scored",
+    "verdict": "unproven",
+    "evidence": "in series/run8"
+  },
+  {
+    "area": "verb-reach",
+    "item": "withdraw_price",
+    "claim": "1 successful of 3 calls",
+    "verdict": "proven",
+    "evidence": "in series/civic12"
+  },
+  {
+    "area": "verb-reach",
+    "item": "work_site",
+    "claim": "reached for 1 times and never once succeeded - every one a paid call that changed nothing; the refusals may be correct, which is why this is not scored",
+    "verdict": "unproven",
+    "evidence": "in series/deni-post-1013-5h"
+  },
+  {
+    "area": "verbs-not-in-the-registry",
+    "item": "fell_timber_batch",
+    "claim": "called 1 times but the world registry does not serve it",
+    "verdict": "unproven",
+    "evidence": "in series/civic12"
+  },
+  {
+    "area": "verbs-not-in-the-registry",
+    "item": "recall_memories",
+    "claim": "40 successful of 40 calls; registered engine-side by pinned_boot (engine/src/sim), not by the world registry this audit reads",
+    "verdict": "proven",
+    "evidence": "in series/civic12, series/deni-1c8733e-5h, series/deni-50-agent"
+  },
+  {
+    "area": "verbs-not-in-the-registry",
+    "item": "recall_session_log",
+    "claim": "23 successful of 23 calls; registered engine-side by pinned_boot (engine/src/sim), not by the world registry this audit reads",
+    "verdict": "proven",
+    "evidence": "in series/civic12, series/deni-50-agent, series/deni-a6f9eb4-5h"
+  },
+  {
+    "area": "verbs-not-in-the-registry",
+    "item": "search_memory",
+    "claim": "called 29 times, every one with no outcome recorded - the corpus does not say whether the town answered, so neither success nor refusal is evidenced here; registered engine-side by pinned_boot (engine/src/sim), not by the world registry this audit reads",
+    "verdict": "unproven",
+    "evidence": "in series/civic12, series/deni-1c8733e-5h, series/deni-a6f9eb4-5h"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "civic12",
+    "claim": "12 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/civic12/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "deni-1c8733e-5h",
+    "claim": "50 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/deni-1c8733e-5h/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "deni-50-agent",
+    "claim": "50 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/deni-50-agent/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "deni-a6f9eb4-5h",
+    "claim": "50 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/deni-a6f9eb4-5h/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "deni-post-1013-5h",
+    "claim": "50 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/deni-post-1013-5h/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "election8",
+    "claim": "8 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/election8/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "fifty",
+    "claim": "50 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/fifty/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "final1",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/final1/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "final2",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/final2/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "final3",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/final3/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "final4",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/final4/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "final5",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/final5/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "final6",
+    "claim": "no per-turn session files; this run cannot be re-audited",
+    "verdict": "unproven",
+    "evidence": "docs/runs/series/final6/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "run10",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/run10/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "run2",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/run2/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "run3",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/run3/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "run4",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/run4/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "run5",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/run5/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "run6",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/run6/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "run7",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/run7/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "run8",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/run8/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "run9",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/run9/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "short1",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/short1/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "smoke-1c8733e",
+    "claim": "50 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/smoke-1c8733e/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "teambox50",
+    "claim": "no per-turn session files; this run cannot be re-audited",
+    "verdict": "unproven",
+    "evidence": "docs/runs/series/teambox50/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "v1",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/v1/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "v2",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/v2/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "v3",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/v3/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "v4",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/v4/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "v5",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/v5/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "v6",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/v6/sessions/"
+  },
+  {
+    "area": "corpus-coverage",
+    "item": "v7",
+    "claim": "10 per-turn session files recorded",
+    "verdict": "proven",
+    "evidence": "docs/runs/series/v7/sessions/"
+  },
+  {
+    "area": "model-agility",
+    "item": "a well-formed stream",
+    "claim": "the control: 2 call(s) ['world_look_around', 'world_move'], stop=StopReason.TOOL_USE",
+    "verdict": "proven",
+    "evidence": "if this is not intact, no hazard below means anything"
+  },
+  {
+    "area": "model-agility",
+    "item": "tool json truncated mid-argument",
+    "claim": "the turn failed loudly (JSONDecodeError); nothing was hidden",
+    "verdict": "proven",
+    "evidence": "a lost turn that raises is survivable"
+  },
+  {
+    "area": "model-agility",
+    "item": "no contentBlockStart for a tool block",
+    "claim": "lost all 2 calls and recorded the loss; the turn ends StopReason.END_TURN and the seam counted it",
+    "verdict": "proven",
+    "evidence": "the call is not recoverable - the tool's name never crossed the wire - but the turn is no longer indistinguishable from a resident that chose not to act"
+  },
+  {
+    "area": "model-agility",
+    "item": "two tool blocks interleaved",
+    "claim": "survived intact: 2 call(s) ['world_look_around', 'world_move'], stop=StopReason.TOOL_USE",
+    "verdict": "proven",
+    "evidence": ""
+  },
+  {
+    "area": "model-agility",
+    "item": "an unmapped stop reason",
+    "claim": "survived intact: 2 call(s) ['world_look_around', 'world_move'], stop=StopReason.REFUSAL",
+    "verdict": "proven",
+    "evidence": ""
+  },
+  {
+    "area": "model-agility",
+    "item": "a refusal stop reason",
+    "claim": "survived intact: 2 call(s) ['world_look_around', 'world_move'], stop=StopReason.REFUSAL",
+    "verdict": "proven",
+    "evidence": ""
+  },
+  {
+    "area": "model-agility",
+    "item": "the call written as prose",
+    "claim": "lost all 2 calls and recorded the loss; the turn ends StopReason.END_TURN and the seam counted it",
+    "verdict": "proven",
+    "evidence": "the call is not recoverable - the tool's name never crossed the wire - but the turn is no longer indistinguishable from a resident that chose not to act"
+  },
+  {
+    "area": "model-agility",
+    "item": "colliding toolUse ids",
+    "claim": "survived intact: 2 call(s) ['world_look_around', 'world_move'], stop=StopReason.TOOL_USE",
+    "verdict": "proven",
+    "evidence": ""
+  },
+  {
+    "area": "model-agility",
+    "item": "the stream cut before messageStop",
+    "claim": "lost 1 of 2 calls, and said so (stop=StopReason.END_TURN)",
+    "verdict": "proven",
+    "evidence": "1 call(s) ['world_look_around'], stop=StopReason.END_TURN"
+  },
+  {
+    "area": "model-agility",
+    "item": "contentBlockStart sent for text",
+    "claim": "survived intact: 2 call(s) ['world_look_around', 'world_move'], stop=StopReason.TOOL_USE",
+    "verdict": "proven",
+    "evidence": ""
+  },
+  {
+    "area": "model-agility",
+    "item": "arguments of the wrong type",
+    "claim": "survived intact: 2 call(s) ['world_look_around', 'world_move'], stop=StopReason.TOOL_USE",
+    "verdict": "proven",
+    "evidence": ""
+  },
+  {
+    "area": "model-agility",
+    "item": "stop reason 'guardrail_intervened' reaches the agent loop",
+    "claim": "a guardrail stopped the model; the loop was told StopReason.REFUSAL",
+    "verdict": "proven",
+    "evidence": "herald/provider.py:573-577 maps three reasons and flattens the rest to END_TURN"
+  },
+  {
+    "area": "model-agility",
+    "item": "stop reason 'content_filtered' reaches the agent loop",
+    "claim": "the content was filtered; the loop was told StopReason.REFUSAL",
+    "verdict": "proven",
+    "evidence": "herald/provider.py:573-577 maps three reasons and flattens the rest to END_TURN"
+  },
+  {
+    "area": "model-agility",
+    "item": "stop reason 'max_tokens' reaches the agent loop",
+    "claim": "the model ran out of room; the loop was told StopReason.MAX_TOKENS",
+    "verdict": "proven",
+    "evidence": "herald/provider.py:573-577 maps three reasons and flattens the rest to END_TURN"
+  },
+  {
+    "area": "model-agility",
+    "item": "the seam stays quiet on a healthy turn",
+    "claim": "a well-formed stream tripped neither counter (0 claimed-tools, 0 call-shaped-text)",
+    "verdict": "proven",
+    "evidence": "without this the two rows below would prove nothing"
+  },
+  {
+    "area": "model-agility",
+    "item": "a turn claiming tools it never sent is counted",
+    "claim": "the seam counted 1 such turn(s) where the parser reported TOOL_USE and delivered nothing",
+    "verdict": "proven",
+    "evidence": "sim/a_turn_that_tried_to_act.py"
+  },
+  {
+    "area": "model-agility",
+    "item": "a call written in an unknown markup is counted",
+    "claim": "the seam counted 1 turn(s) that wrote something call-shaped and called nothing",
+    "verdict": "proven",
+    "evidence": "INFRA-07 in a spelling the broker does not recover"
+  },
+  {
+    "area": "stories",
+    "item": "two residents can marry",
+    "claim": "marry succeeded",
+    "verdict": "proven",
+    "evidence": "at the temple, which is where the verb is gated"
+  },
+  {
+    "area": "stories",
+    "item": "a couple can ask for a child",
+    "claim": "ask_for_a_child succeeded",
+    "verdict": "proven",
+    "evidence": "X15 has been answered 'no birth in any run' since genesis"
+  },
+  {
+    "area": "stories",
+    "item": "a resident can leave a will",
+    "claim": "set_will succeeded",
+    "verdict": "proven",
+    "evidence": "what a child inherits starts with somebody writing it down"
+  },
+  {
+    "area": "stories",
+    "item": "a will can be read",
+    "claim": "read_will succeeded",
+    "verdict": "proven",
+    "evidence": "a0040 reading a0039's will"
+  },
+  {
+    "area": "stories",
+    "item": "a child can come of age",
+    "claim": "come_of_age(stay_and_contribute) succeeded",
+    "verdict": "proven",
+    "evidence": "a0040, aged 18.0"
+  },
+  {
+    "area": "stories",
+    "item": "somebody can be revived",
+    "claim": "revive succeeded",
+    "verdict": "proven",
+    "evidence": "the only exit from dormancy any run has ever seen was a family member paying"
+  },
+  {
+    "area": "stories",
+    "item": "land can change hands",
+    "claim": "transfer_tile was refused: ActorRequirementError: transfer_tile: actor requirement(s) not met: tile (0, 0) belongs to government:treasury, not a004. Every tile starts as the treasury's; a granted plot is permission to build, not a deed; ownership moves only when a building completes, and completing one is a tick-loop job no resident can call. The treasury cannot sell either - the verb needs an owner with hands",
+    "verdict": "unproven",
+    "evidence": "X16 has been answered 'no' in every run, and this is why: not a town that would not trade land, a town where no resident can be in a position to"
+  },
+  {
+    "area": "stories",
+    "item": "a business can change owner",
+    "claim": "transfer_business succeeded; b_construction now belongs to a0041",
+    "verdict": "proven",
+    "evidence": "a business nobody can sell is not property"
+  },
+  {
+    "area": "stories",
+    "item": "a resident can pay what it owes the state",
+    "claim": "pay_tax(30) succeeded; 1 resident(s) owed head tax after the boundary",
+    "verdict": "proven",
+    "evidence": "ten real calls, zero successes; five were answered 'you owe no head tax'"
+  },
+  {
+    "area": "stories",
+    "item": "two acts can be bought with one decision",
+    "claim": "do_in_order(look_around, rest) succeeded",
+    "verdict": "proven",
+    "evidence": "PG1 asks for more than one act per decision; the one recorded call was an HTTP 500"
+  },
+  {
+    "area": "stories",
+    "item": "something can be stolen",
+    "claim": "steal succeeded; the town now holds 1 case(s)",
+    "verdict": "proven",
+    "evidence": "a0040 at market_row, the owner away at farmland"
+  },
+  {
+    "area": "stories",
+    "item": "somebody can be accused",
+    "claim": "file_complaint succeeded",
+    "verdict": "proven",
+    "evidence": "case case-0de1421dab6d, against a0040"
+  },
+  {
+    "area": "stories",
+    "item": "a thief can be arrested",
+    "claim": "arrest succeeded",
+    "verdict": "proven",
+    "evidence": "case case-0de1421dab6d; a0041 sworn in as police: True"
+  },
+  {
+    "area": "stories",
+    "item": "a witness can be subpoenaed",
+    "claim": "file_subpoena succeeded; 1 on file",
+    "verdict": "proven",
+    "evidence": "case case-0de1421dab6d"
+  },
+  {
+    "area": "stories",
+    "item": "a subpoena can be granted",
+    "claim": "grant_subpoena succeeded",
+    "verdict": "proven",
+    "evidence": "subpoena subpoena-7702a0674ab9"
+  },
+  {
+    "area": "stories",
+    "item": "a subpoena can be denied",
+    "claim": "deny_subpoena succeeded",
+    "verdict": "proven",
+    "evidence": "subpoena subpoena-88ffe29e2944"
+  },
+  {
+    "area": "stories",
+    "item": "a case can reach a verdict",
+    "claim": "rule(fine, 10 sim) succeeded",
+    "verdict": "proven",
+    "evidence": "GOV-8's bar: a complaint becoming a ruling against the accused"
+  },
+  {
+    "area": "stories",
+    "item": "a prisoner can be released",
+    "claim": "release succeeded",
+    "verdict": "proven",
+    "evidence": "a sentence nobody can end is not a sentence"
+  },
+  {
+    "area": "stories",
+    "item": "an organisation can be founded",
+    "claim": "register_org succeeded; the town holds 1 organisation(s)",
+    "verdict": "proven",
+    "evidence": "Q18 has been blocked on this verb having zero calls"
+  },
+  {
+    "area": "stories",
+    "item": "somebody can be admitted",
+    "claim": "admit_to_org succeeded",
+    "verdict": "proven",
+    "evidence": "a0040 into org-2ff88b4d61e1"
+  },
+  {
+    "area": "stories",
+    "item": "an organisation can author its own verb",
+    "claim": "define_organization_tool succeeded",
+    "verdict": "proven",
+    "evidence": "a ruleset the charter did not anticipate, which is Q18's question"
+  },
+  {
+    "area": "stories",
+    "item": "a member can leave",
+    "claim": "leave_org succeeded",
+    "verdict": "proven",
+    "evidence": "a membership nobody can end is not a membership"
+  },
+  {
+    "area": "stories",
+    "item": "a resident can invent a verb",
+    "claim": "define_tool succeeded",
+    "verdict": "proven",
+    "evidence": "T3's first link: a tool that did not exist this morning"
+  },
+  {
+    "area": "stories",
+    "item": "an invention can be revised",
+    "claim": "revise_tool succeeded",
+    "verdict": "proven",
+    "evidence": "a tool nobody can correct is a tool nobody will trust"
+  },
+  {
+    "area": "stories",
+    "item": "an invention can be taught",
+    "claim": "teach_tool(5 sim) succeeded",
+    "verdict": "proven",
+    "evidence": "ECON-8 asks for an invented tool used by somebody other than its author"
+  },
+  {
+    "area": "stories",
+    "item": "an invention can be licensed",
+    "claim": "license_tool(3 sim, 5 days) succeeded",
+    "verdict": "proven",
+    "evidence": "Q5's diffusion question, which has never had a single datum"
+  },
+  {
+    "area": "stories",
+    "item": "a licence can be taken back",
+    "claim": "revoke_license succeeded",
+    "verdict": "proven",
+    "evidence": "a licence that cannot be revoked is a gift"
+  },
+  {
+    "area": "stories",
+    "item": "an invention can be sold outright",
+    "claim": "sell_tool(25 sim) succeeded",
+    "verdict": "proven",
+    "evidence": "ECON-7's bar: knowledge changing hands for money"
+  },
+  {
+    "area": "stories",
+    "item": "a business can hold a trade secret",
+    "claim": "define_business_tool succeeded",
+    "verdict": "proven",
+    "evidence": "Q6 asks whether trade secrets hold; nothing has ever been secret"
+  },
+  {
+    "area": "stories",
+    "item": "a skill can be written down and revised",
+    "claim": "revise_skill succeeded",
+    "verdict": "proven",
+    "evidence": "C4's depth question starts with a skill somebody can improve"
+  },
+  {
+    "area": "stories",
+    "item": "a government can convene",
+    "claim": "convene succeeded",
+    "verdict": "proven",
+    "evidence": "GOV-6's standing order starts with a meeting"
+  },
+  {
+    "area": "stories",
+    "item": "the charter can be amended by its own rules",
+    "claim": "table_amendment succeeded",
+    "verdict": "proven",
+    "evidence": "GOV-5: the constitution changes by vote, never once attempted"
+  },
+  {
+    "area": "stories",
+    "item": "the town can petition for land",
+    "claim": "petition succeeded",
+    "verdict": "proven",
+    "evidence": "GROW-12's whole reason for seating a caretaker"
+  },
+  {
+    "area": "stories",
+    "item": "a business permit can be issued",
+    "claim": "issue_business_permit succeeded",
+    "verdict": "proven",
+    "evidence": "to a0041"
+  },
+  {
+    "area": "stories",
+    "item": "the government can decide who may trade",
+    "claim": "set_business_licensing(permit_required) succeeded",
+    "verdict": "proven",
+    "evidence": "GOV-4's policy lever, built and never pulled live"
+  },
+  {
+    "area": "stories",
+    "item": "a price can be capped",
+    "claim": "set_price_control(bread, max 20) succeeded",
+    "verdict": "proven",
+    "evidence": "the lever PRICE-CONTROLS-AND-LICENSING-ARE-POLICY.md was written for"
+  },
+  {
+    "area": "stories",
+    "item": "the state can staff its own police",
+    "claim": "appoint_police(12 sim) succeeded",
+    "verdict": "proven",
+    "evidence": "ECON-11's other half: the treasury paying somebody"
+  },
+  {
+    "area": "stories",
+    "item": "a patent can be granted",
+    "claim": "approve_patent succeeded",
+    "verdict": "proven",
+    "evidence": "application patent-app-8505561f857c"
+  },
+  {
+    "area": "stories",
+    "item": "a patent can be refused",
+    "claim": "reject_patent succeeded",
+    "verdict": "proven",
+    "evidence": "application patent-app-60158819d04d"
+  },
+  {
+    "area": "stories",
+    "item": "a patent can be revoked",
+    "claim": "revoke_patent succeeded",
+    "verdict": "proven",
+    "evidence": "patent patent-536a33d4ed25"
+  },
+  {
+    "area": "stories",
+    "item": "somebody can be taken on",
+    "claim": "hire_employee succeeded; the payroll now reads ['a0001']",
+    "verdict": "proven",
+    "evidence": "b_pharmacy, owned by a0064; consent declared, as TOOL-11.7 requires"
+  },
+  {
+    "area": "stories",
+    "item": "a wage can be named",
+    "claim": "set_wage(20 sim a day) succeeded",
+    "verdict": "proven",
+    "evidence": "the verb has never been called in any run"
+  },
+  {
+    "area": "stories",
+    "item": "a wage can actually be paid",
+    "claim": "pay_wage(20 sim) succeeded; the hand is +20 sim",
+    "verdict": "proven",
+    "evidence": "ECON-5 asks for a hire AND a wage settled; no run has ever had both"
+  },
+  {
+    "area": "stories",
+    "item": "somebody can be let go",
+    "claim": "fire_employee succeeded; the payroll now reads []",
+    "verdict": "proven",
+    "evidence": "a job nobody can leave is not employment"
+  },
+  {
+    "area": "stories",
+    "item": "the government can grant land",
+    "claim": "grant_plot succeeded; the town now holds 1 plot(s)",
+    "verdict": "proven",
+    "evidence": "a0001 seated as Prime Minister, granting to a0002 at home:h0073"
+  },
+  {
+    "area": "stories",
+    "item": "a builder can be licensed",
+    "claim": "issue_builder_license succeeded",
+    "verdict": "proven",
+    "evidence": "the licence the site needs before it can be opened"
+  },
+  {
+    "area": "stories",
+    "item": "something can be raised on granted land",
+    "claim": "build_structure succeeded; the town now holds 1 building(s)",
+    "verdict": "proven",
+    "evidence": "on plot plot-a0002-0"
+  },
+  {
+    "area": "stories",
+    "item": "a site can be worked",
+    "claim": "work_site(building-67511df5a579) succeeded",
+    "verdict": "proven",
+    "evidence": "the one recorded attempt at this verb sent no building_id at all"
+  },
+  {
+    "area": "stories",
+    "item": "a lesson refused for the wrong skill names the right ones",
+    "claim": "the refusal says what this teacher can teach: NotFoundError: You cannot teach 'Reading' because you do not have it. You can teach: carpentry (40).",
+    "verdict": "proven",
+    "evidence": "the exact call two residents made, in two runs, and never repeated"
+  },
+  {
+    "area": "stories",
+    "item": "a skill can be taught for money",
+    "claim": "teach_skill(carpentry, 15 sim) succeeded; the student paid 15 sim and now holds 28 proficiency",
+    "verdict": "proven",
+    "evidence": "both standing at home:h0050"
+  },
+  {
+    "area": "stories",
+    "item": "what a teacher keeps",
+    "claim": "the student paid 15 sim; the teacher is +0 sim after the call's own cost of 15 sim - teaching at this price earns nothing, and any cheaper lesson costs the teacher money",
+    "verdict": "unproven",
+    "evidence": "not a defect: the cost is disclosed in the tool description and pricing above 15 sim profits. Open question is the calibration - a 15 sim floor against the one tuition ever chosen, also 15 - which is the cheapest explanation this instrument has for ECON-7 never holding"
+  },
+  {
+    "area": "stories",
+    "item": "a government verb is hidden from an unseated resident",
+    "claim": "set_tax_rate is not visible to someone who holds no seat",
+    "verdict": "proven",
+    "evidence": "registry.visible_to gates GOVERNMENT on is_sitting"
+  },
+  {
+    "area": "stories",
+    "item": "an unseated resident is told the verb does not exist",
+    "claim": "calling a government verb without a seat answers ToolNotFoundError, exactly as a nonsense name does - DESIGN section 2's rule that non-members cannot see a confidential tool exists",
+    "verdict": "proven",
+    "evidence": "the sameness is the design; what was missing was help for somebody who DOES hold the seat and mistypes, which now names the verbs it can see"
+  },
+  {
+    "area": "stories",
+    "item": "a seated resident is served the government verbs",
+    "claim": "set_tax_rate becomes visible the moment the seat is held",
+    "verdict": "proven",
+    "evidence": "a0001 seated as Prime Minister"
+  },
+  {
+    "area": "stories",
+    "item": "a seat can actually change the tax rate",
+    "claim": "set_tax_rate(500) succeeded; the charter now reads 500 bps",
+    "verdict": "proven",
+    "evidence": "standing at government_complex"
+  },
+  {
+    "area": "stories",
+    "item": "the ledger law survives a batch of ordinary acts",
+    "claim": "24 acts by 6 residents; total 100000 == 100000",
+    "verdict": "proven",
+    "evidence": "checked after every act, not only at the end"
+  },
+  {
+    "area": "stories",
+    "item": "a refused act moves no money",
+    "claim": "0 of 24 acts were refused and the total is unchanged at 100000",
+    "verdict": "proven",
+    "evidence": "charge-before-handler with refund on refusal"
+  },
+  {
+    "area": "stories",
+    "item": "buy is not offered to someone in no conversation",
+    "claim": "`buy` is absent from the tool list served to a resident who is not talking to anybody",
+    "verdict": "proven",
+    "evidence": "79 verbs served to a0001"
+  },
+  {
+    "area": "stories",
+    "item": "buying outside a conversation is refused",
+    "claim": "the town answered: ActorRequirementError: buy: actor requirement(s) not met: you and a0002 are not in a conversation. A sale is agreed between two people who are talking",
+    "verdict": "proven",
+    "evidence": "refused, naming the conversation rule"
+  },
+  {
+    "area": "stories",
+    "item": "a refused purchase moves nothing",
+    "claim": "no goods and no money changed hands; total 100000",
+    "verdict": "proven",
+    "evidence": ""
+  },
+  {
+    "area": "stories",
+    "item": "the day boundary runs without halting the town",
+    "claim": "crossed tick 144 and the run continued",
+    "verdict": "proven",
+    "evidence": "run_life_ticks at a day boundary"
+  },
+  {
+    "area": "stories",
+    "item": "the ledger law survives the day boundary",
+    "claim": "usd total 100000 == 100000",
+    "verdict": "proven",
+    "evidence": "upkeep, tax, payroll, pensions and wages all in one tick"
+  },
+  {
+    "area": "stories",
+    "item": "crossing a day actually takes sim from residents",
+    "claim": "276 of 314 residents are poorer, 37680 sim between them; the treasury moved +37680 sim",
+    "verdict": "proven",
+    "evidence": "the S1 gate counts households VISITED, which passed for 23 runs at a 0 bps rate; this asks the ledger instead"
+  },
+  {
+    "area": "stories",
+    "item": "the treasury's gain is money somebody else lost",
+    "claim": "residents are down 37680 sim and the treasury is up 37680 sim; the difference of 0 came from the town's businesses and institutions, which pay at the same boundary",
+    "verdict": "proven",
+    "evidence": "the ledger invariant holds across the boundary, so nothing was minted"
+  },
+  {
+    "area": "stories",
+    "item": "a checkpoint can be written at all",
+    "claim": "written to checkpoints",
+    "verdict": "proven",
+    "evidence": "CheckpointError aggregates every component's failure rather than writing a partial"
+  },
+  {
+    "area": "stories",
+    "item": "a resumed town is the same town",
+    "claim": "cast 314 == 314, usd 100000 == 100000",
+    "verdict": "proven",
+    "evidence": "resumed from a real checkpoint on disk, not a fixture"
+  },
+  {
+    "area": "replay",
+    "item": "the recorded corpus still validates",
+    "claim": "79 of 97 distinct call shapes that the corpus records as successful are still accepted by the registry's own validator; 11 more are refused on purpose and declared as such; 0 are refused and nobody has said why",
+    "verdict": "proven",
+    "evidence": "12203 recorded successful calls, deduplicated by argument names"
+  },
+  {
+    "area": "replay",
+    "item": "sell(business_id, item, quantity, unit_price_sim)",
+    "claim": "succeeded 57 times in the corpus and is refused today ON PURPOSE: a sale settles at a price already posted, so `sell` names no price. The shop itself is now understood (`business_id` folds to `buyer_id`), but a price supplied at sale time would be ignored, and TRADE-01's rule is that an ignored parameter must be refused rather than dropped",
+    "verdict": "proven",
+    "evidence": "seen in deni-50-agent, fifty, run7; declared in proof/deliberate.py and matched against the refusal the town gives"
+  },
+  {
+    "area": "replay",
+    "item": "buy(business_id, item, quantity, unit_price_sim)",
+    "claim": "succeeded 25 times in the corpus and is refused today ON PURPOSE: the same rule from the buyer's side: the price is the seller's posted one, and `business_id` now folds to `seller_id`",
+    "verdict": "proven",
+    "evidence": "seen in deni-50-agent, fifty, final3; declared in proof/deliberate.py and matched against the refusal the town gives"
+  },
+  {
+    "area": "replay",
+    "item": "sell(buyer_id, item, price, quantity)",
+    "claim": "succeeded 1 times in the corpus and is refused today ON PURPOSE: `price` has no meaning on a sale that settles at the posted price; `post_price` is where a price is named",
+    "verdict": "proven",
+    "evidence": "seen in deni-1c8733e-5h; declared in proof/deliberate.py and matched against the refusal the town gives"
+  },
+  {
+    "area": "replay",
+    "item": "post_price(ask_sim, bid_sim, business_id, item, quantity)",
+    "claim": "succeeded 1 times in the corpus and is refused today ON PURPOSE: a posted price is a rate, not a lot. How much is on the shelf is `stock_shelf`'s business, and pricing a quantity the board cannot show would post a promise the shop has not made",
+    "verdict": "proven",
+    "evidence": "seen in deni-a6f9eb4-5h; declared in proof/deliberate.py and matched against the refusal the town gives"
+  },
+  {
+    "area": "replay",
+    "item": "find_people(for_trade, query)",
+    "claim": "succeeded 1 times in the corpus and is refused today ON PURPOSE: there is no trade filter, and inventing one silently would answer a narrower question than the resident asked. `query` already takes the words a resident would put in that filter",
+    "verdict": "proven",
+    "evidence": "seen in deni-a6f9eb4-5h; declared in proof/deliberate.py and matched against the refusal the town gives"
+  },
+  {
+    "area": "replay",
+    "item": "describe_place(location_id, place_id)",
+    "claim": "succeeded 1 times in the corpus and is refused today ON PURPOSE: both words for the same thing in one call, and they may disagree. `location_id` alone has folded to `place_id` since the synonym table was written; what is refused here is naming the place twice, because answering about one of the two would be answering a question the resident did not ask",
+    "verdict": "proven",
+    "evidence": "seen in deni-a6f9eb4-5h; declared in proof/deliberate.py and matched against the refusal the town gives"
+  },
+  {
+    "area": "replay",
+    "item": "rest(conversation_id)",
+    "claim": "succeeded 1 times in the corpus and is refused today ON PURPOSE: resting is not addressed to anybody. A conversation id here is the model carrying its last call's argument forward, which is worth refusing loudly rather than ignoring",
+    "verdict": "proven",
+    "evidence": "seen in deni-post-1013-5h; declared in proof/deliberate.py and matched against the refusal the town gives"
+  },
+  {
+    "area": "replay",
+    "item": "look_around(wait)",
+    "claim": "succeeded 1 times in the corpus and is refused today ON PURPOSE: nothing in this world is waited for inside a call - a turn that wants time to pass calls `rest`, and `repeated_calls.py` says so explicitly",
+    "verdict": "proven",
+    "evidence": "seen in run10; declared in proof/deliberate.py and matched against the refusal the town gives"
+  },
+  {
+    "area": "replay",
+    "item": "look_around(query)",
+    "claim": "succeeded 1 times in the corpus and is refused today ON PURPOSE: `look_around` reports what is here, whole. A query would make it a search that silently hid the rest of the room; `find_people` and `list_places` are the verbs that take words",
+    "verdict": "proven",
+    "evidence": "seen in run7; declared in proof/deliberate.py and matched against the refusal the town gives"
+  },
+  {
+    "area": "replay",
+    "item": "stock_shelf(business_id, item, price_sim, quantity)",
+    "claim": "succeeded 1 times in the corpus and is refused today ON PURPOSE: stocking and pricing are two acts on purpose - a shelf can hold what is not for sale, and a price can stand over an empty shelf. Accepting both in one call would hide which of the two failed",
+    "verdict": "proven",
+    "evidence": "seen in smoke-1c8733e; declared in proof/deliberate.py and matched against the refusal the town gives"
+  },
+  {
+    "area": "replay",
+    "item": "look_around(conversation_id)",
+    "claim": "succeeded 1 times in the corpus and is refused today ON PURPOSE: looking around is not addressed to anybody either - the same carried argument, one verb later",
+    "verdict": "proven",
+    "evidence": "seen in v7; declared in proof/deliberate.py and matched against the refusal the town gives"
+  },
+  {
+    "area": "replay",
+    "item": "recall_session_log(turns)",
+    "claim": "succeeded 21 times in the corpus; served engine-side by pinned_boot (engine/src/sim), and the engine's own schema still accepts this spelling",
+    "verdict": "proven",
+    "evidence": "seen in civic12, deni-50-agent, deni-a6f9eb4-5h"
+  },
+  {
+    "area": "replay",
+    "item": "recall_memories(count, kind)",
+    "claim": "succeeded 17 times in the corpus; served engine-side by pinned_boot (engine/src/sim), and the engine's own schema still accepts this spelling",
+    "verdict": "proven",
+    "evidence": "seen in civic12, deni-1c8733e-5h, deni-50-agent"
+  },
+  {
+    "area": "replay",
+    "item": "recall_memories(count)",
+    "claim": "succeeded 15 times in the corpus; served engine-side by pinned_boot (engine/src/sim), and the engine's own schema still accepts this spelling",
+    "verdict": "proven",
+    "evidence": "seen in civic12, deni-1c8733e-5h, deni-50-agent"
+  },
+  {
+    "area": "replay",
+    "item": "recall_memories(kind)",
+    "claim": "succeeded 4 times in the corpus; served engine-side by pinned_boot (engine/src/sim), and the engine's own schema still accepts this spelling",
+    "verdict": "proven",
+    "evidence": "seen in final1, run5"
+  },
+  {
+    "area": "replay",
+    "item": "recall_memories(no arguments)",
+    "claim": "succeeded 3 times in the corpus; served engine-side by pinned_boot (engine/src/sim), and the engine's own schema still accepts this spelling",
+    "verdict": "proven",
+    "evidence": "seen in election8, final1, v5"
+  },
+  {
+    "area": "replay",
+    "item": "recall_session_log(no arguments)",
+    "claim": "succeeded 2 times in the corpus; served engine-side by pinned_boot (engine/src/sim), and the engine's own schema still accepts this spelling",
+    "verdict": "proven",
+    "evidence": "seen in final1, run2"
+  },
+  {
+    "area": "replay",
+    "item": "recall_memories(count, query)",
+    "claim": "succeeded 1 times in the corpus; refused on purpose: `recall_memories` lists what a resident lately remembered, by kind and count; it does not search. Searching your own memory is `search_memory`, which takes exactly the `query` this call was reaching for, so folding the word across would answer a different question from the one asked",
+    "verdict": "proven",
+    "evidence": "seen in civic12"
+  }
+]

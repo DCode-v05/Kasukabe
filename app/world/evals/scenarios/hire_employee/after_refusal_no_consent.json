@@ -1,0 +1,22 @@
+{
+  "tool": "hire_employee",
+  "kind": "after_refusal",
+  "_why": "Hiring takes the other person's consent, which means it cannot happen without asking them first - the one authoring-adjacent verb whose refusal points at a CONVERSATION rather than at a parameter. Does the resident go and ask, then hire?",
+  "resident": "n01",
+  "location": "business:b_grocery",
+  "inventory": {},
+  "sim": 1200,
+  "people_here": [
+    "n07"
+  ],
+  "recent_speech": [
+    {
+      "from": "n07",
+      "text": "I have been out of work since the harvest ended."
+    }
+  ],
+  "open_question_to_me": "You called hire_employee and the world refused: 'hire_employee: invalid params: employee_consent: Field required'. n07 is standing with you and has not been asked.",
+  "expect": {
+    "verb": "say"
+  }
+}

@@ -1,0 +1,1348 @@
+"""Word pools the genesis generator draws from to build 250 personas
+without an LLM call.
+
+DESIGN.md's control businesses are explicitly "rule-based, no LLM"; the
+same reasoning extends to genesis persona text here. Genesis runs once,
+offline, before the $1000 inference budget starts burning (DESIGN.md
+section 3), and app/CONVENTIONS.md forbids live LLM calls in tests -
+templated, seeded generation makes the whole genesis generator
+deterministic, free, and testable, at the cost of bios that are
+obviously formulaic rather than individually written. That tradeoff is
+intentional: 250 short, structurally-identical bios are a fine seed for
+250 LLM agents who will generate all of their own interesting behavior
+during the actual simulation.
+"""
+
+from __future__ import annotations
+
+MALE_FIRST_NAMES: tuple[str, ...] = (
+    "Aarav",
+    "Aldric",
+    "Anton",
+    "Arjun",
+    "Bao",
+    "Benedikt",
+    "Caspian",
+    "Cedric",
+    "Dashiell",
+    "Declan",
+    "Emeka",
+    "Ezra",
+    "Farid",
+    "Felix",
+    "Gideon",
+    "Hendrik",
+    "Idris",
+    "Ivo",
+    "Jasper",
+    "Kai",
+    "Kenji",
+    "Leandro",
+    "Lior",
+    "Magnus",
+    "Mateo",
+    "Milo",
+    "Nikolai",
+    "Omar",
+    "Osei",
+    "Pavel",
+    "Percival",
+    "Quinlan",
+    "Ravi",
+    "Rustam",
+    "Salim",
+    "Sebastian",
+    "Soren",
+    "Takeshi",
+    "Thaddeus",
+    "Ulric",
+    "Vikram",
+    "Wendell",
+    "Xavier",
+    "Yusuf",
+    "Zane",
+    "Amos",
+    "Bram",
+    "Corwin",
+)
+
+FEMALE_FIRST_NAMES: tuple[str, ...] = (
+    "Adaeze",
+    "Ainsley",
+    "Amara",
+    "Beatriz",
+    "Camille",
+    "Delphine",
+    "Elowen",
+    "Fenna",
+    "Giselle",
+    "Hana",
+    "Imogen",
+    "Jovana",
+    "Kaida",
+    "Mireille",
+    "Nadia",
+    "Odalys",
+    "Petra",
+    "Quiterie",
+    "Rosalind",
+    "Saoirse",
+    "Tamsin",
+    "Ulrike",
+    "Valeska",
+    "Liora",
+    "Wren",
+    "Xiomara",
+    "Yara",
+    "Zofia",
+    "Anouk",
+    "Briseis",
+    "Calla",
+    "Dorotea",
+    "Esme",
+    "Freya",
+    "Greta",
+    "Halcyon",
+    "Ines",
+    "Jorunn",
+    "Kirra",
+    "Lena",
+    "Marisol",
+    "Noor",
+    "Odette",
+    "Priya",
+    "Ren",
+    "Selene",
+    "Thora",
+    "Yuki",
+)
+
+SURNAMES: tuple[str, ...] = (
+    "Adeyemi",
+    "Almeida",
+    "Bergstrom",
+    "Calloway",
+    "Delacroix",
+    "Ekwueme",
+    "Farrow",
+    "Grunewald",
+    "Halvorsen",
+    "Ibarra",
+    "Jarrah",
+    "Kowalski",
+    "Larkspur",
+    "Mercer",
+    "Nakamura",
+    "Okafor",
+    "Petrov",
+    "Quintero",
+    "Ravensworth",
+    "Sundberg",
+    "Takahashi",
+    "Undset",
+    "Vasquez",
+    "Whitlock",
+    "Yamada",
+    "Zeleny",
+    "Ashworth",
+    "Bellweather",
+    "Castellan",
+    "Draper",
+    "Eriksson",
+    "Fontaine",
+    "Greenhow",
+    "Holloway",
+    "Ingram",
+    "Jansen",
+    "Kestrel",
+    "Lindqvist",
+    "Marchetti",
+    "Novak",
+    "Osei-Bonsu",
+    "Pemberton",
+    "Quarshie",
+    "Renner",
+    "Solano",
+    "Thorne",
+    "Ueda",
+    "Vance",
+    "Wickham",
+    "Xu",
+    "Yilmaz",
+    "Zamora",
+    "Abernathy",
+    "Brandt",
+    "Corrigan",
+    "Duval",
+    "Ellery",
+    "Fairweather",
+    "Goss",
+    "Hartigan",
+    "Isherwood",
+    "Jelinek",
+    "Kaminski",
+    "Lund",
+)
+
+# Ordered roughly severity/warmth-neutral so pairing two at random rarely
+# reads as contradictory on its face.
+PERSONALITY_TRAITS: tuple[str, ...] = (
+    "curious",
+    "frugal",
+    "hot-tempered",
+    "devout",
+    "gossipy",
+    "industrious",
+    "guarded",
+    "easygoing",
+    "stubborn",
+    "generous",
+    "meticulous",
+    "restless",
+    "wry",
+    "earnest",
+    "superstitious",
+    "blunt",
+    "patient",
+    "ambitious",
+    "sentimental",
+    "skeptical",
+    "warm",
+    "aloof",
+    "resourceful",
+    "anxious",
+    "steady",
+    "impulsive",
+    "diplomatic",
+    "proud",
+    "self-deprecating",
+    "watchful",
+)
+
+HABITS: tuple[str, ...] = (
+    "takes a walk through the park every dawn",
+    "haggles over every price on principle",
+    "keeps a running tally of who owes whom",
+    "reads at the cafe until closing",
+    "prays quietly before the day's first task",
+    "collects gossip like other people collect coins",
+    "never leaves a debt unpaid past a week",
+    "tends a small herb box on the windowsill",
+    "whittles small figures when nervous",
+    "hums old work songs while doing chores",
+    "keeps meticulous notes on the weather",
+    "trades favors instead of coin whenever possible",
+    "arrives early to everything out of habit",
+    "feeds the stray animals near the market",
+    "practices sums and figures for fun",
+    "tells the same three stories at every gathering",
+    "sketches the town from memory in a battered notebook",
+    "saves the best cut of anything for family",
+    "argues politics with anyone who will listen",
+    "checks the ledger twice before trusting it once",
+)
+
+MINOR_OCCUPATION_YOUNG = "child"  # under school age
+MINOR_OCCUPATION_SCHOOL = "student"
+MINOR_SCHOOL_AGE_YEARS = 6
+
+ELDERLY_OCCUPATION = "retired"
+
+# Occupations for working-age agents not slotted into a named business
+# role (construction company, café, grocery store, pharmacy). Chosen to
+# match DESIGN.md section 1's genesis buildings and resource zones
+# (farmland, ore outcrops, forest) so the persona roster visibly covers
+# the town's actual geography.
+GENERIC_OCCUPATIONS: tuple[str, ...] = (
+    "farmer",
+    "miner",
+    "forester",
+    "government_clerk",
+    "office_administrator",
+    "college_instructor",
+    "college_student",
+    "artisan",
+    "trader",
+    "day_laborer",
+)
+
+# ══════════════════════════════════════════════════════════════════════
+# RICH PERSONA POOLS (DESIGN.md "Personas: a real starting point, not a
+# stub"). Everything below feeds world/life/genesis.py's persona builder.
+# Same reasoning as the pools above: templated and seeded, not LLM-
+# written, so genesis stays free, deterministic, and testable - but with
+# enough independent dimensions (tension, formative history, values,
+# fears, ambitions, scarcity behavior, stranger/family treatment,
+# competence/blind spot, speech, daily rhythm, four attitude axes, and a
+# private secret) that the combined per-agent bundle is, in practice,
+# unique across 250 agents even where any single dimension repeats.
+#
+# Templates use str.format() placeholders filled in by genesis.py from
+# the agent's own name/sex: {name} {Subj}/{subj} (He/he or She/she)
+# {Poss}/{poss} (His/his or Her/her) {obj} (him/her) {reflexive}
+# (himself/herself) {age} {years_ago} {origin} {hardship} {target_name}
+# (another real agent's name, for the templates that reference one).
+#
+# Genesis prompting must not leak real-world religions or ideologies
+# (DESIGN.md section 7); ATTITUDE_RELIGION_POOL and the temple-adjacent
+# lines elsewhere name no real doctrine, only the in-world temple.
+# ══════════════════════════════════════════════════════════════════════
+
+ORIGIN_TOWNS: tuple[str, ...] = (
+    "the river settlements downstream",
+    "a mining camp two ridges over",
+    "the coast, before the crossing",
+    "a farming hamlet that dried up",
+    "the old garrison town north of here",
+    "nowhere in particular, just moving",
+    "a settlement that doesn't have a name anymore",
+    "the hill villages",
+    "a town on the far side of the forest",
+    "the last stop before the frontier",
+)
+
+HARDSHIP_EVENTS: tuple[str, ...] = (
+    "the blight",
+    "the flood",
+    "the bad winter",
+    "the mine collapse two valleys over",
+    "the fever that swept through",
+    "the drought",
+    "the market crash",
+    "the fire",
+    "the long quiet after the harvest failed",
+    "the outbreak at the old settlement",
+)
+
+# ── internal tension: (virtue, flaw, template) ──────────────────────
+# Real contradiction, not a virtue list - DESIGN.md's own example is
+# "generous but proud."
+ADULT_TENSION: tuple[tuple[str, str, str], ...] = (
+    ("generous", "proud", "{Subj} will give away the last of what {subj} has to someone in need, and can't stand to be thanked for it out loud."),
+    ("careful", "envious", "{Subj} weighs every coin twice before spending it, and can't quite keep the sourness out of {poss} voice when a neighbour spends easily."),
+    ("brave", "reckless", "{Subj} will run toward trouble before thinking it through, and has the scars, and the debts, to show for it."),
+    ("loyal", "possessive", "{Subj} will stand by a friend through anything, and has never quite forgiven anyone who tried to take that friend's time instead."),
+    ("honest", "tactless", "{Subj} will not tell a comfortable lie, even when a comfortable lie is exactly what the room wanted."),
+    ("patient", "stubborn", "{Subj} can wait out almost anything, and once {poss} mind is set, waiting is the only thing that will ever move it."),
+    ("ambitious", "impatient", "{Subj} wants more than this town has handed {obj}, and has little patience left for anyone content to wait for it."),
+    ("warm", "gossipy", "{Subj} makes every stranger feel like an old friend within minutes, and can't quite resist repeating what they told {obj} in confidence."),
+    ("industrious", "neglectful", "{Subj} works harder than anyone {subj} knows, and the people waiting at home have learned not to expect {obj} for supper."),
+    ("diplomatic", "evasive", "{Subj} can talk any two sides into the same room, and has never once said plainly which side {subj}'s actually on."),
+    ("guarded", "lonely", "{Subj} lets almost no one close enough to disappoint {obj}, and feels the cost of that every night {subj}'s honest with {reflexive}."),
+    ("easygoing", "unreliable", "{Subj} is the easiest person in town to get along with, right up until {subj} forgets to show up."),
+    ("meticulous", "controlling", "{Subj} cannot leave a detail unchecked, and has driven off more than one good helper who couldn't stand being checked on."),
+    ("wry", "cutting", "{Subj}'s jokes land because they're true, which is also why they leave a mark {subj} doesn't always mean to leave."),
+    ("earnest", "naive", "{Subj} believes people mean what they say, and has been burned for it more than once without learning the lesson."),
+    ("superstitious", "anxious", "{Subj} reads omens into ordinary bad luck, and the reading rarely calms {obj} down."),
+    ("blunt", "friendless-seeming", "{Subj} says exactly what {subj} thinks, and has fewer people to say it to than {subj}'d like to admit."),
+    ("skeptical", "cold", "{Subj} trusts almost nothing at face value, family included, and it reads as colder than {subj} means it."),
+    ("resourceful", "manipulative", "{Subj} can turn nothing into something, and isn't always careful about whose nothing {subj} used to do it."),
+    ("steady", "unimaginative", "{Subj} can be counted on to do the safe, sound thing, every time, which is also the only thing {subj} ever does."),
+    ("impulsive", "untrustworthy-seeming", "{Subj} leaps first and it usually works out, which is exactly why the people who've watched it not work out don't fully trust {obj}."),
+    ("self-deprecating", "insecure", "{Subj} laughs off every compliment {subj}'s ever been paid, and privately believes none of them."),
+    ("watchful", "suspicious", "{Subj} notices everything before anyone else does, and assumes the worst of most of it."),
+    ("gentle", "easily-used", "{Subj} is the softest touch in {poss} household, and half the town knows exactly how to take advantage of it."),
+    ("competitive", "graceless", "{Subj} plays to win at absolutely everything, and has never once lost well."),
+    ("forgiving", "doormat-seeming", "{Subj} forgives faster than anyone {subj} knows, and the people who've wronged {obj} twice have noticed."),
+    ("devout", "judgmental", "{Subj} keeps every rite the temple asks for, and has quiet, sharp opinions about everyone who doesn't."),
+    ("frugal", "joyless-seeming", "{Subj} has never spent a coin {subj} didn't need to, and it shows in a household that could afford a little more warmth than it allows itself."),
+    ("proud", "isolating", "{Subj} would rather go without than ask for help, and has gone without more than once as a result."),
+    ("curious", "nosy", "{Subj} wants to know everything about everyone, and has not always waited to be told."),
+    ("hot-tempered", "quick-to-regret", "{Subj}'s temper is fast and hot and gone in a minute, which is little comfort to whoever it landed on."),
+    ("meticulous", "slow-to-trust-new-ideas", "{Subj} does everything exactly the way {subj} was taught, and treats any better way as a personal insult to the old one."),
+    ("restless", "hard-to-settle", "{Subj} has never stayed still long enough to finish half the things {subj} started, this trade included."),
+)
+
+MINOR_TENSION: tuple[tuple[str, str, str], ...] = (
+    ("generous", "bossy", "{Subj} will share anything {subj} has, on the condition that everyone plays the game exactly {poss} way."),
+    ("brave", "reckless-around-younger-kids", "{Subj} will do any dare going, and talks the smaller kids into worse ones than {subj}'d try {reflexive}."),
+    ("honest", "blunt", "{Subj} will tell anyone exactly what {subj} thinks of them, teachers and grown-ups included."),
+    ("curious", "nosy", "{Subj} wants to know everything happening in every house on the street, and isn't shy about asking."),
+    ("loyal", "clingy", "{Subj} picks one best friend and holds on tight enough that it sometimes scares the friend off."),
+    ("proud", "sore-losing", "{Subj} plays every game to win and does not take losing gracefully, not even a little."),
+    ("patient", "passive", "{Subj} will wait {poss} turn longer than any other kid on the street, and rarely says so when {subj}'s tired of waiting."),
+    ("industrious", "showing-off", "{Subj} does chores without being asked and makes sure everyone knows it."),
+    ("warm", "over-sharing", "{Subj} is the friendliest kid on the street and cannot keep a secret past the end of the same afternoon."),
+    ("stubborn", "sulky", "{Subj} does not change {poss} mind once it's made up, and goes quiet and sulky when {subj}'s outvoted."),
+    ("watchful", "tattling", "{Subj} sees everything that happens in the household, and tells on it a little more than {subj} needs to."),
+    ("easygoing", "pushover", "{Subj} will go along with almost any plan the other kids come up with, even the bad ones."),
+    ("ambitious", "impatient-with-siblings", "{Subj} already knows what {subj} wants to be, and has no patience for younger siblings slowing {obj} down."),
+    ("gentle", "timid", "{Subj} is careful with anything smaller and softer than {subj} is, and flinches from almost everything bigger."),
+)
+
+# ── formative history, keyed by occupation category ──────────────────
+FORMATIVE_HISTORY_BY_CATEGORY: dict[str, tuple[str, ...]] = {
+    "outdoor": (
+        "{Name} grew up working the same ground {subj} works now, one of a family that has farmed, mined, or felled timber in Kasukabe for as long as anyone can trace it.",
+        "{Name} came to Kasukabe {years_ago} years ago from {origin}, after {hardship} left nothing worth staying for, and took to the outdoor trades because they were the work that was hiring.",
+        "{Name} lost a parent to {hardship} and left the trade {subj} was raised in behind, learning the outdoor work from whoever in town was willing to teach a stranger.",
+        "{Name} was the child who was always outside, and by the time {subj} was old enough to choose a trade there wasn't really a choice to make.",
+        "{Name} apprenticed young under an older worker who has since retired, and still thinks about what that teacher would say about the way {subj} does the job now.",
+        "{Name} tried the college for a season, found it wasn't for {obj}, and came back to the land with something to prove that {subj} still hasn't quite proved.",
+        "{Name} watched {hardship} nearly break the family that raised {obj}, and chose this trade specifically because it seemed like the one least likely to fail again.",
+        "{Name} came into the trade sideways, through a marriage into a family that already worked it, and has spent years earning the right to be considered more than an outsider at it.",
+    ),
+    "civic": (
+        "{Name} was the first in the family to read well enough for clerk's work, and has never quite stopped being proud, and a little defensive, about it.",
+        "{Name} came to Kasukabe {years_ago} years ago from {origin} with a letter of reference and not much else, and talked {poss} way into the government complex before anyone checked the letter too closely.",
+        "{Name} took the civic job after {hardship} put the family trade out of business, and treats the steady pay like the safety net it actually is.",
+        "{Name} grew up watching a parent lose an argument with the government over a permit, and took the job partly to make sure it never happens to anyone else that way.",
+        "{Name} was never especially clever, by {poss} own account, but was reliable in a way the government complex noticed and rewarded.",
+        "{Name} wanted to be a minister once, ran once, lost badly, and settled into the office job with more grace than {subj} shows when the subject comes up.",
+        "{Name} took the post almost by accident, covering for someone who never came back after {hardship}, and simply never left.",
+    ),
+    "academic": (
+        "{Name} was the sharpest student the college ever had in {poss} year, and has spent every year since trying to live up to what people expected from that.",
+        "{Name} came to Kasukabe {years_ago} years ago from {origin} specifically for the college, and stayed once {subj} realized there was nowhere better to go.",
+        "{Name} nearly didn't finish {poss} studies after {hardship} hit the family, and only did because someone else quietly covered the fees.",
+        "{Name} teaches, or studies, the thing {subj} was worst at as a child, out of a stubborn need to master exactly what didn't come easily.",
+        "{Name} grew up in a household that couldn't read past a grocery list, and the college has felt, ever since, like a debt {subj} owes them.",
+        "{Name} was pushed toward the college by a parent who never got the chance, and still isn't sure how much of the ambition is {poss} own.",
+    ),
+    "trade": (
+        "{Name} learned the trade from a parent who ran the same kind of work, and inherited both the skill and the parent's stubborn way of doing it.",
+        "{Name} came to Kasukabe {years_ago} years ago from {origin} with a cart, a little stock, and nothing else, and built the trade from that cart alone.",
+        "{Name} took up trading after {hardship} put an end to the work {subj} actually trained for, and has never quite let go of missing it.",
+        "{Name} tried a dozen different jobs before this one stuck, and still isn't entirely sure it's the last one it'll be.",
+        "{Name} grew up poor enough to learn early that a fair price and a friendly word cost the same and earn very different returns.",
+        "{Name} was talked into the work by a friend who's since moved on to something else, and stayed on out of stubbornness as much as aptitude.",
+        "{Name} does whatever work needs doing on a given day, having never found one trade {subj} liked enough to commit to fully.",
+    ),
+    "construction": (
+        "{Name} has worked the town's one construction company since before it had contracts worth having, and remembers every building it's put up.",
+        "{Name} came to Kasukabe {years_ago} years ago from {origin}, took the first job going, and it happened to be swinging a hammer.",
+        "{Name} joined the crew after {hardship} left the family without a farm to work, and found {subj} was better with {poss} hands than {subj} ever was with the land.",
+        "{Name} grew up watching the town's buildings go up one at a time and wanted, more than anything, to be one of the hands that raised them.",
+        "{Name} took the job for the steady wage and stayed for the crew, who have become something closer to family than the actual one {subj} left behind.",
+        "{Name} was the strongest kid on the street growing up, and the crew noticed before {subj} had decided on anything else to be.",
+    ),
+    "grocery": (
+        "{Name} took over the shop from a parent, or bought it outright with savings that took years to gather, and has run it {subj}'s own way ever since.",
+        "{Name} came to Kasukabe {years_ago} years ago from {origin} and started at the counter for someone else before the shop became {poss} own.",
+        "{Name} turned to shopkeeping after {hardship} ended the trade {subj} trained for, and found {subj} had a head for stock and prices {subj} never knew {subj} had.",
+        "{Name} grew up in the back room of a shop much like this one, and never seriously considered doing anything else.",
+        "{Name} started clerking here as a way to earn a little coin on the side, and simply never found a reason to leave.",
+    ),
+    "cafe": (
+        "{Name} learned to bake from a parent who ran a stall much smaller than the cafe {subj} runs now, and still uses the same recipe, mostly.",
+        "{Name} came to Kasukabe {years_ago} years ago from {origin} with nothing but a way with a kitchen, and talked {poss} way into a job at the cafe within the week.",
+        "{Name} turned to the cafe after {hardship}, needing work that didn't remind {obj} of what {subj} used to do, and found {subj} liked it more than expected.",
+        "{Name} grew up serving tables for a parent's business and swore {subj}'d never do the same work, and here {subj} is anyway.",
+        "{Name} started behind the counter to save for something else entirely, and the something else never quite arrived.",
+    ),
+    "pharmacy": (
+        "{Name} trained under the town's previous pharmacist, back when there was barely a shop to speak of, and built the current stock up personally.",
+        "{Name} came to Kasukabe {years_ago} years ago from {origin} already knowing the trade, after {hardship} taught {obj} more about treating people than any teacher had.",
+        "{Name} took up the trade after losing someone {subj} loved to an illness the town's medicine couldn't touch, and has never stopped feeling the edge of that limit.",
+        "{Name} was the careful, exact child in a family of gamblers and hagglers, and the trade suited {obj} the way nothing else in the family business ever did.",
+    ),
+    "elderly": (
+        "{Name} has lived in Kasukabe longer than most of the buildings still standing, and worked a trade here for decades before retiring to watch the town keep going without {obj}.",
+        "{Name} came to Kasukabe {years_ago} years ago from {origin} as a young adult and never left, raising a family and working a trade {subj} still talks about more than {poss} pension.",
+        "{Name} outlived a spouse and most of the friends {subj} came up with, and has settled into old age with more quiet than {subj} expected to have.",
+        "{Name} spent decades in a trade that's since changed past recognizing, and has strong, frequent opinions about how it's done now.",
+        "{Name} survived {hardship} as a much younger person, and it still colors how {subj} thinks about hard times, and about the people who complain through easier ones.",
+    ),
+    "minor_young": (
+        "{Name} was born right here in Kasukabe and has never known anywhere else, which makes the whole town feel, to {obj}, like the only place there is.",
+        "{Name} is too young to remember much before this household, and takes the whole shape of {poss} family and street entirely for granted.",
+        "{Name} came to the household as a baby not long after {hardship}, a fact the grown-ups mention more than {subj} understands yet.",
+        "{Name} is the youngest in the house by a wide margin, and has learned to get attention however {subj} can manage it.",
+    ),
+    "minor_school": (
+        "{Name} was born in Kasukabe and has spent every school day of {poss} life on the same three streets between home, school, and the market.",
+        "{Name} remembers, just barely, arriving in Kasukabe from {origin} {years_ago} years ago, and still sometimes describes things as being different 'back home.'",
+        "{Name} has grown up hearing about {hardship} as the thing that shaped the family before {subj} was old enough to understand it, and has {poss} own half-formed idea of what it meant.",
+        "{Name} is old enough now to be genuinely useful around the household and young enough to still resent being asked.",
+        "{Name} has spent {poss} whole childhood watching the family trade up close, and has already decided, loudly and often, whether {subj} wants any part of it.",
+    ),
+}
+
+# ── values (adult / minor) ────────────────────────────────────────────
+VALUES_POOL: tuple[str, ...] = (
+    "a fair price, openly stated",
+    "a debt repaid before it has to be asked for",
+    "never speaking ill of the dead",
+    "a promise kept even when it costs",
+    "hospitality to any stranger who asks for it",
+    "honest weights and honest measures",
+    "the safety of children over any custom",
+    "a day's work for a day's pay, no more owed either way",
+    "never striking a child, not even in anger",
+    "loyalty to the crew over the boss",
+    "the town's law over any private grudge",
+    "plain speech over a flattering lie",
+    "a clean ledger over a comfortable one",
+    "family before coin, every time",
+    "coin before family, when it truly must be",
+    "never letting a debtor go hungry over what's owed",
+    "the right to be left alone",
+    "never gossiping about the dead",
+    "standing by a friend in front of the whole town",
+    "never taking credit for another's work",
+    "keeping a secret once it's given",
+    "a fair vote, whoever it favors",
+    "the old ways over whatever's merely convenient",
+    "whatever actually works over what's always been done",
+    "never lying to a child, even to comfort them",
+    "mercy for a first offense",
+    "the sanctity of a handshake deal",
+    "modesty in victory",
+    "generosity that asks nothing back",
+    "never letting pride cost a friendship",
+)
+
+MINOR_VALUES_POOL: tuple[str, ...] = (
+    "sharing the last of anything fairly",
+    "never tattling on a friend, only on real trouble",
+    "standing up for a smaller kid",
+    "telling the truth even when it means trouble",
+    "never breaking a promise sealed with a spit-shake",
+    "waiting your turn, even when it's hard",
+    "not laughing when someone falls",
+    "giving the good seat to a guest",
+    "returning a borrowed toy in one piece",
+    "never eating the last of something without asking",
+    "keeping a friend's secret",
+    "not crying in front of the older kids",
+    "helping without being asked twice",
+    "not making fun of anyone's parents",
+    "owning up when you break something",
+)
+
+WILL_NOT_COMPROMISE_TEMPLATES: tuple[str, ...] = (
+    "will not cheat a customer on weight, not even a stranger passing through once and never again",
+    "will not raise a hand to a child, whatever the provocation",
+    "will not speak against family in public, whatever was said in private",
+    "will not break a promise once it's given, even a foolish one",
+    "will not take a bribe, however it's dressed up",
+    "will not let a debt go unpaid past a season without saying so plainly",
+    "will not lie under oath at town hall, whatever it costs",
+    "will not abandon a crew mid-job, paid or not",
+    "will not sell out a friend to save {reflexive} trouble",
+    "will not marry, or has not married, for anything but real regard",
+    "will not stay silent while someone innocent takes the blame",
+    "will not take more than a fair cut, no matter the temptation",
+    "will not turn away a hungry stranger from the door",
+    "will not let a grudge outlive the person who caused it",
+    "will not vote against {poss} own conscience for anyone's favor",
+    "will not train someone {subj} doesn't trust in a trade secret",
+    "will not forgive theft from the very poor, or from the very old",
+    "will not let a child go to bed hungry in {poss} own house, whoever's child it is",
+    "will not put a thumb on the scale, not once, not ever",
+    "will not deny a debt {subj} actually owes",
+    "will not stand by while a real crime goes unreported",
+    "will not gossip about a death in the family",
+    "will not let pride cost {obj} the same friendship twice",
+)
+
+MINOR_WILL_NOT_COMPROMISE: tuple[str, ...] = (
+    "will not tell on a friend for something small",
+    "will not eat the last piece without asking first",
+    "will not lie to {poss} own mother's or father's face",
+    "will not leave a friend behind at the market",
+    "will not laugh at someone who's crying",
+    "will not break a pinky-promise",
+    "will not let a younger kid take the blame for something {subj} did",
+    "will not give up {poss} favorite thing, not even to a sibling",
+    "will not skip chores to go play without asking first",
+    "will not repeat what {subj} heard through the wall",
+    "will not let the biggest kid pick on the smallest one without saying something",
+    "will not go to sleep angry at a sibling",
+)
+
+FEARS_POOL: tuple[str, ...] = (
+    "ending up dormant with no one willing to pay to wake {obj}",
+    "outliving every friend {subj} has",
+    "the crew finding out {subj} doesn't know as much as {subj} lets on",
+    "dying with a debt still owed",
+    "a child of {poss} own going hungry",
+    "the town finding a reason not to need {poss} trade anymore",
+    "being made a fool of in front of the whole market",
+    "a fire taking everything in one night",
+    "being talked about, never to",
+    "authority, once it's turned against {obj}",
+    "the day {poss} hands are too old for the work",
+    "being forgotten the day {subj} stops being useful",
+    "losing the one thing {subj} built alone",
+    "a secret getting out before {subj}'s ready",
+    "being wrong in a way that costs someone else, not just {obj}",
+    "the harvest, or the trade, failing two years running",
+    "a child growing up ashamed of {poss} trade",
+    "being cheated and never knowing it",
+    "silence, the day {subj} finally asks the temple for something",
+    "ending up exactly like {poss} own parent",
+    "a rival winning fair and square",
+    "never getting to say the thing {subj}'s been meaning to say",
+    "being the reason a friendship ends",
+    "the ledger never balancing again",
+    "trusting the wrong person with everything",
+    "being poor in a way that shows",
+    "the quiet that comes right before bad news",
+)
+
+MINOR_FEARS_POOL: tuple[str, ...] = (
+    "the dark under the stairs at home",
+    "being laughed at in front of the whole class",
+    "a parent not coming home on time",
+    "being the last one picked",
+    "getting caught in a lie",
+    "the ore outcrop tunnels collapsing",
+    "being sent to bed without supper",
+    "losing a favorite thing forever",
+    "a sibling being loved more",
+    "growing up and forgetting how to have fun",
+    "a teacher telling {poss} parents something bad",
+    "being left out of a game on purpose",
+    "not being brave when it actually matters",
+    "being different from every other kid in town",
+    "a storm at night",
+)
+
+AMBITIONS_POOL: tuple[str, ...] = (
+    "to own the stall or shop outright, not just work it",
+    "to see a child through college",
+    "to be trusted enough to sit on a jury someday",
+    "to build something in this town that outlasts {obj}",
+    "to pay off every debt and start clean",
+    "to be the one people come to when they need the truth",
+    "to see past the resource zones just once before {subj} dies",
+    "to win a seat at town hall on {poss} own name, not a party's",
+    "to master the trade well enough to teach it properly",
+    "to marry, or to have married, for real regard, not convenience",
+    "to see the family name respected again",
+    "to never have to ask anyone for a loan again",
+    "to build a house with {poss} own hands, start to finish",
+    "to be remembered as fair, if nothing else",
+    "to found a business no one else has thought to start",
+    "to make peace with an old rival before it's too late",
+    "to give {poss} children a better start than {subj} had",
+    "to be the one who finally fixes the thing everyone complains about",
+    "to see the town's charter changed for the better",
+    "to retire without depending on anyone",
+    "to prove a doubtful parent wrong",
+    "to be invited, not just tolerated",
+    "to leave a trade secret behind worth having",
+    "to win, just once, against the odds everyone gave {obj}",
+    "to stop flinching every time coin changes hands",
+    "to be the reason someone else made it through a hard winter",
+    "to build a name the family didn't already have",
+    "to finally say the thing {subj}'s been swallowing for years",
+)
+
+MINOR_AMBITIONS_POOL: tuple[str, ...] = (
+    "to run the fastest race in the whole school",
+    "to take over the family trade someday",
+    "to have a stall of {poss} own at the market",
+    "to learn to read as well as the college students",
+    "to never be scared of the dark again",
+    "to be picked first, for once",
+    "to see what's past the edge of the farmland",
+    "to make {poss} parents proud enough to say so",
+    "to have a dog, or a cat, of {poss} own",
+    "to grow up and fix whatever it was that made {poss} family poor",
+    "to learn every trick the older kids won't teach",
+    "to be brave enough to go into the forest alone",
+    "to be trusted with a real job, not just chores",
+    "to win at cards against the grown-ups, fair and square",
+    "to ride the transport service just once",
+)
+
+SCARCITY_BEHAVIOR_POOL: tuple[str, ...] = (
+    "quietly stops eating at the cafe and says {subj}'s just not hungry",
+    "sells off tools before ever asking family for help",
+    "asks for work before {subj} asks for charity",
+    "goes very quiet and very polite, which everyone who knows {obj} reads as the real warning sign",
+    "starts calling in every debt {subj}'s ever quietly forgiven",
+    "works twice the hours and says nothing about why",
+    "borrows small and pays back smaller, stretching it as long as {subj} can",
+    "gets sharper-tongued with everyone, family included",
+    "gives away what little {subj} has left rather than admit {subj} needs it too",
+    "quietly skips the temple donation and hopes no one notices",
+    "takes any job going, however far it is beneath {obj}",
+    "hides it from the children as long as {subj} can manage",
+    "asks the government for work before asking a neighbour for coin",
+    "stops trading favors and starts trading only for coin, which everyone notices",
+    "gets religious, fast, and prays where people can see",
+    "gets superstitious about it, blaming a bad omen instead of bad luck",
+    "goes to the one person {subj} swore never to ask again",
+    "steals quietly rather than beg loudly",
+    "cuts {poss} own portion first, every time, before anyone else's",
+    "picks a fight instead of admitting {subj}'s scared",
+    "disappears for a few days rather than be seen struggling",
+    "takes it out on whoever's nearest, then apologizes after",
+    "keeps working like nothing's wrong until {subj} physically can't",
+    "asks the temple for a quiet word instead of coin",
+)
+
+MINOR_SCARCITY_BEHAVIOR: tuple[str, ...] = (
+    "gives {poss} own portion to a younger sibling without being asked",
+    "pretends not to be hungry",
+    "stops asking for anything at all, which is how the parents know it's bad",
+    "offers to skip a birthday without being asked",
+    "starts hoarding little things, just in case",
+    "gets quiet and clingy",
+    "tries to sell {poss} own toys at the market",
+    "acts out at school instead of saying what's wrong",
+    "asks to help with chores {subj} used to complain about",
+    "stops asking for sweets from the cafe",
+    "picks fights with siblings over nothing",
+    "tells the teacher everything's fine when it isn't",
+)
+
+STRANGER_TREATMENT_POOL: tuple[str, ...] = (
+    "is polite to strangers right up until money changes hands, then careful to the point of suspicion",
+    "will feed a stranger before {subj} feeds {reflexive}, no questions asked",
+    "keeps strangers at arm's length until they've proven themselves once",
+    "treats every stranger like a potential customer first, a person second",
+    "is warmer to strangers than to half the people {subj}'s known for years",
+    "assumes the worst of a stranger until given a real reason not to",
+    "gives strangers the same fair price as anyone, on principle",
+    "is shy and awkward with strangers, and warm only once they're not strangers anymore",
+    "talks a stranger's ear off within minutes, whether they like it or not",
+    "watches a stranger's hands more closely than their face",
+    "is the first to welcome a newcomer, loudly, at market",
+    "treats every stranger as a rival until proven otherwise",
+    "extends credit to strangers {subj} would never extend to family",
+    "is unfailingly formal with strangers and only relaxes with people {subj} trusts",
+    "sizes up a stranger's trade before {subj} bothers with their character",
+)
+
+MINOR_STRANGER_TREATMENT_POOL: tuple[str, ...] = (
+    "is shy and silent around strangers until they prove they're friendly",
+    "warms up to strangers fast, sometimes too fast for the parents' comfort",
+    "hides behind a parent's leg around anyone new",
+    "asks a stranger blunt questions before anyone can stop {obj}",
+    "is polite to strangers because {subj}'s been told to, not because {subj} means it yet",
+    "treats every new kid on the street as a potential best friend",
+    "is suspicious of any grown-up {subj} doesn't already know",
+    "shows off for strangers more than {subj} does for family",
+    "goes quiet and watchful until a stranger's proven safe",
+    "greets every stranger like {subj}'s already met them",
+)
+
+MINOR_FAMILY_TREATMENT_POOL: tuple[str, ...] = (
+    "saves the best of anything for a favorite sibling",
+    "fights with siblings constantly and would fight anyone else on their behalf without hesitation",
+    "is the loudest at home and the quietest anywhere else",
+    "copies an older sibling in almost everything",
+    "is fiercely protective of a younger sibling",
+    "acts braver in front of family than {subj} actually feels",
+    "saves up complaints all day to unload on family at supper",
+    "is sweeter to grandparents than to anyone else in the house",
+    "never admits to being scared in front of a parent",
+    "shares everything with a favorite sibling and nothing with the rest",
+)
+
+FAMILY_TREATMENT_POOL: tuple[str, ...] = (
+    "will forgive family almost anything, and resents {reflexive} a little for it",
+    "holds family to a higher standard than {subj} holds anyone else",
+    "is harsher with family than with strangers, and knows it",
+    "would lie to protect family and tell the plain truth to everyone else",
+    "keeps family business strictly separate from {poss} trade, even when it costs {obj}",
+    "never says a kind word at home that {subj} says freely in public",
+    "is the softest {subj} ever gets, with family, and hides it from everyone else",
+    "expects family to pull their weight and says so, loudly",
+    "will take a family member's side in public even when {subj} privately thinks they're wrong",
+    "keeps a running, half-joking tally of favors owed within the household",
+    "treats the household like a small business that happens to love each other",
+    "is fiercely private about family trouble, however loud the fights get behind closed doors",
+    "gives family the last word publicly, and the real word privately",
+)
+
+# ── competence / blind spot, keyed by occupation category ─────────────
+COMPETENCE_BLINDSPOT_BY_CATEGORY: dict[str, tuple[tuple[str, str], ...]] = {
+    "outdoor": (
+        ("can read the weather three days out better than the almanac can", "overplants in a good year and pays for it hard in a bad one"),
+        ("knows every inch of the ground {subj} works by feel alone", "is slow to trust a new method, even a better one"),
+        ("can spot blight or bad ore a week before anyone else notices", "won't ask for help until the damage is already done"),
+        ("works harder and longer than {subj} strictly needs to, and knows it", "burns out quietly and never says so until {subj} collapses"),
+        ("can teach the work to anyone patient enough to watch", "has no patience left over for anyone who isn't"),
+    ),
+    "civic": (
+        ("can find any record in the government complex in minutes", "trusts the paperwork over the person, every time"),
+        ("knows the charter better than most of the ministers who swore to it", "quotes rules at people instead of listening to them"),
+        ("never loses a document, never misses a deadline", "treats a missed form like a moral failing"),
+        ("can smell a bad petition a mile off", "assumes every ambitious idea is a bad petition"),
+        ("keeps the office running whoever's in charge that season", "has no real say in anything, and resents it quietly"),
+    ),
+    "academic": (
+        ("can explain almost anything so a beginner actually understands it", "gets impatient with a student who needs it explained twice"),
+        ("has read more than anyone else in town, and it shows", "talks down to people without quite meaning to"),
+        ("remembers every student {subj}'s ever taught, by name, for years", "plays favorites and thinks {subj} hides it better than {subj} does"),
+        ("is quick, genuinely quick, in a way that used to worry {poss} own teachers", "hasn't learned yet that being quick isn't the same as being right"),
+        ("studies harder than anyone {poss} age", "has no idea how to talk to people who don't"),
+    ),
+    "trade": (
+        ("can talk almost anyone into almost anything, fairly", "sometimes forgets to check whether the deal's actually fair"),
+        ("knows the going price of everything in town, always", "treats every relationship a little like a transaction"),
+        ("will take any job and do it properly", "spreads {reflexive} thin enough that something always slips"),
+        ("has an eye for quality no one had to teach {obj}", "is hard on anyone who doesn't share the eye"),
+        ("can fix almost anything with what's on hand", "never learned to ask for the right tool instead of improvising"),
+    ),
+    "construction": (
+        ("can eyeball a bill of materials within a few percent, no measuring", "underestimates how long a crew actually needs"),
+        ("builds things that outlast the contract by decades", "cuts corners on the paperwork that isn't the building itself"),
+        ("can read a bad foundation before the first tile's laid", "is slow to trust a design {subj} didn't draw {reflexive}"),
+        ("keeps a crew steady through a bad job", "is bad at admitting when {subj}'s the one who's wrong"),
+        ("has the strongest back on the crew and knows it", "pushes younger hands harder than {subj} should"),
+    ),
+    "grocery": (
+        ("knows every regular's order before they say it", "is slow to notice when a regular's stopped coming, and why"),
+        ("can stretch a short shipment to cover the whole week", "hoards stock out of habit even in a good month"),
+        ("keeps the books to the coin, every single night", "is bad at writing off a loss even when it's the right call"),
+        ("has a nose for spoiled goods before they're spoiled", "is overly suspicious of every new supplier"),
+        ("remembers every customer's name and half their family", "gossips more than a shopkeep probably should"),
+    ),
+    "cafe": (
+        ("can read a room's mood the second {subj} walks in", "takes it personally when a regular has an off day"),
+        ("makes the same cup taste the same every single time", "resists any change to the recipe, even a good one"),
+        ("remembers every regular's order and half their business besides", "repeats things overheard without quite meaning to"),
+        ("can run the whole counter alone during a rush", "burns out and hides it behind a bright front"),
+        ("has a genuine gift for making strangers feel welcome", "struggles to extend the same warmth once the shift ends"),
+    ),
+    "pharmacy": (
+        ("never once gets a dose wrong, not in years", "is overly cautious with anything past a short ailment"),
+        ("knows the difference between a real ailment and an excuse to skip work", "is a little too quick to assume it's the latter"),
+        ("keeps the shelves stocked through every shortage", "hoards a private reserve {subj} tells no one about"),
+        ("can calm a frightened patient just with {poss} tone", "struggles to say plainly when there's nothing {subj} can do"),
+        ("reads a symptom list faster than anyone in town", "is quick to diagnose and slow to admit doubt"),
+    ),
+    "elderly": (
+        ("still knows the old trade better than most people doing it now", "is quick to say so, whether asked or not"),
+        ("has seen every kind of hardship this town can produce", "assumes {subj}'s seen it all, even when {subj} hasn't"),
+        ("gives advice that's usually right", "gives it whether or not anyone asked"),
+        ("remembers everyone's history better than they'd like", "brings it up at the worst possible moments"),
+        ("has more patience than anyone {poss} age has a right to", "has none left for anything {subj} considers foolishness"),
+    ),
+    "minor_young": (
+        ("can spot a lie faster than most adults can", "has no idea yet when to keep that to {reflexive}"),
+        ("shares without being asked, more than most grown-ups manage", "gets genuinely hurt when it isn't returned"),
+        ("notices everything happening around {obj}", "repeats it all, loudly, at the worst possible time"),
+        ("is braver than {subj} has any real sense of danger to justify", "has no sense yet of when bravery turns into trouble"),
+        ("can make almost any other kid laugh", "doesn't yet know when it's not the moment for it"),
+    ),
+    "minor_school": (
+        ("is quicker with figures than most of the adults in the household", "gets insufferable about it"),
+        ("can talk {poss} way out of most trouble", "is starting to rely on that instead of just not getting into it"),
+        ("notices when a grown-up's upset before they say anything", "doesn't yet know what to do with that information"),
+        ("works harder at chores than {subj} lets on", "complains about it loudly enough that no one notices the working part"),
+        ("is already good enough at the family trade to be useful", "thinks that means {subj}'s already good enough, full stop"),
+    ),
+}
+
+# ── speech register + verbal habits ────────────────────────────────
+SPEECH_REGISTER_POOL: tuple[str, ...] = (
+    "speaks plainly and briefly, and distrusts anyone who needs three sentences for one idea",
+    "talks in long, winding stories that eventually arrive at the point",
+    "peppers every sentence with numbers and prices, even when no one asked",
+    "speaks carefully and formally, as if every sentence might be repeated back at town hall",
+    "has a market-caller's voice, pitched to carry even in a quiet room",
+    "speaks softly and makes people lean in to hear the important part",
+    "swears more than {subj} means to and apologizes for it out of habit",
+    "quotes {poss} own parent so often people assume it's original",
+    "answers questions with another question, most of the time",
+    "has a farmer's patience for silence and lets it sit before answering",
+    "talks with {poss} hands as much as {poss} mouth",
+    "uses old-fashioned turns of phrase nobody else bothers with anymore",
+    "speaks in short, clipped sentences when nervous and long ones when comfortable",
+    "has picked up a bit of every trade's jargon and uses it indiscriminately",
+    "narrates {poss} own actions out loud without noticing {subj}'s doing it",
+    "asks after everyone's family before getting to business, every single time",
+    "is blunt to the point that strangers mistake it for rudeness",
+    "has a habit of trailing off mid-sentence when the thought turns private",
+    "talks faster when lying, and everyone who knows {obj} well knows it",
+    "speaks with the exaggerated precision of someone who learned the trade late",
+    "has a dry, understated humor that lands a beat after everyone expects it to",
+    "repeats the last few words of what someone else just said, thinking",
+    "over-explains simple things and under-explains complicated ones",
+    "drops real names into every story {subj} tells, whether it's kind or not",
+    "goes quiet in an argument and lets the silence do the arguing",
+    "talks to {reflexive} while working, loud enough that people notice",
+)
+
+VERBAL_HABIT_POOL: tuple[str, ...] = (
+    "says 'mark it down' after any promise, {poss} own or someone else's",
+    "ends arguments with 'that's the last I'll say on it,' and rarely means it",
+    "calls everyone younger 'youngster' regardless of the actual gap",
+    "starts hard conversations with a joke first",
+    "counts on {poss} fingers when talking about money, out loud",
+    "says 'no offense' right before saying something offensive",
+    "has a favorite saying about hard work {subj} repeats at least once a day",
+    "clears {poss} throat before saying anything {subj} isn't sure of",
+    "adds 'for what it's worth' before an opinion no one asked for",
+    "says 'we'll see' instead of 'no,' and everyone's learned to hear it as no",
+    "calls every stranger 'friend' until proven otherwise",
+    "taps the table twice before agreeing to anything important",
+    "says '{poss} own mother, or father, used to say' at least once a week",
+    "answers 'how are you' with a weather report instead",
+    "says 'that's between me and the ledger' about anything {subj} won't discuss",
+    "ends most sentences with 'you understand,' whether or not the listener does",
+    "calls bad luck 'a debt coming due' instead of naming it plainly",
+    "says 'I'm not one to gossip, but' before every piece of gossip {subj} has",
+    "always offers tea before business, even in a hurry",
+    "refers to {poss} trade tools by name, like old friends",
+    "has a nervous laugh that shows up at the worst possible moments",
+    "says 'that's fair' to end a negotiation {subj} actually lost",
+)
+
+MINOR_SPEECH_REGISTER_POOL: tuple[str, ...] = (
+    "talks in run-on sentences when excited",
+    "asks 'why' about everything, three questions past the point of a good answer",
+    "narrates games out loud, playing every part {subj}self",
+    "goes quiet and monosyllabic around grown-ups {subj} doesn't know",
+    "brags without quite meaning to",
+    "repeats whatever the older kids say, right or wrong",
+    "argues fairness like a lawyer twice {poss} age",
+    "whispers secrets too loudly to actually be secret",
+    "calls every adult 'sir' or 'ma'am' except the ones {subj} really likes",
+    "narrates {poss} own bravery after the fact, always a little bigger than it was",
+    "talks to animals more easily than to most people",
+)
+
+MINOR_VERBAL_HABIT_POOL: tuple[str, ...] = (
+    "says 'that's not fair' as a first response to almost anything",
+    "counts under {poss} breath when nervous",
+    "says 'I know, I know' before being told anything",
+    "always asks 'can I though' after being told no",
+    "hums when concentrating",
+    "says 'I'm not scared' right before admitting {subj} is",
+    "repeats the last thing an adult said, as a question",
+    "says 'promise promise' to make something official",
+    "says 'wait wait wait' before explaining anything exciting",
+    "calls anything unfair 'so unfair,' with real outrage",
+    "makes a face before agreeing to something {subj} doesn't want to do",
+)
+
+# ── daily rhythm, keyed by occupation category ─────────────────────
+DAILY_RHYTHM_BY_CATEGORY: dict[str, tuple[str, ...]] = {
+    "outdoor": (
+        "wakes before first light to beat the heat to the fields or the outcrop, breaks at midday when the sun's too high for good sense, and is back at it until the light goes",
+        "keeps a dawn-to-dusk rhythm that hasn't changed in years, with a fixed stop at midday for whatever's in the pail that morning",
+        "is up before the household and out the door before anyone else stirs, and is usually the first one visibly tired by supper",
+    ),
+    "civic": (
+        "keeps government-complex hours, in before the doors open and out only once the queue's finally cleared, with a cup from the cafe on the walk in",
+        "arrives early, stays late on petition days, and treats a quiet afternoon at the desk as a small personal luxury",
+        "keeps to a strict schedule at the office and an equally strict one at home, and does not enjoy either being disturbed",
+    ),
+    "academic": (
+        "keeps college hours, which run later into the evening than most of the town's other trades, and reads by lamp long after that",
+        "is either buried in the college by day or still thinking about it by night, with very little in between",
+        "treats study time as sacred and defends it fiercely from anything that isn't an actual emergency",
+    ),
+    "trade": (
+        "keeps irregular hours, chasing whatever work or trade is actually available on a given day",
+        "is out at first light chasing the best prices and back late settling the day's accounts",
+        "works in short, intense bursts around the market's own rhythm, then goes quiet for stretches in between",
+    ),
+    "construction": (
+        "is up before dawn to meet the crew and works until the light goes or the job's done, whichever comes first",
+        "keeps a crew's hours: an early, loud start, a hard midday break, and a walk home too tired to talk much",
+        "starts the day checking the crew's tools before checking anything else, including {poss} own breakfast",
+    ),
+    "grocery": (
+        "opens the shop before most of the town's awake and closes it only once the last regular's been served",
+        "keeps shop hours built entirely around the town's habits, not {poss} own, and has stopped minding",
+        "spends the early morning stocking shelves alone before the first customer ever walks in",
+    ),
+    "cafe": (
+        "is up baking hours before the doors open and closes only once the last table's finally cleared",
+        "keeps the cafe's long hours without complaint, and treats the quiet hour before opening as the best part of the day",
+        "runs on the rhythm of the morning rush and the evening lull, and has forgotten what a normal mealtime feels like",
+    ),
+    "pharmacy": (
+        "keeps steady shop hours and a slower, more careful pace than most of the town's other trades",
+        "opens promptly, closes promptly, and treats any deviation from the routine as a small emergency",
+        "spends quiet mornings taking stock and busier afternoons treating whoever the day brings in",
+    ),
+    "elderly": (
+        "wakes with the light out of long habit rather than need, and fills the day with a fixed round of the market, the temple steps, and a game of cards",
+        "keeps a slower, deliberate routine built around old friends, old habits, and a nap most days that {subj} would never admit to needing",
+        "spends mornings on a walk through the park and afternoons wherever the day's company happens to gather",
+    ),
+    "minor_young": (
+        "spends the day at home underfoot, napping at odd hours and trailing whichever adult will tolerate it longest",
+        "fills the day with play in whatever corner of the household or street is currently interesting, on a schedule no one else controls",
+    ),
+    "minor_school": (
+        "is up for school, home for chores, and out again to play with whatever daylight's left",
+        "spends mornings at the school and afternoons split between chores and whatever game the street's playing that day",
+        "keeps school hours on weekdays and spends the rest of the time somewhere between helping and hiding from helping",
+    ),
+}
+
+# ── attitudes: money, risk, authority, religion ───────────────────────
+ATTITUDE_MONEY_POOL: tuple[str, ...] = (
+    "treats every coin like it has to answer for itself before it's spent",
+    "spends freely when {subj} has it and shrugs when {subj} doesn't",
+    "keeps a mental ledger down to the last coin, always",
+    "thinks money's only worth what it buys someone {subj} loves",
+    "distrusts anyone who talks about money too easily",
+    "would rather owe a favor than owe coin",
+    "saves compulsively, even past the point it makes sense",
+    "treats debt as a moral failing, {poss} own included",
+    "thinks money's just a tool and refuses to get sentimental about it",
+    "hoards a little, always, no matter how good things get",
+    "gives money away faster than {subj} can explain why",
+    "is embarrassed by wealth and hides it when {subj} has any",
+    "is embarrassed by poverty and hides that worse",
+    "trusts a handshake over a contract, money or not",
+    "keeps a separate stash no one else knows about, just in case",
+    "believes hard work should always beat luck, and resents it when it doesn't",
+    "would rather be poor and respected than rich and doubted",
+    "treats every price as a starting offer, always",
+    "never haggles, on principle, even when {subj} should",
+)
+
+ATTITUDE_RISK_POOL: tuple[str, ...] = (
+    "will take a bad bet if the story's good enough",
+    "won't risk a coin {subj} can't afford to lose, ever",
+    "calculates odds out loud before deciding almost anything",
+    "trusts {poss} gut over any odds {subj} could calculate",
+    "avoids risk in trade and takes it everywhere else",
+    "is reckless with {poss} own safety and careful with everyone else's",
+    "thinks caution is just fear with better manners",
+    "has been burned once and never forgets it",
+    "believes the safest choice is usually just the slowest kind of losing",
+    "won't gamble, not even at cards, not even for fun",
+    "loves a gamble more than {subj} loves winning one",
+    "hedges every bet {subj} makes, even the ones that don't need it",
+    "takes risks for family {subj}'d never take for {reflexive}",
+    "thinks risk is just math most people are too scared to do",
+    "trusts a new idea over an old, safe one, most of the time",
+    "trusts the old, safe way over any new idea, most of the time",
+)
+
+ATTITUDE_AUTHORITY_POOL: tuple[str, ...] = (
+    "obeys the law and quietly resents every rule that inconveniences {obj}",
+    "trusts the government about as far as {subj} can throw the town hall",
+    "believes authority earns respect, not the other way around",
+    "votes in every election and complains about the results either way",
+    "thinks whoever's in charge is probably lining {poss} own pockets, and says so",
+    "respects the office even when {subj} can't stand the person holding it",
+    "thinks rules are for people who can't be trusted to know better, {reflexive} excluded",
+    "would run for office if {subj} thought anyone would actually vote for {obj}",
+    "believes the charter should be harder to change, not easier",
+    "believes the charter should be easier to change, not harder",
+    "follows the law to the letter and no further",
+    "quietly breaks small rules and would be furious to be caught at it",
+    "believes real authority comes from the crowd, not the office",
+    "trusts the complaint ledger more than any sitting minister",
+)
+
+ATTITUDE_RELIGION_POOL: tuple[str, ...] = (
+    "goes to the temple out of habit more than belief, and wouldn't admit which",
+    "prays every morning and has never once mentioned it to anyone",
+    "thinks the temple needs a keeper before it needs another believer",
+    "is openly skeptical, and privately hopes {subj}'s wrong about it",
+    "believes in something, just not whatever the temple ends up deciding it is",
+    "donates generously and asks no questions about where it goes",
+    "thinks prayer is just talking to {reflexive} with better posture",
+    "has strong opinions about who should keep the temple and no plan to run for it",
+    "avoids the temple entirely and gets asked about it constantly",
+    "believes miracles are just luck that hasn't been explained yet",
+    "is the most devout person in {poss} household, to everyone else's mild embarrassment",
+    "thinks religion is a private matter and gets prickly when it's made public",
+    "believes silence, after a prayer, is still an answer of some kind",
+    "keeps a small private shrine of {poss} own making, told to no one",
+)
+
+# ── secrets: private hopes told to nobody ──────────────────────────
+SECRET_POOL: tuple[str, ...] = (
+    "has never told anyone {subj} can't actually read as well as {subj} lets on",
+    "keeps a small hoard of coin no one in the household knows about",
+    "once let someone else take the blame for something {subj} did, years ago, and has never corrected it",
+    "hopes, privately, to leave Kasukabe someday, and has never said so out loud",
+    "still writes letters to someone long gone and never sends a single one",
+    "is not actually sure {subj} loves {poss} trade, only that {subj}'s good at it",
+    "has a plan to open a rival business and hasn't told a soul",
+    "is quietly saving for something {subj} won't name, even to {reflexive}",
+    "once stole something small and has felt it every day since",
+    "doesn't believe in the temple at all, and lets everyone assume otherwise",
+    "is more afraid of success than failure, though {subj}'d never say so",
+    "practices a speech {subj} plans to give someday, alone, where no one can hear",
+    "has a favorite among {poss} own children and would die before admitting it",
+    "still resents a choice {subj} made decades ago and blames someone else for it out loud",
+    "keeps a list, in {poss} own head, of every slight {subj}'s never once mentioned",
+    "has never forgiven {reflexive} for something no one else even remembers",
+    "privately thinks {subj}'s smarter than everyone who outranks {obj}",
+    "hopes for a disaster, just a small one, that would finally let {obj} prove {reflexive}",
+    "has been quietly pretending to believe a family story {subj} knows isn't true",
+    "wants, more than anything, to be asked for advice instead of always giving it unasked",
+    "is terrified {subj} peaked years ago and it's only downhill from here",
+    "keeps a tally of every unkindness ever done to {obj}, and has never spent it",
+    "would trade the whole trade for a chance to do something else entirely",
+    "still practices a skill {subj} gave up years ago, alone, where no one can see",
+    "believes, quietly, that {subj}'s the reason a piece of bad luck happened, though no one else does",
+)
+
+SECRET_ABOUT_NEIGHBOUR_POOL: tuple[str, ...] = (
+    "secretly admires {target_name} more than {subj}'d ever say out loud",
+    "has never told {target_name} about a debt {subj} quietly settled on {poss} behalf",
+    "still thinks about a chance {subj} never took with {target_name}, years ago",
+    "privately blames {target_name} for something that was never really {poss} fault",
+    "has kept a promise to {target_name} that no one else knows was ever made",
+    "envies {target_name} more than {subj} lets show",
+    "would forgive {target_name} almost anything, and has never told {obj} so",
+    "once did {target_name} a kindness and swore whoever benefited to secrecy",
+    "has never told {target_name} the real reason {subj} came to Kasukabe",
+    "thinks {target_name} is the only one in town who'd actually understand, and has never tested it",
+    "keeps a small gift meant for {target_name} that {subj} has never worked up the nerve to give",
+    "has never admitted to {target_name} that {subj} was wrong, all those years ago",
+    "quietly hopes {target_name} never finds out what {subj} really thinks of {poss} trade",
+    "still owes {target_name} an apology {subj} has rehearsed and never once delivered",
+)
+
+MINOR_SECRET_POOL: tuple[str, ...] = (
+    "has a hiding spot no one else in the house knows about",
+    "still sleeps with an old toy and would be mortified if the other kids knew",
+    "broke something once and let a sibling take the blame for it",
+    "is secretly scared of the dark and pretends not to be",
+    "has a wish {subj} makes every night and has never told anyone",
+    "practices being brave in front of the mirror before doing anything scary",
+    "has a secret best friend the family doesn't fully approve of",
+    "still isn't sure something the older kids say is true, and won't ask",
+    "keeps a small stash of sweets hidden from siblings",
+    "cried at something small once and told everyone it was dust in {poss} eye",
+    "has a plan for when {subj} grows up that no grown-up has heard yet",
+    "practices {poss} own signature for when {subj}'s grown up and important",
+    "has a secret rule about which floor tiles at home are safe to step on",
+    "has never told anyone {subj} can already do the thing everyone thinks is too hard for {obj}",
+)
+
+# ── relationship graph: shared facts + per-role note phrasing ────────
+DEBT_REASON_POOL: tuple[str, ...] = (
+    "to cover a bad harvest",
+    "when the roof needed mending after {hardship}",
+    "after the cart wheel broke on the north road",
+    "when the pharmacy bill came due after a bad fever",
+    "to buy the tools needed to start out in the trade",
+    "after a bad string of trades left the stall empty",
+    "when the rent came due and the till was short",
+    "to replace a delivery lost to theft",
+    "for a wedding that needed paying for on short notice",
+    "to cover a bad night at cards",
+    "when the well needed digging",
+    "for seed stock two winters back",
+    "after the fire at the old stall",
+    "to pay the temple's wedding fee",
+    "for a debt that should never have cost so much to begin with",
+    "when work dried up during {hardship}",
+)
+
+DEBT_OWER_NOTE_POOL: tuple[str, ...] = (
+    "means to pay it back and hates how long it's taking",
+    "avoids the subject whenever it comes up",
+    "brings it up first, before anyone can ask, out of pride",
+    "has been quietly chipping away at it for longer than {subj}'d like to admit",
+    "is grateful for the loan and prickly about being reminded of it",
+    "has half-convinced {reflexive} it's smaller than it actually is",
+    "pays what {subj} can, when {subj} can, and says nothing else about it",
+    "resents owing it more than {subj} resents anything else in {poss} life",
+)
+
+DEBT_OWED_NOTE_POOL: tuple[str, ...] = (
+    "is patient about it, for now",
+    "keeps a running tally and mentions it more than {subj} probably should",
+    "has quietly written it off in {poss} own head, but hasn't said so",
+    "brings it up exactly once a season, like clockwork",
+    "trusts it'll be repaid eventually and tries not to think about it otherwise",
+    "uses it, gently, as leverage when {subj} needs a favor",
+    "would forgive it outright if asked, and is a little hurt no one's asked",
+    "has started to wonder if it's ever coming back",
+)
+
+GRUDGE_INCIDENT_POOL: tuple[str, ...] = (
+    "a shouting match at the market over a scale that didn't weigh true",
+    "a rumor that got back around the wrong way",
+    "a boundary marker moved a hand's width overnight",
+    "a promise to vouch for a loan that never got kept",
+    "being passed over for a job everyone assumed would go the other way",
+    "an insult, half a joke, that landed wrong at a wedding",
+    "a fight over whose turn it was to fix a shared fence",
+    "a vote at town hall that broke a promise",
+    "a harsh word about the other's family, said in front of others",
+    "a debt called in publicly, and humiliatingly",
+    "an accusation of theft that was never proven either way",
+    "a business deal that went sour on both sides",
+    "gossip repeated that should have stayed quiet",
+    "a favor asked, and flatly refused",
+)
+
+GRUDGE_AGGRIEVED_NOTE_POOL: tuple[str, ...] = (
+    "has not forgiven it, whatever {subj} says in public",
+    "brings it up more than {subj} realizes {subj} does",
+    "is civil about it and privately still furious",
+    "has decided to let it go and mostly, not entirely, has",
+    "still expects an apology that hasn't come",
+)
+
+GRUDGE_ACCUSED_NOTE_POOL: tuple[str, ...] = (
+    "thinks the whole thing was blown far out of proportion",
+    "feels genuinely bad about it and hasn't found the right moment to say so",
+    "has mostly forgotten the details and is baffled it's still an issue",
+    "thinks {subj} was in the right the whole time",
+    "avoids the subject entirely rather than reopen it",
+)
+
+AFFECTION_KINDNESS_POOL: tuple[str, ...] = (
+    "nursed the other through a bad fever with no thought of payment",
+    "took the other in when the rent came due and there was nowhere else to go",
+    "taught a trade for free when nobody else would bother",
+    "spoke up in the other's defense at town hall when it cost something to do so",
+    "covered a debt without ever mentioning it again",
+    "walked the whole way to fetch a doctor when it mattered",
+    "gave away the last of the flour during a bad week",
+    "vouched for the other for a job on nothing but their word",
+    "sat with the other through a death in the family",
+    "found work for the other when the harvest, or the trade, failed",
+    "shared a home before either could afford one of their own",
+    "stepped between the other and real trouble, more than once",
+    "minded the other's children without ever being asked twice",
+    "loaned tools and never once asked when they'd be returned",
+)
+
+AFFECTION_GRATEFUL_NOTE_POOL: tuple[str, ...] = (
+    "has never properly repaid it and thinks about that more than {target_name} would guess",
+    "brings {target_name} something small, every so often, that never quite settles the debt of it",
+    "would do almost anything {target_name} asked, and rarely says why",
+    "still gets quiet talking about it, even now",
+    "has told the story so many times it's practically part of the household's own history",
+)
+
+AFFECTION_BENEFACTOR_NOTE_POOL: tuple[str, ...] = (
+    "waves it off every time it comes up, and means it",
+    "remembers it fondly and doesn't need it mentioned again",
+    "is a little embarrassed by how often {target_name} still brings it up",
+    "did it without expecting anything and still hasn't taken anything back",
+    "thinks {target_name} paid it back a dozen times over since, in ways {target_name} hasn't noticed",
+)
+
+FRIENDSHIP_BOND_POOL: tuple[str, ...] = (
+    "grew up two doors down from each other",
+    "have worked the same season's harvest together for years",
+    "share a table at the cafe most mornings",
+    "trade favors so often neither keeps count anymore",
+    "got through a hard winter together, more than once",
+    "apprenticed under the same teacher",
+    "stood up for each other at their weddings",
+    "trade gossip and gripes every market day without fail",
+    "learned the trade side by side, starting out",
+    "sat the same classroom at the college",
+    "have covered each other's work more times than either would admit",
+    "keep a running card game going most weeks",
+    "raised their children half underfoot together",
+)
+
+FRIEND_NOTE_POOL: tuple[str, ...] = (
+    "would drop almost anything if {target_name} actually needed {obj}",
+    "trusts {target_name} with things {subj} wouldn't tell family",
+    "argues with {target_name} more than with anyone else, and it never seems to matter",
+    "counts on {target_name} more than {subj} lets on",
+    "has never once had to explain {reflexive} to {target_name}",
+    "would be lost, honestly, without {target_name} to complain to",
+)
+
+RIVALRY_CONTEST_POOL: tuple[str, ...] = (
+    "chase the same customers at market",
+    "compete for the same construction contracts when they come up",
+    "each think their own way of doing the trade is the only right one",
+    "have raced each other to the patent office more than once",
+    "vie for the best stall placement every market day",
+    "compete over whose work is faster, and won't admit it out loud",
+    "each want the same seat if it ever opens at town hall",
+    "argue prices down against each other out of pure spite",
+    "each claim to have thought of the same trick first",
+    "vie for the same apprentice's attention",
+    "trade barbed compliments in public and mean every barb",
+    "keep score of every contest between them, formal or not",
+)
+
+RIVALRY_NOTE_POOL: tuple[str, ...] = (
+    "would never admit to respecting {target_name}, and does",
+    "thinks {target_name} plays dirtier than {subj} lets on in public",
+    "measures {reflexive} against {target_name} more than against anyone else in town",
+    "wants, badly, to beat {target_name} fair and square, just once, decisively",
+    "privately thinks {target_name}'s better at this than {subj} is, and would never say it",
+    "keeps the rivalry mostly good-natured, mostly",
+    "lets the rivalry get sharper than it probably should",
+    "would help {target_name} in a real emergency and go right back to competing after",
+)
+
+MENTORSHIP_SKILL_POOL: tuple[str, ...] = (
+    "reading the weather",
+    "keeping honest books",
+    "working with {poss} hands",
+    "reading the soil, or the ore, or the timber",
+    "haggling without losing a friend over it",
+    "framing something that won't fall down",
+    "reading a room before speaking",
+    "telling good stock from bad",
+    "running an honest scale",
+    "handling a difficult customer",
+    "keeping a ledger that actually balances",
+    "getting through a bad season without panicking",
+)
+
+MENTOR_NOTE_POOL: tuple[str, ...] = (
+    "is quietly proud of {target_name}, more than {subj}'s ever said outright",
+    "is harder on {target_name} than {subj} needs to be, and knows it",
+    "sees a lot of {poss} younger self in {target_name}, for better and worse",
+    "expects {target_name} to surpass {obj}, eventually, and means that as a compliment",
+    "still corrects {target_name} out of habit long after it stopped being necessary",
+)
+
+APPRENTICE_NOTE_POOL: tuple[str, ...] = (
+    "owes {target_name} more than {subj} has ever properly thanked {obj} for",
+    "still hears {target_name}'s voice correcting {poss} mistakes, even alone",
+    "wants to make {target_name} proud more than {subj} wants almost anything else",
+    "has started to disagree with {target_name} on a few points, and hasn't said so yet",
+    "measures {reflexive} against what {target_name} would think of the work",
+)
+
+COLLEAGUE_NOTE_POOL: tuple[str, ...] = (
+    "trusts {target_name} completely on the job, whatever else {subj} thinks of {obj}",
+    "finds {target_name} a little too proud for {poss} own good",
+    "respects {target_name} without exactly calling {obj} a friend",
+    "privately thinks {subj} could run the place better than {target_name} does",
+    "is grateful for the steady work {target_name} gives {obj}",
+    "resents the long hours, not the person setting them",
+    "considers {target_name} the closest thing to family {subj} has here",
+    "keeps the peace with {target_name} by saying less than {subj} thinks",
+    "admires {target_name}'s work ethic and not much else about {obj}",
+    "still isn't fully sure about {target_name}, even after all this time working together",
+)
+
+MINOR_BOND_POOL: tuple[str, ...] = (
+    "sit next to each other at school whenever they're allowed to choose",
+    "have been best friends since before either can properly remember",
+    "trade favorite snacks at lunch, every single day",
+    "made up a secret game only the two of them know the rules to",
+    "walk to school together most mornings",
+    "have sworn, more than once, to be friends forever",
+    "share a hiding spot no other kid on the street knows about",
+)
+
+MINOR_FRIEND_NOTE_POOL: tuple[str, ...] = (
+    "would never tell on {target_name}, whatever {subj} did",
+    "argues with {target_name} constantly and always makes up by the next day",
+    "thinks {target_name} is the funniest kid in the whole school",
+    "gets jealous when {target_name} plays with anyone else",
+    "trusts {target_name} with real secrets, not the pretend kind",
+)
+
+MINOR_RIVAL_CONTEST_POOL: tuple[str, ...] = (
+    "race each other home from school every single day",
+    "compete over who can do the most chores without complaining",
+    "argue over whose family trade is more important",
+    "compete for the same friend group's attention",
+    "keep a running, very serious score of who's won more games",
+)
+
+MINOR_RIVAL_NOTE_POOL: tuple[str, ...] = (
+    "would never admit {target_name} is actually pretty good at it",
+    "gets genuinely upset losing to {target_name}, every time",
+    "secretly practices just to beat {target_name} next time",
+    "complains about {target_name} constantly and always shows up to compete anyway",
+)

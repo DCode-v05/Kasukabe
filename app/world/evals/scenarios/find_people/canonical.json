@@ -1,0 +1,18 @@
+{
+  "tool": "find_people",
+  "kind": "positive",
+  "_why": "Run 23: residents reached for names off the map's buildings - Tobias hailing 'Harvey' and 'Isabella', Bram walking to 'sh_silva' - none of whom exist in the run. A resident who needs a specific trade and does not know who has it is precisely the situation this verb exists for.",
+  "resident": "n09",
+  "location": "Kasukabe Town Square",
+  "inventory": {
+    "copper": 3
+  },
+  "sim": 300,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "you need somebody who can smelt copper and do not know who",
+  "expect": {
+    "verb": "find_people",
+    "params_include": {}
+  }
+}

@@ -1,0 +1,29 @@
+
+==================================================================
+RUN data/fifty.db
+==================================================================
+calls 2288  ok 2288  spend $14.75  last tick 0
+utterances 259
+
+GATE                      VALUE               RESULT
+G1 reply rate             92/199 = 46%        FAIL
+G2 exchanges 4+ turns     15                  PASS
+G3 group (3+ speakers)    15                  PASS
+G4 settlements            4                   PASS
+G5 alive at stop          50/50               PASS
+G6 turns w/ effect        1004/1707 = 59%     PASS
+
+tool calls: {'world_say': 259, 'world_move': 205, 'world_look_around': 181, 'world_find_people': 52, 'world_describe_person': 51, 'world_describe_place': 40, 'world_rest': 40, 'world_list_places': 38, 'world_describe_primitives': 24, 'world_harvest': 24, 'world_buy': 23, 'world_fell_timber': 23}
+
+largest gathering: 12 speakers at business:b_grocery, ticks 37-49
+   Vikram Ingram -> aloud: Story of my age, isn't it? Standing in a room with someone whose name I don't know, asking for food I can't re
+   Junia Vance -> aloud: You're early. Shop opens at seven, but since you're standing there—what do you need?
+   Kem Okonjo -> Junia Vance: Friend, I'm wondering what's been sitting too long. You know how it is—some things move fast, others grow root
+   Hendrik Whitlock -> Junia Vance: Junia, what do you have for sale today, and at what prices? I'm Hendrik Whitlock - I teach at the college and 
+   Tova Okonjo -> Kem Okonjo: Kem. Need to borrow for breakfast — I'm empty and Marta wasn't at the bakery. Can you cover me here?
+   Rosalind Vance -> Junia Vance: Junia. You have grain here, or flour? And Kem Okonjo—selling below my rate in my own daughter's shop now?
+
+settlement: Rosalind Vance said 24, paid at tick 38
+
+FAILED: G1 reply rate
+

@@ -1,0 +1,564 @@
+2026-09-08 04:32:49,494 INFO kasukabe.genesis_runner map service ready from D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\smallville\environment\frontend_server\static_dirs\assets\the_ville
+2026-09-08 04:32:49,623 INFO kasukabe.genesis_runner run 1788822169-50131612: app=4dc3bfe10df3fea07a6abd61fd893258c7301632 engine=4dc3bfe10df3fea07a6abd61fd893258c7301632 genesis=35ca2a86189c
+2026-09-08 04:32:49,623 INFO kasukabe.genesis_runner world-side persistence attached: agents, utterances, transactions
+2026-09-08 04:32:49,623 INFO kasukabe.genesis_runner no checkpoint found, seeding fresh genesis
+2026-09-08 04:32:49,864 INFO httpx HTTP Request: GET http://127.0.0.1:8200/admin/lanes "HTTP/1.1 200 OK"
+2026-09-08 04:32:49,868 WARNING kasukabe.genesis_runner --tick-interval-s=15.00s asks for ~300 RPM but the broker serves 200 (22.50s/tick). Obeying you; expect queueing and circuit-breaker trips.
+2026-09-08 04:32:49,868 INFO kasukabe.genesis_runner genesis seeded: 50 agents, 18 households, 7 businesses
+2026-09-08 04:32:49,868 INFO kasukabe.genesis_runner GROW-10: briefed 10 resident(s) to their employer's premises rather than to their trade's generic workplace
+2026-09-08 04:32:50,045 INFO httpx HTTP Request: GET http://127.0.0.1:8200/admin/lanes "HTTP/1.1 200 OK"
+2026-09-08 04:32:50,046 WARNING kasukabe.genesis_runner --tick-interval-s=15.00s asks for ~300 RPM but the broker serves 200 (22.50s/tick). Obeying you; expect queueing and circuit-breaker trips.
+2026-09-08 04:32:50,069 INFO kasukabe.genesis_runner run manifest: data\kasukabe-checkpoints\run_manifest.json (run_id=1788822169-50131612)
+2026-09-08 04:32:50,070 WARNING kasukabe.genesis_runner OPERATOR_TOKEN not set - generated an ephemeral admin token for this genesis run's embedded world app. Ephemeral operator token: 1AhHQnZI2Q_oM_ef47zhhJK5Gct_movKW-GAuWaXf1k
+2026-09-08 04:32:50,294 INFO kasukabe.genesis_runner embedded world server listening on 127.0.0.1:8100
+2026-09-08 04:32:51,100 INFO kasukabe.genesis_runner preflight:
+  [\u2713] Genesis cast loads
+        world\genesis_50_town.json — 50 agents
+  [\u2713] Cast size matches the run
+        genesis has 50, run wants 50
+  [\u2713] USD ledger invariant ($1000)
+        total_cents = 100000
+  [\u2713] Broker is up
+        http://127.0.0.1:8200 — {'status': 'ok', 'service': 'broker', 'inference': 'bedrock'}
+  [\u2713] Broker is on real Bedrock
+        inference = 'bedrock'
+  [\u2713] Spend cap is set
+        SPEND_CAP_USD = 70
+  [!] Cap covers the intended run
+        $70 \u2248 1.3h at $53.33/hour (estimated - no trace history yet)
+        \u2192 raise SPEND_CAP_USD to about $267 for 5 hours, or run fewer agents
+  [\u2713] Memory fits the engine count
+        2000 MB needed, 14087 MB usable (14599 MB free less 512 reserved) · 40 MB/engine, last measured on this machine
+  [\u2713] Disk has room for the trace store
+        187593 MB free; a 5h run projects 0 MB at the 0 KB/call this store is averaging
+  [\u2713] Trace store writable, hop column present
+        data/deni-post-1013-5h.db — llm_calls has 27 columns
+  [\u2713] SEPTEMBER_HOME root is writable
+        C:\Users\denis\AppData\Local\Temp\k_deni-post-1013-5h
+  [\u2713] Engine ports are free
+        9100–9149 — all free
+  [\u2713] Engine repo and venv present
+        ..\engine\.venv\Scripts\python.exe
+  [\u2713] Session logging is ready for every engine
+        50/50 SEPTEMBER_HOMEs accept a session log under C:\Users\denis\AppData\Local\Temp\k_deni-post-1013-5h
+
+  13/14 passed
+2026-09-08 04:32:51,289 INFO kasukabe.genesis_runner run_genesis: 50 engines need ~2000 MB, 14588 MB free - fits
+2026-09-08 04:32:54,530 INFO kasukabe.genesis_runner launched 50 of 50 agent units (mock_mode=False)
+2026-09-08 04:32:58,404 INFO httpx HTTP Request: GET http://127.0.0.1:9100/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:04,928 INFO httpx HTTP Request: GET http://127.0.0.1:9101/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:08,949 INFO httpx HTTP Request: GET http://127.0.0.1:9102/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:10,325 INFO httpx HTTP Request: GET http://127.0.0.1:9103/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:12,767 INFO httpx HTTP Request: GET http://127.0.0.1:9104/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:12,785 INFO httpx HTTP Request: GET http://127.0.0.1:9105/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:16,563 INFO httpx HTTP Request: GET http://127.0.0.1:9106/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:17,470 INFO httpx HTTP Request: GET http://127.0.0.1:9107/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:20,212 INFO httpx HTTP Request: GET http://127.0.0.1:9108/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:20,216 INFO httpx HTTP Request: GET http://127.0.0.1:9109/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:20,600 INFO httpx HTTP Request: GET http://127.0.0.1:9110/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:21,626 INFO httpx HTTP Request: GET http://127.0.0.1:9112/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:23,516 INFO httpx HTTP Request: GET http://127.0.0.1:9111/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:23,517 INFO httpx HTTP Request: GET http://127.0.0.1:9113/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:23,521 INFO httpx HTTP Request: GET http://127.0.0.1:9114/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:23,522 INFO httpx HTTP Request: GET http://127.0.0.1:9115/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:23,526 INFO httpx HTTP Request: GET http://127.0.0.1:9116/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:23,596 INFO httpx HTTP Request: GET http://127.0.0.1:9117/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:23,860 INFO httpx HTTP Request: GET http://127.0.0.1:9118/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:23,894 INFO httpx HTTP Request: GET http://127.0.0.1:9141/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:23,913 INFO httpx HTTP Request: GET http://127.0.0.1:9148/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,366 INFO httpx HTTP Request: GET http://127.0.0.1:9121/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,368 INFO httpx HTTP Request: GET http://127.0.0.1:9120/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,369 INFO httpx HTTP Request: GET http://127.0.0.1:9119/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,382 INFO httpx HTTP Request: GET http://127.0.0.1:9131/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,394 INFO httpx HTTP Request: GET http://127.0.0.1:9132/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,396 INFO httpx HTTP Request: GET http://127.0.0.1:9134/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,428 INFO httpx HTTP Request: GET http://127.0.0.1:9138/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,447 INFO httpx HTTP Request: GET http://127.0.0.1:9147/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,872 INFO httpx HTTP Request: GET http://127.0.0.1:9122/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,874 INFO httpx HTTP Request: GET http://127.0.0.1:9123/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,899 INFO httpx HTTP Request: GET http://127.0.0.1:9124/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,906 INFO httpx HTTP Request: GET http://127.0.0.1:9129/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,908 INFO httpx HTTP Request: GET http://127.0.0.1:9130/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,919 INFO httpx HTTP Request: GET http://127.0.0.1:9128/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,925 INFO httpx HTTP Request: GET http://127.0.0.1:9135/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,936 INFO httpx HTTP Request: GET http://127.0.0.1:9140/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,937 INFO httpx HTTP Request: GET http://127.0.0.1:9139/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,944 INFO httpx HTTP Request: GET http://127.0.0.1:9145/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,945 INFO httpx HTTP Request: GET http://127.0.0.1:9146/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:24,946 INFO httpx HTTP Request: GET http://127.0.0.1:9144/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:26,408 INFO httpx HTTP Request: GET http://127.0.0.1:9125/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:26,409 INFO httpx HTTP Request: GET http://127.0.0.1:9126/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:26,411 INFO httpx HTTP Request: GET http://127.0.0.1:9127/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:26,412 INFO httpx HTTP Request: GET http://127.0.0.1:9133/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:26,413 INFO httpx HTTP Request: GET http://127.0.0.1:9136/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:26,414 INFO httpx HTTP Request: GET http://127.0.0.1:9137/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:26,415 INFO httpx HTTP Request: GET http://127.0.0.1:9142/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:26,415 INFO httpx HTTP Request: GET http://127.0.0.1:9143/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:26,425 INFO httpx HTTP Request: GET http://127.0.0.1:9149/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:26,449 INFO kasukabe.genesis_runner all 50 engines ready
+2026-09-08 04:33:26,449 INFO kasukabe.genesis_runner watchdog started: polling every 10s, restarting anything silent past 180s
+2026-09-08 04:33:26,453 INFO kasukabe.groundskeeper groundskeeper started: sweeping C:/Users/denis/AppData/Local/Temp/k_deni-post-1013-5h every 300s
+2026-09-08 04:33:40,096 INFO httpx HTTP Request: GET http://127.0.0.1:9101/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:40,906 INFO httpx HTTP Request: GET http://127.0.0.1:9102/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:41,884 INFO httpx HTTP Request: GET http://127.0.0.1:9103/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:44,224 INFO httpx HTTP Request: GET http://127.0.0.1:9104/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:45,744 INFO httpx HTTP Request: GET http://127.0.0.1:9105/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:46,682 INFO httpx HTTP Request: POST http://127.0.0.1:9127/tick "HTTP/1.1 200 OK"
+2026-09-08 04:33:48,164 INFO httpx HTTP Request: GET http://127.0.0.1:9106/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:49,163 INFO httpx HTTP Request: GET http://127.0.0.1:9107/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:49,891 INFO httpx HTTP Request: GET http://127.0.0.1:9108/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:50,671 INFO httpx HTTP Request: GET http://127.0.0.1:9109/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:51,711 INFO httpx HTTP Request: GET http://127.0.0.1:9110/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:52,579 INFO httpx HTTP Request: GET http://127.0.0.1:9111/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:53,508 INFO httpx HTTP Request: POST http://127.0.0.1:9124/tick "HTTP/1.1 200 OK"
+2026-09-08 04:33:53,525 INFO httpx HTTP Request: GET http://127.0.0.1:9112/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:54,425 INFO httpx HTTP Request: GET http://127.0.0.1:9113/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:55,328 INFO httpx HTTP Request: GET http://127.0.0.1:9114/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:56,230 INFO httpx HTTP Request: POST http://127.0.0.1:9121/tick "HTTP/1.1 200 OK"
+2026-09-08 04:33:56,231 INFO httpx HTTP Request: POST http://127.0.0.1:9145/tick "HTTP/1.1 200 OK"
+2026-09-08 04:33:56,248 INFO httpx HTTP Request: GET http://127.0.0.1:9115/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:56,861 INFO httpx HTTP Request: POST http://127.0.0.1:9130/tick "HTTP/1.1 200 OK"
+2026-09-08 04:33:56,888 INFO httpx HTTP Request: GET http://127.0.0.1:9116/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:57,830 INFO httpx HTTP Request: GET http://127.0.0.1:9117/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:58,735 INFO httpx HTTP Request: GET http://127.0.0.1:9118/health "HTTP/1.1 200 OK"
+2026-09-08 04:33:59,679 INFO httpx HTTP Request: GET http://127.0.0.1:9119/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:00,575 INFO httpx HTTP Request: GET http://127.0.0.1:9120/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:01,469 INFO httpx HTTP Request: GET http://127.0.0.1:9121/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:02,303 INFO httpx HTTP Request: GET http://127.0.0.1:9122/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:03,056 INFO httpx HTTP Request: GET http://127.0.0.1:9123/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:03,815 INFO httpx HTTP Request: GET http://127.0.0.1:9124/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:04,760 INFO httpx HTTP Request: GET http://127.0.0.1:9125/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:05,616 INFO httpx HTTP Request: GET http://127.0.0.1:9126/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:06,469 INFO httpx HTTP Request: GET http://127.0.0.1:9127/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:07,342 INFO httpx HTTP Request: GET http://127.0.0.1:9128/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:08,081 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-08 04:34:08,167 INFO httpx HTTP Request: GET http://127.0.0.1:9129/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:09,111 INFO httpx HTTP Request: GET http://127.0.0.1:9130/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:09,983 INFO httpx HTTP Request: GET http://127.0.0.1:9131/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:10,733 INFO httpx HTTP Request: GET http://127.0.0.1:9132/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:11,653 INFO httpx HTTP Request: GET http://127.0.0.1:9133/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:12,604 INFO httpx HTTP Request: GET http://127.0.0.1:9134/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:13,420 INFO httpx HTTP Request: GET http://127.0.0.1:9135/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:14,410 INFO httpx HTTP Request: GET http://127.0.0.1:9136/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:15,203 INFO httpx HTTP Request: POST http://127.0.0.1:9118/tick "HTTP/1.1 200 OK"
+2026-09-08 04:34:15,248 INFO httpx HTTP Request: GET http://127.0.0.1:9137/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:16,191 INFO httpx HTTP Request: GET http://127.0.0.1:9138/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:16,955 INFO httpx HTTP Request: GET http://127.0.0.1:9139/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:17,780 INFO httpx HTTP Request: GET http://127.0.0.1:9140/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:18,495 INFO httpx HTTP Request: GET http://127.0.0.1:9141/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:19,379 INFO httpx HTTP Request: GET http://127.0.0.1:9142/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:20,122 INFO httpx HTTP Request: GET http://127.0.0.1:9143/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:21,011 INFO httpx HTTP Request: GET http://127.0.0.1:9144/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:21,653 INFO httpx HTTP Request: GET http://127.0.0.1:9145/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:22,574 INFO httpx HTTP Request: GET http://127.0.0.1:9146/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:23,734 INFO httpx HTTP Request: GET http://127.0.0.1:9147/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:24,691 INFO httpx HTTP Request: GET http://127.0.0.1:9148/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:25,766 INFO httpx HTTP Request: GET http://127.0.0.1:9149/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:26,373 INFO httpx HTTP Request: POST http://127.0.0.1:9115/tick "HTTP/1.1 200 OK"
+2026-09-08 04:34:30,169 INFO httpx HTTP Request: POST http://127.0.0.1:9133/tick "HTTP/1.1 200 OK"
+2026-09-08 04:34:32,090 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-08 04:34:35,534 INFO httpx HTTP Request: POST http://127.0.0.1:9142/tick "HTTP/1.1 200 OK"
+2026-09-08 04:34:36,668 INFO httpx HTTP Request: GET http://127.0.0.1:9100/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:37,543 INFO httpx HTTP Request: GET http://127.0.0.1:9101/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:38,490 INFO httpx HTTP Request: GET http://127.0.0.1:9102/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:39,233 INFO httpx HTTP Request: GET http://127.0.0.1:9103/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:40,108 INFO httpx HTTP Request: GET http://127.0.0.1:9104/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:40,976 INFO httpx HTTP Request: GET http://127.0.0.1:9105/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:41,734 INFO httpx HTTP Request: GET http://127.0.0.1:9106/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:42,636 INFO httpx HTTP Request: GET http://127.0.0.1:9107/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:43,351 INFO httpx HTTP Request: GET http://127.0.0.1:9108/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:44,389 INFO httpx HTTP Request: GET http://127.0.0.1:9109/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:45,088 INFO httpx HTTP Request: GET http://127.0.0.1:9110/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:45,994 INFO httpx HTTP Request: GET http://127.0.0.1:9111/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:46,935 INFO httpx HTTP Request: GET http://127.0.0.1:9112/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:47,618 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-08 04:34:47,647 INFO httpx HTTP Request: GET http://127.0.0.1:9113/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:48,381 INFO httpx HTTP Request: GET http://127.0.0.1:9114/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:49,066 INFO httpx HTTP Request: GET http://127.0.0.1:9115/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:49,781 INFO httpx HTTP Request: GET http://127.0.0.1:9116/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:50,492 INFO httpx HTTP Request: GET http://127.0.0.1:9117/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:51,199 INFO httpx HTTP Request: GET http://127.0.0.1:9118/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:51,922 INFO httpx HTTP Request: GET http://127.0.0.1:9119/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:52,647 INFO httpx HTTP Request: GET http://127.0.0.1:9120/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:53,394 INFO httpx HTTP Request: POST http://127.0.0.1:9148/tick "HTTP/1.1 200 OK"
+2026-09-08 04:34:53,417 INFO httpx HTTP Request: GET http://127.0.0.1:9121/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:54,159 INFO httpx HTTP Request: GET http://127.0.0.1:9122/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:54,883 INFO httpx HTTP Request: GET http://127.0.0.1:9123/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:55,617 INFO httpx HTTP Request: GET http://127.0.0.1:9124/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:56,342 INFO httpx HTTP Request: GET http://127.0.0.1:9125/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:57,057 INFO httpx HTTP Request: GET http://127.0.0.1:9126/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:57,773 INFO httpx HTTP Request: POST http://127.0.0.1:9112/tick "HTTP/1.1 200 OK"
+2026-09-08 04:34:57,785 INFO httpx HTTP Request: GET http://127.0.0.1:9127/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:58,513 INFO httpx HTTP Request: POST http://127.0.0.1:9139/tick "HTTP/1.1 200 OK"
+2026-09-08 04:34:58,524 INFO httpx HTTP Request: GET http://127.0.0.1:9128/health "HTTP/1.1 200 OK"
+2026-09-08 04:34:59,281 INFO httpx HTTP Request: GET http://127.0.0.1:9129/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:00,003 INFO httpx HTTP Request: POST http://127.0.0.1:9136/tick "HTTP/1.1 200 OK"
+2026-09-08 04:35:00,013 INFO httpx HTTP Request: GET http://127.0.0.1:9130/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:00,719 INFO httpx HTTP Request: GET http://127.0.0.1:9131/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:01,431 INFO httpx HTTP Request: GET http://127.0.0.1:9132/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:02,128 INFO httpx HTTP Request: GET http://127.0.0.1:9133/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:02,852 INFO httpx HTTP Request: GET http://127.0.0.1:9134/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:03,546 INFO httpx HTTP Request: GET http://127.0.0.1:9135/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:04,278 INFO httpx HTTP Request: GET http://127.0.0.1:9136/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:05,002 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-08 04:35:05,019 INFO httpx HTTP Request: GET http://127.0.0.1:9137/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:05,767 INFO httpx HTTP Request: GET http://127.0.0.1:9138/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:06,491 INFO httpx HTTP Request: GET http://127.0.0.1:9139/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:07,215 INFO httpx HTTP Request: GET http://127.0.0.1:9140/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:07,937 INFO httpx HTTP Request: GET http://127.0.0.1:9141/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:08,650 INFO httpx HTTP Request: GET http://127.0.0.1:9142/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:09,344 INFO httpx HTTP Request: GET http://127.0.0.1:9143/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:10,060 INFO httpx HTTP Request: GET http://127.0.0.1:9144/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:10,710 INFO httpx HTTP Request: GET http://127.0.0.1:9145/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:11,415 INFO httpx HTTP Request: GET http://127.0.0.1:9146/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:12,152 INFO httpx HTTP Request: GET http://127.0.0.1:9147/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:12,855 INFO httpx HTTP Request: GET http://127.0.0.1:9148/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:13,569 INFO httpx HTTP Request: GET http://127.0.0.1:9149/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:29,488 INFO httpx HTTP Request: GET http://127.0.0.1:9100/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:30,247 INFO kasukabe.genesis_runner engine memory on this machine: 40 MB each (100 engines)
+2026-09-08 04:35:30,423 INFO httpx HTTP Request: GET http://127.0.0.1:9101/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:31,202 INFO httpx HTTP Request: GET http://127.0.0.1:9102/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:32,050 INFO httpx HTTP Request: GET http://127.0.0.1:9103/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:34,971 INFO httpx HTTP Request: GET http://127.0.0.1:9104/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:35,917 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-08 04:35:35,946 INFO httpx HTTP Request: GET http://127.0.0.1:9105/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:36,706 INFO httpx HTTP Request: GET http://127.0.0.1:9106/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:37,455 INFO httpx HTTP Request: GET http://127.0.0.1:9107/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:38,331 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-08 04:35:38,348 INFO httpx HTTP Request: GET http://127.0.0.1:9108/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:39,098 INFO httpx HTTP Request: GET http://127.0.0.1:9109/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:39,940 INFO httpx HTTP Request: POST http://127.0.0.1:9131/tick "HTTP/1.1 200 OK"
+2026-09-08 04:35:39,942 INFO httpx HTTP Request: POST http://127.0.0.1:9119/tick "HTTP/1.1 200 OK"
+2026-09-08 04:35:39,969 INFO httpx HTTP Request: GET http://127.0.0.1:9110/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:40,819 INFO httpx HTTP Request: GET http://127.0.0.1:9111/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:41,581 INFO httpx HTTP Request: GET http://127.0.0.1:9112/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:42,577 INFO httpx HTTP Request: GET http://127.0.0.1:9113/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:43,599 INFO httpx HTTP Request: GET http://127.0.0.1:9114/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:44,575 INFO httpx HTTP Request: GET http://127.0.0.1:9115/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:46,008 INFO httpx HTTP Request: POST http://127.0.0.1:9110/tick "HTTP/1.1 200 OK"
+2026-09-08 04:35:46,533 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-08 04:35:46,544 INFO httpx HTTP Request: GET http://127.0.0.1:9116/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:47,739 INFO httpx HTTP Request: GET http://127.0.0.1:9117/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:48,631 INFO httpx HTTP Request: GET http://127.0.0.1:9118/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:49,476 INFO httpx HTTP Request: POST http://127.0.0.1:9135/tick "HTTP/1.1 200 OK"
+2026-09-08 04:35:49,515 INFO httpx HTTP Request: GET http://127.0.0.1:9119/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:50,372 INFO httpx HTTP Request: GET http://127.0.0.1:9120/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:50,883 INFO httpx HTTP Request: POST http://127.0.0.1:9122/tick "HTTP/1.1 200 OK"
+2026-09-08 04:35:50,891 INFO httpx HTTP Request: GET http://127.0.0.1:9121/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:51,150 INFO httpx HTTP Request: GET http://127.0.0.1:9122/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:51,701 INFO httpx HTTP Request: POST http://127.0.0.1:9128/tick "HTTP/1.1 200 OK"
+2026-09-08 04:35:51,723 INFO httpx HTTP Request: GET http://127.0.0.1:9123/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:52,620 INFO httpx HTTP Request: GET http://127.0.0.1:9124/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:53,565 INFO httpx HTTP Request: GET http://127.0.0.1:9125/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:54,403 INFO httpx HTTP Request: GET http://127.0.0.1:9126/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:55,203 INFO httpx HTTP Request: GET http://127.0.0.1:9127/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:55,928 INFO httpx HTTP Request: GET http://127.0.0.1:9128/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:56,674 INFO httpx HTTP Request: GET http://127.0.0.1:9129/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:57,477 INFO httpx HTTP Request: GET http://127.0.0.1:9130/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:58,400 INFO httpx HTTP Request: GET http://127.0.0.1:9131/health "HTTP/1.1 200 OK"
+2026-09-08 04:35:59,419 INFO httpx HTTP Request: GET http://127.0.0.1:9132/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:00,451 INFO httpx HTTP Request: GET http://127.0.0.1:9133/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:01,358 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-08 04:36:01,361 INFO httpx HTTP Request: POST http://127.0.0.1:9113/tick "HTTP/1.1 200 OK"
+2026-09-08 04:36:01,382 INFO httpx HTTP Request: GET http://127.0.0.1:9134/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:02,253 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-08 04:36:02,285 INFO httpx HTTP Request: GET http://127.0.0.1:9135/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:03,055 INFO httpx HTTP Request: GET http://127.0.0.1:9136/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:03,926 INFO httpx HTTP Request: GET http://127.0.0.1:9137/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:04,695 INFO httpx HTTP Request: GET http://127.0.0.1:9138/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:05,475 INFO httpx HTTP Request: GET http://127.0.0.1:9139/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:06,409 INFO httpx HTTP Request: GET http://127.0.0.1:9140/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:07,148 INFO httpx HTTP Request: GET http://127.0.0.1:9141/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:08,178 INFO httpx HTTP Request: GET http://127.0.0.1:9142/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:08,938 INFO httpx HTTP Request: GET http://127.0.0.1:9143/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:09,901 INFO httpx HTTP Request: GET http://127.0.0.1:9144/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:10,945 INFO httpx HTTP Request: GET http://127.0.0.1:9145/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:11,942 INFO httpx HTTP Request: GET http://127.0.0.1:9146/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:12,704 INFO httpx HTTP Request: GET http://127.0.0.1:9147/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:13,596 INFO httpx HTTP Request: GET http://127.0.0.1:9148/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:14,348 INFO httpx HTTP Request: GET http://127.0.0.1:9149/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:18,985 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-08 04:36:19,807 INFO httpx HTTP Request: POST http://127.0.0.1:9137/tick "HTTP/1.1 200 OK"
+2026-09-08 04:36:20,994 INFO httpx HTTP Request: POST http://127.0.0.1:9125/tick "HTTP/1.1 200 OK"
+2026-09-08 04:36:23,678 INFO httpx HTTP Request: POST http://127.0.0.1:9116/tick "HTTP/1.1 200 OK"
+2026-09-08 04:36:25,300 INFO httpx HTTP Request: GET http://127.0.0.1:9100/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:26,070 INFO httpx HTTP Request: GET http://127.0.0.1:9101/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:26,834 INFO httpx HTTP Request: GET http://127.0.0.1:9102/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:27,714 INFO httpx HTTP Request: GET http://127.0.0.1:9103/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:28,463 INFO httpx HTTP Request: GET http://127.0.0.1:9104/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:29,421 INFO httpx HTTP Request: GET http://127.0.0.1:9105/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:30,437 INFO httpx HTTP Request: GET http://127.0.0.1:9106/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:31,198 INFO httpx HTTP Request: GET http://127.0.0.1:9107/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:32,064 INFO httpx HTTP Request: GET http://127.0.0.1:9108/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:33,085 INFO httpx HTTP Request: GET http://127.0.0.1:9109/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:33,881 INFO httpx HTTP Request: GET http://127.0.0.1:9110/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:34,762 INFO httpx HTTP Request: GET http://127.0.0.1:9111/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:35,700 INFO httpx HTTP Request: GET http://127.0.0.1:9112/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:36,642 INFO httpx HTTP Request: GET http://127.0.0.1:9113/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:37,407 INFO httpx HTTP Request: POST http://127.0.0.1:9149/tick "HTTP/1.1 200 OK"
+2026-09-08 04:36:37,417 INFO httpx HTTP Request: GET http://127.0.0.1:9114/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:38,132 INFO httpx HTTP Request: GET http://127.0.0.1:9115/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:39,192 INFO httpx HTTP Request: GET http://127.0.0.1:9116/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:40,417 INFO httpx HTTP Request: GET http://127.0.0.1:9117/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:41,415 INFO httpx HTTP Request: GET http://127.0.0.1:9118/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:42,357 INFO httpx HTTP Request: GET http://127.0.0.1:9119/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:43,373 INFO httpx HTTP Request: GET http://127.0.0.1:9120/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:44,072 INFO httpx HTTP Request: GET http://127.0.0.1:9121/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:44,881 INFO httpx HTTP Request: GET http://127.0.0.1:9122/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:45,852 INFO httpx HTTP Request: GET http://127.0.0.1:9123/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:46,564 INFO httpx HTTP Request: GET http://127.0.0.1:9124/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:47,317 INFO httpx HTTP Request: GET http://127.0.0.1:9125/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:48,260 INFO httpx HTTP Request: GET http://127.0.0.1:9126/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:49,145 INFO httpx HTTP Request: GET http://127.0.0.1:9127/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:49,880 INFO httpx HTTP Request: GET http://127.0.0.1:9128/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:50,634 INFO httpx HTTP Request: GET http://127.0.0.1:9129/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:51,370 INFO httpx HTTP Request: POST http://127.0.0.1:9141/tick "HTTP/1.1 200 OK"
+2026-09-08 04:36:51,385 INFO httpx HTTP Request: GET http://127.0.0.1:9130/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:52,380 INFO httpx HTTP Request: GET http://127.0.0.1:9131/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:53,260 INFO httpx HTTP Request: GET http://127.0.0.1:9132/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:54,050 INFO httpx HTTP Request: GET http://127.0.0.1:9133/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:54,767 INFO httpx HTTP Request: GET http://127.0.0.1:9134/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:55,681 INFO httpx HTTP Request: GET http://127.0.0.1:9135/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:56,416 INFO httpx HTTP Request: GET http://127.0.0.1:9136/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:57,193 INFO httpx HTTP Request: GET http://127.0.0.1:9137/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:57,948 INFO httpx HTTP Request: GET http://127.0.0.1:9138/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:58,713 INFO httpx HTTP Request: GET http://127.0.0.1:9139/health "HTTP/1.1 200 OK"
+2026-09-08 04:36:59,431 INFO httpx HTTP Request: GET http://127.0.0.1:9140/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:00,172 INFO httpx HTTP Request: GET http://127.0.0.1:9141/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:00,911 INFO httpx HTTP Request: POST http://127.0.0.1:9134/tick "HTTP/1.1 200 OK"
+2026-09-08 04:37:00,925 INFO httpx HTTP Request: GET http://127.0.0.1:9142/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:01,847 INFO httpx HTTP Request: GET http://127.0.0.1:9143/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:02,572 INFO httpx HTTP Request: GET http://127.0.0.1:9144/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:03,262 INFO httpx HTTP Request: GET http://127.0.0.1:9145/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:03,970 INFO httpx HTTP Request: GET http://127.0.0.1:9146/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:03,974 INFO httpx HTTP Request: POST http://127.0.0.1:9143/tick "HTTP/1.1 200 OK"
+2026-09-08 04:37:03,987 INFO httpx HTTP Request: POST http://127.0.0.1:9140/tick "HTTP/1.1 200 OK"
+2026-09-08 04:37:04,731 INFO httpx HTTP Request: GET http://127.0.0.1:9147/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:05,443 INFO httpx HTTP Request: GET http://127.0.0.1:9148/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:06,127 INFO httpx HTTP Request: GET http://127.0.0.1:9149/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:06,176 INFO httpx HTTP Request: POST http://127.0.0.1:9117/tick "HTTP/1.1 200 OK"
+2026-09-08 04:37:06,182 INFO httpx HTTP Request: POST http://127.0.0.1:9146/tick "HTTP/1.1 200 OK"
+2026-09-08 04:37:18,089 INFO httpx HTTP Request: GET http://127.0.0.1:9100/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:19,062 INFO httpx HTTP Request: GET http://127.0.0.1:9101/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:19,797 INFO httpx HTTP Request: GET http://127.0.0.1:9102/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:20,573 INFO httpx HTTP Request: GET http://127.0.0.1:9103/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:21,486 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-08 04:37:21,523 INFO httpx HTTP Request: GET http://127.0.0.1:9104/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:22,247 INFO httpx HTTP Request: POST http://127.0.0.1:9135/tick "HTTP/1.1 200 OK"
+2026-09-08 04:37:22,275 INFO httpx HTTP Request: GET http://127.0.0.1:9105/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:23,161 INFO httpx HTTP Request: POST http://127.0.0.1:9121/tick "HTTP/1.1 200 OK"
+2026-09-08 04:37:23,210 INFO httpx HTTP Request: GET http://127.0.0.1:9106/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:24,278 INFO httpx HTTP Request: GET http://127.0.0.1:9107/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:25,055 INFO httpx HTTP Request: GET http://127.0.0.1:9108/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:25,958 INFO httpx HTTP Request: GET http://127.0.0.1:9109/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:26,856 INFO httpx HTTP Request: GET http://127.0.0.1:9110/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:27,640 INFO httpx HTTP Request: GET http://127.0.0.1:9111/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:28,607 INFO httpx HTTP Request: GET http://127.0.0.1:9112/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:29,537 INFO httpx HTTP Request: GET http://127.0.0.1:9113/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:30,316 INFO httpx HTTP Request: GET http://127.0.0.1:9114/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:31,255 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-08 04:37:31,281 INFO httpx HTTP Request: GET http://127.0.0.1:9115/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:32,084 INFO httpx HTTP Request: GET http://127.0.0.1:9116/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:32,993 INFO httpx HTTP Request: POST http://127.0.0.1:9112/tick "HTTP/1.1 200 OK"
+2026-09-08 04:37:33,050 INFO httpx HTTP Request: GET http://127.0.0.1:9117/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:34,015 INFO httpx HTTP Request: GET http://127.0.0.1:9118/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:34,936 INFO httpx HTTP Request: GET http://127.0.0.1:9119/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:35,898 INFO httpx HTTP Request: GET http://127.0.0.1:9120/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:36,750 INFO httpx HTTP Request: GET http://127.0.0.1:9121/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:36,751 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-08 04:37:37,616 INFO httpx HTTP Request: GET http://127.0.0.1:9122/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:38,355 INFO httpx HTTP Request: GET http://127.0.0.1:9123/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:39,217 INFO httpx HTTP Request: GET http://127.0.0.1:9124/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:39,942 INFO httpx HTTP Request: GET http://127.0.0.1:9125/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:40,799 INFO httpx HTTP Request: GET http://127.0.0.1:9126/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:41,486 INFO httpx HTTP Request: POST http://127.0.0.1:9132/tick "HTTP/1.1 200 OK"
+2026-09-08 04:37:41,752 INFO httpx HTTP Request: GET http://127.0.0.1:9127/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:42,933 INFO httpx HTTP Request: GET http://127.0.0.1:9128/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:43,890 INFO httpx HTTP Request: GET http://127.0.0.1:9129/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:44,774 INFO httpx HTTP Request: GET http://127.0.0.1:9130/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:46,036 INFO httpx HTTP Request: GET http://127.0.0.1:9131/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:47,344 INFO httpx HTTP Request: GET http://127.0.0.1:9132/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:48,278 INFO httpx HTTP Request: GET http://127.0.0.1:9133/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:49,071 INFO httpx HTTP Request: GET http://127.0.0.1:9134/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:50,003 INFO httpx HTTP Request: GET http://127.0.0.1:9135/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:50,759 INFO httpx HTTP Request: POST http://127.0.0.1:9126/tick "HTTP/1.1 200 OK"
+2026-09-08 04:37:50,783 INFO httpx HTTP Request: GET http://127.0.0.1:9136/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:51,916 INFO httpx HTTP Request: GET http://127.0.0.1:9137/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:52,748 INFO httpx HTTP Request: GET http://127.0.0.1:9138/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:53,476 INFO httpx HTTP Request: GET http://127.0.0.1:9139/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:54,211 INFO httpx HTTP Request: GET http://127.0.0.1:9140/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:55,100 INFO httpx HTTP Request: POST http://127.0.0.1:9120/tick "HTTP/1.1 200 OK"
+2026-09-08 04:37:55,114 INFO httpx HTTP Request: GET http://127.0.0.1:9141/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:55,992 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-08 04:37:56,018 INFO httpx HTTP Request: GET http://127.0.0.1:9142/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:56,768 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-08 04:37:56,780 INFO httpx HTTP Request: GET http://127.0.0.1:9143/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:57,530 INFO httpx HTTP Request: GET http://127.0.0.1:9144/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:57,539 INFO httpx HTTP Request: POST http://127.0.0.1:9114/tick "HTTP/1.1 200 OK"
+2026-09-08 04:37:58,391 INFO httpx HTTP Request: POST http://127.0.0.1:9111/tick "HTTP/1.1 200 OK"
+2026-09-08 04:37:58,410 INFO httpx HTTP Request: GET http://127.0.0.1:9145/health "HTTP/1.1 200 OK"
+2026-09-08 04:37:59,210 INFO httpx HTTP Request: GET http://127.0.0.1:9146/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:00,171 INFO httpx HTTP Request: GET http://127.0.0.1:9147/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:00,882 INFO httpx HTTP Request: POST http://127.0.0.1:9123/tick "HTTP/1.1 200 OK"
+2026-09-08 04:38:00,916 INFO httpx HTTP Request: GET http://127.0.0.1:9148/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:01,868 INFO httpx HTTP Request: GET http://127.0.0.1:9149/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:02,919 INFO httpx HTTP Request: POST http://127.0.0.1:9144/tick "HTTP/1.1 200 OK"
+2026-09-08 04:38:06,106 INFO httpx HTTP Request: POST http://127.0.0.1:9147/tick "HTTP/1.1 200 OK"
+2026-09-08 04:38:12,677 INFO httpx HTTP Request: GET http://127.0.0.1:9100/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:13,398 INFO httpx HTTP Request: GET http://127.0.0.1:9101/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:14,383 INFO httpx HTTP Request: GET http://127.0.0.1:9102/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:15,172 INFO httpx HTTP Request: GET http://127.0.0.1:9103/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:16,052 INFO httpx HTTP Request: GET http://127.0.0.1:9104/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:16,765 INFO httpx HTTP Request: GET http://127.0.0.1:9105/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:17,527 INFO httpx HTTP Request: GET http://127.0.0.1:9106/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:18,246 INFO httpx HTTP Request: GET http://127.0.0.1:9107/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:18,975 INFO httpx HTTP Request: GET http://127.0.0.1:9108/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:19,729 INFO httpx HTTP Request: GET http://127.0.0.1:9109/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:20,693 INFO httpx HTTP Request: GET http://127.0.0.1:9110/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:21,416 INFO httpx HTTP Request: GET http://127.0.0.1:9111/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:22,164 INFO kasukabe.genesis_runner n39 ate carrot
+2026-09-08 04:38:22,172 INFO httpx HTTP Request: GET http://127.0.0.1:9112/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:22,875 INFO httpx HTTP Request: GET http://127.0.0.1:9113/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:23,818 INFO httpx HTTP Request: GET http://127.0.0.1:9114/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:24,522 INFO httpx HTTP Request: GET http://127.0.0.1:9115/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:25,230 INFO httpx HTTP Request: GET http://127.0.0.1:9116/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:25,995 INFO httpx HTTP Request: GET http://127.0.0.1:9117/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:26,901 INFO httpx HTTP Request: GET http://127.0.0.1:9118/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:27,619 INFO httpx HTTP Request: GET http://127.0.0.1:9119/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:28,499 INFO httpx HTTP Request: GET http://127.0.0.1:9120/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:29,383 INFO httpx HTTP Request: GET http://127.0.0.1:9121/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:30,241 INFO httpx HTTP Request: GET http://127.0.0.1:9122/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:30,954 INFO httpx HTTP Request: GET http://127.0.0.1:9123/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:31,683 INFO httpx HTTP Request: POST http://127.0.0.1:9129/tick "HTTP/1.1 200 OK"
+2026-09-08 04:38:31,707 INFO httpx HTTP Request: GET http://127.0.0.1:9124/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:32,408 INFO httpx HTTP Request: GET http://127.0.0.1:9125/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:33,130 INFO httpx HTTP Request: GET http://127.0.0.1:9126/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:33,823 INFO httpx HTTP Request: GET http://127.0.0.1:9127/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:34,434 INFO httpx HTTP Request: GET http://127.0.0.1:9128/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:35,155 INFO httpx HTTP Request: GET http://127.0.0.1:9129/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:35,885 INFO httpx HTTP Request: GET http://127.0.0.1:9130/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:36,600 INFO httpx HTTP Request: GET http://127.0.0.1:9131/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:37,346 INFO httpx HTTP Request: GET http://127.0.0.1:9132/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:38,071 INFO httpx HTTP Request: POST http://127.0.0.1:9138/tick "HTTP/1.1 200 OK"
+2026-09-08 04:38:38,081 INFO httpx HTTP Request: GET http://127.0.0.1:9133/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:38,819 INFO httpx HTTP Request: GET http://127.0.0.1:9134/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:39,574 INFO httpx HTTP Request: GET http://127.0.0.1:9135/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:40,294 INFO httpx HTTP Request: GET http://127.0.0.1:9136/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:41,025 INFO httpx HTTP Request: GET http://127.0.0.1:9137/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:41,739 INFO httpx HTTP Request: GET http://127.0.0.1:9138/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:42,462 INFO httpx HTTP Request: GET http://127.0.0.1:9139/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:43,163 INFO httpx HTTP Request: GET http://127.0.0.1:9140/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:43,871 INFO httpx HTTP Request: GET http://127.0.0.1:9141/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:44,657 INFO httpx HTTP Request: GET http://127.0.0.1:9142/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:45,360 INFO httpx HTTP Request: GET http://127.0.0.1:9143/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:46,080 INFO httpx HTTP Request: GET http://127.0.0.1:9144/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:46,777 INFO httpx HTTP Request: GET http://127.0.0.1:9145/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:47,474 INFO httpx HTTP Request: GET http://127.0.0.1:9146/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:48,184 INFO httpx HTTP Request: GET http://127.0.0.1:9147/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:48,877 INFO httpx HTTP Request: GET http://127.0.0.1:9148/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:49,575 INFO httpx HTTP Request: GET http://127.0.0.1:9149/health "HTTP/1.1 200 OK"
+2026-09-08 04:38:50,090 INFO kasukabe.genesis_runner shutting down genesis runner
+2026-09-08 04:38:50,498 INFO httpx HTTP Request: POST http://127.0.0.1:9139/learn "HTTP/1.1 200 OK"
+2026-09-08 04:38:50,510 INFO httpx HTTP Request: POST http://127.0.0.1:9123/learn "HTTP/1.1 200 OK"
+2026-09-08 04:38:50,512 INFO httpx HTTP Request: POST http://127.0.0.1:9129/learn "HTTP/1.1 200 OK"
+2026-09-08 04:38:50,513 INFO httpx HTTP Request: POST http://127.0.0.1:9137/learn "HTTP/1.1 200 OK"
+2026-09-08 04:38:50,514 INFO httpx HTTP Request: POST http://127.0.0.1:9141/learn "HTTP/1.1 200 OK"
+2026-09-08 04:38:58,209 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-08 04:39:00,276 INFO httpx HTTP Request: POST http://127.0.0.1:9124/tick "HTTP/1.1 200 OK"
+2026-09-08 04:39:00,285 INFO httpx HTTP Request: POST http://127.0.0.1:9130/tick "HTTP/1.1 200 OK"
+2026-09-08 04:39:00,635 INFO httpx HTTP Request: POST http://127.0.0.1:9118/tick "HTTP/1.1 200 OK"
+2026-09-08 04:39:01,142 INFO httpx HTTP Request: POST http://127.0.0.1:9121/tick "HTTP/1.1 200 OK"
+2026-09-08 04:39:01,289 INFO httpx HTTP Request: POST http://127.0.0.1:9139/tick "HTTP/1.1 200 OK"
+2026-09-08 04:39:02,283 INFO httpx HTTP Request: POST http://127.0.0.1:9127/tick "HTTP/1.1 200 OK"
+2026-09-08 04:39:09,156 INFO httpx HTTP Request: POST http://127.0.0.1:9145/tick "HTTP/1.1 200 OK"
+2026-09-08 04:39:11,926 INFO httpx HTTP Request: POST http://127.0.0.1:9143/learn "HTTP/1.1 200 OK"
+2026-09-08 04:39:14,584 INFO httpx HTTP Request: POST http://127.0.0.1:9124/learn "HTTP/1.1 200 OK"
+2026-09-08 04:39:15,587 INFO httpx HTTP Request: POST http://127.0.0.1:9138/learn "HTTP/1.1 200 OK"
+2026-09-08 04:39:16,321 INFO httpx HTTP Request: POST http://127.0.0.1:9127/learn "HTTP/1.1 200 OK"
+2026-09-08 04:39:17,089 INFO httpx HTTP Request: POST http://127.0.0.1:9119/learn "HTTP/1.1 200 OK"
+2026-09-08 04:39:19,313 INFO httpx HTTP Request: POST http://127.0.0.1:9131/learn "HTTP/1.1 200 OK"
+2026-09-08 04:39:19,681 INFO httpx HTTP Request: POST http://127.0.0.1:9110/learn "HTTP/1.1 200 OK"
+2026-09-08 04:39:22,920 INFO httpx HTTP Request: POST http://127.0.0.1:9145/learn "HTTP/1.1 200 OK"
+2026-09-08 04:39:26,004 INFO httpx HTTP Request: POST http://127.0.0.1:9133/tick "HTTP/1.1 200 OK"
+2026-09-08 04:39:26,983 INFO httpx HTTP Request: POST http://127.0.0.1:9115/tick "HTTP/1.1 200 OK"
+2026-09-08 04:39:27,151 INFO httpx HTTP Request: POST http://127.0.0.1:9114/learn "HTTP/1.1 200 OK"
+2026-09-08 04:39:27,931 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-08 04:39:28,168 INFO httpx HTTP Request: POST http://127.0.0.1:9107/learn "HTTP/1.1 200 OK"
+2026-09-08 04:39:31,366 INFO httpx HTTP Request: POST http://127.0.0.1:9116/tick "HTTP/1.1 200 OK"
+2026-09-08 04:39:33,432 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-08 04:39:34,602 INFO httpx HTTP Request: POST http://127.0.0.1:9142/tick "HTTP/1.1 200 OK"
+2026-09-08 04:39:35,014 INFO httpx HTTP Request: POST http://127.0.0.1:9104/learn "HTTP/1.1 200 OK"
+2026-09-08 04:39:36,879 INFO httpx HTTP Request: POST http://127.0.0.1:9136/tick "HTTP/1.1 200 OK"
+2026-09-08 04:39:39,313 INFO httpx HTTP Request: POST http://127.0.0.1:9125/tick "HTTP/1.1 200 OK"
+2026-09-08 04:39:40,245 INFO httpx HTTP Request: POST http://127.0.0.1:9146/learn "HTTP/1.1 200 OK"
+2026-09-08 04:39:40,347 INFO httpx HTTP Request: POST http://127.0.0.1:9111/learn "HTTP/1.1 200 OK"
+2026-09-08 04:39:41,410 INFO httpx HTTP Request: POST http://127.0.0.1:9122/learn "HTTP/1.1 200 OK"
+2026-09-08 04:39:45,537 INFO httpx HTTP Request: POST http://127.0.0.1:9135/learn "HTTP/1.1 200 OK"
+2026-09-08 04:39:48,437 INFO httpx HTTP Request: POST http://127.0.0.1:9102/learn "HTTP/1.1 200 OK"
+2026-09-08 04:39:48,497 INFO httpx HTTP Request: POST http://127.0.0.1:9134/learn "HTTP/1.1 200 OK"
+2026-09-08 04:39:50,474 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n04: 
+2026-09-08 04:39:50,475 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n10: 
+2026-09-08 04:39:50,475 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n16: 
+2026-09-08 04:39:50,475 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n17: 
+2026-09-08 04:39:50,476 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n19: 
+2026-09-08 04:39:50,476 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n22: 
+2026-09-08 04:39:50,476 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n26: 
+2026-09-08 04:39:50,476 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n31: 
+2026-09-08 04:39:50,476 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n34: 
+2026-09-08 04:39:50,477 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n37: 
+2026-09-08 04:39:50,477 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n43: 
+2026-09-08 04:39:50,479 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n01: 
+2026-09-08 04:39:50,484 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n02: 
+2026-09-08 04:39:50,487 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n06: 
+2026-09-08 04:39:50,492 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n07: 
+2026-09-08 04:39:50,502 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n09: 
+2026-09-08 04:39:50,503 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n13: 
+2026-09-08 04:39:50,507 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n14: 
+2026-09-08 04:39:50,508 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n18: 
+2026-09-08 04:39:50,510 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n21: 
+2026-09-08 04:39:50,511 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n27: 
+2026-09-08 04:39:50,512 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n29: 
+2026-09-08 04:39:50,514 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n33: 
+2026-09-08 04:39:50,519 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n41: 
+2026-09-08 04:39:50,521 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n45: 
+2026-09-08 04:39:50,523 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n48: 
+2026-09-08 04:39:50,524 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n49: 
+2026-09-08 04:39:50,526 WARNING kasukabe.genesis_runner end-of-run learning drain failed for n50: 
+2026-09-08 04:39:50,526 INFO kasukabe.genesis_runner end-of-run learning drain: 12 of 50 resident(s) consolidated
+2026-09-08 04:39:52,221 INFO kasukabe.genesis_runner checkpoint written: tick=40 game_day=0 -> data\kasukabe-checkpoints\checkpoint_0000000040.json.gz
+2026-09-08 04:39:52,221 INFO kasukabe.genesis_runner final checkpoint written at tick 40
+Traceback (most recent call last):
+  File [35m"<frozen runpy>"[0m, line [35m198[0m, in [35m_run_module_as_main[0m
+  File [35m"<frozen runpy>"[0m, line [35m88[0m, in [35m_run_code[0m
+  File [35m"D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\world\run_genesis.py"[0m, line [35m8637[0m, in [35m<module>[0m
+    [31mmain[0m[1;31m()[0m
+    [31m~~~~[0m[1;31m^^[0m
+  File [35m"D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\world\run_genesis.py"[0m, line [35m8633[0m, in [35mmain[0m
+    [31masyncio.run[0m[1;31m(main_async())[0m
+    [31m~~~~~~~~~~~[0m[1;31m^^^^^^^^^^^^^^[0m
+  File [35m"C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py"[0m, line [35m195[0m, in [35mrun[0m
+    return [31mrunner.run[0m[1;31m(main)[0m
+           [31m~~~~~~~~~~[0m[1;31m^^^^^^[0m
+  File [35m"C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py"[0m, line [35m118[0m, in [35mrun[0m
+    return [31mself._loop.run_until_complete[0m[1;31m(task)[0m
+           [31m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m[1;31m^^^^^^[0m
+  File [35m"C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py"[0m, line [35m719[0m, in [35mrun_until_complete[0m
+    return [31mfuture.result[0m[1;31m()[0m
+           [31m~~~~~~~~~~~~~[0m[1;31m^^[0m
+  File [35m"D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\world\run_genesis.py"[0m, line [35m8627[0m, in [35mmain_async[0m
+    await runner.run_continuous()
+  File [35m"D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\world\run_genesis.py"[0m, line [35m8179[0m, in [35mrun_continuous[0m
+    result = [1;31mawait self.run_tick()[0m
+             [1;31m^^^^^^^^^^^^^^^^^^^^^[0m
+  File [35m"D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\world\run_genesis.py"[0m, line [35m6466[0m, in [35mrun_tick[0m
+    await self.dispatch_due_agents(result)
+  File [35m"D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\world\run_genesis.py"[0m, line [35m6857[0m, in [35mdispatch_due_agents[0m
+    await asyncio.gather(*(one(agent_id) for agent_id in due))
+  File [35m"D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\world\run_genesis.py"[0m, line [35m6656[0m, in [35mone[0m
+    await self.world_state.advance_continuing(self.registry, agent_id)
+  File [35m"D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\world\tools\state.py"[0m, line [35m1282[0m, in [35madvance_continuing[0m
+    done = action.satisfied(self)
+  File [35m"D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\world\tools\state.py"[0m, line [35m377[0m, in [35msatisfied[0m
+    if self.until.get("dusk") and not [1;31mworld.is_daytime[0m():
+                                      [1;31m^^^^^^^^^^^^^^^^[0m
+[1;35mAttributeError[0m: [35m'WorldState' object has no attribute 'is_daytime'[0m

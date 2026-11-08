@@ -1,0 +1,24 @@
+{
+  "tool": "register_business",
+  "kind": "negative",
+  "_why": "Selling something once does not make a firm, and registering costs a fee. A resident that registers for a single sale has learned a verb and not a reason.",
+  "resident": "n18",
+  "location": "street",
+  "inventory": {
+    "cabbage": 2
+  },
+  "sim": 400,
+  "people_here": [
+    "n11"
+  ],
+  "recent_speech": [
+    {
+      "from": "n11",
+      "text": "I will take the two cabbages if the price is fair."
+    }
+  ],
+  "open_question_to_me": "n11 wants your two cabbages, now.",
+  "expect": {
+    "verb": "register_business"
+  }
+}

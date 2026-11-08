@@ -1,0 +1,54 @@
+[Unit]
+# World server: map, ticks, tool registry, ledger, charter, health, crime
+# (DESIGN.md section 9, app/CONVENTIONS.md "world/ owns ALL world state").
+# Internal-only: bound to 127.0.0.1, never exposed to the internet. broker,
+# game/server.py, and game/console/app.py on this same host are its only
+# callers (all default to WORLD_BASE_URL=http://127.0.0.1:8100).
+Description=Kasukabe world server (map, ticks, tools, ledger, charter)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=kasukabe
+Group=kasukabe
+WorkingDirectory=/opt/kasukabe/app
+EnvironmentFile=/opt/kasukabe/app/infra/env/world.env
+# INFRA-04: world.main:app, NOT world.app:app.
+#
+# `world/app.py` is a health-check scaffold. Its own docstring says so -
+# "scaffold placeholder, superseded ... it is not booted by anything else
+# in this repo" - and it is 31 lines with no map, no ticks, no tool
+# registry, no ledger and no charter. This unit booted it, so the service
+# the runbook starts answered /health and could not run a town.
+#
+# `world/main.py` + `wiring.build_world_server()` is the standalone world
+# server, and is what `make run-world` and docker-compose's `world`
+# service launch.
+#
+# NOTE, and this is the part that matters for a genesis run: the standalone
+# server is NOT what a run uses. Every run in this project's history boots
+# `world.run_genesis`, which embeds its own world app and supervises the
+# engines - see kasukabe-genesis.service beside this file. This unit is
+# for a world served on its own, without a town living in it.
+ExecStart=/opt/kasukabe/app/.venv/bin/uvicorn world.main:app --host 127.0.0.1 --port 8100
+Restart=always
+RestartSec=2
+# No --reload in prod (that's the dev-only docker-compose.yml behavior).
+# journald captures stdout/stderr; read with `journalctl -u kasukabe-world -f`.
+StandardOutput=journal
+StandardError=journal
+
+# Hardening: this process only needs to read the repo and write to the
+# shared SQLite data directory (KASUKABE_SQLITE_PATH in world.env) and its
+# own checkpoint output - nothing else on the host.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/kasukabe/data
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

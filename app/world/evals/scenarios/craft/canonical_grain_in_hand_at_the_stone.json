@@ -1,0 +1,17 @@
+{
+  "tool": "craft",
+  "kind": "positive",
+  "_why": "Run 25: Rosalind ran wheat to flour eleven times, and the bread chain the run is proud of exists because of it.",
+  "resident": "n11",
+  "location": "business:b_mill",
+  "inventory": {
+    "wheat": 3
+  },
+  "sim": 3755,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You own Vance Mill and you are standing in it, holding three wheat. The recipe craft:wheat->flour turns one into one.",
+  "expect": {
+    "verb": "craft"
+  }
+}

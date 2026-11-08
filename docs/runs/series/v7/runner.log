@@ -1,0 +1,255 @@
+2026-09-02 00:25:53,779 INFO kasukabe.genesis_runner world-side persistence attached: agents, utterances, transactions
+2026-09-02 00:25:53,780 INFO kasukabe.genesis_runner no checkpoint found, seeding fresh genesis
+2026-09-02 00:25:54,031 INFO httpx HTTP Request: GET http://127.0.0.1:8200/admin/lanes "HTTP/1.1 200 OK"
+2026-09-02 00:25:54,033 INFO kasukabe.genesis_runner genesis seeded: 10 agents, 2 households, 2 businesses
+2026-09-02 00:25:54,033 WARNING kasukabe.genesis_runner OPERATOR_TOKEN not set - generated an ephemeral admin token for this genesis run's embedded world app. Ephemeral operator token: RzJSTGW3dxgRRi-_nt5YoDwR6Hmdp2PIHTOdkUpZKhI
+2026-09-02 00:25:54,257 INFO kasukabe.genesis_runner embedded world server listening on 127.0.0.1:8100
+2026-09-02 00:25:54,878 INFO kasukabe.genesis_runner preflight:
+  [\u2713] Genesis cast loads
+        world\genesis_10.json — 10 agents
+  [\u2713] Cast size matches the run
+        genesis has 10, run wants 10
+  [\u2713] USD ledger invariant ($1000)
+        total_cents = 100000
+  [\u2713] Broker is up
+        http://127.0.0.1:8200 — {'status': 'ok', 'service': 'broker', 'inference': 'bedrock'}
+  [\u2713] Broker is on real Bedrock
+        inference = 'bedrock'
+  [\u2713] Spend cap is set
+        SPEND_CAP_USD = 2.5
+  [!] Cap covers the intended run
+        $2.5 \u2248 0.2h at $10.67/hour (estimated - no trace history yet)
+        \u2192 raise SPEND_CAP_USD to about $53 for 5 hours, or run fewer agents
+  [\u2713] Memory fits the engine count
+        5500 MB needed, 13267 MB usable (13779 MB free less 512 reserved) · never measured here — using the conservative estimate
+  [\u2713] Disk has room for the trace store
+        191697 MB free; a 5h run projects 0 MB at the 0 KB/call this store is averaging
+  [\u2713] Trace store writable, hop column present
+        data/v7.db — llm_calls has 23 columns
+  [\u2713] SEPTEMBER_HOME root is writable
+        C:\Users\denis\AppData\Local\Temp\k_v7
+  [\u2713] Engine ports are free
+        9100–9109 — all free
+  [\u2713] Engine repo and venv present
+        ..\engine\.venv\Scripts\python.exe
+  [\u2713] Session logging is ready for every engine
+        10/10 SEPTEMBER_HOMEs accept a session log under C:\Users\denis\AppData\Local\Temp\k_v7
+
+  13/14 passed
+2026-09-02 00:25:54,910 INFO kasukabe.genesis_runner run_genesis: 10 engines need ~5500 MB, 13768 MB free - fits
+2026-09-02 00:25:55,552 INFO kasukabe.genesis_runner launched 10 of 10 agent units (mock_mode=False)
+2026-09-02 00:25:58,867 INFO httpx HTTP Request: GET http://127.0.0.1:9101/health "HTTP/1.1 200 OK"
+2026-09-02 00:25:58,883 INFO httpx HTTP Request: GET http://127.0.0.1:9102/health "HTTP/1.1 200 OK"
+2026-09-02 00:25:59,406 INFO httpx HTTP Request: GET http://127.0.0.1:9103/health "HTTP/1.1 200 OK"
+2026-09-02 00:25:59,422 INFO httpx HTTP Request: GET http://127.0.0.1:9104/health "HTTP/1.1 200 OK"
+2026-09-02 00:25:59,439 INFO httpx HTTP Request: GET http://127.0.0.1:9105/health "HTTP/1.1 200 OK"
+2026-09-02 00:25:59,964 INFO httpx HTTP Request: GET http://127.0.0.1:9106/health "HTTP/1.1 200 OK"
+2026-09-02 00:25:59,975 INFO httpx HTTP Request: GET http://127.0.0.1:9107/health "HTTP/1.1 200 OK"
+2026-09-02 00:25:59,990 INFO httpx HTTP Request: GET http://127.0.0.1:9108/health "HTTP/1.1 200 OK"
+2026-09-02 00:26:00,005 INFO httpx HTTP Request: GET http://127.0.0.1:9109/health "HTTP/1.1 200 OK"
+2026-09-02 00:26:01,028 INFO httpx HTTP Request: GET http://127.0.0.1:9100/health "HTTP/1.1 200 OK"
+2026-09-02 00:26:01,031 INFO kasukabe.genesis_runner all 10 engines ready
+2026-09-02 00:26:01,031 INFO kasukabe.genesis_runner watchdog started: polling every 10s, restarting anything silent past 180s
+2026-09-02 00:26:01,035 INFO kasukabe.groundskeeper groundskeeper started: sweeping C:/Users/denis/AppData/Local/Temp/k_v7 every 300s
+2026-09-02 00:26:09,906 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:26:10,261 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:26:16,812 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-02 00:26:25,258 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:26:30,690 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:26:34,667 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:26:40,543 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:26:58,550 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:27:21,149 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:27:28,744 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:27:29,000 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-02 00:27:30,997 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:27:37,844 INFO kasukabe.genesis_runner n03 ate potato
+2026-09-02 00:27:42,679 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:27:50,851 INFO kasukabe.genesis_runner n01 ate bread
+2026-09-02 00:28:07,777 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-02 00:28:28,573 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:28:59,162 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:29:04,469 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-02 00:29:06,072 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:29:06,851 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:29:06,955 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:29:12,573 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:29:18,686 WARNING world.wiring an utterance arrived with no conversation id; filed as unthreaded-a75aba96de70783a (1 this run)
+2026-09-02 00:29:30,729 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:29:31,449 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:29:38,535 WARNING world.wiring an utterance arrived with no conversation id; filed as unthreaded-cfaa859dab045208 (2 this run)
+2026-09-02 00:29:49,460 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:30:17,013 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-02 00:30:20,275 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:30:21,162 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:30:24,742 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:30:27,702 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:31:45,717 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:31:50,706 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\world\run_genesis.py", line 2753, in tool_calls
+    result = await registry.execute(world_state, agent_id, tool_name, tool_input)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\world\tools\registry.py", line 472, in execute
+    outcome = await self.dispatch(world, actor_id, tool_name, raw_params)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\world\tools\registry.py", line 404, in dispatch
+    outcome = await spec.handler(world, agent, params)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\world\tools\meta.py", line 755, in skillify_handler
+    raise ToolValidationError(
+        "skillify", problems, context=await world.authoring_context(agent.agent_id)
+    )
+world.tools.errors.ToolValidationError: skillify: invalid params: step 2: no tool named 'world.harvest' - tools are named like: approve_patent, auction_land, build_structure, buy, come_of_age, cook, craft, define_business_tool, define_organization_tool, define_tool, deny_subpoena, describe_person
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 144, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 706, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 352, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\world\run_genesis.py", line 2763, in tool_calls
+    raise HTTPException(status_code=400, detail=detail) from exc
+fastapi.exceptions.HTTPException: 400: {'error': "skillify: invalid params: step 2: no tool named 'world.harvest' - tools are named like: approve_patent, auction_land, build_structure, buy, come_of_age, cook, craft, define_business_tool, define_organization_tool, define_tool, deny_subpoena, describe_person", 'context': {'you': {'agent_id': 'n03', 'name': 'Tobias Holloway', 'occupation': 'day_laborer', 'workplace': 'Kasukabe Farmland', 'location_id': 'Kasukabe Farmland', 'sim': 1163, 'usd_cents': 591, 'skills': {'farming': 26}, 'repetitions': {'farming': 4}, 'holding': {'potato': 5}}, 'already_written': {'skills': [], 'tools': [], 'skill_steps': {}}, 'tools_you_can_use': [{'name': 'auction_land', 'description': 'Auction one unit of government land to a private buyer. The proceeds go to the treasury. Cost: 20 sim-currency (government land auction paperwork; the sale proceeds go to the treasury).', 'params': ['memo', 'price_sim', 'tile_x', 'tile_y', 'to_owner_id'], 'sim_cost_minimum': 20, 'your_proficiency': 0, 'requires_seat': True, 'at_location': None}, {'name': 'build_structure', 'description': 'Raise a building on a permitted plot, freeform footprint. Cost: 15 sim-currency (tool wear per footprint tile, on top of the timber/metal the handler already debits).', 'params': ['footprint', 'metal_kind', 'plot_id', 'purpose'], 'sim_cost_minimum': 40, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'buy', 'description': 'Buy an item from a business at its shop. Cost: 2 sim-currency (1% transaction cost on the total price paid).', 'params': ['business_id', 'item', 'quantity', 'unit_price_sim'], 'sim_cost_minimum': 2, 'your_proficiency': 0, 'requires_seat': False, 'at_location': <function business_location_gate at 0x000001F418AE1580>}, {'name': 'come_of_age', 'description': 'Decide what happens now you are eighteen: stay in the family household and contribute to its bill, move out on your own, or pair off and start a household together. Cost: 20 sim-currency (settling where you live now you are eighteen; the temple fee for pairing off is separate).', 'params': ['choice', 'new_household_id', 'partner_agent_id'], 'sim_cost_minimum': 20, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'cook', 'description': 'Cook a milled good or fresh produce into a finished dish. Cost: 6 sim-currency (tool wear per batch cooked).', 'params': ['batches', 'recipe_id'], 'sim_cost_minimum': 11, 'your_proficiency': 0, 'requires_seat': False, 'at_location': <function cook_location_gate at 0x000001F418AE3F60>}, {'name': 'craft', 'description': 'Convert raw material into a processed good via a recipe. Cost: 8 sim-currency (tool wear per batch converted at a workshop).', 'params': ['batches', 'recipe_id'], 'sim_cost_minimum': 14, 'your_proficiency': 0, 'requires_seat': False, 'at_location': <function craft_location_gate at 0x000001F418AE3EC0>}, {'name': 'define_business_tool', 'description': "Compose primitives into a private trade-secret tool for a business you own. No patent office, no fee, no review - live immediately, visible only to the business's owner and employees. Cost: 0 sim-currency (free - a trade secret needs no filing).", 'params': ['business_id', 'description', 'name', 'param_schema', 'steps'], 'sim_cost_minimum': 0, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'define_organization_tool', 'description': 'Compose primitives into a private tool for an organization you founded. No patent office, no fee, no review - live immediately, visible only to members. Cost: 0 sim-currency (0 by design, same reasoning as define_business_tool).', 'params': ['description', 'name', 'org_id', 'param_schema', 'steps'], 'sim_cost_minimum': 0, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'define_tool', 'description': 'Compose existing primitives into a new tool, filed at the patent office. Cost: 0 sim-currency (no separate fee - the patent office charges its own filing fee).', 'params': ['description', 'name', 'param_schema', 'steps'], 'sim_cost_minimum': 0, 'your_proficiency': 0, 'requires_seat': False, 'at_location': 'patent_office'}, {'name': 'describe_person', 'description': 'What one resident does for a living, where they work, the shop they own or work at, and what they are known to be good at. Cost: 1 sim-currency (looking one neighbour up costs a moment).', 'params': ['agent_id'], 'sim_cost_minimum': 1, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'describe_place', 'description': 'Learn what a specific place is for, who is standing there now, and which businesses operate there. Cost: 0 sim-currency (free: learning what a place is for costs energy to think, not money).', 'params': ['place_id'], 'sim_cost_minimum': 0, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'describe_primitives', 'description': 'List the actions you can actually take: the least each would cost YOU (your skill discount included), what it needs, and where you must be. Costs shown are the minimum - a bigger job costs more, and quote_action_cost prices one exact call. Use this before composing a tool or writing a skill. Cost: 1 sim-currency (a token fee for listing what you can do).', 'params': ['contains'], 'sim_cost_minimum': 1, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'eat', 'description': 'Eat food you are holding, so it feeds you instead of sitting in your inventory. The only way to consume food. Cost: 0 sim-currency (eating what you already hold costs nothing but the food).', 'params': ['item', 'quantity'], 'sim_cost_minimum': 0, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'fell_timber', 'description': 'Fell timber in the forest. Cost: 4 sim-currency (tool wear per unit of timber felled).', 'params': ['quantity'], 'sim_cost_minimum': 6, 'your_proficiency': 0, 'requires_seat': False, 'at_location': 'forest'}, {'name': 'file_complaint', 'description': 'File a crime-reporting complaint at the government complaints desk. Cost: 10 sim-currency (filing paperwork at the complaints desk).', 'params': ['against_agent_id', 'description'], 'sim_cost_minimum': 10, 'your_proficiency': 0, 'requires_seat': False, 'at_location': 'government_complex'}, {'name': 'find_people', 'description': "Find residents who can help with something: a trade, a skill, a good, or a shop. Say what you need in your own words - 'who buys copper', 'someone who mills flour' - and get back who does that, where they work, and where they are now. Cost: 1 sim-currency (asking who does what costs a moment, not a morning).", 'params': ['limit', 'query'], 'sim_cost_minimum': 1, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'fire_employee', 'description': "Revoke an agent's employee access to a business you own. Cost: 10 sim-currency (payroll/roster paperwork).", 'params': ['business_id', 'employee_agent_id'], 'sim_cost_minimum': 10, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'give', 'description': 'Hand an item to another resident standing in the same place. Unlike `sell`, no business and no payment is involved. Cost: 0 sim-currency (handing something to somebody standing with you; the gift is the cost).', 'params': ['item', 'quantity', 'to_agent_id'], 'sim_cost_minimum': 0, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'harvest', 'description': 'Harvest a crop from the farmland strip growing it. Cost: 3 sim-currency (tool wear per unit of crop harvested).', 'params': ['crop', 'quantity'], 'sim_cost_minimum': 5, 'your_proficiency': 26, 'requires_seat': False, 'at_location': <function build_specs.<locals>.<lambda> at 0x000001F418C15260>}, {'name': 'hire_employee', 'description': 'Grant an agent employee access to a business you own. Cost: 10 sim-currency (payroll/roster paperwork).', 'params': ['business_id', 'employee_agent_id'], 'sim_cost_minimum': 10, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'list_places', 'description': 'List the places in Kasukabe you could travel to, with what each is for. Use this to find where to work, buy, sell, pray, vote, or buy energy credit. Cost: 0 sim-currency (free: recalling which places exist costs energy to think, not money).', 'params': ['query'], 'sim_cost_minimum': 0, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'look_around', 'description': 'Look at where you are standing right now: the place, who is with you, and where you could go from here. Cost: 0 sim-currency (free: observing where you already stand costs energy to think, not money).', 'params': [], 'sim_cost_minimum': 0, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'marry', 'description': "Marry another agent in a temple ceremony, merging households. Cost: 30 sim-currency (a wedding day is a day not spent earning, separate from the temple's own ceremony fee).", 'params': ['new_household_id', 'spouse_agent_id'], 'sim_cost_minimum': 30, 'your_proficiency': 0, 'requires_seat': False, 'at_location': 'temple'}, {'name': 'mine', 'description': 'Mine ore from the outcrop producing it. Cost: 5 sim-currency (tool wear per unit of ore mined (harder than farmland)).', 'params': ['metal', 'quantity'], 'sim_cost_minimum': 8, 'your_proficiency': 0, 'requires_seat': False, 'at_location': <function build_specs.<locals>.<lambda> at 0x000001F418C15300>}, {'name': 'move', 'description': 'Walk to another named location. Cost: 2 sim-currency (flat minimum plus a per-tile charge for the distance actually walked).', 'params': ['destination_location_id'], 'sim_cost_minimum': 1, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'pray', 'description': 'Pray at the temple, with an optional donation. Cost: 3 sim-currency (time at the temple, separate from any voluntary donation).', 'params': ['donation_sim', 'message'], 'sim_cost_minimum': 3, 'your_proficiency': 0, 'requires_seat': False, 'at_location': 'temple'}, {'name': 'quote_action_cost', 'description': "Ask what a specific tool call would cost in sim-currency before committing to it. Give the tool's name and, for a variable-cost tool (one whose price depends on distance, value, or size), the same params you would call it with, otherwise you get back the tool's published base rate rather than a total for a specific call. Cost: 0 sim-currency (free - asking a price costs nothing).", 'params': ['call_params', 'tool_name'], 'sim_cost_minimum': 0, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'read_will', 'description': "Read a will back - your own, or someone else's. Cost: 2 sim-currency (looking a will up in the registry).", 'params': ['agent_id'], 'sim_cost_minimum': 2, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'register_business', 'description': 'Register a new business with government, for a fee. Cost: 0 sim-currency (no separate fee - registering a business costs 5,000 sim on its own).', 'params': ['business_id', 'business_type', 'name'], 'sim_cost_minimum': 0, 'your_proficiency': 0, 'requires_seat': False, 'at_location': 'government_complex'}, {'name': 'register_org', 'description': 'Register a party, cult, society, or religion with government. Cost: 3,000 sim-currency (the registration fee for founding an organization).', 'params': ['charter_text', 'kind', 'name'], 'sim_cost_minimum': 3000, 'your_proficiency': 0, 'requires_seat': False, 'at_location': 'government_complex'}, {'name': 'rest', 'description': 'Stay where you are for now, and stop walking if you were. Use it to end a journey you no longer want. Cost: 1 sim-currency (a spell of standing still is a spell not spent earning).', 'params': [], 'sim_cost_minimum': 1, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'revise_skill', 'description': 'Rewrite the steps of a procedure you wrote, when you have learned a better way. Earlier versions are kept. You and anyone you taught keep the proficiency you earned - improving something you are good at should not make you a beginner again. Cost: 0 sim-currency (free - changing your mind about how a job is done).', 'params': ['because', 'name', 'preconditions', 'steps'], 'sim_cost_minimum': 0, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'revise_tool', 'description': "Change the steps of a tool you invented. The old steps are kept. Only for tools you made with toolify - a patented tool's disclosed steps are what was approved and cannot be swapped. Cost: 0 sim-currency (free - each step still costs what it always did).", 'params': ['because', 'description', 'name', 'steps'], 'sim_cost_minimum': 0, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'say', 'description': "Speak aloud where you are currently standing. Leave listener_agent_id unset to address everyone present, or set it to speak to one co-located agent specifically. Cost: 1 sim-currency (a moment's talk is a moment not spent earning).", 'params': ['content', 'conversation_id', 'listener_agent_id'], 'sim_cost_minimum': 1, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'sell', 'description': 'Sell an item to a business, standing at its shop. To sell to a person instead - anyone beside you, no shop and no registration required - use `trade`. Cost: 2 sim-currency (1% transaction cost on the total price received).', 'params': ['business_id', 'item', 'quantity', 'unit_price_sim'], 'sim_cost_minimum': 2, 'your_proficiency': 0, 'requires_seat': False, 'at_location': <function business_location_gate at 0x000001F418AE1580>}, {'name': 'set_will', 'description': "Record who inherits your money and your land when you die. Cost: 15 sim-currency (registering an owner's wishes for their estate (section 31.3)).", 'params': ['bequests'], 'sim_cost_minimum': 15, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'skillify', 'description': "Write down a procedure you know as an ordered workflow, so you and anyone you teach can follow it. Each step is {order, kind, ref, note}, where kind is 'tool' (call this), 'skill' (do this whole other procedure), or 'check' (look at this before continuing, dispatching nothing) and ref names what it uses. This differs from toolify's steps, which are real calls: a procedure is read, a tool is run. Free, immediate, no approval - unless a step uses a power only a government seat carries, in which case it is a standing order and goes to the council as an amendment. Repeating a workflow end to end is what makes you better at it, and better means cheaper. You do not need to get it right first time: this answers with every action you can use and what each costs you, whether it accepts the filing or refuses it, and `revise_skill` changes the steps afterwards. A draft you walk and then fix beats a procedure you never write. Cost: 0 sim-currency (free - what a workflow costs you is the thinking).", 'params': ['business_id', 'name', 'preconditions', 'steps'], 'sim_cost_minimum': 0, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'start_conversation', 'description': "Call people together for a conversation about something, here where you are standing. Name everyone you want in it - they must be in this place - or name nobody and wait for whoever comes. Then use say with the conversation_id it gives you, so a room holding two conversations keeps them apart. Cost: 2 sim-currency (calling people together spends everyone's attention, not only yours).", 'params': ['topic', 'with_agent_ids'], 'sim_cost_minimum': 2, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'steal', 'description': "Attempt to take an item from an unattended storage container. Cost: 5 sim-currency (physical effort of an attempt, independent of outcome; legal punishment is crime/'s job, not this schedule's).", 'params': ['item', 'quantity', 'storage_id'], 'sim_cost_minimum': 5, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'store_item', 'description': 'Stash an item in a named storage container. Cost: 1 sim-currency (handling fee per item stashed).', 'params': ['item', 'quantity', 'storage_id'], 'sim_cost_minimum': 2, 'your_proficiency': 0, 'requires_seat': False, 'at_location': <function storage_location_gate_optional at 0x000001F418AE16C0>}, {'name': 'teach_skill', 'description': "Teach a skill to a co-located, consenting student. Cost: 15 sim-currency (the teacher's time, separate from any voluntary tuition price_sim).", 'params': ['price_sim', 'skill', 'student_agent_id', 'student_consent'], 'sim_cost_minimum': 15, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'toolify', 'description': "Turn a sequence of actions you keep repeating into a single new tool, yours, callable immediately - no fee, no patent office, no approval. Each step is {tool_name, params} - a real call, because this tool RUNS its steps, which is why they are not skillify's {order, kind, ref} plan entries. Steps must be actions that already exist; this answers with all of them, priced for you, whether it builds the tool or refuses it, so you do not have to go and look first. Each step still costs what it always did; what you save is deciding. `revise_tool` changes the steps later, so a first version that turns out wrong costs you nothing but the filing. Cost: 0 sim-currency (free - each step still costs what it always did).", 'params': ['description', 'name', 'param_schema', 'steps'], 'sim_cost_minimum': 0, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'trade', 'description': 'Sell something to a PERSON rather than to a shop: hand goods to whoever is standing with you and take their payment, in one act. No business, no premises and no registration are needed - that is `sell`, which is for selling into a business at its shop. You hand over the item, they hand over price_sim. Use a price of 0 to give something away. Cost: 2 sim-currency (striking a bargain costs the time it takes to strike).', 'params': ['counterparty_agent_id', 'item', 'price_sim', 'quantity'], 'sim_cost_minimum': 2, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'transfer', 'description': 'Pay another agent sim-currency directly. Cost: 1 sim-currency (0.5% transaction cost on a direct peer-to-peer payment).', 'params': ['amount_sim', 'memo', 'to_agent_id'], 'sim_cost_minimum': 1, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'transfer_business', 'description': 'Transfer ownership of a business you own to another agent (sale or inheritance). Cost: 20 sim-currency (ownership-transfer paperwork (sale or inheritance handoff)).', 'params': ['business_id', 'new_owner_agent_id'], 'sim_cost_minimum': 20, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'transfer_tile', 'description': 'Sell or give one 1x1 unit of land you own to someone else. Cost: 20 sim-currency (deed transfer for one 1x1 land unit (sale or gift)).', 'params': ['memo', 'price_sim', 'tile_x', 'tile_y', 'to_owner_id'], 'sim_cost_minimum': 20, 'your_proficiency': 0, 'requires_seat': False, 'at_location': None}, {'name': 'vote', 'description': 'Cast a ballot in an open election, in person at town hall. Cost: 2 sim-currency (casting a ballot at town hall).', 'params': ['candidate_agent_id', 'election_id'], 'sim_cost_minimum': 2, 'your_proficiency': 0, 'requires_seat': False, 'at_location': 'town_hall'}, {'name': 'withdraw_item', 'description': 'Take an item back out of a named storage container. Cost: 1 sim-currency (handling fee per item retrieved).', 'params': ['item', 'quantity', 'storage_id'], 'sim_cost_minimum': 2, 'your_proficiency': 0, 'requires_seat': False, 'at_location': <function storage_location_gate_required at 0x000001F418AE1620>}]}}
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 1281, in handle
+    await super().handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 59, in wrapped_app
+    response = await handler(conn, exc)  # type: ignore[arg-type]
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\exception_handlers.py", line 15, in http_exception_handler
+    return JSONResponse(
+        {"detail": exc.detail}, status_code=exc.status_code, headers=headers
+    )
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 192, in __init__
+    super().__init__(content, status_code, headers, media_type, background)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 45, in __init__
+    self.body = self.render(content)
+                ~~~~~~~~~~~^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 195, in render
+    return json.dumps(
+           ~~~~~~~~~~^
+        content,
+        ^^^^^^^^
+    ...<3 lines>...
+        separators=(",", ":"),
+        ^^^^^^^^^^^^^^^^^^^^^^
+    ).encode("utf-8")
+    ^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\json\__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ~~~~~~^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\json\encoder.py", line 200, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\json\encoder.py", line 261, in iterencode
+    return _iterencode(o, 0)
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\json\encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+                    f'is not JSON serializable')
+TypeError: Object of type function is not JSON serializable
+2026-09-02 00:31:51,789 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:31:59,414 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:32:09,461 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:32:17,795 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:32:26,672 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:32:31,010 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:32:31,090 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-02 00:32:54,820 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:32:58,192 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:33:02,339 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:33:02,804 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:33:07,586 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-02 00:33:40,768 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:33:46,809 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:33:48,683 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:33:52,703 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:33:52,859 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-02 00:33:54,645 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:33:59,786 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:34:02,763 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:34:05,865 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:34:11,629 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-02 00:35:02,813 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:35:12,573 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:35:13,743 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:35:34,896 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:35:35,985 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:35:53,867 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-02 00:35:58,338 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:35:59,664 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:36:02,159 INFO kasukabe.groundskeeper groundskeeper swept 2883 noise rows from 9/10 brains
+2026-09-02 00:36:02,363 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:36:07,027 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-02 00:36:19,300 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:36:24,613 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:36:27,392 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:36:30,489 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:36:35,043 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:36:48,906 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-02 00:36:51,908 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:36:56,688 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:37:41,698 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:37:49,074 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:37:54,273 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-02 00:38:02,650 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-02 00:38:08,294 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:38:10,600 INFO kasukabe.genesis_runner n02 ate bread
+2026-09-02 00:38:14,303 WARNING world.wiring an utterance arrived with no conversation id; filed as unthreaded-6e73e2f6fd3aa58c (3 this run)
+2026-09-02 00:38:19,878 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:38:43,649 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:38:46,783 INFO kasukabe.genesis_runner n10 ate bread
+2026-09-02 00:39:38,631 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:39:43,522 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:39:48,354 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:39:59,119 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:40:03,690 WARNING kasukabe.genesis_runner tick dispatch failed for n04: ReadError

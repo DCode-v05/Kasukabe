@@ -1,0 +1,4 @@
+record_ui: recording http://127.0.0.1:8400/township-v2.html?book=election&roofs=off&camera=government:2.2 at 1920x1080, a frame every 2.0s -> ../docs/runs/series/civic12/video/frames
+record_ui: http://127.0.0.1:8100/world/state stopped answering; stopping
+record_ui: 900 frames taken this session
+record_ui: 900 frames -> /Users/sharan/Downloads/kasukabe/docs/runs/series/civic12/video/run.mp4 (30s at 30 fps)

@@ -1,0 +1,331 @@
+/* ═══════════════════════════════════════════════════════════════════
+   THE CONTROLS PANE — the instrument panel of the observation deck
+   ───────────────────────────────────────────────────────────────────
+   shell.js reparents four things built for a horizontal bar into one
+   400px column: the wordmark, the map search, the console and nothing
+   else. Read left to right those elements were a strip; read top to
+   bottom they were an undifferentiated wall of pills, and an operator
+   hunting for "5×" had to read every label on the way to it.
+
+   Three ideas fix that, and every rule below is one of them:
+
+     1. THE CLOCK IS THE READOUT. It is the number you look at without
+        deciding to, so it gets the size of a real instrument and the
+        tabular figures that stop it twitching as the seconds tick.
+     2. THE BUTTONS ARE CLUSTERED — playback, then view, then output,
+        separated by hairlines. A rule between two groups does more for
+        findability than any amount of styling within one.
+     3. THE STATES ARE UNAMBIGUOUS. Mint says the town is doing this;
+        ember says this is the rate the run burns money at.
+
+   COPPER APPEARS NOWHERE HERE. Copper means an agent authored something,
+   and not one control in this pane was authored by an agent.
+
+   Loaded last, so plain selectors win. Where a rule is scoped deeper
+   than it looks like it needs, an older rule of that weight is already
+   in play and the comment says which.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── the drawer ──────────────────────────────────────────────────────
+   Width goes on the id because township.css sets it on .dock.controls
+   and both files are entitled to the same class weight; the id ends the
+   argument. `display` is deliberately absent: the pane hides itself with
+   [hidden], and a display declaration at id weight would outrank that
+   and leave the drawer standing open on load. */
+#controlsDock { width: min(410px, 34vw); border-left: 1px solid var(--line); }
+#controlsDock[hidden] { display: none; }
+
+/* The reparented blocks are strangers to one another, so they get a wide
+   gutter between them and a tighter rhythm inside each. */
+#controlsBody {
+  display: flex; flex-direction: column; gap: var(--s5);
+  padding: var(--s4) var(--s4) var(--s6); overflow-y: auto; overscroll-behavior: contain;
+}
+
+/* The console was a strip of smoked glass floating over the map. In a
+   pane there is already a surface under it, and a card on a card reads
+   as a mistake, so it gives up its frame and becomes a plain stack. */
+.dock.controls .console {
+  display: flex; flex-direction: column; align-items: stretch; gap: var(--s3);
+  padding: 0; background: transparent; border: 0; border-radius: 0;
+  box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+/* A flex spacer is how the strip pushed the census out to the far right.
+   In a column it is an invisible element contributing invisible height. */
+.dock.controls .spacer { display: none; }
+
+/* ── the wordmark ────────────────────────────────────────────────────
+   A name and a one-line spec, ruled off like the head of a datasheet.
+   Mono for the kicker as well as the clock: it carries a population
+   count, and every number on this page is set in figures that do not
+   change width when the count does. */
+.dock.controls .titles { display: block; padding-bottom: var(--s3); border-bottom: 1px solid var(--line-soft); }
+.dock.controls .titles h1 {
+  font-family: var(--font-display); font-size: 20px; font-weight: 600;
+  letter-spacing: -.02em; line-height: 1.1; color: var(--ink);
+}
+.kicker {
+  font-family: var(--font-mono); font-size: 9.5px; font-weight: 400;
+  letter-spacing: .16em; text-transform: uppercase;
+  font-variant-numeric: tabular-nums; color: var(--ink-faint);
+}
+
+/* ── the clock: the hero of this pane ────────────────────────────────
+   The day sits on its own line above the time for one reason: when the
+   run rolls from Day 9 to Day 10 the eyebrow gets wider, and if it
+   shared a baseline with the readout it would shove the seconds sideways
+   once a day. Stacked, it cannot. */
+.dock.controls .clock { display: block; padding: var(--s1) 0 0; }
+.dock.controls .clock .day {
+  display: block; margin-bottom: var(--s1); font-family: var(--font-mono);
+  font-size: 10px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase;
+  font-variant-numeric: tabular-nums; color: var(--ink-faint);
+}
+/* 44px is as large as "06:00:00" goes before it reaches the far edge at
+   the narrowest width this drawer is allowed. A mono face and tabular
+   figures together mean the seconds column is the only thing that moves
+   when a second passes — hours and minutes do not shift a pixel, so this
+   reads as an instrument rather than a ticker. */
+.dock.controls .clock .time {
+  display: flex; align-items: baseline; gap: var(--s2); font-family: var(--font-mono);
+  font-size: 44px; font-weight: 500; line-height: 1; letter-spacing: -.045em;
+  font-variant-numeric: tabular-nums; color: var(--ink);
+}
+#clockLabel { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; }
+/* AM/PM is a unit, not part of the number, so it is sized like one and
+   sits on the digits' own baseline instead of floating beside them. */
+.clock .meridiem, #clockMeridiem {
+  margin-left: 0; font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint);
+}
+/* The phase is the caption under the readout — what the town is doing at
+   this hour. Quiet and unsaturated: it changes six times a day and must
+   never compete with a control that means something is switched on. */
+.dock.controls .phase-pill {
+  align-self: flex-start; padding: 5px var(--s3); border-radius: 99px;
+  border: 1px solid var(--line); background: var(--surface-2); box-shadow: var(--rim);
+  font-family: var(--font-body); font-size: 10px; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft);
+}
+
+/* ── buttons: one vocabulary, four unmistakable states ───────────────
+   Written as `button.ctl` because township.css still carries a very old
+   `button.ctl` block from the light theme, and matching its weight is
+   the only way to retire it without the override of last resort. */
+button.ctl {
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  padding: 10px var(--s3); border: 1px solid var(--line); border-radius: var(--rs);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  box-shadow: var(--rim); color: var(--ink-soft);
+  font-family: var(--font-body); font-size: 11px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; line-height: 1;
+  transition: background .15s ease, border-color .15s ease,
+              color .15s ease, box-shadow .15s ease, transform .1s ease;
+}
+button.ctl:hover {
+  background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
+  border-color: var(--line-lit); color: var(--ink); transform: none;
+}
+/* Pressing goes DOWN. The old rule lifted on hover and returned to rest
+   on :active, which reads as a button springing away from the pointer. */
+button.ctl:active { transform: translateY(1px); background: var(--surface); box-shadow: inset 0 2px 6px rgba(0,0,0,.55); }
+button.ctl:focus-visible { outline: 2px solid var(--line-lit); outline-offset: 2px; }
+
+/* Pause/Play is the only control that acts on the world rather than on
+   the view, so it carries more weight than its neighbours at rest. */
+.ctl.primary {
+  background: linear-gradient(180deg, var(--surface-3), var(--surface-2));
+  border-color: var(--line-lit); color: var(--ink);
+}
+/* MINT IS "ON". Every aria-pressed toggle here reports something the
+   deck is really doing — the town is running, labels are drawn, roofs
+   are off — and mint is this instrument's colour for live and real.
+   Placed after .ctl.primary deliberately: the two weigh the same, and a
+   running sim has to beat the primary's rest styling. */
+.ctl[aria-pressed="true"] {
+  background: linear-gradient(180deg, rgba(74,222,155,.11), var(--mint-soft));
+  border-color: var(--mint-dim); color: var(--mint);
+  box-shadow: inset 0 0 0 1px rgba(74,222,155,.13), 0 0 14px rgba(74,222,155,.10);
+}
+.ctl[aria-pressed="true"]:hover { border-color: var(--mint); color: var(--mint); }
+
+/* EMBER IS THE RATE. The speed selector is not something the town does,
+   it is how fast the run consumes the broker's budget — 10× spends ten
+   times the money per wall-clock hour — and ember is money in motion.
+   Mono figures so 1×, 5× and 10× sit on one grid in the segmented row. */
+.ctl.speed {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+  letter-spacing: .02em; font-variant-numeric: tabular-nums;
+}
+.ctl.speed[aria-pressed="true"] {
+  background: linear-gradient(180deg, rgba(240,134,60,.13), var(--ember-soft));
+  border-color: var(--ember-dim); color: var(--ember);
+  box-shadow: inset 0 0 0 1px rgba(240,134,60,.15), 0 0 14px rgba(240,134,60,.12);
+}
+.ctl.speed[aria-pressed="true"]:hover { border-color: var(--ember); color: var(--ember); }
+/* The close button on the resident file speaks the same vocabulary; it
+   is only smaller, because it labels a panel rather than drives a map. */
+.ctl.tiny { padding: 5px var(--s2); font-size: 9.5px; letter-spacing: .1em; }
+
+/* ── the three clusters ──────────────────────────────────────────────
+   Six columns, because the row divides cleanly into a full-width primary,
+   three speeds at two columns each, and pairs at three. The first item of
+   each cluster carries the hairline above it as a pseudo-element: there
+   are no wrapper elements in this markup to hang a border on, and
+   inventing them would mean editing HTML the simulation owns. */
+.dock.controls .controls {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--s2);
+  margin: 0; padding-top: 0; border-top: 0;
+}
+.dock.controls .controls .ctl { width: 100%; padding: 10px var(--s2); text-align: center; }
+
+/* playback ─ view ─ output. Each leader opens a 24px band (the row gap
+   plus its own margin) and the rule is drawn at -12px, dead centre. */
+#playBtn { grid-column: 1 / -1; margin-top: var(--s3); }
+.ctl.speed { grid-column: span 2; }
+.dock.controls .zoom-group { grid-column: 1 / -1; margin-top: var(--s4); }
+#recentreBtn { grid-column: 1 / -1; }
+#labelBtn, #insideBtn { grid-column: span 3; }
+/* Both halves of the output row carry the margin, not just the one that
+   draws the rule: a margin on a single grid item shifts that item alone
+   inside a stretched row, and Export would sit lower and shorter than
+   the Night button beside it. */
+#exportBtn, #themeBtn { grid-column: span 3; margin-top: var(--s4); }
+
+.dock.controls #playBtn,
+.dock.controls .zoom-group,
+.dock.controls #exportBtn { position: relative; }
+.dock.controls #playBtn::before,
+.dock.controls .zoom-group::before,
+.dock.controls #exportBtn::before {
+  content: ''; position: absolute; left: 0; right: 0;
+  top: calc(var(--s3) * -1); height: 1px; background: var(--line-soft);
+}
+/* Export leads its cluster from a half-width cell, so its rule has to
+   reach across the Night button beside it. Three of six columns plus one
+   gap is exactly its own width plus a gap — the arithmetic is exact, not
+   an eyeballed nudge. */
+.dock.controls #exportBtn::before { right: calc(-100% - var(--s2)); }
+
+/* ── the zoom well ───────────────────────────────────────────────────
+   Minus, readout, plus. Recessed rather than raised, because the middle
+   of it is a value you read, not a button you press. */
+.dock.controls .zoom-group {
+  display: grid; grid-template-columns: 42px 1fr 42px; align-items: center;
+  gap: 0; padding: 3px; border: 1px solid var(--line); border-radius: var(--rs);
+  background: var(--void); box-shadow: inset 0 1px 3px rgba(0,0,0,.5);
+}
+.dock.controls .zoom-group .ctl.zoom {
+  min-width: 0; padding: 7px 0; background: transparent; border-color: transparent;
+  box-shadow: none; font-family: var(--font-mono); font-size: 15px; line-height: 1;
+}
+.dock.controls .zoom-group .ctl.zoom:hover { background: var(--surface-2); border-color: var(--line); color: var(--ink); }
+.zoom-level {
+  text-align: center; font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+  letter-spacing: .02em; font-variant-numeric: tabular-nums; color: var(--ink-soft);
+}
+
+/* ── the census ledger ───────────────────────────────────────────────
+   Two columns of hairline cells. Each stat stays ordinary inline flow
+   rather than becoming a flex column: the markup interleaves bare text
+   nodes ("Town wealth", " sim") with the <b>, and a column flex box
+   strands the unit on a line where it reads as a fifth statistic. */
+.dock.controls .hud-stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+  margin-top: var(--s3); padding-top: var(--s3); border-top: 1px solid var(--line-soft);
+}
+.dock.controls .hud-stat {
+  display: block; padding: var(--s2) var(--s3); border-radius: 0;
+  border: 0; border-bottom: 1px solid var(--line-soft);
+  font-family: var(--font-body); font-size: 9.5px; font-weight: 600; line-height: 1.7;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+}
+.dock.controls .hud-stat:nth-child(odd) { border-right: 1px solid var(--line-soft); }
+.dock.controls .hud-stat:nth-last-child(-n+2) { border-bottom: 0; }
+.dock.controls .hud-stat b {
+  font-family: var(--font-mono); font-size: 16px; font-weight: 500; letter-spacing: -.02em;
+  text-transform: none; font-variant-numeric: tabular-nums; color: var(--ink);
+}
+/* Wealth and treasury stay ink. Ember means money IN MOTION and it is
+   already spent on the cost readout above; a standing balance borrowing
+   that colour would make the one figure meaning "this run is burning
+   money" look ordinary. Alive and deceased do take their hues, because
+   those two are the honest count of what the town is. Scoped past the
+   rule above, which would otherwise force both back to ink. */
+.dock.controls .hud-stat.alive b { color: var(--mint); }
+.dock.controls .hud-stat.dead b { color: var(--rust); }
+
+/* ── search ──────────────────────────────────────────────────────────
+   Floating on the map this had to be legible over grass and rooftiles,
+   so it was smoked glass; in the pane there is nothing behind it and it
+   becomes a plain recessed field. `position: relative` matters: the
+   clear button is absolutely positioned, and with the wrapper static it
+   anchors to the drawer instead and lands in the wrong corner. The old
+   left padding made room for a .ms-icon this page never renders, which
+   left 40px of empty field in front of the caret. */
+.map-search.in-pane { position: relative; width: 100%; margin: 0; }
+#mapSearch {
+  width: 100%; box-sizing: border-box; padding: 10px 34px 10px var(--s3); outline: none;
+  border: 1px solid var(--line); border-radius: var(--rs); background: var(--void);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.45); color: var(--ink);
+  font-family: var(--font-body); font-size: 12px; font-weight: 500; letter-spacing: .01em;
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+#mapSearch::placeholder { color: var(--ink-faint); font-weight: 400; }
+/* The focus ring is deliberately colourless. Every saturated hue in this
+   pane is a statement about the town, and "the caret is in this box" is
+   a statement about the operator. */
+#mapSearch:focus { border-color: var(--line-lit); box-shadow: inset 0 1px 3px rgba(0,0,0,.45), 0 0 0 3px rgba(58,75,94,.45); }
+/* type=search draws its own cancel button in WebKit, and two clear
+   buttons on top of each other is not a choice anyone made. */
+#mapSearch::-webkit-search-cancel-button { display: none; }
+.map-search.in-pane .ms-clear {
+  position: absolute; right: var(--s1); top: 50%; transform: translateY(-50%);
+  width: 26px; height: 26px; border: 0; border-radius: var(--rs); cursor: pointer;
+  background: transparent; color: var(--ink-faint); font-size: 17px; line-height: 1;
+}
+.map-search.in-pane .ms-clear:hover { background: var(--surface-2); color: var(--ink); }
+.map-search.in-pane .ms-results {
+  position: static; width: 100%; margin-top: var(--s2); max-height: 300px; overflow-y: auto;
+  border: 1px solid var(--line); border-radius: var(--rm); background: var(--surface);
+  box-shadow: var(--shadow); backdrop-filter: none; -webkit-backdrop-filter: none;
+}
+.map-search.in-pane .ms-row {
+  display: flex; align-items: center; gap: var(--s3); width: 100%; cursor: pointer;
+  padding: var(--s2) var(--s3); border: 0; border-bottom: 1px solid var(--line-soft);
+  background: transparent; text-align: left;
+}
+.map-search.in-pane .ms-row:last-child { border-bottom: 0; }
+.map-search.in-pane .ms-row:hover,
+.map-search.in-pane .ms-row:focus-visible { background: var(--surface-2); }
+.map-search.in-pane .ms-emoji { flex: none; width: 20px; font-size: 15px; text-align: center; }
+.map-search.in-pane .ms-main { flex: 1 1 auto; min-width: 0; }
+/* A resident's name is a NAME, so it is set in the display face like
+   every other name on this page; a long one truncates rather than wraps,
+   because twelve results should stay twelve rows tall. The sub-line is
+   "Farmer · 34F" — half of it is a figure, so the whole line is mono and
+   the ages stay in one column. */
+.map-search.in-pane .ms-name {
+  display: block; font-family: var(--font-display); font-size: 13px; font-weight: 600;
+  letter-spacing: -.01em; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.map-search.in-pane .ms-sub {
+  display: block; font-family: var(--font-mono); font-size: 10px; font-weight: 400;
+  letter-spacing: .02em; font-variant-numeric: tabular-nums; color: var(--ink-faint);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.map-search.in-pane .ms-kind {
+  flex: none; padding: 2px var(--s2); border-radius: 99px; background: transparent;
+  border: 1px solid var(--line-soft); font-family: var(--font-mono);
+  font-size: 8.5px; font-weight: 500; letter-spacing: .14em; color: var(--ink-faint);
+}
+
+/* ── motion ──────────────────────────────────────────────────────────
+   These transitions exist to make a state change legible, not to
+   animate. Anyone who has asked for less movement loses nothing. */
+@media (prefers-reduced-motion: reduce) {
+  button.ctl { transition: none; }
+  button.ctl:active { transform: none; }
+}

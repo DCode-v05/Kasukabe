@@ -1,0 +1,128 @@
+<!doctype html>
+<!--
+  Kasukabe World View - DESIGN.md section 8's Viewers: governance, voting,
+  scenarios, conversations. Read-only window over the live world server
+  plus the SQLite trace store; nothing on this page can mutate the world
+  (mutation is the President/God console, a separate page - see
+  game/console/static/index.html). Framework-free: js/views/*.js as
+  native ES modules, no build step, matching game/static/index.html's own
+  approach (see that page's own comment for the same rationale).
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kasukabe — World View</title>
+  <link rel="stylesheet" href="css/views.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-title">
+      <span class="crest">卍</span>
+      <div>
+        <h1>Kasukabe World View</h1>
+        <p class="subtitle">Governance · Voting · Scenarios · Conversations — read-only</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap">
+      <a class="nav-link" href="index.html">🏙 Town</a>
+      <a class="nav-link" href="agents.html">🔎 Agents</a>
+      <div class="api-box">
+        <label for="api-base-url">World API</label>
+        <input id="api-base-url" type="text" autocomplete="off" placeholder="http://localhost:8100" />
+        <button id="api-save" class="btn btn-ghost btn-sm">Save</button>
+        <span id="api-dot" class="dot dot-unknown" title="connection status"></span>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="governance">🏛 Governance</button>
+    <button class="tab-btn" data-tab="voting">🗳 Voting</button>
+    <button class="tab-btn" data-tab="scenarios">📜 Scenarios</button>
+    <button class="tab-btn" data-tab="conversations">💬 Conversations</button>
+  </nav>
+
+  <!-- ================= GOVERNANCE TAB ================= -->
+  <section class="tab-panel active" id="tab-governance">
+    <div id="gov-summary" class="list-loading">Loading…</div>
+
+    <div class="grid-2" style="margin-top:1rem">
+      <article class="panel">
+        <h2>Current charter</h2>
+        <div id="gov-charter" class="list-loading">Loading…</div>
+      </article>
+      <article class="panel">
+        <h2>Active policies</h2>
+        <p class="panel-hint">Tax rate, credit-store margin, jobs created/cut, pensions, permits, police force size.</p>
+        <div id="gov-active-policies" class="list-loading">Loading…</div>
+      </article>
+    </div>
+
+    <article class="panel panel-wide" style="margin-top:1rem">
+      <h2>Constitution change log</h2>
+      <p class="panel-hint">Every amendment: the enacting action, who proposed it, per-agent votes, and a text diff of the charter before vs after. Click an entry to expand.</p>
+      <div id="gov-amendments" class="list-loading">Loading…</div>
+    </article>
+
+    <article class="panel panel-wide" style="margin-top:1rem">
+      <h2>Complaint ledger</h2>
+      <p class="panel-hint">Immutable, append-only - the constitutional check against government power (DESIGN.md section 7), distinct from the crime desk.</p>
+      <div id="gov-complaints" class="list-loading">Loading…</div>
+    </article>
+  </section>
+
+  <!-- ================= VOTING TAB ================= -->
+  <section class="tab-panel" id="tab-voting">
+    <article class="panel panel-wide">
+      <h2>Elections</h2>
+      <p class="panel-hint">Newest first. Click an election to see candidates, the running tally, every ballot as cast, and the result.</p>
+      <div id="voting-elections" class="list-loading">Loading…</div>
+    </article>
+  </section>
+
+  <!-- ================= SCENARIOS TAB ================= -->
+  <section class="tab-panel" id="tab-scenarios">
+    <article class="panel panel-wide">
+      <h2>Scenario feed</h2>
+      <p class="panel-hint">Crimes, trials, births, deaths, marriages, disasters, miracles, cult formation, amendments, regime transitions. Click an entry to expand its causal trace.</p>
+      <div class="filter-bar">
+        <select id="scn-category"></select>
+        <input id="scn-agent" type="text" placeholder="filter by agent_id" />
+        <span class="spacer"></span>
+        <button id="scn-refresh" class="btn btn-sm">Refresh</button>
+      </div>
+      <div id="scn-feed" class="list-loading">Loading…</div>
+    </article>
+  </section>
+
+  <!-- ================= CONVERSATIONS TAB ================= -->
+  <section class="tab-panel" id="tab-conversations">
+    <article class="panel panel-wide">
+      <h2>Conversations</h2>
+      <p class="panel-hint">Individual chats and inferred group conversations (co-located participants, overlapping tick window). Group threads are visually distinct from one-to-one.</p>
+      <div class="filter-bar">
+        <input id="conv-place" type="text" placeholder="filter by place" />
+        <input id="conv-participant" type="text" placeholder="filter by participant agent_id" />
+        <select id="conv-kind">
+          <option value="">individual + group</option>
+          <option value="individual">individual only</option>
+          <option value="group">group only</option>
+        </select>
+        <span class="spacer"></span>
+        <button id="conv-refresh" class="btn btn-sm">Refresh</button>
+      </div>
+      <div class="split">
+        <div id="conv-list" class="list-loading">Loading…</div>
+        <div id="conv-detail" class="panel" style="position:sticky;top:100px">
+          <div class="panel-hint">Select a conversation to read its transcript.</div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <footer class="attribution">Kasukabe — internal research instrument. Windows onto the world, never an authority over it.</footer>
+
+  <script type="module" src="js/views/main.js"></script>
+</body>
+</html>

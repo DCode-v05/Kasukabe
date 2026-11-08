@@ -1,0 +1,15 @@
+{
+  "tool": "set_goal",
+  "kind": "positive",
+  "_why": "Run 25: set_goal was called six times and the goals set were economic and stage-shaped - \"Cover today's household upkeep of 450 sim through trading\". Ainsley's, verbatim.",
+  "resident": "n02",
+  "location": "Harvey Oak Supply Store",
+  "inventory": {},
+  "sim": 4502,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "Your household owes 450 sim of upkeep today and you trade for a living. Nothing you are carrying is worth that.",
+  "expect": {
+    "verb": "set_goal"
+  }
+}

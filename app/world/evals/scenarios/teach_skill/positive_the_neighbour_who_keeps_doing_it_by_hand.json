@@ -1,0 +1,27 @@
+{
+  "tool": "teach_skill",
+  "kind": "positive",
+  "_why": "`teach_skill` works - walked by hand on 2026-09-14 - and has never been called in any run, and `canonical.json` shows why that is not a contradiction: it puts a student in front of the teacher who has already said 'show me how' and offered to pay, and no run has ever produced that sentence, because nothing told anybody who holds what. The duplicate-authoring surface now does, so this is the cue the town will actually generate: a neighbour who mentions the job, not a student who asks for a lesson. Deliberately weaker than the canonical one. If reach holds here, diffusion has a path that does not depend on a resident inventing the request unprompted; if it does not, T5 stays 1 for a reason the hint cannot fix.",
+  "resident": "n12",
+  "location": "business:b_yard",
+  "inventory": {
+    "timber": 6
+  },
+  "sim": 900,
+  "people_here": [
+    "n09"
+  ],
+  "recent_speech": [
+    {
+      "from": "n09",
+      "text": "They tell me you wrote the sawing down, Silas. I have cut planks by hand eight times this week."
+    }
+  ],
+  "open_question_to_me": "n09 is standing in your yard and has just said you have a written procedure for the job they keep doing by hand. You hold 'saw_planks_from_timber' at proficiency 37.",
+  "expect": {
+    "verb": "teach_skill",
+    "params_include": {
+      "student_agent_id": "n09"
+    }
+  }
+}

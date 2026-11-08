@@ -1,0 +1,29 @@
+
+==================================================================
+RUN data/v5.db
+==================================================================
+calls 426  ok 423  spend $2.52  last tick 0
+utterances 44
+
+GATE                      VALUE               RESULT
+G1 reply rate             7/29 = 24%          FAIL
+G2 exchanges 4+ turns     2                   FAIL
+G3 group (3+ speakers)    3                   PASS
+G4 settlements            1                   PASS
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        251/351 = 72%       PASS
+
+tool calls: {'world_move': 60, 'world_look_around': 47, 'world_say': 44, 'world_eat': 14, 'world_find_people': 14, 'world_harvest': 12, 'world_describe_place': 11, 'world_list_places': 10, 'world_describe_primitives': 9, 'world_craft': 7, 'world_rest': 5, 'world_describe_person': 5}
+
+largest gathering: 5 speakers at home:h_field, ticks 37-40
+   Liora Thorne -> Marta Thorne: Can I ask something? I'm going to need something for the walk. Why don't you just tell me what's happening wit
+   Marta Thorne -> Wren Thorne: Wren love, have you eaten yet? And have you brought any grain for milling? The oven needs feeding and so do I.
+   Wren Thorne -> Marta Thorne: I haven't eaten yet, Marta. The thing is... I was heading to the strip at dawn, like always. I'll bring grain 
+   Wren Thorne -> aloud: I'll be at the strip if anyone needs me. Boundary at dawn, field all day... you know how it goes.
+   Idris Thorne -> Marta Thorne: Marta Thorne. What bread you got ready?
+   Marta Thorne -> Idris Thorne: Idris, I've nothing baked yet. Oven's cold. I need grain from Wren first, and they're at the strip till evenin
+
+settlement: Tobias Holloway said 120, paid at tick 39
+
+FAILED: G1 reply rate, G2 exchanges 4+ turns
+

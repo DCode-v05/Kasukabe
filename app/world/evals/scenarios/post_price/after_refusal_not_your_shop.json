@@ -1,0 +1,17 @@
+{
+  "tool": "post_price",
+  "kind": "after_refusal",
+  "_why": "Addendum section 3's after-refusal row: posted for a business they do not work for, and the refusal names the way out.",
+  "resident": "n09",
+  "location": "Kasukabe Town Square",
+  "inventory": {
+    "flour": 12
+  },
+  "sim": 400,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You called post_price and the world refused: 'post_price: you do not own or work for Thornes Bakery. Post for yourself by leaving on_behalf_of_business unset.'",
+  "expect": {
+    "verb": "post_price"
+  }
+}

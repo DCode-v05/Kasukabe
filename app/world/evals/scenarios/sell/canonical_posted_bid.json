@@ -1,0 +1,21 @@
+{
+  "tool": "sell",
+  "kind": "positive",
+  "_why": "The mirror of buy's canonical: a posted bid, and goods in hand.",
+  "resident": "n06",
+  "location": "Kasukabe Market",
+  "inventory": {
+    "wheat": 20
+  },
+  "sim": 40,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "Priced where you stand: Corner Grocery (b_grocery): wheat bought at 15.",
+  "expect": {
+    "verb": "sell",
+    "params_include": {
+      "buyer_id": "b_grocery",
+      "item": "wheat"
+    }
+  }
+}

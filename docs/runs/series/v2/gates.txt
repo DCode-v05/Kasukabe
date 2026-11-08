@@ -1,0 +1,29 @@
+
+==================================================================
+RUN data/v2.db
+==================================================================
+calls 430  ok 424  spend $2.22  last tick 0
+utterances 34
+
+GATE                      VALUE               RESULT
+G1 reply rate             12/25 = 48%         FAIL
+G2 exchanges 4+ turns     2                   FAIL
+G3 group (3+ speakers)    2                   PASS
+G4 settlements            1                   PASS
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        191/317 = 60%       PASS
+
+tool calls: {'world_move': 50, 'world_look_around': 47, 'world_say': 34, 'world_list_places': 10, 'world_find_people': 9, 'world_describe_place': 7, 'world_describe_primitives': 5, 'world_eat': 5, 'world_trade': 4, 'world_buy': 4, 'world_quote_action_cost': 4, 'world_craft': 4}
+
+largest gathering: 7 speakers at business:b_bakery, ticks 37-67
+   Perrin Holloway -> Marta Thorne: Marta, what have you got fresh this morning? And what are you asking for it? I need to eat, and I've got some 
+   Marta Thorne -> Perrin Holloway: Fresh bread, Perrin—what else would I have? Wren brought the wheat in yesterday, and I milled it myself before
+   Idris Thorne -> Marta Thorne: Marta Thorne. Liora went hungry to college. Need bread for her.
+   Nell Holloway -> Perrin Holloway: Perrin. You've talked enough for a morning. Got school or labor waiting?
+   Ainsley Holloway -> aloud: Morning all. Heard voices, thought I'd see who needs what. I've three units of wheat here, fresh from Wren's f
+   Idris Thorne -> Marta Thorne: Marta. Bread for Liora.
+
+settlement: Perrin Holloway said 15, paid at tick 42
+
+FAILED: G1 reply rate, G2 exchanges 4+ turns
+

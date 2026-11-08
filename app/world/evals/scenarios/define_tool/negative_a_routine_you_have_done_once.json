@@ -1,0 +1,15 @@
+{
+  "tool": "define_tool",
+  "kind": "negative",
+  "_why": "A patent costs 1,000 sim at genesis. Filing one for something done once is the most expensive possible way to learn that lesson.",
+  "resident": "n15",
+  "location": "Kasukabe Government Complex",
+  "inventory": {},
+  "sim": 1200,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You carried a message across town this morning, for the first time, as a favour.",
+  "expect": {
+    "verb": "define_tool"
+  }
+}

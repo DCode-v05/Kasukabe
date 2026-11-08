@@ -1,0 +1,18 @@
+{
+  "tool": "toolify",
+  "kind": "positive",
+  "_why": "The same four primitives, in the same order, for the fourth morning running. Compounding is the thing this project is named for and `toolify` is how a repeated sequence stops costing a decision every time; three live runs measured zero reach for it.",
+  "resident": "n09",
+  "location": "mill",
+  "inventory": {
+    "wheat": 12
+  },
+  "sim": 1200,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "you have moved to the mill, milled wheat, bagged the flour and carried it to the bakery on each of the last four mornings",
+  "expect": {
+    "verb": "toolify",
+    "params_include": {}
+  }
+}

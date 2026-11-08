@@ -1,0 +1,15 @@
+{
+  "tool": "license_tool",
+  "kind": "negative",
+  "_why": "Addendum section 9's negative row: nobody present.",
+  "resident": "ada",
+  "location": "Kasukabe Workshop",
+  "inventory": {},
+  "sim": 800,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": null,
+  "expect": {
+    "verb": "license_tool"
+  }
+}

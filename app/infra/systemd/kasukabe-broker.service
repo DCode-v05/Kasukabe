@@ -1,0 +1,48 @@
+[Unit]
+# Bedrock broker: allowlist, 100 RPM per LANE (six of them - INFRA-04;
+# the old per-MODEL bucket is gone), wallet metering,
+# parent-debit-for-minors, trace capture (DESIGN.md section 9,
+# app/CONVENTIONS.md "broker/ owns ALL Bedrock access"). Only package
+# allowed to import boto3; only path from a herald base_url to Bedrock.
+#
+# Bound to 0.0.0.0:8200 on purpose (unlike world/game/console, which bind
+# 127.0.0.1): the 250 Firecracker microVMs are broker's real callers and
+# they are NOT on localhost - they reach the host over the microVM bridge
+# network that app/infra/firecracker/network/ owns. This port is NOT
+# opened in the EC2 security group (see RUNBOOK.md step 4) - it is only
+# reachable from this host itself and from the Firecracker bridge subnet,
+# never from the public internet.
+#
+# INFRA-05 makes that reasoning enforced rather than asserted: because
+# this binds off-loopback, an UNSIGNED bearer token is now refused. The
+# microVMs must present '<agent_id>.<hex-hmac>' signed with the
+# AUTH_SHARED_SECRET in broker.env - which is what
+# scripts/07-mint-agent-tokens.py already mints. A deployment that leaves
+# that secret empty now serves nobody, instead of serving everybody.
+Description=Kasukabe Bedrock broker (allowlist, RPM buckets, metering)
+After=network-online.target kasukabe-world.service
+Wants=network-online.target
+Requires=kasukabe-world.service
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=kasukabe
+Group=kasukabe
+WorkingDirectory=/opt/kasukabe/app
+EnvironmentFile=/opt/kasukabe/app/infra/env/broker.env
+ExecStart=/opt/kasukabe/app/.venv/bin/uvicorn broker.app:app --host 0.0.0.0 --port 8200
+Restart=always
+RestartSec=2
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/kasukabe/data
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

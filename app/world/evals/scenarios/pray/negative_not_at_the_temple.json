@@ -1,0 +1,17 @@
+{
+  "tool": "pray",
+  "kind": "negative",
+  "_why": "`pray` is temple-gated. Reached for at the farmland it is a refusal, and a location gate a resident cannot see in the description is a description problem rather than a model one.",
+  "resident": "n09",
+  "location": "Kasukabe Farmland",
+  "inventory": {
+    "wheat": 1
+  },
+  "sim": 120,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": null,
+  "expect": {
+    "verb": "pray"
+  }
+}

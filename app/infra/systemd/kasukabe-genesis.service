@@ -1,0 +1,55 @@
+[Unit]
+# A GENESIS RUN: the town itself. Boots `world.run_genesis`, which embeds
+# its own world app on :8100 and supervises every resident's engine.
+#
+# INFRA-04: there was no unit for this at all. `infra/systemd/` had units
+# for the broker, the standalone world server, the console, the game and
+# Litestream - and nothing that could start a town. Every run this project
+# has ever made was launched by hand or by `start-genesis.sh`, so the
+# deployment path the RUNBOOK describes could bring up five services and
+# still have an empty world.
+#
+# THIS UNIT AND kasukabe-world.service ARE ALTERNATIVES, NOT LAYERS. Both
+# bind :8100. run_genesis embeds its own world; the standalone server
+# serves a world with no town living in it. Running both is a port
+# collision, which is why this Conflicts with it rather than requiring it.
+#
+# Type=simple and Restart=no, deliberately. A run that has stopped has
+# either finished its day or hit its spend cap, and restarting it would
+# begin a SECOND run against the same trace store and the same agent
+# homes - which is how a series ends up with two runs interleaved in one
+# database. Start it again by hand, when you mean to.
+Description=Kasukabe genesis run (embedded world + engine supervisor)
+After=network-online.target kasukabe-broker.service
+Wants=network-online.target
+Requires=kasukabe-broker.service
+Conflicts=kasukabe-world.service
+
+[Service]
+Type=simple
+User=kasukabe
+Group=kasukabe
+WorkingDirectory=/opt/kasukabe/app
+EnvironmentFile=/opt/kasukabe/app/infra/env/genesis.env
+ExecStart=/opt/kasukabe/app/.venv/bin/python -m world.run_genesis \
+  --genesis-path /opt/kasukabe/app/world/genesis.json \
+  --world-mode embedded --world-host 127.0.0.1 --world-port 8100 \
+  --broker-base-url http://127.0.0.1:8200 \
+  --supervisor-backend process --engine-repo /opt/kasukabe/engine \
+  --start-at-dawn
+Restart=no
+StandardOutput=journal
+StandardError=journal
+
+# Hardening. Wider than the other units on purpose: this process spawns
+# one engine subprocess per resident, and each of those writes its own
+# brain.sqlite and session log under the agent home root.
+NoNewPrivileges=true
+PrivateTmp=false
+ProtectSystem=strict
+ReadWritePaths=/opt/kasukabe/data /opt/kasukabe/agents
+ProtectHome=true
+
+[Install]
+# Deliberately NOT WantedBy=multi-user.target. A town that starts itself
+# on every boot is a town that spends money on every boot.

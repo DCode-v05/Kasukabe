@@ -1,0 +1,12 @@
+{
+  "name": "researcher",
+  "version": "1.0.0",
+  "is_latest": true,
+  "type": "research",
+  "capabilities": ["web_search", "research", "fact_verification", "competitive_analysis", "source_attribution"],
+  "config": {
+    "default_tools": ["web_search", "web_fetch"],
+    "default_skills": ["summarizer", "fact_checker"]
+  },
+  "description": "Activate for in-depth research, competitive analysis, market investigation, technical deep-dives, or fact-finding. Triggers: 'research X', 'find out about Y', 'investigate', 'dig into', 'what do we know about', 'background on'."
+}

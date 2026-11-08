@@ -1,0 +1,3 @@
+run report -> ../docs/runs/series/test-run-50agents-5dollar-20260929/report.md
+Ville asset directory not found at /home/team/kasukabe/smallville/environment/frontend_server/static_dirs/assets/the_ville - build_world() is booting with WorldState.movement = None; `move` will keep publishing an instant location jump instead of a real walked route until this directory is present.
+wrote ../docs/runs/series/test-run-50agents-5dollar-20260929/report.md (12455 lines)

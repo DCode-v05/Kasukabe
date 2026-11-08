@@ -1,0 +1,39 @@
+{
+  "name": "email-composer",
+  "version": "1.0.0",
+  "description": "Draft professional emails from intent, bullet points, or rough notes. This skill should be used when composing any email, follow-up, cold outreach, or internal communication. Triggers: 'write an email', 'draft a reply', 'compose a message to', 'email this to', 'follow up with', 'send a note to'.",
+  "category": "communication",
+  "capabilities": ["email_drafting", "professional_communication", "tone_matching", "call_to_action"],
+  "input_signature": {
+    "type": "object",
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "Intent, bullet points, or rough notes"
+      },
+      "tone": {
+        "type": "string",
+        "description": "formal/casual/friendly"
+      },
+      "recipient": {
+        "type": "string",
+        "description": "Who the email is for"
+      }
+    }
+  },
+  "output_signature": {
+    "type": "object",
+    "properties": {
+      "subject": {
+        "type": "string"
+      },
+      "body": {
+        "type": "string"
+      }
+    }
+  },
+  "has_prompt": true,
+  "has_scripts": false,
+  "has_references": false,
+  "has_gotchas": false
+}

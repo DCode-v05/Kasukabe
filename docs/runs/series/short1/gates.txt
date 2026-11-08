@@ -1,0 +1,29 @@
+
+==================================================================
+RUN data/short1.db
+==================================================================
+calls 203  ok 203  spend $0.81  last tick 0
+utterances 18
+
+GATE                      VALUE               RESULT
+G1 reply rate             4/13 = 31%          FAIL
+G2 exchanges 4+ turns     2                   FAIL
+G3 group (3+ speakers)    3                   PASS
+G4 settlements            0                   FAIL
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        56/132 = 42%        FAIL
+
+tool calls: {'world_say': 21, 'world_look_around': 11, 'world_move': 10, 'world_harvest': 4, 'world_fell_timber': 3, 'world_eat': 2, 'world_find_people': 2, 'world_start_conversation': 1, 'world_transfer': 1, 'world_mine': 1}
+
+largest gathering: 4 speakers at home:h_field, ticks 36-43
+   Corwin Thorne -> aloud: Right. Before we're all scattered—I've got nothing in my pack, and the forest doesn't feed me while I'm there.
+   Idris Thorne -> aloud: Got nothing either. Forest first, I'll eat later.
+   Liora Thorne -> Marta Thorne: I have nothing in my pack either. Corwin's right—neither of us get fed by our work. Marta, Wren, is there food
+   Marta Thorne -> Corwin Thorne: Sit down, all of you. Let's have it plain.
+
+Corwin, house is bare. Not a crust between us since yesterday's lo
+   Corwin Thorne -> aloud: I'll clear the slope. Wren needs that ground, and timber's what I've got to give. Forest by seven, then.
+   Marta Thorne -> Liora Thorne: Liora Thorne. You'll take bread with you, same as always. Two loaves—one for the morning, one for midday. You'
+
+FAILED: G1 reply rate, G2 exchanges 4+ turns, G4 settlements, G6 turns w/ effect
+

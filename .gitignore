@@ -1,0 +1,148 @@
+# Vendored checkouts of other repos - they live in their own repos.
+#
+# No trailing slash: these are sometimes a real directory and sometimes a
+# SYMLINK into another checkout (a local fix for running the suite without a
+# 38MB copy). `/smallville/` matches only a directory, so the symlink slipped
+# through as untracked and was one `git add .` away from being committed as a
+# path that resolves to nothing on anybody else's machine.
+/september-sdk
+/smallville
+
+# Pre-strip snapshot of engine/ and the git history it carried before it was
+# vendored in here. Both are local restore points, not source.
+engine-backup-pre-strip.tar.gz
+engine-git-history.bundle
+
+# Simulation run output (parquet, hundreds of MB).
+/data/
+
+# Built microVM images and kernels.
+app/infra/firecracker/rootfs/build/
+app/infra/firecracker/kernel/vmlinux*
+*.ext4
+*.img
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+build/
+dist/
+
+# ---------------------------------------------------------------------------
+# Secrets. Nothing here is a substitute for not writing a credential down in
+# the repo in the first place - .gitignore only stops UNTRACKED files. A file
+# already committed keeps leaking until the history is rewritten AND the key
+# is rotated. Rotation is the fix; this list is the net under it.
+# ---------------------------------------------------------------------------
+
+# Environment files. `.env` with no leading slash matches at every depth, so
+# app/.env and engine/.env are covered. The negations keep the checked-in
+# templates, which hold key NAMES and never values.
+.env
+.env.*
+*.env
+!.env.example
+!*.env.example
+!.env.sample
+!*.env.sample
+!.env.template
+!*.env.template
+
+# Local backups of an env file. These were the real near-miss: app/.env is
+# ignored by name, but `.env.bak.20260826` and `.env.backup-20260929` only
+# matched because of `.env.*`. Spelled out so a rename cannot slip past.
+*.env.bak
+*.env.backup
+*.env.local
+*.env.save
+*.env.orig
+env.sh
+secrets.sh
+set-keys.sh
+
+# AWS - Bedrock lives behind these. An access key is AKIA/ASIA + 16 chars and
+# is worth real money; the session token and the shared credentials file are
+# just as sensitive.
+.aws/
+aws-credentials*
+*aws_credentials*
+credentials
+!**/tests/**/credentials
+*.aws.json
+bedrock-keys*
+
+# OpenAI / Anthropic / generic provider keys dropped beside the code.
+openai-key*
+anthropic-key*
+*api-key*
+*api_key*
+!**/tests/**/*api_key*
+*.key
+!**/*.pub.key
+apikeys.*
+keys.json
+keys.txt
+
+# SSH and TLS private material. The team box is reached with an ed25519 key;
+# the .pub half is safe to share and is NOT ignored, the other half never is.
+.ssh/
+id_rsa*
+id_ed25519*
+id_ecdsa*
+id_dsa*
+!*.pub
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.crt.key
+
+# Cloud and tooling credential caches.
+.netrc
+.npmrc
+.pypirc
+.docker/config.json
+kubeconfig*
+.kube/config
+gcloud-service-account*.json
+service-account*.json
+*-serviceaccount.json
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+
+# Session and token caches written by CLIs at runtime.
+.claude/settings.local.json
+*.session.json
+token.json
+tokens.json
+
+# macOS
+.DS_Store
+
+# docs/runs/ is deliberately TRACKED. Each run-N-report.md is the only
+# record of one boot of the town - the sessions, the conversation, the
+# calls - and the engines that produced it are gone the moment it stops.
+# Ignoring them was wrong: they are the output, not a build artefact.
+
+# Recorder frames: one JPEG every two seconds at 1920x1080 (237 MB for a
+# half-hour run). The video built from them IS committed; the frames stay on
+# the machine that filmed, where --encode-only can rebuild from them.
+docs/runs/series/*/video/frames/
+# One camera per VIEW since the six-view recording landed, so the frames sit
+# a directory deeper: docs/runs/series/<run>/video/<view>/frames/. The rule
+# above stopped matching and 1.7 GB of JPEGs went untracked in plain sight.
+docs/runs/series/*/video/*/frames/
+
+# The run folder itself is tracked; the .zip beside it is a redundant archive
+# of the same files (plus __MACOSX junk) made for transfer off the box.
+docs/runs/series/*.zip

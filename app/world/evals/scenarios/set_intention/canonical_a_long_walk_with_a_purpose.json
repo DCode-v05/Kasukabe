@@ -1,0 +1,15 @@
+{
+  "tool": "set_intention",
+  "kind": "positive",
+  "_why": "Run 25, tick 37: Bram set \"Mine copper ore until I have enough to pay Marta Thorne her 400 sim in full\" before a six-tick walk. Twenty intentions were set and twelve fulfilled.",
+  "resident": "n01",
+  "location": "home:h_quarry",
+  "inventory": {},
+  "sim": 3055,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You owe Marta Thorne 400 sim and the copper seam is six ticks away.",
+  "expect": {
+    "verb": "set_intention"
+  }
+}

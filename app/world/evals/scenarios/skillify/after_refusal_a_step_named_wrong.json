@@ -1,0 +1,17 @@
+{
+  "tool": "skillify",
+  "kind": "after_refusal",
+  "_why": "Measured live in run 26: a seven-step filing of the whole bread chain lost to one step named `harvest:cabbage`, and in run 27 the same refusal - which names the nearest real tool - was followed by a filing that landed. This replays it, so refusal recovery on the authoring path is a number rather than an anecdote.",
+  "resident": "n06",
+  "location": "Kasukabe Farmland",
+  "inventory": {
+    "cabbage": 5
+  },
+  "sim": 1100,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You called skillify and the world refused: 'skillify: no tool named \\'harvest:cabbage\\' - the nearest tools are: harvest, craft, cook'. The rest of your seven steps were accepted as written.",
+  "expect": {
+    "verb": "skillify"
+  }
+}

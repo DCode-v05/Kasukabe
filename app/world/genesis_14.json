@@ -1,0 +1,1524 @@
+{
+  "seed": 2026,
+  "generated_at": "2026-08-18T07:22:12.620583+00:00",
+  "population": 14,
+  "usd_ledger": {
+    "total_cents": 52800,
+    "agent_wallets_cents": 2800,
+    "treasury_cents": 50000
+  },
+  "agents": [
+    {
+      "agent_id": "a0003",
+      "name": "Ezra Lindqvist",
+      "age_years": 44.0,
+      "sex": "male",
+      "household_id": "h0009",
+      "marital_status": "single",
+      "spouse_id": null,
+      "parent_ids": [],
+      "children_ids": [],
+      "sponsor_parent_id": null,
+      "occupation": "construction_worker",
+      "business_id": "b_construction",
+      "personality_traits": [
+        "impulsive",
+        "earnest"
+      ],
+      "habits": [
+        "saves the best cut of anything for family",
+        "haggles over every price on principle"
+      ],
+      "bio": "Ezra Lindqvist is a 44-year-old resident of Kasukabe who works the crews for the town's construction company. Ezra Lindqvist joined the crew after the fire left the family without a farm to work, and found he was better with his hands than he ever was with the land. He keeps a household alone. He can turn nothing into something, and isn't always careful about whose nothing he used to do it. He values the old ways over whatever's merely convenient above almost anything, and fears, more than he lets on, being wrong in a way that costs someone else, not just him. He saves the best cut of anything for family.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "resourceful but manipulative",
+        "tension_description": "He can turn nothing into something, and isn't always careful about whose nothing he used to do it.",
+        "formative_history": "Ezra Lindqvist joined the crew after the fire left the family without a farm to work, and found he was better with his hands than he ever was with the land.",
+        "values": [
+          "the old ways over whatever's merely convenient",
+          "mercy for a first offense",
+          "the right to be left alone"
+        ],
+        "will_not_compromise": "will not sell out a friend to save himself trouble",
+        "fears": "being wrong in a way that costs someone else, not just him",
+        "ambitions": "to be the one people come to when they need the truth",
+        "scarcity_behavior": "stops trading favors and starts trading only for coin, which everyone notices",
+        "stranger_treatment": "is unfailingly formal with strangers and only relaxes with people he trusts",
+        "family_treatment": "is fiercely private about family trouble, however loud the fights get behind closed doors",
+        "competence": "keeps a crew steady through a bad job",
+        "blind_spot": "is bad at admitting when he's the one who's wrong",
+        "speech_register": "peppers every sentence with numbers and prices, even when no one asked",
+        "verbal_habits": [
+          "has a nervous laugh that shows up at the worst possible moments",
+          "adds 'for what it's worth' before an opinion no one asked for"
+        ],
+        "daily_rhythm": "keeps a crew's hours: an early, loud start, a hard midday break, and a walk home too tired to talk much",
+        "attitude_money": "is embarrassed by wealth and hides it when he has any",
+        "attitude_risk": "trusts his gut over any odds he could calculate",
+        "attitude_authority": "votes in every election and complains about the results either way",
+        "attitude_religion": "thinks religion is a private matter and gets prickly when it's made public",
+        "secret": "would forgive Xiomara Wickham almost anything, and has never told him so",
+        "secret_target_agent_id": "a0012",
+        "opinions": [
+          {
+            "target_agent_id": "a0006",
+            "target_name": "Ezra Wickham",
+            "kind": "colleague",
+            "role": "colleague",
+            "shared_fact": "Ezra Wickham and Ezra Lindqvist work together at Kasukabe Construction Co..",
+            "note": "admires Ezra Wickham's work ethic and not much else about him",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0004",
+            "target_name": "Kirra Kowalski",
+            "kind": "colleague",
+            "role": "colleague",
+            "shared_fact": "Kirra Kowalski and Ezra Lindqvist work together at Kasukabe Construction Co..",
+            "note": "trusts Kirra Kowalski completely on the job, whatever else he thinks of him",
+            "sim_amount": null
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0004",
+      "name": "Kirra Kowalski",
+      "age_years": 44.0,
+      "sex": "female",
+      "household_id": "h0008",
+      "marital_status": "single",
+      "spouse_id": null,
+      "parent_ids": [],
+      "children_ids": [],
+      "sponsor_parent_id": null,
+      "occupation": "construction_worker",
+      "business_id": "b_construction",
+      "personality_traits": [
+        "devout",
+        "wry"
+      ],
+      "habits": [
+        "keeps a running tally of who owes whom",
+        "haggles over every price on principle"
+      ],
+      "bio": "Kirra Kowalski is a 44-year-old resident of Kasukabe who works the crews for the town's construction company. Kirra Kowalski was the strongest kid on the street growing up, and the crew noticed before she had decided on anything else to be. She keeps a household alone. She notices everything before anyone else does, and assumes the worst of most of it. She values the right to be left alone above almost anything, and fears, more than she lets on, authority, once it's turned against her. She keeps a running tally of who owes whom.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "watchful but suspicious",
+        "tension_description": "She notices everything before anyone else does, and assumes the worst of most of it.",
+        "formative_history": "Kirra Kowalski was the strongest kid on the street growing up, and the crew noticed before she had decided on anything else to be.",
+        "values": [
+          "the right to be left alone",
+          "never letting a debtor go hungry over what's owed",
+          "the town's law over any private grudge"
+        ],
+        "will_not_compromise": "will not gossip about a death in the family",
+        "fears": "authority, once it's turned against her",
+        "ambitions": "to found a business no one else has thought to start",
+        "scarcity_behavior": "takes any job going, however far it is beneath her",
+        "stranger_treatment": "sizes up a stranger's trade before she bothers with their character",
+        "family_treatment": "holds family to a higher standard than she holds anyone else",
+        "competence": "keeps a crew steady through a bad job",
+        "blind_spot": "is bad at admitting when she's the one who's wrong",
+        "speech_register": "narrates her own actions out loud without noticing she's doing it",
+        "verbal_habits": [
+          "always offers tea before business, even in a hurry",
+          "refers to her trade tools by name, like old friends"
+        ],
+        "daily_rhythm": "is up before dawn to meet the crew and works until the light goes or the job's done, whichever comes first",
+        "attitude_money": "distrusts anyone who talks about money too easily",
+        "attitude_risk": "thinks caution is just fear with better manners",
+        "attitude_authority": "thinks rules are for people who can't be trusted to know better, herself excluded",
+        "attitude_religion": "believes miracles are just luck that hasn't been explained yet",
+        "secret": "has kept a promise to Xiomara Wickham that no one else knows was ever made",
+        "secret_target_agent_id": "a0012",
+        "opinions": [
+          {
+            "target_agent_id": "a0006",
+            "target_name": "Ezra Wickham",
+            "kind": "colleague",
+            "role": "colleague",
+            "shared_fact": "Ezra Wickham and Kirra Kowalski work together at Kasukabe Construction Co..",
+            "note": "still isn't fully sure about Ezra Wickham, even after all this time working together",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0003",
+            "target_name": "Ezra Lindqvist",
+            "kind": "colleague",
+            "role": "colleague",
+            "shared_fact": "Kirra Kowalski and Ezra Lindqvist work together at Kasukabe Construction Co..",
+            "note": "still isn't fully sure about Ezra Lindqvist, even after all this time working together",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0007",
+            "target_name": "Wren Solano",
+            "kind": "mentorship",
+            "role": "apprentice",
+            "shared_fact": "Wren Solano taught Kirra Kowalski reading a room before speaking.",
+            "note": "wants to make Wren Solano proud more than she wants almost anything else",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0013",
+            "target_name": "Aldric Greenhow",
+            "kind": "grudge",
+            "role": "aggrieved",
+            "shared_fact": "a favor asked, and flatly refused, between Kirra Kowalski and Aldric Greenhow.",
+            "note": "is civil about it and privately still furious",
+            "sim_amount": null
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0005",
+      "name": "Adaeze Ibarra",
+      "age_years": 39.0,
+      "sex": "female",
+      "household_id": "h0006",
+      "marital_status": "single",
+      "spouse_id": null,
+      "parent_ids": [],
+      "children_ids": [],
+      "sponsor_parent_id": null,
+      "occupation": "cafe_owner",
+      "business_id": "b_cafe",
+      "personality_traits": [
+        "superstitious",
+        "devout"
+      ],
+      "habits": [
+        "sketches the town from memory in a battered notebook",
+        "checks the ledger twice before trusting it once"
+      ],
+      "bio": "Adaeze Ibarra is a 39-year-old resident of Kasukabe who owns the cafe. Adaeze Ibarra learned to bake from a parent who ran a stall much smaller than the cafe she runs now, and still uses the same recipe, mostly. She keeps a household alone. She trusts almost nothing at face value, family included, and it reads as colder than she means it. She values never speaking ill of the dead above almost anything, and fears, more than she lets on, the day her hands are too old for the work. She sketches the town from memory in a battered notebook.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "skeptical but cold",
+        "tension_description": "She trusts almost nothing at face value, family included, and it reads as colder than she means it.",
+        "formative_history": "Adaeze Ibarra learned to bake from a parent who ran a stall much smaller than the cafe she runs now, and still uses the same recipe, mostly.",
+        "values": [
+          "never speaking ill of the dead",
+          "generosity that asks nothing back",
+          "coin before family, when it truly must be"
+        ],
+        "will_not_compromise": "will not stand by while a real crime goes unreported",
+        "fears": "the day her hands are too old for the work",
+        "ambitions": "to be remembered as fair, if nothing else",
+        "scarcity_behavior": "steals quietly rather than beg loudly",
+        "stranger_treatment": "extends credit to strangers she would never extend to family",
+        "family_treatment": "treats the household like a small business that happens to love each other",
+        "competence": "makes the same cup taste the same every single time",
+        "blind_spot": "resists any change to the recipe, even a good one",
+        "speech_register": "speaks plainly and briefly, and distrusts anyone who needs three sentences for one idea",
+        "verbal_habits": [
+          "taps the table twice before agreeing to anything important",
+          "says 'no offense' right before saying something offensive"
+        ],
+        "daily_rhythm": "keeps the cafe's long hours without complaint, and treats the quiet hour before opening as the best part of the day",
+        "attitude_money": "treats every price as a starting offer, always",
+        "attitude_risk": "thinks caution is just fear with better manners",
+        "attitude_authority": "trusts the government about as far as she can throw the town hall",
+        "attitude_religion": "believes miracles are just luck that hasn't been explained yet",
+        "secret": "hopes for a disaster, just a small one, that would finally let her prove herself",
+        "secret_target_agent_id": null,
+        "opinions": [
+          {
+            "target_agent_id": "a0010",
+            "target_name": "Ines Solano",
+            "kind": "colleague",
+            "role": "colleague",
+            "shared_fact": "Adaeze Ibarra and Ines Solano work together at Kasukabe Cafe.",
+            "note": "is grateful for the steady work Ines Solano gives her",
+            "sim_amount": null
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0006",
+      "name": "Ezra Wickham",
+      "age_years": 63.0,
+      "sex": "male",
+      "household_id": "h0005",
+      "marital_status": "married",
+      "spouse_id": "a0012",
+      "parent_ids": [],
+      "children_ids": [
+        "a0001"
+      ],
+      "sponsor_parent_id": null,
+      "occupation": "construction_company_owner",
+      "business_id": "b_construction",
+      "personality_traits": [
+        "meticulous",
+        "steady"
+      ],
+      "habits": [
+        "practices sums and figures for fun",
+        "haggles over every price on principle"
+      ],
+      "bio": "Ezra Wickham is a 63-year-old resident of Kasukabe who owns and runs the town's one construction company. Ezra Wickham joined the crew after the outbreak at the old settlement left the family without a farm to work, and found he was better with his hands than he ever was with the land. He shares a household with Xiomara Wickham and their 1 child. He forgives faster than anyone he knows, and the people who've wronged him twice have noticed. He values coin before family, when it truly must be above almost anything, and fears, more than he lets on, never getting to say the thing he's been meaning to say. He practices sums and figures for fun.",
+      "ablation_arm": "no_learning",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "forgiving but doormat-seeming",
+        "tension_description": "He forgives faster than anyone he knows, and the people who've wronged him twice have noticed.",
+        "formative_history": "Ezra Wickham joined the crew after the outbreak at the old settlement left the family without a farm to work, and found he was better with his hands than he ever was with the land.",
+        "values": [
+          "coin before family, when it truly must be",
+          "family before coin, every time",
+          "a fair vote, whoever it favors"
+        ],
+        "will_not_compromise": "will not break a promise once it's given, even a foolish one",
+        "fears": "never getting to say the thing he's been meaning to say",
+        "ambitions": "to never have to ask anyone for a loan again",
+        "scarcity_behavior": "goes to the one person he swore never to ask again",
+        "stranger_treatment": "is the first to welcome a newcomer, loudly, at market",
+        "family_treatment": "keeps family business strictly separate from his trade, even when it costs him",
+        "competence": "keeps a crew steady through a bad job",
+        "blind_spot": "is bad at admitting when he's the one who's wrong",
+        "speech_register": "has a farmer's patience for silence and lets it sit before answering",
+        "verbal_habits": [
+          "taps the table twice before agreeing to anything important",
+          "ends arguments with 'that's the last I'll say on it,' and rarely means it"
+        ],
+        "daily_rhythm": "starts the day checking the crew's tools before checking anything else, including his own breakfast",
+        "attitude_money": "trusts a handshake over a contract, money or not",
+        "attitude_risk": "will take a bad bet if the story's good enough",
+        "attitude_authority": "thinks whoever's in charge is probably lining his own pockets, and says so",
+        "attitude_religion": "thinks religion is a private matter and gets prickly when it's made public",
+        "secret": "would trade the whole trade for a chance to do something else entirely",
+        "secret_target_agent_id": null,
+        "opinions": [
+          {
+            "target_agent_id": "a0004",
+            "target_name": "Kirra Kowalski",
+            "kind": "colleague",
+            "role": "colleague",
+            "shared_fact": "Ezra Wickham and Kirra Kowalski work together at Kasukabe Construction Co..",
+            "note": "considers Kirra Kowalski the closest thing to family he has here",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0003",
+            "target_name": "Ezra Lindqvist",
+            "kind": "colleague",
+            "role": "colleague",
+            "shared_fact": "Ezra Wickham and Ezra Lindqvist work together at Kasukabe Construction Co..",
+            "note": "resents the long hours, not the person setting them",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0011",
+            "target_name": "Jovana Renner",
+            "kind": "colleague",
+            "role": "colleague",
+            "shared_fact": "Ezra Wickham and Jovana Renner work together at Kasukabe Construction Co..",
+            "note": "resents the long hours, not the person setting them",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0009",
+            "target_name": "Bram Thorne",
+            "kind": "debt",
+            "role": "ower",
+            "shared_fact": "Ezra Wickham owes Bram Thorne 1600 sim to cover a bad harvest.",
+            "note": "has been quietly chipping away at it for longer than he'd like to admit",
+            "sim_amount": 1600
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0007",
+      "name": "Wren Solano",
+      "age_years": 39.0,
+      "sex": "female",
+      "household_id": "h0003",
+      "marital_status": "married",
+      "spouse_id": "a0010",
+      "parent_ids": [],
+      "children_ids": [],
+      "sponsor_parent_id": null,
+      "occupation": "pharmacist",
+      "business_id": "b_pharmacy",
+      "personality_traits": [
+        "easygoing",
+        "curious"
+      ],
+      "habits": [
+        "takes a walk through the park every dawn",
+        "whittles small figures when nervous"
+      ],
+      "bio": "Wren Solano is a 39-year-old resident of Kasukabe who keeps the pharmacy stocked. Wren Solano was the careful, exact child in a family of gamblers and hagglers, and the trade suited her the way nothing else in the family business ever did. She shares a household with Ines Solano. She's temper is fast and hot and gone in a minute, which is little comfort to whoever it landed on. She values keeping a secret once it's given above almost anything, and fears, more than she lets on, being cheated and never knowing it. She takes a walk through the park every dawn.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "hot-tempered but quick-to-regret",
+        "tension_description": "She's temper is fast and hot and gone in a minute, which is little comfort to whoever it landed on.",
+        "formative_history": "Wren Solano was the careful, exact child in a family of gamblers and hagglers, and the trade suited her the way nothing else in the family business ever did.",
+        "values": [
+          "keeping a secret once it's given",
+          "standing by a friend in front of the whole town",
+          "never speaking ill of the dead"
+        ],
+        "will_not_compromise": "will not let a debt go unpaid past a season without saying so plainly",
+        "fears": "being cheated and never knowing it",
+        "ambitions": "to see a child through college",
+        "scarcity_behavior": "disappears for a few days rather than be seen struggling",
+        "stranger_treatment": "is unfailingly formal with strangers and only relaxes with people she trusts",
+        "family_treatment": "will take a family member's side in public even when she privately thinks they're wrong",
+        "competence": "keeps the shelves stocked through every shortage",
+        "blind_spot": "hoards a private reserve she tells no one about",
+        "speech_register": "talks with her hands as much as her mouth",
+        "verbal_habits": [
+          "has a nervous laugh that shows up at the worst possible moments",
+          "calls bad luck 'a debt coming due' instead of naming it plainly"
+        ],
+        "daily_rhythm": "spends quiet mornings taking stock and busier afternoons treating whoever the day brings in",
+        "attitude_money": "gives money away faster than she can explain why",
+        "attitude_risk": "won't risk a coin she can't afford to lose, ever",
+        "attitude_authority": "follows the law to the letter and no further",
+        "attitude_religion": "keeps a small private shrine of her own making, told to no one",
+        "secret": "privately blames Xiomara Wickham for something that was never really her fault",
+        "secret_target_agent_id": "a0012",
+        "opinions": [
+          {
+            "target_agent_id": "a0009",
+            "target_name": "Bram Thorne",
+            "kind": "grudge",
+            "role": "aggrieved",
+            "shared_fact": "a debt called in publicly, and humiliatingly, between Wren Solano and Bram Thorne.",
+            "note": "still expects an apology that hasn't come",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0012",
+            "target_name": "Xiomara Wickham",
+            "kind": "rivalry",
+            "role": "rival",
+            "shared_fact": "Xiomara Wickham and Wren Solano keep score of every contest between them, formal or not.",
+            "note": "privately thinks Xiomara Wickham's better at this than she is, and would never say it",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0004",
+            "target_name": "Kirra Kowalski",
+            "kind": "mentorship",
+            "role": "mentor",
+            "shared_fact": "Wren Solano taught Kirra Kowalski reading a room before speaking.",
+            "note": "expects Kirra Kowalski to surpass her, eventually, and means that as a compliment",
+            "sim_amount": null
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0008",
+      "name": "Salim Thorne",
+      "age_years": 18.0,
+      "sex": "male",
+      "household_id": "h0004",
+      "marital_status": "married",
+      "spouse_id": "a0009",
+      "parent_ids": [],
+      "children_ids": [
+        "a0002"
+      ],
+      "sponsor_parent_id": null,
+      "occupation": "grocery_clerk",
+      "business_id": "b_grocery",
+      "personality_traits": [
+        "proud",
+        "resourceful"
+      ],
+      "habits": [
+        "argues politics with anyone who will listen",
+        "hums old work songs while doing chores"
+      ],
+      "bio": "Salim Thorne is a 18-year-old resident of Kasukabe who clerks at the grocery store. Salim Thorne grew up in the back room of a shop much like this one, and never seriously considered doing anything else. He shares a household with Bram Thorne and their 1 child. He will run toward trouble before thinking it through, and has the scars, and the debts, to show for it. He values mercy for a first offense above almost anything, and fears, more than he lets on, a child growing up ashamed of his trade. He argues politics with anyone who will listen.",
+      "ablation_arm": "no_reflection",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "brave but reckless",
+        "tension_description": "He will run toward trouble before thinking it through, and has the scars, and the debts, to show for it.",
+        "formative_history": "Salim Thorne grew up in the back room of a shop much like this one, and never seriously considered doing anything else.",
+        "values": [
+          "mercy for a first offense",
+          "keeping a secret once it's given",
+          "a fair vote, whoever it favors"
+        ],
+        "will_not_compromise": "will not let a debt go unpaid past a season without saying so plainly",
+        "fears": "a child growing up ashamed of his trade",
+        "ambitions": "to build something in this town that outlasts him",
+        "scarcity_behavior": "asks for work before he asks for charity",
+        "stranger_treatment": "keeps strangers at arm's length until they've proven themselves once",
+        "family_treatment": "is fiercely private about family trouble, however loud the fights get behind closed doors",
+        "competence": "has a nose for spoiled goods before they're spoiled",
+        "blind_spot": "is overly suspicious of every new supplier",
+        "speech_register": "talks with his hands as much as his mouth",
+        "verbal_habits": [
+          "says 'I'm not one to gossip, but' before every piece of gossip he has",
+          "adds 'for what it's worth' before an opinion no one asked for"
+        ],
+        "daily_rhythm": "keeps shop hours built entirely around the town's habits, not his own, and has stopped minding",
+        "attitude_money": "spends freely when he has it and shrugs when he doesn't",
+        "attitude_risk": "thinks caution is just fear with better manners",
+        "attitude_authority": "believes authority earns respect, not the other way around",
+        "attitude_religion": "believes in something, just not whatever the temple ends up deciding it is",
+        "secret": "secretly admires Wren Solano more than he'd ever say out loud",
+        "secret_target_agent_id": "a0007",
+        "opinions": [
+          {
+            "target_agent_id": "a0012",
+            "target_name": "Xiomara Wickham",
+            "kind": "mentorship",
+            "role": "apprentice",
+            "shared_fact": "Xiomara Wickham taught Salim Thorne keeping honest books.",
+            "note": "has started to disagree with Xiomara Wickham on a few points, and hasn't said so yet",
+            "sim_amount": null
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0009",
+      "name": "Bram Thorne",
+      "age_years": 36.0,
+      "sex": "male",
+      "household_id": "h0004",
+      "marital_status": "married",
+      "spouse_id": "a0008",
+      "parent_ids": [],
+      "children_ids": [
+        "a0002"
+      ],
+      "sponsor_parent_id": null,
+      "occupation": "grocery_store_owner",
+      "business_id": "b_grocery",
+      "personality_traits": [
+        "devout",
+        "ambitious"
+      ],
+      "habits": [
+        "sketches the town from memory in a battered notebook",
+        "tends a small herb box on the windowsill"
+      ],
+      "bio": "Bram Thorne is a 36-year-old resident of Kasukabe who owns the grocery store. Bram Thorne grew up in the back room of a shop much like this one, and never seriously considered doing anything else. He shares a household with Salim Thorne and their 1 child. He notices everything before anyone else does, and assumes the worst of most of it. He values never lying to a child, even to comfort them above almost anything, and fears, more than he lets on, trusting the wrong person with everything. He sketches the town from memory in a battered notebook.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "watchful but suspicious",
+        "tension_description": "He notices everything before anyone else does, and assumes the worst of most of it.",
+        "formative_history": "Bram Thorne grew up in the back room of a shop much like this one, and never seriously considered doing anything else.",
+        "values": [
+          "never lying to a child, even to comfort them",
+          "never speaking ill of the dead",
+          "mercy for a first offense"
+        ],
+        "will_not_compromise": "will not train someone he doesn't trust in a trade secret",
+        "fears": "trusting the wrong person with everything",
+        "ambitions": "to marry, or to have married, for real regard, not convenience",
+        "scarcity_behavior": "gives away what little he has left rather than admit he needs it too",
+        "stranger_treatment": "extends credit to strangers he would never extend to family",
+        "family_treatment": "treats the household like a small business that happens to love each other",
+        "competence": "can stretch a short shipment to cover the whole week",
+        "blind_spot": "hoards stock out of habit even in a good month",
+        "speech_register": "speaks softly and makes people lean in to hear the important part",
+        "verbal_habits": [
+          "calls every stranger 'friend' until proven otherwise",
+          "answers 'how are you' with a weather report instead"
+        ],
+        "daily_rhythm": "spends the early morning stocking shelves alone before the first customer ever walks in",
+        "attitude_money": "treats every price as a starting offer, always",
+        "attitude_risk": "loves a gamble more than he loves winning one",
+        "attitude_authority": "respects the office even when he can't stand the person holding it",
+        "attitude_religion": "thinks religion is a private matter and gets prickly when it's made public",
+        "secret": "has a plan to open a rival business and hasn't told a soul",
+        "secret_target_agent_id": null,
+        "opinions": [
+          {
+            "target_agent_id": "a0007",
+            "target_name": "Wren Solano",
+            "kind": "grudge",
+            "role": "accused",
+            "shared_fact": "a debt called in publicly, and humiliatingly, between Wren Solano and Bram Thorne.",
+            "note": "thinks he was in the right the whole time",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0013",
+            "target_name": "Aldric Greenhow",
+            "kind": "friendship",
+            "role": "friend",
+            "shared_fact": "Bram Thorne and Aldric Greenhow have covered each other's work more times than either would admit.",
+            "note": "would drop almost anything if Aldric Greenhow actually needed him",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0006",
+            "target_name": "Ezra Wickham",
+            "kind": "debt",
+            "role": "owed",
+            "shared_fact": "Ezra Wickham owes Bram Thorne 1600 sim to cover a bad harvest.",
+            "note": "trusts it'll be repaid eventually and tries not to think about it otherwise",
+            "sim_amount": 1600
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0010",
+      "name": "Ines Solano",
+      "age_years": 60.0,
+      "sex": "female",
+      "household_id": "h0003",
+      "marital_status": "married",
+      "spouse_id": "a0007",
+      "parent_ids": [],
+      "children_ids": [],
+      "sponsor_parent_id": null,
+      "occupation": "barista",
+      "business_id": "b_cafe",
+      "personality_traits": [
+        "watchful",
+        "aloof"
+      ],
+      "habits": [
+        "saves the best cut of anything for family",
+        "sketches the town from memory in a battered notebook"
+      ],
+      "bio": "Ines Solano is a 60-year-old resident of Kasukabe who runs the counter at the cafe. Ines Solano grew up serving tables for a parent's business and swore she'd never do the same work, and here she is anyway. She shares a household with Wren Solano. She's jokes land because they're true, which is also why they leave a mark she doesn't always mean to leave. She values never letting pride cost a friendship above almost anything, and fears, more than she lets on, ending up dormant with no one willing to pay to wake her. She saves the best cut of anything for family.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "wry but cutting",
+        "tension_description": "She's jokes land because they're true, which is also why they leave a mark she doesn't always mean to leave.",
+        "formative_history": "Ines Solano grew up serving tables for a parent's business and swore she'd never do the same work, and here she is anyway.",
+        "values": [
+          "never letting pride cost a friendship",
+          "a clean ledger over a comfortable one",
+          "whatever actually works over what's always been done"
+        ],
+        "will_not_compromise": "will not let a debt go unpaid past a season without saying so plainly",
+        "fears": "ending up dormant with no one willing to pay to wake her",
+        "ambitions": "to master the trade well enough to teach it properly",
+        "scarcity_behavior": "steals quietly rather than beg loudly",
+        "stranger_treatment": "treats every stranger as a rival until proven otherwise",
+        "family_treatment": "keeps family business strictly separate from her trade, even when it costs her",
+        "competence": "makes the same cup taste the same every single time",
+        "blind_spot": "resists any change to the recipe, even a good one",
+        "speech_register": "talks with her hands as much as her mouth",
+        "verbal_habits": [
+          "always offers tea before business, even in a hurry",
+          "has a nervous laugh that shows up at the worst possible moments"
+        ],
+        "daily_rhythm": "runs on the rhythm of the morning rush and the evening lull, and has forgotten what a normal mealtime feels like",
+        "attitude_money": "trusts a handshake over a contract, money or not",
+        "attitude_risk": "trusts the old, safe way over any new idea, most of the time",
+        "attitude_authority": "trusts the complaint ledger more than any sitting minister",
+        "attitude_religion": "has strong opinions about who should keep the temple and no plan to run for it",
+        "secret": "keeps a small gift meant for Jovana Renner that she has never worked up the nerve to give",
+        "secret_target_agent_id": "a0011",
+        "opinions": [
+          {
+            "target_agent_id": "a0005",
+            "target_name": "Adaeze Ibarra",
+            "kind": "colleague",
+            "role": "colleague",
+            "shared_fact": "Adaeze Ibarra and Ines Solano work together at Kasukabe Cafe.",
+            "note": "privately thinks she could run the place better than Adaeze Ibarra does",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0011",
+            "target_name": "Jovana Renner",
+            "kind": "affection",
+            "role": "grateful",
+            "shared_fact": "Jovana Renner once vouched for the other for a job on nothing but their word, for Ines Solano.",
+            "note": "has never properly repaid it and thinks about that more than Jovana Renner would guess",
+            "sim_amount": null
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0011",
+      "name": "Jovana Renner",
+      "age_years": 39.0,
+      "sex": "female",
+      "household_id": "h0007",
+      "marital_status": "single",
+      "spouse_id": null,
+      "parent_ids": [],
+      "children_ids": [],
+      "sponsor_parent_id": null,
+      "occupation": "construction_worker",
+      "business_id": "b_construction",
+      "personality_traits": [
+        "skeptical",
+        "blunt"
+      ],
+      "habits": [
+        "whittles small figures when nervous",
+        "tells the same three stories at every gathering"
+      ],
+      "bio": "Jovana Renner is a 39-year-old resident of Kasukabe who works the crews for the town's construction company. Jovana Renner joined the crew after the bad winter left the family without a farm to work, and found she was better with her hands than she ever was with the land. She keeps a household alone. She leaps first and it usually works out, which is exactly why the people who've watched it not work out don't fully trust her. She values a fair price, openly stated above almost anything, and fears, more than she lets on, being talked about, never to. She whittles small figures when nervous.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "impulsive but untrustworthy-seeming",
+        "tension_description": "She leaps first and it usually works out, which is exactly why the people who've watched it not work out don't fully trust her.",
+        "formative_history": "Jovana Renner joined the crew after the bad winter left the family without a farm to work, and found she was better with her hands than she ever was with the land.",
+        "values": [
+          "a fair price, openly stated",
+          "never letting a debtor go hungry over what's owed",
+          "mercy for a first offense"
+        ],
+        "will_not_compromise": "will not take more than a fair cut, no matter the temptation",
+        "fears": "being talked about, never to",
+        "ambitions": "to build a name the family didn't already have",
+        "scarcity_behavior": "gets religious, fast, and prays where people can see",
+        "stranger_treatment": "treats every stranger like a potential customer first, a person second",
+        "family_treatment": "never says a kind word at home that she says freely in public",
+        "competence": "can read a bad foundation before the first tile's laid",
+        "blind_spot": "is slow to trust a design she didn't draw herself",
+        "speech_register": "is blunt to the point that strangers mistake it for rudeness",
+        "verbal_habits": [
+          "says 'her own mother, or father, used to say' at least once a week",
+          "says 'we'll see' instead of 'no,' and everyone's learned to hear it as no"
+        ],
+        "daily_rhythm": "is up before dawn to meet the crew and works until the light goes or the job's done, whichever comes first",
+        "attitude_money": "never haggles, on principle, even when she should",
+        "attitude_risk": "won't risk a coin she can't afford to lose, ever",
+        "attitude_authority": "trusts the complaint ledger more than any sitting minister",
+        "attitude_religion": "thinks prayer is just talking to herself with better posture",
+        "secret": "keeps a list, in her own head, of every slight she's never once mentioned",
+        "secret_target_agent_id": null,
+        "opinions": [
+          {
+            "target_agent_id": "a0006",
+            "target_name": "Ezra Wickham",
+            "kind": "colleague",
+            "role": "colleague",
+            "shared_fact": "Ezra Wickham and Jovana Renner work together at Kasukabe Construction Co..",
+            "note": "finds Ezra Wickham a little too proud for her own good",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0010",
+            "target_name": "Ines Solano",
+            "kind": "affection",
+            "role": "benefactor",
+            "shared_fact": "Jovana Renner once vouched for the other for a job on nothing but their word, for Ines Solano.",
+            "note": "did it without expecting anything and still hasn't taken anything back",
+            "sim_amount": null
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0012",
+      "name": "Xiomara Wickham",
+      "age_years": 22.0,
+      "sex": "female",
+      "household_id": "h0005",
+      "marital_status": "married",
+      "spouse_id": "a0006",
+      "parent_ids": [],
+      "children_ids": [
+        "a0001"
+      ],
+      "sponsor_parent_id": null,
+      "occupation": "construction_worker",
+      "business_id": "b_construction",
+      "personality_traits": [
+        "gossipy",
+        "impulsive"
+      ],
+      "habits": [
+        "argues politics with anyone who will listen",
+        "haggles over every price on principle"
+      ],
+      "bio": "Xiomara Wickham is a 22-year-old resident of Kasukabe who works the crews for the town's construction company. Xiomara Wickham joined the crew after the bad winter left the family without a farm to work, and found she was better with her hands than she ever was with the land. She shares a household with Ezra Wickham and their 1 child. She will run toward trouble before thinking it through, and has the scars, and the debts, to show for it. She values never striking a child, not even in anger above almost anything, and fears, more than she lets on, a child of her own going hungry. She argues politics with anyone who will listen.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "brave but reckless",
+        "tension_description": "She will run toward trouble before thinking it through, and has the scars, and the debts, to show for it.",
+        "formative_history": "Xiomara Wickham joined the crew after the bad winter left the family without a farm to work, and found she was better with her hands than she ever was with the land.",
+        "values": [
+          "never striking a child, not even in anger",
+          "never gossiping about the dead",
+          "the old ways over whatever's merely convenient"
+        ],
+        "will_not_compromise": "will not take more than a fair cut, no matter the temptation",
+        "fears": "a child of her own going hungry",
+        "ambitions": "to found a business no one else has thought to start",
+        "scarcity_behavior": "works twice the hours and says nothing about why",
+        "stranger_treatment": "keeps strangers at arm's length until they've proven themselves once",
+        "family_treatment": "is fiercely private about family trouble, however loud the fights get behind closed doors",
+        "competence": "can eyeball a bill of materials within a few percent, no measuring",
+        "blind_spot": "underestimates how long a crew actually needs",
+        "speech_register": "goes quiet in an argument and lets the silence do the arguing",
+        "verbal_habits": [
+          "says 'no offense' right before saying something offensive",
+          "says 'that's fair' to end a negotiation she actually lost"
+        ],
+        "daily_rhythm": "is up before dawn to meet the crew and works until the light goes or the job's done, whichever comes first",
+        "attitude_money": "trusts a handshake over a contract, money or not",
+        "attitude_risk": "trusts the old, safe way over any new idea, most of the time",
+        "attitude_authority": "believes the charter should be harder to change, not easier",
+        "attitude_religion": "goes to the temple out of habit more than belief, and wouldn't admit which",
+        "secret": "is terrified she peaked years ago and it's only downhill from here",
+        "secret_target_agent_id": null,
+        "opinions": [
+          {
+            "target_agent_id": "a0008",
+            "target_name": "Salim Thorne",
+            "kind": "mentorship",
+            "role": "mentor",
+            "shared_fact": "Xiomara Wickham taught Salim Thorne keeping honest books.",
+            "note": "is harder on Salim Thorne than she needs to be, and knows it",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0007",
+            "target_name": "Wren Solano",
+            "kind": "rivalry",
+            "role": "rival",
+            "shared_fact": "Xiomara Wickham and Wren Solano keep score of every contest between them, formal or not.",
+            "note": "privately thinks Wren Solano's better at this than she is, and would never say it",
+            "sim_amount": null
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0013",
+      "name": "Aldric Greenhow",
+      "age_years": 79.0,
+      "sex": "male",
+      "household_id": "h0002",
+      "marital_status": "single",
+      "spouse_id": null,
+      "parent_ids": [],
+      "children_ids": [],
+      "sponsor_parent_id": null,
+      "occupation": "retired",
+      "business_id": null,
+      "personality_traits": [
+        "anxious",
+        "guarded"
+      ],
+      "habits": [
+        "reads at the cafe until closing",
+        "keeps a running tally of who owes whom"
+      ],
+      "bio": "Aldric Greenhow is a 79-year-old resident of Kasukabe who is retired and draws a pension. Aldric Greenhow survived the bad winter as a much younger person, and it still colors how he thinks about hard times, and about the people who complain through easier ones. He keeps a household alone. He notices everything before anyone else does, and assumes the worst of most of it. He values the safety of children over any custom above almost anything, and fears, more than he lets on, a secret getting out before he's ready. He reads at the cafe until closing.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "watchful but suspicious",
+        "tension_description": "He notices everything before anyone else does, and assumes the worst of most of it.",
+        "formative_history": "Aldric Greenhow survived the bad winter as a much younger person, and it still colors how he thinks about hard times, and about the people who complain through easier ones.",
+        "values": [
+          "the safety of children over any custom",
+          "keeping a secret once it's given",
+          "family before coin, every time"
+        ],
+        "will_not_compromise": "will not lie under oath at town hall, whatever it costs",
+        "fears": "a secret getting out before he's ready",
+        "ambitions": "to own the stall or shop outright, not just work it",
+        "scarcity_behavior": "steals quietly rather than beg loudly",
+        "stranger_treatment": "keeps strangers at arm's length until they've proven themselves once",
+        "family_treatment": "treats the household like a small business that happens to love each other",
+        "competence": "gives advice that's usually right",
+        "blind_spot": "gives it whether or not anyone asked",
+        "speech_register": "has a farmer's patience for silence and lets it sit before answering",
+        "verbal_habits": [
+          "taps the table twice before agreeing to anything important",
+          "says 'his own mother, or father, used to say' at least once a week"
+        ],
+        "daily_rhythm": "wakes with the light out of long habit rather than need, and fills the day with a fixed round of the market, the temple steps, and a game of cards",
+        "attitude_money": "believes hard work should always beat luck, and resents it when it doesn't",
+        "attitude_risk": "trusts a new idea over an old, safe one, most of the time",
+        "attitude_authority": "thinks whoever's in charge is probably lining his own pockets, and says so",
+        "attitude_religion": "keeps a small private shrine of his own making, told to no one",
+        "secret": "keeps a small hoard of coin no one in the household knows about",
+        "secret_target_agent_id": null,
+        "opinions": [
+          {
+            "target_agent_id": "a0014",
+            "target_name": "Rustam Yilmaz",
+            "kind": "friendship",
+            "role": "friend",
+            "shared_fact": "Aldric Greenhow and Rustam Yilmaz share a table at the cafe most mornings.",
+            "note": "would be lost, honestly, without Rustam Yilmaz to complain to",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0009",
+            "target_name": "Bram Thorne",
+            "kind": "friendship",
+            "role": "friend",
+            "shared_fact": "Bram Thorne and Aldric Greenhow have covered each other's work more times than either would admit.",
+            "note": "counts on Bram Thorne more than he lets on",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0004",
+            "target_name": "Kirra Kowalski",
+            "kind": "grudge",
+            "role": "accused",
+            "shared_fact": "a favor asked, and flatly refused, between Kirra Kowalski and Aldric Greenhow.",
+            "note": "feels genuinely bad about it and hasn't found the right moment to say so",
+            "sim_amount": null
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0014",
+      "name": "Rustam Yilmaz",
+      "age_years": 81.0,
+      "sex": "male",
+      "household_id": "h0001",
+      "marital_status": "single",
+      "spouse_id": null,
+      "parent_ids": [],
+      "children_ids": [],
+      "sponsor_parent_id": null,
+      "occupation": "retired",
+      "business_id": null,
+      "personality_traits": [
+        "hot-tempered",
+        "industrious"
+      ],
+      "habits": [
+        "saves the best cut of anything for family",
+        "whittles small figures when nervous"
+      ],
+      "bio": "Rustam Yilmaz is a 81-year-old resident of Kasukabe who is retired and draws a pension. Rustam Yilmaz has lived in Kasukabe longer than most of the buildings still standing, and worked a trade here for decades before retiring to watch the town keep going without him. He keeps a household alone. He weighs every coin twice before spending it, and can't quite keep the sourness out of his voice when a neighbour spends easily. He values a promise kept even when it costs above almost anything, and fears, more than he lets on, being the reason a friendship ends. He saves the best cut of anything for family.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "careful but envious",
+        "tension_description": "He weighs every coin twice before spending it, and can't quite keep the sourness out of his voice when a neighbour spends easily.",
+        "formative_history": "Rustam Yilmaz has lived in Kasukabe longer than most of the buildings still standing, and worked a trade here for decades before retiring to watch the town keep going without him.",
+        "values": [
+          "a promise kept even when it costs",
+          "whatever actually works over what's always been done",
+          "modesty in victory"
+        ],
+        "will_not_compromise": "will not stay silent while someone innocent takes the blame",
+        "fears": "being the reason a friendship ends",
+        "ambitions": "to pay off every debt and start clean",
+        "scarcity_behavior": "quietly skips the temple donation and hopes no one notices",
+        "stranger_treatment": "is shy and awkward with strangers, and warm only once they're not strangers anymore",
+        "family_treatment": "would lie to protect family and tell the plain truth to everyone else",
+        "competence": "gives advice that's usually right",
+        "blind_spot": "gives it whether or not anyone asked",
+        "speech_register": "over-explains simple things and under-explains complicated ones",
+        "verbal_habits": [
+          "says 'that's between me and the ledger' about anything he won't discuss",
+          "clears his throat before saying anything he isn't sure of"
+        ],
+        "daily_rhythm": "keeps a slower, deliberate routine built around old friends, old habits, and a nap most days that he would never admit to needing",
+        "attitude_money": "treats debt as a moral failing, his own included",
+        "attitude_risk": "loves a gamble more than he loves winning one",
+        "attitude_authority": "thinks rules are for people who can't be trusted to know better, himself excluded",
+        "attitude_religion": "goes to the temple out of habit more than belief, and wouldn't admit which",
+        "secret": "still practices a skill he gave up years ago, alone, where no one can see",
+        "secret_target_agent_id": null,
+        "opinions": [
+          {
+            "target_agent_id": "a0013",
+            "target_name": "Aldric Greenhow",
+            "kind": "friendship",
+            "role": "friend",
+            "shared_fact": "Aldric Greenhow and Rustam Yilmaz share a table at the cafe most mornings.",
+            "note": "counts on Aldric Greenhow more than he lets on",
+            "sim_amount": null
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0001",
+      "name": "Magnus Wickham",
+      "age_years": 15.0,
+      "sex": "male",
+      "household_id": "h0005",
+      "marital_status": "single",
+      "spouse_id": null,
+      "parent_ids": [
+        "a0006",
+        "a0012"
+      ],
+      "children_ids": [],
+      "sponsor_parent_id": "a0006",
+      "occupation": "student",
+      "business_id": null,
+      "personality_traits": [
+        "curious",
+        "easygoing"
+      ],
+      "habits": [
+        "never leaves a debt unpaid past a week",
+        "haggles over every price on principle"
+      ],
+      "bio": "Magnus Wickham is a 15-year-old resident of Kasukabe who attends the town school. Magnus Wickham remembers, just barely, arriving in Kasukabe from the old garrison town north of here 9 years ago, and still sometimes describes things as being different 'back home.' He lives at home with Ezra Wickham and Xiomara Wickham. He picks one best friend and holds on tight enough that it sometimes scares the friend off. He values never tattling on a friend, only on real trouble above almost anything, and fears, more than he lets on, a storm at night. He never leaves a debt unpaid past a week.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "loyal but clingy",
+        "tension_description": "He picks one best friend and holds on tight enough that it sometimes scares the friend off.",
+        "formative_history": "Magnus Wickham remembers, just barely, arriving in Kasukabe from the old garrison town north of here 9 years ago, and still sometimes describes things as being different 'back home.'",
+        "values": [
+          "never tattling on a friend, only on real trouble",
+          "never breaking a promise sealed with a spit-shake"
+        ],
+        "will_not_compromise": "will not lie to his own mother's or father's face",
+        "fears": "a storm at night",
+        "ambitions": "to ride the transport service just once",
+        "scarcity_behavior": "gives his own portion to a younger sibling without being asked",
+        "stranger_treatment": "asks a stranger blunt questions before anyone can stop him",
+        "family_treatment": "never admits to being scared in front of a parent",
+        "competence": "is quicker with figures than most of the adults in the household",
+        "blind_spot": "gets insufferable about it",
+        "speech_register": "whispers secrets too loudly to actually be secret",
+        "verbal_habits": [
+          "says 'wait wait wait' before explaining anything exciting",
+          "says 'that's not fair' as a first response to almost anything"
+        ],
+        "daily_rhythm": "spends mornings at the school and afternoons split between chores and whatever game the street's playing that day",
+        "attitude_money": "keeps a separate stash no one else knows about, just in case",
+        "attitude_risk": "won't risk a coin he can't afford to lose, ever",
+        "attitude_authority": "trusts the complaint ledger more than any sitting minister",
+        "attitude_religion": "is openly skeptical, and privately hopes he's wrong about it",
+        "secret": "has a hiding spot no one else in the house knows about",
+        "secret_target_agent_id": null,
+        "opinions": [
+          {
+            "target_agent_id": "a0002",
+            "target_name": "Tamsin Thorne",
+            "kind": "friendship",
+            "role": "friend",
+            "shared_fact": "Tamsin Thorne and Magnus Wickham made up a secret game only the two of them know the rules to.",
+            "note": "trusts Tamsin Thorne with real secrets, not the pretend kind",
+            "sim_amount": null
+          }
+        ]
+      },
+      "is_minor": true,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0002",
+      "name": "Tamsin Thorne",
+      "age_years": 15.0,
+      "sex": "female",
+      "household_id": "h0004",
+      "marital_status": "single",
+      "spouse_id": null,
+      "parent_ids": [
+        "a0009",
+        "a0008"
+      ],
+      "children_ids": [],
+      "sponsor_parent_id": "a0009",
+      "occupation": "student",
+      "business_id": null,
+      "personality_traits": [
+        "superstitious",
+        "hot-tempered"
+      ],
+      "habits": [
+        "takes a walk through the park every dawn",
+        "trades favors instead of coin whenever possible"
+      ],
+      "bio": "Tamsin Thorne is a 15-year-old resident of Kasukabe who attends the town school. Tamsin Thorne remembers, just barely, arriving in Kasukabe from a town on the far side of the forest 10 years ago, and still sometimes describes things as being different 'back home.' She lives at home with Bram Thorne and Salim Thorne. She will do any dare going, and talks the smaller kids into worse ones than she'd try herself. She values not making fun of anyone's parents above almost anything, and fears, more than she lets on, being different from every other kid in town. She takes a walk through the park every dawn.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "brave but reckless-around-younger-kids",
+        "tension_description": "She will do any dare going, and talks the smaller kids into worse ones than she'd try herself.",
+        "formative_history": "Tamsin Thorne remembers, just barely, arriving in Kasukabe from a town on the far side of the forest 10 years ago, and still sometimes describes things as being different 'back home.'",
+        "values": [
+          "not making fun of anyone's parents",
+          "owning up when you break something"
+        ],
+        "will_not_compromise": "will not give up her favorite thing, not even to a sibling",
+        "fears": "being different from every other kid in town",
+        "ambitions": "to be brave enough to go into the forest alone",
+        "scarcity_behavior": "stops asking for anything at all, which is how the parents know it's bad",
+        "stranger_treatment": "treats every new kid on the street as a potential best friend",
+        "family_treatment": "is the loudest at home and the quietest anywhere else",
+        "competence": "works harder at chores than she lets on",
+        "blind_spot": "complains about it loudly enough that no one notices the working part",
+        "speech_register": "calls every adult 'sir' or 'ma'am' except the ones she really likes",
+        "verbal_habits": [
+          "counts under her breath when nervous",
+          "says 'I know, I know' before being told anything"
+        ],
+        "daily_rhythm": "is up for school, home for chores, and out again to play with whatever daylight's left",
+        "attitude_money": "is embarrassed by poverty and hides that worse",
+        "attitude_risk": "calculates odds out loud before deciding almost anything",
+        "attitude_authority": "quietly breaks small rules and would be furious to be caught at it",
+        "attitude_religion": "has strong opinions about who should keep the temple and no plan to run for it",
+        "secret": "has a secret rule about which floor tiles at home are safe to step on",
+        "secret_target_agent_id": null,
+        "opinions": [
+          {
+            "target_agent_id": "a0001",
+            "target_name": "Magnus Wickham",
+            "kind": "friendship",
+            "role": "friend",
+            "shared_fact": "Tamsin Thorne and Magnus Wickham made up a secret game only the two of them know the rules to.",
+            "note": "argues with Magnus Wickham constantly and always makes up by the next day",
+            "sim_amount": null
+          }
+        ]
+      },
+      "is_minor": true,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    }
+  ],
+  "households": [
+    {
+      "household_id": "h0001",
+      "member_ids": [
+        "a0014"
+      ],
+      "formed_at_hours": 0.0
+    },
+    {
+      "household_id": "h0002",
+      "member_ids": [
+        "a0013"
+      ],
+      "formed_at_hours": 0.0
+    },
+    {
+      "household_id": "h0003",
+      "member_ids": [
+        "a0007",
+        "a0010"
+      ],
+      "formed_at_hours": 0.0
+    },
+    {
+      "household_id": "h0004",
+      "member_ids": [
+        "a0009",
+        "a0008",
+        "a0002"
+      ],
+      "formed_at_hours": 0.0
+    },
+    {
+      "household_id": "h0005",
+      "member_ids": [
+        "a0006",
+        "a0012",
+        "a0001"
+      ],
+      "formed_at_hours": 0.0
+    },
+    {
+      "household_id": "h0006",
+      "member_ids": [
+        "a0005"
+      ],
+      "formed_at_hours": 0.0
+    },
+    {
+      "household_id": "h0007",
+      "member_ids": [
+        "a0011"
+      ],
+      "formed_at_hours": 0.0
+    },
+    {
+      "household_id": "h0008",
+      "member_ids": [
+        "a0004"
+      ],
+      "formed_at_hours": 0.0
+    },
+    {
+      "household_id": "h0009",
+      "member_ids": [
+        "a0003"
+      ],
+      "formed_at_hours": 0.0
+    }
+  ],
+  "construction_company": {
+    "business_id": "b_construction",
+    "name": "Kasukabe Construction Co.",
+    "owner_agent_id": "a0006",
+    "hand_agent_ids": [
+      "a0004",
+      "a0003",
+      "a0011",
+      "a0012"
+    ],
+    "starting_sim_balance": 20000,
+    "opening_stock": {
+      "timber": 60,
+      "planks": 24,
+      "iron_ore": 40,
+      "iron_tool": 4
+    },
+    "opening_prices": {
+      "timber": {
+        "bid": 6,
+        "ask": 8
+      },
+      "planks": {
+        "ask": 10,
+        "bid": 8
+      },
+      "iron_ore": {
+        "bid": 5,
+        "ask": 7
+      },
+      "iron_tool": {
+        "ask": 24,
+        "bid": 18
+      },
+      "stone": {
+        "bid": 4
+      }
+    }
+  },
+  "small_businesses": [
+    {
+      "business_id": "b_grocery",
+      "name": "Kasukabe Grocery",
+      "business_type": "grocery_store",
+      "owner_agent_id": "a0009",
+      "employee_agent_ids": [
+        "a0008"
+      ],
+      "starting_sim_balance": 20000,
+      "opening_stock": {
+        "bread": 8,
+        "apple": 20,
+        "carrot": 20,
+        "potato": 16,
+        "milk": 10
+      },
+      "opening_prices": {
+        "bread": {
+          "ask": 12,
+          "bid": 9
+        },
+        "apple": {
+          "ask": 4,
+          "bid": 2
+        },
+        "carrot": {
+          "ask": 4,
+          "bid": 2
+        },
+        "potato": {
+          "ask": 4,
+          "bid": 2
+        },
+        "milk": {
+          "ask": 5,
+          "bid": 3
+        },
+        "egg": {
+          "ask": 4,
+          "bid": 2
+        },
+        "cabbage": {
+          "ask": 4,
+          "bid": 2
+        },
+        "tomato": {
+          "ask": 4,
+          "bid": 2
+        },
+        "fish": {
+          "ask": 7,
+          "bid": 5
+        },
+        "wheat": {
+          "ask": 6,
+          "bid": 4
+        },
+        "flour": {
+          "ask": 8,
+          "bid": 6
+        }
+      }
+    },
+    {
+      "business_id": "b_cafe",
+      "name": "Kasukabe Cafe",
+      "business_type": "cafe",
+      "owner_agent_id": "a0005",
+      "employee_agent_ids": [
+        "a0010"
+      ],
+      "starting_sim_balance": 20000,
+      "opening_stock": {
+        "bread": 10,
+        "milk": 12,
+        "apple": 8,
+        "carrot_soup": 6
+      },
+      "opening_prices": {
+        "bread": {
+          "ask": 12,
+          "bid": 9
+        },
+        "milk": {
+          "ask": 5,
+          "bid": 3
+        },
+        "apple": {
+          "ask": 4,
+          "bid": 2
+        },
+        "carrot_soup": {
+          "ask": 9,
+          "bid": 6
+        },
+        "cabbage_stew": {
+          "ask": 9,
+          "bid": 6
+        },
+        "ale": {
+          "ask": 10,
+          "bid": 7
+        },
+        "flour": {
+          "bid": 6
+        },
+        "wheat": {
+          "bid": 4
+        }
+      }
+    },
+    {
+      "business_id": "b_pharmacy",
+      "name": "Kasukabe Pharmacy",
+      "business_type": "pharmacy",
+      "owner_agent_id": "a0007",
+      "employee_agent_ids": [],
+      "starting_sim_balance": 20000,
+      "opening_prices": {
+        "milk": {
+          "ask": 5,
+          "bid": 3
+        },
+        "egg": {
+          "ask": 4,
+          "bid": 2
+        },
+        "apple": {
+          "ask": 4,
+          "bid": 2
+        },
+        "bread": {
+          "ask": 12,
+          "bid": 9
+        },
+        "carrot": {
+          "ask": 4,
+          "bid": 2
+        },
+        "potato": {
+          "ask": 4,
+          "bid": 2
+        },
+        "wheat": {
+          "ask": 6,
+          "bid": 4
+        },
+        "flour": {
+          "ask": 8,
+          "bid": 6
+        }
+      },
+      "opening_stock": {
+        "milk": 10,
+        "egg": 12,
+        "apple": 12,
+        "bread": 6
+      }
+    }
+  ],
+  "control_businesses": [
+    {
+      "business_id": "cb01",
+      "name": "Ration Bakery",
+      "business_type": "bakery",
+      "pricing_strategy": "cost_plus_10pct",
+      "starting_sim_balance": 20000
+    },
+    {
+      "business_id": "cb02",
+      "name": "Steady General Store",
+      "business_type": "general_store",
+      "pricing_strategy": "undercut_min_price_5pct",
+      "starting_sim_balance": 20000
+    },
+    {
+      "business_id": "cb03",
+      "name": "Farm Cooperative",
+      "business_type": "farm_coop",
+      "pricing_strategy": "fixed_price_seasonal",
+      "starting_sim_balance": 20000
+    },
+    {
+      "business_id": "cb04",
+      "name": "Old Anvil Smithy",
+      "business_type": "smithy",
+      "pricing_strategy": "cost_plus_20pct",
+      "starting_sim_balance": 20000
+    },
+    {
+      "business_id": "cb05",
+      "name": "Riverside Lumber Mill",
+      "business_type": "lumber_mill",
+      "pricing_strategy": "fixed_price_seasonal",
+      "starting_sim_balance": 20000
+    },
+    {
+      "business_id": "cb06",
+      "name": "Plainstitch Tailor",
+      "business_type": "tailor",
+      "pricing_strategy": "cost_plus_15pct",
+      "starting_sim_balance": 20000
+    },
+    {
+      "business_id": "cb07",
+      "name": "Wayfarer Inn",
+      "business_type": "inn",
+      "pricing_strategy": "dynamic_occupancy_pricing",
+      "starting_sim_balance": 20000
+    },
+    {
+      "business_id": "cb08",
+      "name": "Kasukabe Transport",
+      "business_type": "transport",
+      "pricing_strategy": "distance_based_flat_rate",
+      "starting_sim_balance": 20000
+    },
+    {
+      "business_id": "cb09",
+      "name": "Mutual Bank Stall",
+      "business_type": "bank_stall",
+      "pricing_strategy": "fixed_spread_lending",
+      "starting_sim_balance": 20000
+    },
+    {
+      "business_id": "cb10",
+      "name": "Open Market Stall",
+      "business_type": "market_stall",
+      "pricing_strategy": "undercut_min_price_10pct",
+      "starting_sim_balance": 20000
+    }
+  ],
+  "ablation_summary": {
+    "full": 12,
+    "no_reflection": 1,
+    "no_learning": 1,
+    "deepseek_locked": 0
+  }
+}

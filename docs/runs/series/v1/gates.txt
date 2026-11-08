@@ -1,0 +1,31 @@
+
+==================================================================
+RUN data/v1.db
+==================================================================
+calls 456  ok 453  spend $2.51  last tick 0
+utterances 44
+
+GATE                      VALUE               RESULT
+G1 reply rate             17/35 = 49%         FAIL
+G2 exchanges 4+ turns     3                   PASS
+G3 group (3+ speakers)    3                   PASS
+G4 settlements            3                   PASS
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        164/318 = 52%       PASS
+
+tool calls: {'world_move': 46, 'world_say': 44, 'world_look_around': 32, 'world_describe_place': 10, 'world_list_places': 9, 'world_eat': 5, 'world_harvest': 5, 'world_find_people': 4, 'world_mine': 3, 'world_craft': 3, 'world_fell_timber': 3, 'world_describe_primitives': 3}
+
+largest gathering: 7 speakers at business:b_bakery, ticks 38-50
+   Wren Thorne -> Marta Thorne: Fresh from this morning. Three units — there's more in the ground, I'll get it later. Corwin — did you bring t
+   Liora Thorne -> Marta Thorne: Marta. Wren. I came to help with the wheat, but I left without it. I'm sorry. 
+
+I said things at the field. I 
+   Perrin Holloway -> Liora Thorne: Liora. I came. I walked. I'm here.
+   Perrin Holloway -> Marta Thorne: Marta. I need to buy one loaf of bread. If you have one to sell.
+   Nell Holloway -> Marta Thorne: Perrin. Thornes. I'm holding 2599 sim. No food in hand. The household needs numbers and we need sustenance—tod
+   Marta Thorne -> Nell Holloway: Nell. I sell bread, one loaf. Five sim, that's the morning price. I'll not bargain hungry people.
+
+settlement: Perrin Holloway said 50, paid at tick 41
+
+FAILED: G1 reply rate
+

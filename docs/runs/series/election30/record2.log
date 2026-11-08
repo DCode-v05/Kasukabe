@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\scripts\record_ui.py", line 228, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\scripts\record_ui.py", line 224, in main
+    return asyncio.run(record(args))
+           ~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py", line 719, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\scripts\record_ui.py", line 152, in record
+    loop.add_signal_handler(sig, stop.set)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\events.py", line 596, in add_signal_handler
+    raise NotImplementedError
+NotImplementedError

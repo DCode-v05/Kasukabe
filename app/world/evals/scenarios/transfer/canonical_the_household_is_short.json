@@ -1,0 +1,22 @@
+{
+  "tool": "transfer",
+  "kind": "positive",
+  "_why": "Run 25, tick 77: Ezra held 3,206 sim while Father Anselm told Liora the household was thirty short. Ezra's answer - give the household 600 from me - was the run's clearest act of provision.",
+  "resident": "n15",
+  "location": "street",
+  "inventory": {},
+  "sim": 3203,
+  "people_here": [
+    "n10"
+  ],
+  "recent_speech": [
+    {
+      "from": "n10",
+      "text": "Father Anselm said we are thirty short for the head tax. Is that right?"
+    }
+  ],
+  "open_question_to_me": "Your household owes 600 sim before nightfall and you are holding 3,203.",
+  "expect": {
+    "verb": "transfer"
+  }
+}

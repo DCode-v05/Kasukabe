@@ -1,0 +1,16 @@
+{
+  "tool": "pray",
+  "kind": "positive",
+  "_why": "At the temple, with something to ask for. `pray` is temple-gated and the resident is standing in it - if the verb is not reached for here it is not reached for anywhere.",
+  "resident": "n09",
+  "location": "Kasukabe Temple",
+  "inventory": {},
+  "sim": 120,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "your household has gone two days without enough food and you are standing in the temple",
+  "expect": {
+    "verb": "pray",
+    "params_include": {}
+  }
+}

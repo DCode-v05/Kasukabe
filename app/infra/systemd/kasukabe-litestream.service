@@ -1,0 +1,48 @@
+[Unit]
+# Continuous WAL streaming of the shared SQLite trace DB to S3 (DESIGN.md
+# section 9: "Litestream streams the WAL continuously to S3 (spot-death
+# safe, restores to seconds-old state)"). Started AFTER kasukabe-world
+# and kasukabe-broker so the SQLite file at KASUKABE_SQLITE_PATH already
+# exists (both processes open it in WAL mode on first write - see
+# world.env / broker.env) - Litestream can technically start first and
+# wait, but ordering it after avoids a confusing "no such file" log spam
+# on a cold boot.
+#
+# INFRA-10: litestream.yml HAS landed, at `app/infra/litestream.yml`.
+#
+# This block used to say the config was deliberately not shipped and that
+# this unit would refuse to start until it arrived. It arrived; the
+# notice did not move. (The exact wording is not repeated here, because a
+# test asserts that phrase is gone from this file and quoting it would
+# put it straight back.)
+#
+# A standing "this does not work yet" beside a thing that works is how a
+# service nobody enables stays unenabled - which is what happened: no
+# launcher in this repo starts Litestream and the RUNBOOK's step list
+# does not enable it.
+Description=Litestream (SQLite WAL -> S3 continuous replication)
+After=network-online.target kasukabe-world.service kasukabe-broker.service
+Wants=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=kasukabe
+Group=kasukabe
+WorkingDirectory=/opt/kasukabe/app
+EnvironmentFile=/opt/kasukabe/app/infra/env/litestream.env
+ExecStart=/usr/local/bin/litestream replicate -config /opt/kasukabe/app/infra/litestream.yml
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/kasukabe/data
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

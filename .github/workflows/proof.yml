@@ -1,0 +1,51 @@
+# The ratchet.
+#
+# Nothing that was proven may stop being proven, and nothing may newly
+# fail. Known failures recorded in `app/proof/baseline.json` hold the
+# build green - they are named debts in docs/proof/FINDINGS.md, and
+# holding the build red for them would only teach the team to bypass it.
+#
+# This is the repository's first CI workflow. It deliberately does NOT
+# run the 2,054-test suite: that takes 54 minutes, which is why it has
+# never gated anything. `proof` is meant to stay minutes.
+name: proof
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install the app
+        working-directory: app
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Install the engine
+        # `proof.harness` imports `src.herald.provider` - the FROZEN parser
+        # is the thing under test, so the engine's dependencies have to be
+        # present or the agility area would silently test nothing.
+        working-directory: engine
+        run: pip install -e .
+
+      - name: Run the gate
+        working-directory: app
+        run: python -m proof
+
+      - name: Keep the verdicts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: proof-findings
+          path: docs/proof/findings.json

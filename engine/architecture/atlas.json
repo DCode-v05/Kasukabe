@@ -1,0 +1,97 @@
+[
+  {
+    "file": "00_overview.md",
+    "group": "Foundations",
+    "title": "Overview & Subsystem Map"
+  },
+  {
+    "file": "10_system_context.md",
+    "group": "Foundations",
+    "title": "System Context"
+  },
+  {
+    "file": "15_request_walkthrough.md",
+    "group": "Foundations",
+    "title": "Request Walkthrough"
+  },
+  {
+    "file": "20_data_model.md",
+    "group": "Foundations",
+    "title": "Data Model (SQLite)"
+  },
+  {
+    "file": "25_block_contract.md",
+    "group": "Foundations",
+    "title": "Block Wire Contract"
+  },
+  {
+    "file": "30_integration_server.md",
+    "group": "Integration",
+    "title": "Server / Bootstrap / Auth"
+  },
+  {
+    "file": "40_engine_core_loop.md",
+    "group": "engine_core",
+    "title": "Agent Loop & Threading"
+  },
+  {
+    "file": "42_engine_core_context_compaction.md",
+    "group": "engine_core",
+    "title": "Context & Compaction"
+  },
+  {
+    "file": "44_engine_core_hooks.md",
+    "group": "engine_core",
+    "title": "Hooks Subsystem"
+  },
+  {
+    "file": "46_engine_core_agents_tools_blocks.md",
+    "group": "engine_core",
+    "title": "Sub-Agents, Tools & Blocks"
+  },
+  {
+    "file": "50_sandbox.md",
+    "group": "Capability Plane",
+    "title": "Sandbox (Secure Execution)"
+  },
+  {
+    "file": "56_asset_directory_channel.md",
+    "group": "Capability Plane",
+    "title": "Asset Directory & Channels"
+  },
+  {
+    "file": "60_utility_utils_infra.md",
+    "group": "Capability Plane",
+    "title": "Utility / Activity / Infra"
+  },
+  {
+    "file": "52_herald.md",
+    "group": "Intelligence Plane",
+    "title": "Herald (LLM Gateway)"
+  },
+  {
+    "file": "54_memory.md",
+    "group": "Intelligence Plane",
+    "title": "Memory System"
+  },
+  {
+    "file": "58_learning_security_raven.md",
+    "group": "Intelligence Plane",
+    "title": "Learning / Security / Raven"
+  },
+  {
+    "file": "70_security_deployment.md",
+    "group": "Cross-cutting",
+    "title": "Security & Deployment"
+  },
+  {
+    "file": "80_boundaries_refactoring.md",
+    "group": "Cross-cutting",
+    "title": "Boundaries & Refactoring Map"
+  },
+  {
+    "file": "90_glossary.md",
+    "group": "Cross-cutting",
+    "title": "Glossary"
+  }
+]

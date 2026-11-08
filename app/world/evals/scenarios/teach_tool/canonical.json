@@ -1,0 +1,26 @@
+{
+  "tool": "teach_tool",
+  "kind": "positive",
+  "_why": "The third pair of hands. If only the inventor could teach, the town would be capped at one hop from wherever an idea started - which is what C4 asks about.",
+  "resident": "n09",
+  "location": "Kasukabe Workshop",
+  "inventory": {},
+  "sim": 400,
+  "people_here": [
+    "n10"
+  ],
+  "recent_speech": [
+    {
+      "from": "n10",
+      "text": "Farid, you have been making rope all week. Show me. I will pay you for the teaching."
+    }
+  ],
+  "open_question_to_me": "n10 is waiting on an answer. You hold your own copy of the tool rope_making, taught to you by Ada Gray.",
+  "expect": {
+    "verb": "teach_tool",
+    "params_include": {
+      "tool_name": "rope_making",
+      "student_id": "n10"
+    }
+  }
+}

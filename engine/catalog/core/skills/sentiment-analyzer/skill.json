@@ -1,0 +1,31 @@
+{
+  "name": "sentiment-analyzer",
+  "version": "1.0.0",
+  "description": "Analyze sentiment of text, returning positive/negative/neutral with confidence score. This skill should be used when gauging customer feedback tone, analyzing reviews, checking the mood of a message, or classifying opinion text. Triggers: 'what's the sentiment', 'is this positive or negative', 'analyze the tone', 'how do customers feel about', 'mood of this text'.",
+  "category": "analysis",
+  "capabilities": ["sentiment_detection", "tone_analysis", "feedback_classification", "opinion_scoring"],
+  "input_signature": {
+    "type": "object",
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "Text to analyze sentiment of"
+      }
+    }
+  },
+  "output_signature": {
+    "type": "object",
+    "properties": {
+      "sentiment": {
+        "type": "string"
+      },
+      "confidence": {
+        "type": "number"
+      }
+    }
+  },
+  "has_prompt": false,
+  "has_scripts": true,
+  "has_references": false,
+  "has_gotchas": false
+}

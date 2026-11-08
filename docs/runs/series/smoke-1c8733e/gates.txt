@@ -1,0 +1,27 @@
+
+==================================================================
+RUN data/smoke-1c8733e.db
+==================================================================
+calls 602  ok 602  spend $2.25  last tick 41
+utterances 81
+
+GATE                      VALUE               RESULT
+G1 reply rate             21/56 = 38%         FAIL
+G2 exchanges 4+ turns     7                   PASS
+G3 group (3+ speakers)    8                   PASS
+G4 settlements            0                   FAIL
+G5 alive at stop          50/50 (tick 41 < 144)NOT EXERCISED
+G6 turns w/ effect        465/544 = 85%       PASS
+
+tool calls: {'world_move': 122, 'world_look_around': 87, 'world_say': 83, 'world_rest': 67, 'world_check_debts': 17, 'world_describe_place': 13, 'world_describe_primitives': 12, 'world_harvest': 12, 'world_find_people': 8, 'world_list_places': 8, 'world_set_intention': 7, 'world_take_from_shelf': 7}
+
+largest gathering: 6 speakers at business:b_yard, ticks 37-41
+   Arjun Holloway -> Idris Solano: You're here early too then. Forest path isn't cooperating with the morning. Giselle have orders posted yet, or
+   Hester Vance -> aloud: Tova. You're here early. Usually you find me in the evenings, after your lessons.
+   Giselle Ingram -> Idris Solano: Morning, crew. Arjun, Idris - no offense, but we've got work to do. Hester Vance, is it? I know you by sight, 
+   Giselle Ingram -> Idris Solano: Idris, Selene - morning proper. You two ready to put in a day's work? Got standing orders to follow, materials
+   Selene Renner -> aloud: Anyone seen Giselle? Got a question about today's footing
+   Giselle Ingram -> Mireille Jarrah: Mireille. Good. You're here. Idris, Selene - you know the drill. Foundation work on the south plot needs finis
+
+FAILED: G1 reply rate, G4 settlements, G5 alive at stop
+

@@ -1,0 +1,18 @@
+{
+  "tool": "take_from_shelf",
+  "kind": "positive",
+  "_why": "TRADE-02. `take_from_shelf` was called with `{}` five times by five different residents in run deni-a6f9eb4-5h, because its index row advertised no parameters. It had no scenario either.",
+  "resident": "n07",
+  "location": "Kasukabe Town Square",
+  "inventory": {},
+  "sim": 600,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You work at b_mill and you are standing in it. The shelf holds 23 flour. You need flour in your own hands to bake with.",
+  "expect": {
+    "verb": "take_from_shelf",
+    "params_include": {
+      "item": "flour"
+    }
+  }
+}

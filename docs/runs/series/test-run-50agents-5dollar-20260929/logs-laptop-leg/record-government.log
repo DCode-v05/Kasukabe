@@ -1,0 +1,19 @@
+record_ui: recording http://127.0.0.1:8400/township-v2.html?book=govern&roofs=off&camera=government:2.2 at 1920x1080, a frame every 4.0s -> ../docs/runs/series/fifty-test3-20260929/video/government/frames
+record_ui: frame 11 failed (Page.captureScreenshot: {'code': -32603, 'message': 'Internal error'}); 1 in a row, continuing
+record_ui: frame 11 failed (Page.captureScreenshot: {'code': -32603, 'message': 'Internal error'}); 2 in a row, continuing
+record_ui: frame 11 failed (Page.captureScreenshot: {'code': -32603, 'message': 'Internal error'}); 3 in a row, continuing
+record_ui: frame 11 failed (Page.captureScreenshot: {'code': -32603, 'message': 'Internal error'}); 4 in a row, continuing
+record_ui: frame 11 failed (Page.captureScreenshot: {'code': -32603, 'message': 'Internal error'}); 5 in a row, continuing
+record_ui: frame 11 failed (Page.captureScreenshot: {'code': -32603, 'message': 'Internal error'}); 6 in a row, continuing
+record_ui: frame 11 failed (Page.captureScreenshot: {'code': -32603, 'message': 'Internal error'}); 7 in a row, continuing
+record_ui: frame 11 failed (Page.captureScreenshot: {'code': -32603, 'message': 'Internal error'}); 8 in a row, continuing
+record_ui: frame 11 failed (Page.captureScreenshot: {'code': -32603, 'message': 'Internal error'}); 9 in a row, continuing
+record_ui: frame 11 failed (Page.captureScreenshot: {'code': -32603, 'message': 'Internal error'}); 10 in a row, continuing
+record_ui: frame 11 failed (Page.captureScreenshot: {'code': -32603, 'message': 'Internal error'}); 11 in a row, continuing
+record_ui: frame 11 failed (Page.captureScreenshot: {'code': -32603, 'message': 'Internal error'}); 12 in a row, continuing
+record_ui: frame 11 failed (Page.captureScreenshot: {'code': -32603, 'message': 'Internal error'}); 13 in a row, continuing
+record_ui: frame 11 failed (Page.captureScreenshot: {'code': -32603, 'message': 'Internal error'}); 14 in a row, continuing
+record_ui: frame 11 failed (Page.captureScreenshot: {'code': -32603, 'message': 'Internal error'}); 15 in a row, continuing
+record_ui: 15 failures in a row; giving up on new frames and encoding the 11 already taken
+record_ui: 11 frames taken this session
+record_ui: 11 frames -> /Users/sharan/Downloads/kasukabe/docs/runs/series/fifty-test3-20260929/video/government/run.mp4 (0s at 30 fps)

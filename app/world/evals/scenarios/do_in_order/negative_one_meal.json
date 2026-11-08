@@ -1,0 +1,17 @@
+{
+  "tool": "do_in_order",
+  "kind": "negative",
+  "_why": "One act and nothing after it. A program wrapped around a single step costs nothing extra in sim, but reaching for the program verb when the plain verb fits means the description is selling itself rather than stating what it does.",
+  "resident": "n06",
+  "location": "home:h_field",
+  "inventory": {
+    "bread": 2
+  },
+  "sim": 3800,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": null,
+  "expect": {
+    "verb": "do_in_order"
+  }
+}

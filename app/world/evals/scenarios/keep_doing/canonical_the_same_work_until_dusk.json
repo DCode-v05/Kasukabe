@@ -1,0 +1,17 @@
+{
+  "tool": "keep_doing",
+  "kind": "positive",
+  "_why": "Run 25: 103 calls across 7 residents, and the reason the run's tool-call share held up at all. Idris felled, Bram mined, Rosalind harvested - repeat work with no decision in between.",
+  "resident": "n08",
+  "location": "Kasukabe Forest",
+  "inventory": {
+    "timber": 12
+  },
+  "sim": 2773,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You are in the forest with the whole afternoon ahead and nothing to decide between swings.",
+  "expect": {
+    "verb": "keep_doing"
+  }
+}

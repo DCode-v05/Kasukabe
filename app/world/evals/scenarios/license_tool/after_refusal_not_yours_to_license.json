@@ -1,0 +1,22 @@
+{
+  "tool": "license_tool",
+  "kind": "after_refusal",
+  "_why": "Licensing what somebody else invented is refused, and the refusal names the inventor. The recovery worth measuring is asking the inventor - not abandoning the trade.",
+  "resident": "n09",
+  "location": "street",
+  "inventory": {},
+  "sim": 1400,
+  "people_here": [
+    "n02"
+  ],
+  "recent_speech": [
+    {
+      "from": "n02",
+      "text": "If you can let me use that milling routine, I will pay for it."
+    }
+  ],
+  "open_question_to_me": "You called license_tool and the world refused: the tool was invented by somebody else, not you. n02 still wants to use it.",
+  "expect": {
+    "verb": "say"
+  }
+}

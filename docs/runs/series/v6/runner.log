@@ -1,0 +1,182 @@
+2026-09-02 00:11:23,326 INFO kasukabe.genesis_runner world-side persistence attached: agents, utterances, transactions
+2026-09-02 00:11:23,326 INFO kasukabe.genesis_runner no checkpoint found, seeding fresh genesis
+2026-09-02 00:11:23,568 INFO httpx HTTP Request: GET http://127.0.0.1:8200/admin/lanes "HTTP/1.1 200 OK"
+2026-09-02 00:11:23,569 INFO kasukabe.genesis_runner genesis seeded: 10 agents, 2 households, 2 businesses
+2026-09-02 00:11:23,569 WARNING kasukabe.genesis_runner OPERATOR_TOKEN not set - generated an ephemeral admin token for this genesis run's embedded world app. Ephemeral operator token: MenbTIWycNIksVrDxgmhtowyd1vag7BtruZ88v3-yFE
+2026-09-02 00:11:23,786 INFO kasukabe.genesis_runner embedded world server listening on 127.0.0.1:8100
+2026-09-02 00:11:24,298 INFO kasukabe.genesis_runner preflight:
+  [\u2713] Genesis cast loads
+        world\genesis_10.json — 10 agents
+  [\u2713] Cast size matches the run
+        genesis has 10, run wants 10
+  [\u2713] USD ledger invariant ($1000)
+        total_cents = 100000
+  [\u2713] Broker is up
+        http://127.0.0.1:8200 — {'status': 'ok', 'service': 'broker', 'inference': 'bedrock'}
+  [\u2713] Broker is on real Bedrock
+        inference = 'bedrock'
+  [\u2713] Spend cap is set
+        SPEND_CAP_USD = 2.5
+  [!] Cap covers the intended run
+        $2.5 \u2248 0.2h at $10.67/hour (estimated - no trace history yet)
+        \u2192 raise SPEND_CAP_USD to about $53 for 5 hours, or run fewer agents
+  [\u2713] Memory fits the engine count
+        5500 MB needed, 13286 MB usable (13798 MB free less 512 reserved) · never measured here — using the conservative estimate
+  [\u2713] Disk has room for the trace store
+        191717 MB free; a 5h run projects 0 MB at the 0 KB/call this store is averaging
+  [\u2713] Trace store writable, hop column present
+        data/v6.db — llm_calls has 23 columns
+  [\u2713] SEPTEMBER_HOME root is writable
+        C:\Users\denis\AppData\Local\Temp\k_v6
+  [\u2713] Engine ports are free
+        9100–9109 — all free
+  [\u2713] Engine repo and venv present
+        ..\engine\.venv\Scripts\python.exe
+  [\u2713] Session logging is ready for every engine
+        10/10 SEPTEMBER_HOMEs accept a session log under C:\Users\denis\AppData\Local\Temp\k_v6
+
+  13/14 passed
+2026-09-02 00:11:24,322 INFO kasukabe.genesis_runner run_genesis: 10 engines need ~5500 MB, 13798 MB free - fits
+2026-09-02 00:11:24,957 INFO kasukabe.genesis_runner launched 10 of 10 agent units (mock_mode=False)
+2026-09-02 00:11:28,286 INFO httpx HTTP Request: GET http://127.0.0.1:9101/health "HTTP/1.1 200 OK"
+2026-09-02 00:11:28,300 INFO httpx HTTP Request: GET http://127.0.0.1:9102/health "HTTP/1.1 200 OK"
+2026-09-02 00:11:28,315 INFO httpx HTTP Request: GET http://127.0.0.1:9103/health "HTTP/1.1 200 OK"
+2026-09-02 00:11:28,844 INFO httpx HTTP Request: GET http://127.0.0.1:9104/health "HTTP/1.1 200 OK"
+2026-09-02 00:11:28,859 INFO httpx HTTP Request: GET http://127.0.0.1:9105/health "HTTP/1.1 200 OK"
+2026-09-02 00:11:28,874 INFO httpx HTTP Request: GET http://127.0.0.1:9106/health "HTTP/1.1 200 OK"
+2026-09-02 00:11:29,389 INFO httpx HTTP Request: GET http://127.0.0.1:9107/health "HTTP/1.1 200 OK"
+2026-09-02 00:11:29,404 INFO httpx HTTP Request: GET http://127.0.0.1:9108/health "HTTP/1.1 200 OK"
+2026-09-02 00:11:29,421 INFO httpx HTTP Request: GET http://127.0.0.1:9109/health "HTTP/1.1 200 OK"
+2026-09-02 00:11:30,436 INFO httpx HTTP Request: GET http://127.0.0.1:9100/health "HTTP/1.1 200 OK"
+2026-09-02 00:11:30,443 INFO kasukabe.genesis_runner all 10 engines ready
+2026-09-02 00:11:30,444 INFO kasukabe.genesis_runner watchdog started: polling every 10s, restarting anything silent past 180s
+2026-09-02 00:11:30,447 INFO kasukabe.groundskeeper groundskeeper started: sweeping C:/Users/denis/AppData/Local/Temp/k_v6 every 300s
+2026-09-02 00:11:38,221 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-02 00:11:40,623 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:11:42,045 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:11:43,751 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:11:50,382 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:11:50,977 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:11:51,877 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:11:51,944 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:11:53,718 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:11:56,629 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:12:03,227 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-02 00:12:08,000 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-02 00:12:43,689 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:12:48,386 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:12:48,529 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:12:51,138 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:12:55,239 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:13:02,199 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:13:11,941 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:13:23,633 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:13:36,143 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:13:38,750 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-02 00:13:41,579 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:13:43,576 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:13:48,315 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-02 00:13:51,417 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:13:52,416 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:14:28,080 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:14:33,553 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:14:42,927 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:14:46,693 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:14:49,253 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:14:49,520 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-02 00:14:50,810 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-02 00:14:54,007 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:14:59,024 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:14:59,840 INFO kasukabe.genesis_runner n03 ate wheat
+2026-09-02 00:15:01,079 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:15:30,075 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:16:23,255 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:16:26,538 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:16:28,324 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:16:28,890 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:16:30,289 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:16:30,987 INFO kasukabe.groundskeeper groundskeeper swept 209 noise rows from 1/10 brains
+2026-09-02 00:16:31,298 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:16:35,026 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-02 00:16:36,193 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-02 00:16:41,603 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:16:45,962 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:16:48,701 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:16:52,472 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:16:55,796 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:16:55,820 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:16:58,050 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:17:25,481 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:17:28,623 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-02 00:17:30,801 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:17:32,900 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-02 00:17:33,551 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:17:38,012 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:17:38,057 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:17:42,072 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:17:44,774 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:17:46,333 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:18:04,265 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:18:07,336 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-02 00:18:11,116 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-02 00:18:11,433 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:18:18,802 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:18:24,589 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:18:35,978 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:18:41,373 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:18:44,969 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:18:45,225 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:18:45,292 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:18:50,832 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-02 00:18:52,003 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-02 00:18:53,340 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:18:55,446 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:19:28,664 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:19:35,299 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:19:38,560 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:19:47,011 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:19:47,037 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:19:54,893 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:19:57,633 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-02 00:20:00,783 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:20:00,818 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-02 00:20:10,146 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:20:35,941 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:20:42,812 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:20:43,608 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:20:48,274 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:20:52,268 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:20:54,013 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:20:58,528 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-02 00:21:01,700 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:21:02,765 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-02 00:21:04,735 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:21:18,014 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:21:28,855 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-02 00:21:28,885 WARNING kasukabe.genesis_runner tick dispatch failed for n03: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9102/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error
+2026-09-02 00:21:31,261 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:21:32,261 INFO kasukabe.groundskeeper groundskeeper swept 5274 noise rows from 10/10 brains
+2026-09-02 00:21:35,964 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:21:39,239 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:21:45,002 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:21:46,456 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-02 00:21:50,032 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-02 00:21:52,431 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:21:53,025 INFO kasukabe.genesis_runner n02 ate cabbage
+2026-09-02 00:21:58,839 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:22:08,954 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:22:09,076 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:22:16,328 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:22:19,832 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-02 00:22:26,991 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-02 00:22:33,604 INFO httpx HTTP Request: POST http://127.0.0.1:9108/tick "HTTP/1.1 200 OK"
+2026-09-02 00:22:34,823 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:22:41,209 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-02 00:22:43,246 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-02 00:22:44,589 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-02 00:22:59,586 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-02 00:24:34,883 WARNING kasukabe.genesis_runner tick dispatch timed out for n01 after 120s (1 so far)
+2026-09-02 00:24:41,918 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-02 00:24:42,244 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-02 00:25:33,709 WARNING kasukabe.genesis_runner tick dispatch failed for n07: ReadError

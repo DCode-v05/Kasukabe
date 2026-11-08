@@ -1,0 +1,14 @@
+== election-at-dawn-8, from world/scenarios/election_at_dawn_8.json
+   Scenario **election-at-dawn-8** - Eight residents, a government already sitting, and an election held in one game-day: candidacy at dawn, the count at dusk, then the day boundary that charges the first tax and pays the first wages. The whole checklist question - does a town elect a government, and does that government do anything - inside $15-20.
+   Cast: `world/genesis_8_funded.json`.
+   The world starts at tick 36 and stops at tick 150.
+   The election opens at tick 36: candidacy closes 60, voting opens 84, and the vote is counted at tick 108.
+   Already in office when it starts: prime minister a0047; ministers a0090, a0042 - they may stand again, against anyone who stands for the first time.
+   Spend cap $19.00.
+   cap $19.00 (broker $24.0), ticks 36-150, up to 6h, out ../docs/runs/series/election8
+overflow model(s) qwen.qwen3-coder-480b have no inference profile on this deployment and will NOT be routed to. Capacity is 200 RPM without them - enough for a 20-resident run, not for 50 (measured peak ~282 RPM). Add a profile to BEDROCK_INFERENCE_PROFILES to restore the overflow tier.
+   (running without the overflow lane)
+   runner pid 7672; watch http://127.0.0.1:8400/township-v2.html?book=election&roofs=off&camera=government:2.2
+   the vote is counted at tick 108; recording -> ../docs/runs/series/election8/video; logs in ../docs/runs/series/election8
+== election-at-dawn-8 finished; video ../docs/runs/series/election8/video/run.mp4; writing the report
+   trace data/election-at-dawn-8.db; checkpoints data/checkpoints-election-at-dawn-8; homes archived in data/checkpoints-election-at-dawn-8/engine-homes.tar.gz

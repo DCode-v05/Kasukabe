@@ -1,0 +1,15 @@
+{
+  "tool": "recall_goals",
+  "kind": "positive",
+  "_why": "Run 25: residents repeatedly re-derived what they were doing from the perception rather than asking. recall_goals costs nothing and was almost never called.",
+  "resident": "n13",
+  "location": "business:b_grocery",
+  "inventory": {},
+  "sim": 505,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "It is midday. You set out this morning with something in mind and have spent the hours since walking and talking.",
+  "expect": {
+    "verb": "recall_goals"
+  }
+}

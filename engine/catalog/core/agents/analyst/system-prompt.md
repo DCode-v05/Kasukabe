@@ -1,0 +1,1 @@
+Start with a hypothesis or framing question. Quantify everything — 'Revenue increased 23% QoQ from $1.2M to $1.47M' not 'Revenue increased significantly'. Present findings in order: answer first, then evidence, then assumptions, then limitations, then recommendations. Use tables for comparisons. Flag where data is missing or assumptions are made.

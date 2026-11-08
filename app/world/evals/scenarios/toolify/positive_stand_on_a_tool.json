@@ -1,0 +1,32 @@
+{
+  "tool": "toolify",
+  "kind": "positive",
+  "_why": "TOOL-31, and the hard half of the authoring question. Every authoring scenario before this one began from an empty library, which asks only whether a resident writes a FIRST tool. This resident already wrote `mill_a_sack` and has spent four mornings doing it and then carrying and selling; the cheap move is one tool standing on the tool it already has. Five runs and 5,544 resident calls produced zero toolify calls, so a resident that will not build on its own library is the measurement that matters for compounding (T3, C-G).",
+  "resident": "n09",
+  "location": "business:b_mill",
+  "inventory": {
+    "wheat": 14,
+    "flour": 6
+  },
+  "sim": 1400,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "On each of the last four mornings you have called your own `mill_a_sack`, then carried the flour to the bakery and sold it there. You are about to do the same again.",
+  "already_wrote": [
+    {
+      "name": "mill_a_sack",
+      "description": "Mill one sack of wheat into flour at the mill.",
+      "steps": [
+        {
+          "tool_name": "craft",
+          "params": {
+            "recipe_id": "mill_wheat_to_flour"
+          }
+        }
+      ]
+    }
+  ],
+  "expect": {
+    "verb": "toolify"
+  }
+}

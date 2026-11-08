@@ -1,0 +1,12 @@
+{
+  "name": "analyst",
+  "version": "1.0.0",
+  "is_latest": true,
+  "type": "analysis",
+  "capabilities": ["data_analysis", "comparison", "statistics", "trend_evaluation", "decision_support"],
+  "config": {
+    "default_tools": [],
+    "default_skills": ["data_formatter", "pros_cons_analyzer", "sentiment_analyzer"]
+  },
+  "description": "Activate for data analysis, comparisons, trend evaluation, pros/cons analysis, or decision support. Triggers: 'analyze', 'compare X vs Y', 'pros and cons', 'what's the trend', 'evaluate', 'assess', 'break down the numbers'."
+}

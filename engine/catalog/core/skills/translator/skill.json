@@ -1,0 +1,35 @@
+{
+  "name": "translator",
+  "version": "1.0.0",
+  "description": "Translate text between languages while preserving tone, style, and meaning. This skill should be used when translating content for international audiences, localizing documents, or converting text from one language to another. Triggers: 'translate this to', 'say this in Spanish', 'convert to French', 'what does this mean in English', 'localize this for'.",
+  "category": "language",
+  "capabilities": ["translation", "localization", "multilingual_processing", "tone_preservation"],
+  "input_signature": {
+    "type": "object",
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "Text to translate"
+      },
+      "target_language": {
+        "type": "string",
+        "description": "Target language"
+      }
+    }
+  },
+  "output_signature": {
+    "type": "object",
+    "properties": {
+      "translation": {
+        "type": "string"
+      },
+      "source_language": {
+        "type": "string"
+      }
+    }
+  },
+  "has_prompt": true,
+  "has_scripts": false,
+  "has_references": false,
+  "has_gotchas": false
+}

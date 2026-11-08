@@ -1,0 +1,17 @@
+{
+  "tool": "cook",
+  "kind": "positive",
+  "_why": "Run 25: Marta milled, baked and shelved bread in one session at tick 39 - the only complete production chain any resident ran end to end that morning.",
+  "resident": "n07",
+  "location": "business:b_bakery",
+  "inventory": {
+    "flour": 3
+  },
+  "sim": 4494,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You are the baker, standing in your bakery holding three flour. The recipe cook:flour->bread turns one into one.",
+  "expect": {
+    "verb": "cook"
+  }
+}

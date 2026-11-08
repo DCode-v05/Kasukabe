@@ -1,0 +1,17 @@
+{
+  "tool": "do_in_order",
+  "kind": "after_refusal",
+  "_why": "The commonest refusal a first program gets: more acts than one call may make. The refusal quotes the ceiling, so the second attempt should be a shorter program - not an abandoned verb. Measures whether a priced, teaching refusal recovers (the claim `ToolError.context` makes) on the one authoring path that needs no filing.",
+  "resident": "n14",
+  "location": "Kasukabe Farmland",
+  "inventory": {
+    "wheat": 30
+  },
+  "sim": 2600,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You called do_in_order and the world refused: 'do_in_order: this program would make 60 acts, and a program may make at most 40. Take some steps out.' You still want the morning's harvesting done in one decision.",
+  "expect": {
+    "verb": "do_in_order"
+  }
+}

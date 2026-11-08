@@ -1,0 +1,24 @@
+{
+  "tool": "register_org",
+  "kind": "negative",
+  "_why": "An agreement between two people is a conversation, not a society, and DESIGN's own note is that unregistered coordination is itself data. Registering here would make the instrument the cause of what it measures.",
+  "resident": "n05",
+  "location": "street",
+  "inventory": {
+    "planks": 4
+  },
+  "sim": 800,
+  "people_here": [
+    "n09"
+  ],
+  "recent_speech": [
+    {
+      "from": "n09",
+      "text": "Neither of us goes below thirty for planks, then. Agreed?"
+    }
+  ],
+  "open_question_to_me": "n09 wants a handshake on a price floor for planks.",
+  "expect": {
+    "verb": "register_org"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "coder",
+  "version": "1.0.0",
+  "is_latest": true,
+  "type": "coding",
+  "capabilities": ["coding", "debugging", "code_review", "refactoring", "algorithm_design"],
+  "config": {
+    "default_tools": [],
+    "default_skills": ["code_reviewer"]
+  },
+  "description": "Activate for writing code, debugging, code review, refactoring, or implementation tasks. Triggers: 'write a function', 'fix this bug', 'review this code', 'refactor', 'debug', 'implement', 'code this'."
+}

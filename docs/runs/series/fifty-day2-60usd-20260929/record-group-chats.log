@@ -1,0 +1,3 @@
+record_ui: recording http://127.0.0.1:8400/township-v2.html?book=groupchat&roofs=off at 1920x1080, a frame every 4.0s -> ../docs/runs/series/fifty-day2-60usd-20260929/video/group-chats/frames
+record_ui: 31 frames taken this session
+record_ui: 1263 frames -> /home/team/kasukabe/docs/runs/series/fifty-day2-60usd-20260929/video/group-chats/run.mp4 (42s at 30 fps)

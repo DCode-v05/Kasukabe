@@ -1,0 +1,29 @@
+
+==================================================================
+RUN data/v4.db
+==================================================================
+calls 413  ok 413  spend $2.40  last tick 0
+utterances 39
+
+GATE                      VALUE               RESULT
+G1 reply rate             11/28 = 39%         FAIL
+G2 exchanges 4+ turns     3                   PASS
+G3 group (3+ speakers)    2                   PASS
+G4 settlements            2                   PASS
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        203/324 = 63%       PASS
+
+tool calls: {'world_move': 54, 'world_look_around': 44, 'world_say': 39, 'world_describe_place': 12, 'world_craft': 7, 'world_describe_primitives': 6, 'world_list_places': 6, 'world_quote_action_cost': 5, 'world_rest': 5, 'world_sell': 5, 'world_fell_timber': 5, 'world_mine': 4}
+
+largest gathering: 6 speakers at business:b_bakery, ticks 38-55
+   Nell Holloway -> Wren Thorne: Marta. Wren. You have bread for sale? My household needs feeding.
+   Wren Thorne -> Nell Holloway: Morning, Nell. Weather's holding dry — good for the grain, though we'll want rain by week's end. I've wheat he
+   Nell Holloway -> Wren Thorne: Wren. I'm here for bread, but I'll say this plain: that marker moved last winter. Both our families noticed. B
+   Nell Holloway -> Wren Thorne: In my day, when a marker moved, the family that moved it admitted the mistake and put it right. I've lived her
+   Nell Holloway -> Wren Thorne: Ainsley handles trade in our household - grain's not my work. But Wren, before you go, that marker between our
+   Marta Thorne -> Wren Thorne: Wren. You brought the wheat—good. But it's not flour yet, and flour's what fills the oven. Can you mill it her
+
+settlement: Bram Holloway said 150, paid at tick 41
+
+FAILED: G1 reply rate
+

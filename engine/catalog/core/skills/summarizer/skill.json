@@ -1,0 +1,28 @@
+{
+  "name": "summarizer",
+  "version": "1.0.0",
+  "description": "Summarize text, articles, documents, or long content into concise key points. This skill should be used when condensing lengthy content, creating executive summaries, extracting the main takeaways from a document, or distilling research findings. Triggers: 'summarize this', 'give me the key points', 'TL;DR', 'what's the gist', 'condense this', 'executive summary of'.",
+  "category": "content",
+  "capabilities": ["summarization", "key_point_extraction", "content_compression", "digest_generation"],
+  "input_signature": {
+    "type": "object",
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "Text to summarize"
+      }
+    }
+  },
+  "output_signature": {
+    "type": "object",
+    "properties": {
+      "summary": {
+        "type": "string"
+      }
+    }
+  },
+  "has_prompt": true,
+  "has_scripts": false,
+  "has_references": false,
+  "has_gotchas": false
+}

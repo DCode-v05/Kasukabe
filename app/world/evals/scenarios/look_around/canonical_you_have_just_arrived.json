@@ -1,0 +1,15 @@
+{
+  "tool": "look_around",
+  "kind": "positive",
+  "_why": "Run 25: 161 calls, 17 residents, almost always on the tick after arriving somewhere. The cheapest verb in the town and the one that grounds every other.",
+  "resident": "n03",
+  "location": "street",
+  "inventory": {},
+  "sim": 1134,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You have just arrived somewhere and do not know who is here.",
+  "expect": {
+    "verb": "look_around"
+  }
+}

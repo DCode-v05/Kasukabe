@@ -1,0 +1,6 @@
+Scenario **fifty-from-day-two** - Fifty residents from dawn on game-day 2, an election that day and another every day after, run on gpt-6-luna until the $60 cap is spent - about game-day 4.5 at the measured rate. The largest cast the seeded economy has faced, and the first run on a model that is not Bedrock's.
+Cast: `world/genesis_50_town.json`.
+The world starts at tick 324 and stops at tick 756.
+The election opens at tick 324: candidacy closes 342, voting opens 360, and the vote is counted at tick 378.
+Already in office when it starts: prime minister n02; ministers n06, n08 - they may stand again, against anyone who stands for the first time.
+Spend cap $60.00.

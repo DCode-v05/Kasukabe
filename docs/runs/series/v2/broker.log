@@ -1,0 +1,1534 @@
+4 of 6 lanes have no inference profile and were NOT built: moonshotai.kimi-k2.5@us-east-1, moonshotai.kimi-k2.5@us-west-2, deepseek.v3.2@us-east-1, deepseek.v3.2@us-west-2. Aggregate throughput is 200 RPM, not 600.
+INFO:     Started server process [21720]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8200 (Press CTRL+C to quit)
+INFO:     127.0.0.1:1194 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1198 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1201 - "GET /admin/lanes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1202 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1259 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1261 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1262 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1267 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1259 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1262 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1261 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1267 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1259 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1261 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1267 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1262 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1259 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1267 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1259 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1259 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1267 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1262 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1259 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1267 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1259 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1262 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1267 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1259 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1259 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1267 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1262 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1259 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1262 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1267 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1259 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1262 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1267 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1262 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1262 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1262 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1262 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1281 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1283 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1287 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1289 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1281 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1289 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1283 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1287 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1281 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1289 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1283 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1287 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1289 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1287 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1283 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1289 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1287 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1283 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1289 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1287 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1283 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1287 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1262 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1289 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1283 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1287 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1287 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1289 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1283 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1287 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1289 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1283 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1287 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1287 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1283 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1287 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1287 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1287 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1283 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1287 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1283 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1283 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1287 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1285 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1283 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1283 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19074 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19075 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19077 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19078 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19079 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19079 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19074 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19078 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19077 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19079 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19078 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19079 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19077 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19079 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19079 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19075 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19079 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19079 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19079 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19079 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19087 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19089 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19088 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19089 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19089 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19089 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19088 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19089 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19089 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19102 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19103 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19104 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19105 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19104 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19102 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19105 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19104 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19103 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19105 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19105 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19105 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19105 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19105 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19105 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19105 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19105 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19105 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19105 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19105 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:19105 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40451 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40452 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40453 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40454 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40451 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40452 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40453 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40451 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40453 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40451 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40454 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40451 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40454 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40451 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40451 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40451 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40451 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40451 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40451 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40451 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40475 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40473 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40476 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40477 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40474 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40473 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40477 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40475 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40476 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40474 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40487 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40488 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40488 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40487 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40488 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40498 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40500 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40499 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40501 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40501 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40499 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40501 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40501 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40500 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40498 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40498 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40500 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40498 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40498 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40498 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40498 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46501 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46502 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46503 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46504 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46502 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46501 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46503 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46502 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46504 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46502 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46501 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46502 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46502 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46515 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46517 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46516 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46517 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46515 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46516 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46516 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46526 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46527 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46528 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46526 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46528 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46527 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46539 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46541 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46542 - "POST /v1/messages HTTP/1.1" 200 OK
+broker.service: CONTENT LOSS for agent 'n01' on moonshotai.kimi-k2.5@ap-south-1 - billed 1 output tokens and every recorded block is empty - the record shows structure and no words
+INFO:     127.0.0.1:46539 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46541 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46542 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46540 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3613 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3612 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3614 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3612 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3613 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3612 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3614 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:3614 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22334 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22335 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22337 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22336 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22334 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22337 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22335 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22336 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22336 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22349 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22348 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22350 - "POST /v1/messages HTTP/1.1" 200 OK
+broker.app: unhandled exception in /v1/messages
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 162, in converse_stream
+    response = await asyncio.to_thread(self.call_converse_stream_sync, request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 182, in call_converse_stream_sync
+    return self.client.converse_stream(**self.resolved_request(request))
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.ValidationException: An error occurred (ValidationException) when calling the ConverseStream operation: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 1281, in handle
+    await super().handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 145, in app
+    await response(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 273, in __call__
+    async with create_collapsing_task_group() as task_group:
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 235, in __aexit__
+    await self.gen.athrow(value)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_utils.py", line 93, in create_collapsing_task_group
+    raise exc from exc.__cause__ or context
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\anyio\_core\_tasks.py", line 275, in _run_coro
+    retval = await self._coro
+             ^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 276, in wrap
+    await func()
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 250, in stream_response
+    async for chunk in self.body_iterator:
+    ...<2 lines>...
+        await send({"type": "http.response.body", "body": chunk, "more_body": True})
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\app.py", line 329, in body
+    async for event in generator:
+        yield sse_line(event)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\service.py", line 824, in handle_messages_stream
+    async for event in anthropic_sse_events_from_converse_stream(
+    ...<3 lines>...
+        yield event
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\translate.py", line 675, in anthropic_sse_events_from_converse_stream
+    async for event in bedrock_events:
+    ...<110 lines>...
+            }
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 165, in converse_stream
+    raise classify_client_error(
+        error.get("Code", "UnknownError"), error.get("Message", str(e))
+    ) from e
+broker.errors.UpstreamError: Bedrock ValidationException: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 162, in converse_stream
+    response = await asyncio.to_thread(self.call_converse_stream_sync, request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 182, in call_converse_stream_sync
+    return self.client.converse_stream(**self.resolved_request(request))
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.ValidationException: An error occurred (ValidationException) when calling the ConverseStream operation: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 1281, in handle
+    await super().handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 145, in app
+    await response(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 273, in __call__
+    async with create_collapsing_task_group() as task_group:
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 235, in __aexit__
+    await self.gen.athrow(value)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_utils.py", line 93, in create_collapsing_task_group
+    raise exc from exc.__cause__ or context
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\anyio\_core\_tasks.py", line 275, in _run_coro
+    retval = await self._coro
+             ^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 276, in wrap
+    await func()
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 250, in stream_response
+    async for chunk in self.body_iterator:
+    ...<2 lines>...
+        await send({"type": "http.response.body", "body": chunk, "more_body": True})
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\app.py", line 329, in body
+    async for event in generator:
+        yield sse_line(event)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\service.py", line 824, in handle_messages_stream
+    async for event in anthropic_sse_events_from_converse_stream(
+    ...<3 lines>...
+        yield event
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\translate.py", line 675, in anthropic_sse_events_from_converse_stream
+    async for event in bedrock_events:
+    ...<110 lines>...
+            }
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 165, in converse_stream
+    raise classify_client_error(
+        error.get("Code", "UnknownError"), error.get("Message", str(e))
+    ) from e
+broker.errors.UpstreamError: Bedrock ValidationException: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+INFO:     127.0.0.1:22348 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22350 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22360 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22359 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22361 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22360 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22359 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22361 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:22361 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1487 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1488 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1489 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1490 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1490 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1489 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1487 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1487 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1488 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1506 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1508 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1507 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1511 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1509 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1510 - "POST /v1/messages HTTP/1.1" 200 OK
+broker.app: unhandled exception in /v1/messages
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 162, in converse_stream
+    response = await asyncio.to_thread(self.call_converse_stream_sync, request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 182, in call_converse_stream_sync
+    return self.client.converse_stream(**self.resolved_request(request))
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.ValidationException: An error occurred (ValidationException) when calling the ConverseStream operation: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 1281, in handle
+    await super().handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 145, in app
+    await response(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 273, in __call__
+    async with create_collapsing_task_group() as task_group:
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 235, in __aexit__
+    await self.gen.athrow(value)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_utils.py", line 93, in create_collapsing_task_group
+    raise exc from exc.__cause__ or context
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\anyio\_core\_tasks.py", line 275, in _run_coro
+    retval = await self._coro
+             ^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 276, in wrap
+    await func()
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 250, in stream_response
+    async for chunk in self.body_iterator:
+    ...<2 lines>...
+        await send({"type": "http.response.body", "body": chunk, "more_body": True})
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\app.py", line 329, in body
+    async for event in generator:
+        yield sse_line(event)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\service.py", line 824, in handle_messages_stream
+    async for event in anthropic_sse_events_from_converse_stream(
+    ...<3 lines>...
+        yield event
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\translate.py", line 675, in anthropic_sse_events_from_converse_stream
+    async for event in bedrock_events:
+    ...<110 lines>...
+            }
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 165, in converse_stream
+    raise classify_client_error(
+        error.get("Code", "UnknownError"), error.get("Message", str(e))
+    ) from e
+broker.errors.UpstreamError: Bedrock ValidationException: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 162, in converse_stream
+    response = await asyncio.to_thread(self.call_converse_stream_sync, request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 182, in call_converse_stream_sync
+    return self.client.converse_stream(**self.resolved_request(request))
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.ValidationException: An error occurred (ValidationException) when calling the ConverseStream operation: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 1281, in handle
+    await super().handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 145, in app
+    await response(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 273, in __call__
+    async with create_collapsing_task_group() as task_group:
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 235, in __aexit__
+    await self.gen.athrow(value)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_utils.py", line 93, in create_collapsing_task_group
+    raise exc from exc.__cause__ or context
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\anyio\_core\_tasks.py", line 275, in _run_coro
+    retval = await self._coro
+             ^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 276, in wrap
+    await func()
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 250, in stream_response
+    async for chunk in self.body_iterator:
+    ...<2 lines>...
+        await send({"type": "http.response.body", "body": chunk, "more_body": True})
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\app.py", line 329, in body
+    async for event in generator:
+        yield sse_line(event)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\service.py", line 824, in handle_messages_stream
+    async for event in anthropic_sse_events_from_converse_stream(
+    ...<3 lines>...
+        yield event
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\translate.py", line 675, in anthropic_sse_events_from_converse_stream
+    async for event in bedrock_events:
+    ...<110 lines>...
+            }
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 165, in converse_stream
+    raise classify_client_error(
+        error.get("Code", "UnknownError"), error.get("Message", str(e))
+    ) from e
+broker.errors.UpstreamError: Bedrock ValidationException: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+INFO:     127.0.0.1:1508 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1507 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1511 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1509 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1510 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6424 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6424 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6424 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6424 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36804 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36805 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36806 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36804 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36804 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36804 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36805 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36804 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36806 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36804 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36804 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36804 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36804 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36806 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36806 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36806 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:17996 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:17998 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:17997 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:17999 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:18001 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:18000 - "POST /v1/messages HTTP/1.1" 200 OK
+broker.app: unhandled exception in /v1/messages
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 162, in converse_stream
+    response = await asyncio.to_thread(self.call_converse_stream_sync, request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 182, in call_converse_stream_sync
+    return self.client.converse_stream(**self.resolved_request(request))
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.ValidationException: An error occurred (ValidationException) when calling the ConverseStream operation: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 1281, in handle
+    await super().handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 145, in app
+    await response(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 273, in __call__
+    async with create_collapsing_task_group() as task_group:
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 235, in __aexit__
+    await self.gen.athrow(value)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_utils.py", line 93, in create_collapsing_task_group
+    raise exc from exc.__cause__ or context
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\anyio\_core\_tasks.py", line 275, in _run_coro
+    retval = await self._coro
+             ^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 276, in wrap
+    await func()
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 250, in stream_response
+    async for chunk in self.body_iterator:
+    ...<2 lines>...
+        await send({"type": "http.response.body", "body": chunk, "more_body": True})
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\app.py", line 329, in body
+    async for event in generator:
+        yield sse_line(event)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\service.py", line 824, in handle_messages_stream
+    async for event in anthropic_sse_events_from_converse_stream(
+    ...<3 lines>...
+        yield event
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\translate.py", line 675, in anthropic_sse_events_from_converse_stream
+    async for event in bedrock_events:
+    ...<110 lines>...
+            }
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 165, in converse_stream
+    raise classify_client_error(
+        error.get("Code", "UnknownError"), error.get("Message", str(e))
+    ) from e
+broker.errors.UpstreamError: Bedrock ValidationException: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 162, in converse_stream
+    response = await asyncio.to_thread(self.call_converse_stream_sync, request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 182, in call_converse_stream_sync
+    return self.client.converse_stream(**self.resolved_request(request))
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.ValidationException: An error occurred (ValidationException) when calling the ConverseStream operation: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 1281, in handle
+    await super().handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 145, in app
+    await response(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 273, in __call__
+    async with create_collapsing_task_group() as task_group:
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 235, in __aexit__
+    await self.gen.athrow(value)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_utils.py", line 93, in create_collapsing_task_group
+    raise exc from exc.__cause__ or context
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\anyio\_core\_tasks.py", line 275, in _run_coro
+    retval = await self._coro
+             ^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 276, in wrap
+    await func()
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 250, in stream_response
+    async for chunk in self.body_iterator:
+    ...<2 lines>...
+        await send({"type": "http.response.body", "body": chunk, "more_body": True})
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\app.py", line 329, in body
+    async for event in generator:
+        yield sse_line(event)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\service.py", line 824, in handle_messages_stream
+    async for event in anthropic_sse_events_from_converse_stream(
+    ...<3 lines>...
+        yield event
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\translate.py", line 675, in anthropic_sse_events_from_converse_stream
+    async for event in bedrock_events:
+    ...<110 lines>...
+            }
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 165, in converse_stream
+    raise classify_client_error(
+        error.get("Code", "UnknownError"), error.get("Message", str(e))
+    ) from e
+broker.errors.UpstreamError: Bedrock ValidationException: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+INFO:     127.0.0.1:17998 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:17997 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:18001 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:18000 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:17997 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:17999 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:17997 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:17997 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:18001 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:17997 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:17997 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:17997 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:17997 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:17997 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:17997 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32064 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32065 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32066 - "POST /v1/messages HTTP/1.1" 200 OK
+broker.app: unhandled exception in /v1/messages
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 162, in converse_stream
+    response = await asyncio.to_thread(self.call_converse_stream_sync, request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 182, in call_converse_stream_sync
+    return self.client.converse_stream(**self.resolved_request(request))
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.ValidationException: An error occurred (ValidationException) when calling the ConverseStream operation: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 1281, in handle
+    await super().handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 145, in app
+    await response(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 273, in __call__
+    async with create_collapsing_task_group() as task_group:
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 235, in __aexit__
+    await self.gen.athrow(value)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_utils.py", line 93, in create_collapsing_task_group
+    raise exc from exc.__cause__ or context
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\anyio\_core\_tasks.py", line 275, in _run_coro
+    retval = await self._coro
+             ^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 276, in wrap
+    await func()
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 250, in stream_response
+    async for chunk in self.body_iterator:
+    ...<2 lines>...
+        await send({"type": "http.response.body", "body": chunk, "more_body": True})
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\app.py", line 329, in body
+    async for event in generator:
+        yield sse_line(event)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\service.py", line 824, in handle_messages_stream
+    async for event in anthropic_sse_events_from_converse_stream(
+    ...<3 lines>...
+        yield event
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\translate.py", line 675, in anthropic_sse_events_from_converse_stream
+    async for event in bedrock_events:
+    ...<110 lines>...
+            }
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 165, in converse_stream
+    raise classify_client_error(
+        error.get("Code", "UnknownError"), error.get("Message", str(e))
+    ) from e
+broker.errors.UpstreamError: Bedrock ValidationException: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 162, in converse_stream
+    response = await asyncio.to_thread(self.call_converse_stream_sync, request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 182, in call_converse_stream_sync
+    return self.client.converse_stream(**self.resolved_request(request))
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.ValidationException: An error occurred (ValidationException) when calling the ConverseStream operation: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 1281, in handle
+    await super().handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 145, in app
+    await response(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 273, in __call__
+    async with create_collapsing_task_group() as task_group:
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 235, in __aexit__
+    await self.gen.athrow(value)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_utils.py", line 93, in create_collapsing_task_group
+    raise exc from exc.__cause__ or context
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\anyio\_core\_tasks.py", line 275, in _run_coro
+    retval = await self._coro
+             ^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 276, in wrap
+    await func()
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 250, in stream_response
+    async for chunk in self.body_iterator:
+    ...<2 lines>...
+        await send({"type": "http.response.body", "body": chunk, "more_body": True})
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\app.py", line 329, in body
+    async for event in generator:
+        yield sse_line(event)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\service.py", line 824, in handle_messages_stream
+    async for event in anthropic_sse_events_from_converse_stream(
+    ...<3 lines>...
+        yield event
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\translate.py", line 675, in anthropic_sse_events_from_converse_stream
+    async for event in bedrock_events:
+    ...<110 lines>...
+            }
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 165, in converse_stream
+    raise classify_client_error(
+        error.get("Code", "UnknownError"), error.get("Message", str(e))
+    ) from e
+broker.errors.UpstreamError: Bedrock ValidationException: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+INFO:     127.0.0.1:32065 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32066 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32066 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32074 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32075 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32075 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32074 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32074 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32090 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32091 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32094 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32093 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32092 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32090 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32091 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32093 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32092 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32094 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32104 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32105 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32103 - "POST /v1/messages HTTP/1.1" 200 OK
+broker.app: unhandled exception in /v1/messages
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 162, in converse_stream
+    response = await asyncio.to_thread(self.call_converse_stream_sync, request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 182, in call_converse_stream_sync
+    return self.client.converse_stream(**self.resolved_request(request))
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.ValidationException: An error occurred (ValidationException) when calling the ConverseStream operation: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 1281, in handle
+    await super().handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 145, in app
+    await response(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 273, in __call__
+    async with create_collapsing_task_group() as task_group:
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 235, in __aexit__
+    await self.gen.athrow(value)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_utils.py", line 93, in create_collapsing_task_group
+    raise exc from exc.__cause__ or context
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\anyio\_core\_tasks.py", line 275, in _run_coro
+    retval = await self._coro
+             ^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 276, in wrap
+    await func()
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 250, in stream_response
+    async for chunk in self.body_iterator:
+    ...<2 lines>...
+        await send({"type": "http.response.body", "body": chunk, "more_body": True})
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\app.py", line 329, in body
+    async for event in generator:
+        yield sse_line(event)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\service.py", line 824, in handle_messages_stream
+    async for event in anthropic_sse_events_from_converse_stream(
+    ...<3 lines>...
+        yield event
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\translate.py", line 675, in anthropic_sse_events_from_converse_stream
+    async for event in bedrock_events:
+    ...<110 lines>...
+            }
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 165, in converse_stream
+    raise classify_client_error(
+        error.get("Code", "UnknownError"), error.get("Message", str(e))
+    ) from e
+broker.errors.UpstreamError: Bedrock ValidationException: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 162, in converse_stream
+    response = await asyncio.to_thread(self.call_converse_stream_sync, request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 182, in call_converse_stream_sync
+    return self.client.converse_stream(**self.resolved_request(request))
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.ValidationException: An error occurred (ValidationException) when calling the ConverseStream operation: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 1281, in handle
+    await super().handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 145, in app
+    await response(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 273, in __call__
+    async with create_collapsing_task_group() as task_group:
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 235, in __aexit__
+    await self.gen.athrow(value)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_utils.py", line 93, in create_collapsing_task_group
+    raise exc from exc.__cause__ or context
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\anyio\_core\_tasks.py", line 275, in _run_coro
+    retval = await self._coro
+             ^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 276, in wrap
+    await func()
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 250, in stream_response
+    async for chunk in self.body_iterator:
+    ...<2 lines>...
+        await send({"type": "http.response.body", "body": chunk, "more_body": True})
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\app.py", line 329, in body
+    async for event in generator:
+        yield sse_line(event)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\service.py", line 824, in handle_messages_stream
+    async for event in anthropic_sse_events_from_converse_stream(
+    ...<3 lines>...
+        yield event
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\translate.py", line 675, in anthropic_sse_events_from_converse_stream
+    async for event in bedrock_events:
+    ...<110 lines>...
+            }
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 165, in converse_stream
+    raise classify_client_error(
+        error.get("Code", "UnknownError"), error.get("Message", str(e))
+    ) from e
+broker.errors.UpstreamError: Bedrock ValidationException: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+INFO:     127.0.0.1:32104 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32103 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32112 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32113 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32113 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32112 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32113 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32113 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32113 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33329 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33331 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33330 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33335 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33333 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33332 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33335 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33330 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33331 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33333 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33332 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33329 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33329 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33344 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33345 - "POST /v1/messages HTTP/1.1" 200 OK
+broker.app: unhandled exception in /v1/messages
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 162, in converse_stream
+    response = await asyncio.to_thread(self.call_converse_stream_sync, request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 182, in call_converse_stream_sync
+    return self.client.converse_stream(**self.resolved_request(request))
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.ValidationException: An error occurred (ValidationException) when calling the ConverseStream operation: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 1281, in handle
+    await super().handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 145, in app
+    await response(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 273, in __call__
+    async with create_collapsing_task_group() as task_group:
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 235, in __aexit__
+    await self.gen.athrow(value)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_utils.py", line 93, in create_collapsing_task_group
+    raise exc from exc.__cause__ or context
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\anyio\_core\_tasks.py", line 275, in _run_coro
+    retval = await self._coro
+             ^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 276, in wrap
+    await func()
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 250, in stream_response
+    async for chunk in self.body_iterator:
+    ...<2 lines>...
+        await send({"type": "http.response.body", "body": chunk, "more_body": True})
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\app.py", line 329, in body
+    async for event in generator:
+        yield sse_line(event)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\service.py", line 824, in handle_messages_stream
+    async for event in anthropic_sse_events_from_converse_stream(
+    ...<3 lines>...
+        yield event
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\translate.py", line 675, in anthropic_sse_events_from_converse_stream
+    async for event in bedrock_events:
+    ...<110 lines>...
+            }
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 165, in converse_stream
+    raise classify_client_error(
+        error.get("Code", "UnknownError"), error.get("Message", str(e))
+    ) from e
+broker.errors.UpstreamError: Bedrock ValidationException: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 162, in converse_stream
+    response = await asyncio.to_thread(self.call_converse_stream_sync, request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 182, in call_converse_stream_sync
+    return self.client.converse_stream(**self.resolved_request(request))
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.ValidationException: An error occurred (ValidationException) when calling the ConverseStream operation: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 1281, in handle
+    await super().handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 145, in app
+    await response(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 273, in __call__
+    async with create_collapsing_task_group() as task_group:
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 235, in __aexit__
+    await self.gen.athrow(value)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_utils.py", line 93, in create_collapsing_task_group
+    raise exc from exc.__cause__ or context
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\anyio\_core\_tasks.py", line 275, in _run_coro
+    retval = await self._coro
+             ^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 276, in wrap
+    await func()
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 250, in stream_response
+    async for chunk in self.body_iterator:
+    ...<2 lines>...
+        await send({"type": "http.response.body", "body": chunk, "more_body": True})
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\app.py", line 329, in body
+    async for event in generator:
+        yield sse_line(event)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\service.py", line 824, in handle_messages_stream
+    async for event in anthropic_sse_events_from_converse_stream(
+    ...<3 lines>...
+        yield event
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\translate.py", line 675, in anthropic_sse_events_from_converse_stream
+    async for event in bedrock_events:
+    ...<110 lines>...
+            }
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 165, in converse_stream
+    raise classify_client_error(
+        error.get("Code", "UnknownError"), error.get("Message", str(e))
+    ) from e
+broker.errors.UpstreamError: Bedrock ValidationException: The content field in the Message object at messages.9 is empty. Add a ContentBlock object to the content field and try again.
+INFO:     127.0.0.1:33345 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33352 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33353 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33352 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33353 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33353 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33369 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33374 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33370 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33371 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33372 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33373 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33370 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33371 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33373 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33369 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33374 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33372 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33374 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33370 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33374 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33374 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33374 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33374 - "POST /v1/messages HTTP/1.1" 200 OK

@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kasukabe Observatory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Archivo:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* The observatory reads the trace database directly, so it still answers
+     "is this run believable" when the WORLD is the thing that is broken.
+     The page is styled to match the township instrument rather than to be
+     pretty on its own: same graphite chrome, same four signal hues, same
+     three faces. A researcher moving between the two should not feel they
+     have changed application.
+
+     Committed to dark. The previous sheet was light by default with a dark
+     media query, which meant the same run looked like two different tools
+     depending on an OS setting nobody set deliberately. */
+  :root{
+    color-scheme: dark;
+    --ground:#070A0E; --surface:#10161E; --sunk:#161E28;
+    --ink:#E8E3D8; --muted:#A3AEBB; --faint:#6B7885;
+    --rule:#253140; --rule-soft:#1A232E; --rule-lit:#3A4B5E;
+    /* The four signals carry the same meanings as the township:
+       mint = real/alive/good, brass = watch, rust = critical,
+       ember = money in motion. Nothing here is decorative. */
+    --accent:#4ADE9B; --accent-soft:#072016; --accent-dim:#2A8159;
+    --warn:#DCA945;  --warn-soft:#251C08;
+    --bad:#E85C50;   --bad-soft:#2A0F0D; --bad-dim:#8C332C;
+    --ember:#F0863C;
+    --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+    --body:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --display:"Fraunces","Iowan Old Style",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:
+         radial-gradient(1200px 600px at 50% -10%, #0D131B 0%, var(--ground) 60%);
+       color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;
+       min-height:100vh}
+  .wrap{max-width:1080px;margin:0 auto;padding:44px 24px 90px}
+  header{border-bottom:1px solid var(--rule);padding-bottom:22px;margin-bottom:32px}
+  h1{font-family:var(--display);font-size:28px;font-weight:600;margin:0 0 4px;
+     letter-spacing:.01em}
+  .sub{color:var(--faint);font-size:13px;margin:0}
+  h2{font-size:11px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;
+     color:var(--faint);font-weight:500;margin:38px 0 12px;
+     padding-bottom:8px;border-bottom:1px solid var(--rule-soft)}
+
+  /* Believability goes FIRST on the page, not last: a run at 39% dispatch
+     success is a broken instrument, not a finding about society, and the
+     researcher has to see that before reading anything below it. */
+  .card{background:var(--surface);border:1px solid var(--rule-soft);
+        border-radius:10px;padding:18px 20px;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.045)}
+  .verdict{border-left:3px solid var(--accent-dim);background:
+           linear-gradient(90deg,var(--accent-soft),var(--surface) 55%)}
+  .verdict.bad{border-left-color:var(--bad);background:
+               linear-gradient(90deg,var(--bad-soft),var(--surface) 55%)}
+  .verdict .v{font-family:var(--display);font-size:19px;font-weight:600;margin-bottom:4px}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:1px;
+         background:var(--rule-soft);border:1px solid var(--rule-soft);
+         border-radius:10px;overflow:hidden;margin-top:16px}
+  .stats div{background:var(--surface);padding:14px 15px}
+  .stats .n{font-family:var(--mono);font-variant-numeric:tabular-nums;
+            font-size:20px;color:var(--accent);line-height:1.2}
+  .stats .n.warn{color:var(--warn)} .stats .n.bad{color:var(--bad)}
+  .stats .l{font-size:11px;color:var(--faint);margin-top:3px;letter-spacing:.02em}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+     text-transform:uppercase;color:var(--faint);font-weight:500;
+     padding:0 10px 8px;border-bottom:1px solid var(--rule)}
+  td{padding:10px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  tbody tr:hover td{background:var(--sunk)}
+  /* Figures are tabular so a column of counts stays a column as it ticks. */
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums;
+       text-align:right;white-space:nowrap;color:var(--ink)}
+  .key{font-family:var(--mono);font-size:12px;color:var(--muted)}
+  /* A missing VERB is the row that closes the loop with toolify: a capability
+     gap with a name and a headcount is the prompt for an invention. */
+  .verb{color:var(--accent);font-weight:600}
+  .note{color:var(--faint);font-size:12px;margin:10px 0 0;line-height:1.6}
+  .empty{color:var(--faint);font-size:13px;padding:10px 0;font-style:italic}
+  .bar{height:6px;background:var(--sunk);border-radius:3px;overflow:hidden;margin-top:9px}
+  .bar span{display:block;height:100%;background:var(--accent)}
+  .bar span.bad{background:var(--bad)}
+  .tablewrap{overflow-x:auto}
+  footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--rule);
+         color:var(--faint);font-size:12px;font-family:var(--mono)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Kasukabe Observatory</h1>
+    <p class="sub">Read-only. Nothing on this page writes to the town.</p>
+  </header>
+
+  <h2>Is this run believable?</h2>
+  <div id="health-verdict" class="card verdict"><div class="v">loading…</div></div>
+  <div id="health-stats" class="stats"></div>
+
+  <h2>What the town cannot do</h2>
+  <div class="card"><div class="tablewrap"><div id="gaps"></div></div></div>
+  <p class="note">A gap with a name and a headcount. Rows in
+    <span class="verb">green</span> are missing verbs — the town reached for
+    something that does not exist, which is the kind of gap an agent could
+    close by inventing a tool.</p>
+
+  <h2>What is failing, and where</h2>
+  <div class="card"><div class="tablewrap"><div id="hops"></div></div></div>
+
+  <footer id="foot">Polling every 5s.</footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const pct = (x) => (x * 100).toFixed(0) + "%";
+
+function statBlock(label, value, tone) {
+  return `<div><div class="n ${tone || ""}">${value}</div><div class="l">${label}</div></div>`;
+}
+
+async function get(path) {
+  try {
+    const r = await fetch(path, {cache: "no-store"});
+    return await r.json();
+  } catch (e) {
+    return {available: false, why: "the observatory could not reach its own API"};
+  }
+}
+
+async function drawHealth() {
+  const d = await get("/api/health");
+  if (!d.available) {
+    $("health-verdict").className = "card verdict";
+    $("health-verdict").innerHTML = `<div class="v">Nothing to judge yet</div><div>${d.why || ""}</div>`;
+    $("health-stats").innerHTML = "";
+    return;
+  }
+  const bad = !d.believable && d.calls > 0;
+  $("health-verdict").className = "card verdict" + (bad ? " bad" : "");
+  $("health-verdict").innerHTML =
+    `<div class="v">${d.verdict}</div>` +
+    `<div class="bar"><span class="${bad ? "bad" : ""}" style="width:${pct(d.dispatch_success)}"></span></div>`;
+  $("health-stats").innerHTML = [
+    statBlock("dispatch success", pct(d.dispatch_success), bad ? "bad" : ""),
+    statBlock("calls", d.calls.toLocaleString()),
+    statBlock("failures", d.failures.toLocaleString(), d.failures ? "warn" : ""),
+    statBlock("spend", "$" + d.spend_usd.toFixed(2)),
+    statBlock("agents seen", d.agents_seen),
+    statBlock("engines alive", d.engines_expected ? `${d.engines_alive}/${d.engines_expected}` : "—"),
+  ].join("");
+}
+
+async function drawGaps() {
+  const d = await get("/api/gaps");
+  if (!d.available) { $("gaps").innerHTML = `<div class="empty">${d.why || "unavailable"}</div>`; return; }
+  if (!d.gaps.length) {
+    $("gaps").innerHTML = `<div class="empty">No refused intentions yet — either the run is young, or the town has not wanted anything it cannot have.</div>`;
+    return;
+  }
+  $("gaps").innerHTML = `<table><thead><tr>
+      <th>What was missing</th><th class="num">Agents</th><th class="num">Attempts</th><th>Reaching for</th>
+    </tr></thead><tbody>` + d.gaps.map(g => `<tr>
+      <td class="key ${g.is_missing_verb ? "verb" : ""}">${g.unmet_requirement}
+        ${g.example ? `<div class="l" style="color:var(--muted);font-size:12px">${g.example}</div>` : ""}</td>
+      <td class="num">${g.agents}</td><td class="num">${g.attempts}</td>
+      <td class="key">${g.tools.join(", ")}</td></tr>`).join("") + `</tbody></table>`;
+}
+
+async function drawHops() {
+  const d = await get("/api/hops");
+  if (!d.available) { $("hops").innerHTML = `<div class="empty">${d.why || "unavailable"}</div>`; return; }
+  if (!d.hops.length) { $("hops").innerHTML = `<div class="empty">No failures recorded. That is the good outcome.</div>`; return; }
+  const warn = d.untagged_share > 0
+    ? `<p class="note">${pct(d.untagged_share)} of failures predate hop tagging and are grouped as “untagged”.</p>` : "";
+  $("hops").innerHTML = `<table><thead><tr>
+      <th>Which link broke</th><th class="num">Failures</th><th class="num">Agents</th><th>Example</th>
+    </tr></thead><tbody>` + d.hops.map(h => `<tr>
+      <td class="key">${h.hop}</td><td class="num">${h.failures.toLocaleString()}</td>
+      <td class="num">${h.agents}</td>
+      <td>${h.example_error}<div style="color:var(--muted);font-size:12px">${h.example_message}</div></td>
+    </tr>`).join("") + `</tbody></table>` + warn;
+}
+
+async function tick() {
+  await Promise.all([drawHealth(), drawGaps(), drawHops()]);
+  $("foot").textContent = "Polling every 5s · last updated " + new Date().toLocaleTimeString();
+}
+tick();
+setInterval(tick, 5000);
+</script>
+</body>
+</html>

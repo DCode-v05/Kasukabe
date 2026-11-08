@@ -1,0 +1,16 @@
+{
+  "tool": "do_in_order",
+  "kind": "positive",
+  "_why": "Runs 26-28 made 0 programs in 662 turns while residents narrated routines out loud - 'walk, harvest what I can carry, walk back, stock the shelf' - and run 28 spent 45% of its turn calls in turns that ran to the 12-call limit, one act per call. A known sequence decided in advance is the situation do_in_order exists for: several acts, already chosen, bought with one call. If a model spends a call per harvest here it will do so in every live morning.",
+  "resident": "n06",
+  "location": "farmland:wheat",
+  "inventory": {},
+  "sim": 3800,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You know this morning's work: cut wheat until you hold ten, then carry it to the mill. You have done exactly this every morning this week.",
+  "expect": {
+    "verb": "do_in_order",
+    "params_include": {}
+  }
+}

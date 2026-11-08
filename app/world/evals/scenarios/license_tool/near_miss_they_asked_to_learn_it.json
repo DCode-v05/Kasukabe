@@ -1,0 +1,22 @@
+{
+  "tool": "license_tool",
+  "kind": "near_miss",
+  "_why": "Addendum section 9's near miss: they asked how it WORKS, not to borrow it. `teach_tool` and `license_tool` are scored as distinct reaches, and the difference between renting and teaching is the interesting part.",
+  "resident": "ada",
+  "location": "Kasukabe Workshop",
+  "inventory": {},
+  "sim": 800,
+  "people_here": [
+    "n09"
+  ],
+  "recent_speech": [
+    {
+      "from": "n09",
+      "text": "Ada. Teach me how you do it. I want to be able to make rope myself, after you are gone."
+    }
+  ],
+  "open_question_to_me": "n09 is waiting on an answer. You own the tool rope_making.",
+  "expect": {
+    "verb": "teach_tool"
+  }
+}

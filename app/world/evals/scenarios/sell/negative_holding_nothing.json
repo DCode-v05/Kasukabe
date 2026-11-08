@@ -1,0 +1,15 @@
+{
+  "tool": "sell",
+  "kind": "negative",
+  "_why": "Nothing to sell and nobody buying.",
+  "resident": "n06",
+  "location": "home:h_thorne",
+  "inventory": {},
+  "sim": 40,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": null,
+  "expect": {
+    "verb": "sell"
+  }
+}

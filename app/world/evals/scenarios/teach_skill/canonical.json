@@ -1,0 +1,25 @@
+{
+  "tool": "teach_skill",
+  "kind": "positive",
+  "_why": "T5 asks for a tool held by three residents, and diffusion has never been measured on a run (EVAL-05). A consenting student standing in front of a proficient teacher who has just asked to be taught is the situation the verb exists for.",
+  "resident": "n09",
+  "location": "mill",
+  "inventory": {},
+  "sim": 600,
+  "people_here": [
+    "n05"
+  ],
+  "recent_speech": [
+    {
+      "from": "n05",
+      "text": "Show me how you mill it. I will pay for the lesson."
+    }
+  ],
+  "open_question_to_me": "n05 asked you to teach them milling and offered to pay",
+  "expect": {
+    "verb": "teach_skill",
+    "params_include": {
+      "student_agent_id": "n05"
+    }
+  }
+}

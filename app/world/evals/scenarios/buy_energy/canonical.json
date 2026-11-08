@@ -1,0 +1,13 @@
+{
+  "tool": "buy_energy",
+  "kind": "positive",
+  "_why": "The verb that closes the survival loop, tested before it ever reaches a run - the discipline the eval spec adds, and the one this project has never followed. The resident is at the counter, holds sim, and its thinking is nearly out.",
+  "resident": "n01",
+  "location": "Kasukabe Government Complex",
+  "inventory": {},
+  "sim": 2600,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": null,
+  "expect": {"verb": "buy_energy", "params_include": {}}
+}

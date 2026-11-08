@@ -1,0 +1,59 @@
+# Kasukabe reverse proxy + TLS + token gating (RUNBOOK.md step 6).
+#
+# Two public sites, both on the september.wtf domain, both gated behind
+# HTTP Basic Auth in front of everything else - "token gating" per the
+# TASK spec, implemented as a single shared operator credential Caddy
+# checks before a request ever reaches game/ or game/console/. This is a
+# second, independent layer on top of the console's own OPERATOR_TOKEN
+# bearer auth (game/console/auth.py) - the live town view at kasukabe.
+# has NO app-level auth at all (game/config.py's own docstring: "the
+# unauthenticated live town view"), so Caddy's basic_auth is the ONLY
+# gate standing between the public internet and a page that streams the
+# entire town's live state.
+#
+# Caddy's automatic HTTPS (Let's Encrypt via ACME HTTP-01) needs port 80
+# reachable from the internet and each hostname's DNS A record already
+# pointing at this host's Elastic IP before Caddy starts - see
+# RUNBOOK.md step 5 (DNS) which must happen BEFORE step 6 (this file).
+#
+# Placeholders (RUNBOOK.md step 6 fills these in with real values before
+# copying this file to /etc/caddy/Caddyfile):
+#   KASUKABE_DOMAIN_ROOT     e.g. kasukabe.september.wtf
+#   KASUKABE_DOMAIN_CONSOLE  e.g. console.kasukabe.september.wtf
+#   KASUKABE_BASIC_AUTH_HASH output of `caddy hash-password` for the
+#                            shared operator token (RUNBOOK.md step 6)
+#   KASUKABE_ACME_EMAIL      an address that can receive Let's Encrypt
+#                            expiry/renewal-failure notices
+
+{
+	email {$KASUKABE_ACME_EMAIL}
+}
+
+{$KASUKABE_DOMAIN_ROOT} {
+	encode zstd gzip
+
+	basic_auth {
+		operator {$KASUKABE_BASIC_AUTH_HASH}
+	}
+
+	# game/server.py: live town view + WS relay (kasukabe-game.service,
+	# 127.0.0.1:8400). Caddy proxies the WebSocket upgrade for /ws
+	# transparently - no separate directive needed, reverse_proxy detects
+	# the Connection: Upgrade header itself.
+	reverse_proxy 127.0.0.1:8400
+}
+
+{$KASUKABE_DOMAIN_CONSOLE} {
+	encode zstd gzip
+
+	basic_auth {
+		operator {$KASUKABE_BASIC_AUTH_HASH}
+	}
+
+	# game/console/app.py: President/God operator console
+	# (kasukabe-console.service, 127.0.0.1:8300). Its own /api/* routes
+	# additionally require Authorization: Bearer <OPERATOR_TOKEN> - Caddy's
+	# basic_auth above and the app's bearer check are deliberately two
+	# separate secrets (RUNBOOK.md step 6 note).
+	reverse_proxy 127.0.0.1:8300
+}

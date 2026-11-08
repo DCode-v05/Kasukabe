@@ -1,0 +1,35 @@
+{
+  "name": "code-reviewer",
+  "version": "1.0.0",
+  "description": "Review code for bugs, security vulnerabilities, performance issues, and style problems. This skill should be used when code needs a second pair of eyes, when reviewing a PR or diff, when checking for security issues before deployment, or when assessing code quality. Triggers: 'review this code', 'check for bugs', 'is this secure', 'code quality check'.",
+  "category": "development",
+  "capabilities": ["code_review", "security_audit", "bug_detection", "quality_assessment"],
+  "input_signature": {
+    "type": "object",
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "Code to review"
+      },
+      "language": {
+        "type": "string",
+        "description": "Programming language"
+      }
+    }
+  },
+  "output_signature": {
+    "type": "object",
+    "properties": {
+      "issues": {
+        "type": "array"
+      },
+      "summary": {
+        "type": "string"
+      }
+    }
+  },
+  "has_prompt": true,
+  "has_scripts": false,
+  "has_references": false,
+  "has_gotchas": false
+}

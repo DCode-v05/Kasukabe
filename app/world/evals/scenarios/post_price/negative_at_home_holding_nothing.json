@@ -1,0 +1,15 @@
+{
+  "tool": "post_price",
+  "kind": "negative",
+  "_why": "Addendum section 3's negative row.",
+  "resident": "n06",
+  "location": "home:h_thorne",
+  "inventory": {},
+  "sim": 60,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": null,
+  "expect": {
+    "verb": "post_price"
+  }
+}

@@ -1,0 +1,27 @@
+
+==================================================================
+RUN data/v6.db
+==================================================================
+calls 433  ok 432  spend $2.50  last tick 0
+utterances 39
+
+GATE                      VALUE               RESULT
+G1 reply rate             12/30 = 40%         FAIL
+G2 exchanges 4+ turns     4                   PASS
+G3 group (3+ speakers)    3                   PASS
+G4 settlements            0                   FAIL
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        171/312 = 55%       PASS
+
+tool calls: {'world_move': 53, 'world_say': 39, 'world_look_around': 27, 'world_craft': 9, 'world_fell_timber': 8, 'world_describe_place': 7, 'world_list_places': 6, 'world_find_people': 5, 'world_sell': 4, 'world_harvest': 3, 'world_rest': 3, 'world_mine': 3}
+
+largest gathering: 7 speakers at business:b_bakery, ticks 41-69
+   Ainsley Holloway -> Marta Thorne: Marta. Good morning. I need a loaf—your cheapest that fills. And the price? But first, before money changes ha
+   Marta Thorne -> Ainsley Holloway: Ainsley. Sit down. Or don't—standing's gotten to be a habit for us both. But listen, because I've only got thi
+   Nell Holloway -> Ainsley Holloway: Ainsley. Marta. That 400 sim debt - we're speaking it plain now. Forty years I've watched the Thornes be polit
+   Ainsley Holloway -> Nell Holloway: Now then. Three women standing in a bakery at eight in the morning, and none of us have eaten. Nell, you named
+   Marta Thorne -> Nell Holloway: Nell. Ainsley. I've heard you both. I'll witness what you need witnessed. But first— first I need to know if e
+   Wren Thorne -> Ainsley Holloway: The debt, Ainsley? Or the grain? I've got green wheat here, one unit pulled early. And questions about... abou
+
+FAILED: G1 reply rate, G4 settlements
+

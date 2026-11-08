@@ -1,0 +1,17 @@
+{
+  "tool": "register_business",
+  "kind": "positive",
+  "_why": "Every business in Kasukabe is one genesis seeded: `register_business` has never been called in any run. A resident already trading out of its own holdings, at the complex, with the fee in hand, is the situation the verb exists for.",
+  "resident": "n02",
+  "location": "Kasukabe Government Complex",
+  "inventory": {
+    "bread": 12
+  },
+  "sim": 2400,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You have been baking and selling bread out of your own hands for three days, and you are standing in the government complex.",
+  "expect": {
+    "verb": "register_business"
+  }
+}

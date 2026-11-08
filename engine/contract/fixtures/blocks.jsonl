@@ -1,0 +1,108 @@
+seq: 1
+event: block
+data: {"id": "text:turn_fixture:thread_fixture", "type": "text", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"text": ""}}
+
+seq: 1
+event: block
+data: {"id": "reasoning:turn_fixture:thread_fixture", "type": "reasoning", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"text": ""}}
+
+seq: 1
+event: block
+data: {"id": "tool:turn_fixture", "type": "tool", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"tool_name": "", "source": "", "phase": "", "params": {}, "result": "", "duration": 0, "status": "", "parallel_batch_id": "", "permission_tier": 0, "chain_id": ""}}
+
+seq: 1
+event: block
+data: {"id": "image:turn_fixture", "type": "image", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"title": "", "items": []}}
+
+seq: 1
+event: block
+data: {"id": "voice:turn_fixture:thread_fixture", "type": "voice", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"text": ""}}
+
+seq: 1
+event: block
+data: {"id": "audio:turn_fixture", "type": "audio", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"title": "", "items": []}}
+
+seq: 1
+event: block
+data: {"id": "video:turn_fixture", "type": "video", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"title": "", "items": []}}
+
+seq: 1
+event: block
+data: {"id": "craft:turn_fixture", "type": "craft", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"question": "", "gap_type": null, "asset_hint": "", "format": "", "options": [], "suggested_rule": "", "block_id": "", "wait": false}}
+
+seq: 1
+event: block
+data: {"id": "source:turn_fixture:turn_fixture", "type": "source", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"kind": ""}}
+
+seq: 1
+event: block
+data: {"id": "progress:turn_fixture", "type": "progress", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"charter_id": "", "node_id": "", "label": "", "status": "", "output_preview": "", "items": null, "is_replan": false, "phase": "node"}}
+
+seq: 1
+event: block
+data: {"id": "status:interruptible:turn_fixture", "type": "status", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"interruptible": false, "tool_count": 0, "kind": "interruptible"}}
+
+seq: 1
+event: block
+data: {"id": "thread:thread_fixture", "type": "thread", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"status": "", "model_id": "", "phase": ""}}
+
+seq: 1
+event: block
+data: {"id": "summary:turn_fixture", "type": "summary", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"status": "", "duration_ms": 0, "total_input_tokens": 0, "total_output_tokens": 0, "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0, "estimated_cost_usd": 0.0, "tool_calls_count": 0, "model_id": "", "exit_reason": "", "last_model_stop": "", "num_turns": 0, "chain_id": "", "depth": 0, "turn_id": "", "turn_counter": 0, "quota": null}}
+
+seq: 1
+event: block
+data: {"id": "sub_agent:turn_fixture", "type": "sub_agent", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"agent_id": "", "agent_name": "", "task_description": "", "chain_id": "", "depth": 0, "parent_chain_id": "", "is_fork": false, "fork_label": "", "agent_type": "", "model_id": "", "phase": "start"}}
+
+seq: 1
+event: block
+data: {"id": "routing:turn_fixture", "type": "routing", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"reasoning": "", "active_thread_count": 0, "segments": []}}
+
+seq: 1
+event: block
+data: {"id": "replan:turn_fixture", "type": "replan", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"charter_id": "", "reason": ""}}
+
+seq: 1
+event: block
+data: {"id": "asset:required:turn_fixture", "type": "asset", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"server_name": "", "connection_id": null, "oauth_url": null, "kind": "required"}}
+
+seq: 1
+event: block
+data: {"id": "compaction:compaction:turn_fixture", "type": "compaction", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"messages_before": 0, "messages_after": 0, "tokens_before": 0, "tokens_after": 0, "method": "", "chain_id": "", "turn_id_before": "", "turn_id_after": "", "kind": "compaction"}}
+
+seq: 1
+event: block
+data: {"id": "budget:turn_fixture", "type": "budget", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"turn_tokens": 0, "budget": 0, "pct": 0, "continuation_count": 0, "phase": "progress"}}
+
+seq: 1
+event: block
+data: {"id": "model:fallback:turn_fixture", "type": "model", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"original_model": "", "fallback_model": "", "consecutive_529s": 0, "kind": "fallback"}}
+
+seq: 1
+event: block
+data: {"id": "hook:turn_fixture:0", "type": "hook", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"tool_name": "", "tool_use_id": "", "denied": false, "allowed": false, "prevented": false, "hook_outcomes": [], "phase": "pre_tool"}}
+
+seq: 1
+event: block
+data: {"id": "memory:turn_fixture", "type": "memory", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"memory_type": "", "key": "", "value_preview": ""}}
+
+seq: 1
+event: block
+data: {"id": "file:turn_fixture", "type": "file", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"path": "", "tokens": 0, "truncated": false, "phase": "restored"}}
+
+seq: 1
+event: block
+data: {"id": "subprocess:sandbox_exec", "type": "subprocess", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"spawn_site": "sandbox_exec", "mode": "off", "scrubbed_count": 0, "has_proxy_env": false}}
+
+seq: 1
+event: block
+data: {"id": "session:turn_fixture", "type": "session", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"previous_state": "", "idle_seconds": 0.0, "tool_calls": 0, "errors": 0, "user_active_seconds": 0.0, "engine_active_seconds": 0.0, "natural_language": "", "source": "llm"}}
+
+seq: 1
+event: block
+data: {"id": "error:turn_fixture", "type": "error", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"code": "internal_error", "message": "Internal engine error", "retryable": false}}
+
+seq: 1
+event: block
+data: {"id": "done:turn_fixture", "type": "done", "thread_id": "thread_fixture", "ts": "2020-01-01T00:00:00+00:00", "payload": {"status": "completed", "num_turns": 1, "cost_usd": 0.0, "duration_ms": 0, "quota": {"used_tokens": 0, "max_tokens": 0, "window_seconds": 0}}}
+

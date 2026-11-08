@@ -1,0 +1,30 @@
+{
+  "tool": "start_conversation",
+  "kind": "positive",
+  "_why": "The dynamic-chat consolidated report's central finding: convening was reached for FIVE TIMES across all six final runs, and where it was used it produced the best conversations in the set (final2's grain conversation, final5's forestry apprenticeship). Three people in one room with one thing to settle is exactly what it is for.",
+  "resident": "n09",
+  "location": "Kasukabe Market Square",
+  "inventory": {
+    "wheat": 4
+  },
+  "sim": 900,
+  "people_here": [
+    "n05",
+    "n03"
+  ],
+  "recent_speech": [
+    {
+      "from": "n05",
+      "text": "The mill wants a price for the wheat and I cannot set one alone."
+    },
+    {
+      "from": "n03",
+      "text": "Nor can I. Somebody has to say what it is worth."
+    }
+  ],
+  "open_question_to_me": "n05 and n03 are both waiting on a price for the wheat",
+  "expect": {
+    "verb": "start_conversation",
+    "params_include": {}
+  }
+}

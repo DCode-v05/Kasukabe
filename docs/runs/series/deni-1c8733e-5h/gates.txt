@@ -1,0 +1,27 @@
+
+==================================================================
+RUN data/deni-1c8733e-5h.db
+==================================================================
+calls 3247  ok 3246  spend $13.61  last tick 152
+utterances 202
+
+GATE                      VALUE               RESULT
+G1 reply rate             106/171 = 62%       PASS
+G2 exchanges 4+ turns     10                  PASS
+G3 group (3+ speakers)    12                  PASS
+G4 settlements            0                   FAIL
+G5 alive at stop          50/50               PASS
+G6 turns w/ effect        802/2442 = 33%      FAIL
+
+tool calls: {'world_say': 202, 'world_move': 186, 'world_look_around': 122, 'world_rest': 88, 'world_harvest': 30, 'world_check_debts': 26, 'world_keep_doing': 21, 'world_describe_primitives': 20, 'world_find_people': 20, 'world_describe_place': 20, 'world_mine': 18, 'world_set_intention': 16}
+
+largest gathering: 9 speakers at business:b_yard, ticks 37-67
+   Arjun Holloway -> Idris Solano: You're early too, then? Or just couldn't sleep with Giselle's voice already in your head about that foundation
+   Idris Solano -> Arjun Holloway: *chuckles* Couldn't sleep is about right. Forty years in and I still wake up thinking someone's about to tell 
+   Arjun Holloway -> Idris Solano: *laughs* Ay, I know that feeling. Difference is you actually care if you swung it wrong. I've seen you check a
+   Selene Renner -> Giselle Ingram: Morning, Giselle. What's the board look like today—any contracts need setting hands to?
+   Mireille Jarrah -> Giselle Ingram: Morning, Giselle. Got work for the crew today? Household's hungry and the ledger's thin, you understand.
+   Giselle Ingram -> aloud: Morning all. What's the day looking like? Any jobs lined up? Saw you two trading words earlier—pricing talk, o
+
+FAILED: G4 settlements, G6 turns w/ effect
+

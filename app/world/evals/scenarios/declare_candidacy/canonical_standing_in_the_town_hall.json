@@ -1,0 +1,15 @@
+{
+  "tool": "declare_candidacy",
+  "kind": "positive",
+  "_why": "Run 25 found TOOL-08's other half here: the charter engines compared a location string with != and the map spelled the same ground differently, so the town could vote and could not stand. Every empty ballot in 24 runs was read as apathy. This is the situation, at the place the gate accepts.",
+  "resident": "n19",
+  "location": "town_hall",
+  "inventory": {},
+  "sim": 1755,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "An election is open for candidates and nobody has declared. You are standing in the town hall.",
+  "expect": {
+    "verb": "declare_candidacy"
+  }
+}

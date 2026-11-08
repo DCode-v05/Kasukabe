@@ -1,0 +1,29 @@
+
+==================================================================
+RUN data/v7.db
+==================================================================
+calls 411  ok 411  spend $2.45  last tick 0
+utterances 44
+
+GATE                      VALUE               RESULT
+G1 reply rate             20/37 = 54%         FAIL
+G2 exchanges 4+ turns     2                   FAIL
+G3 group (3+ speakers)    2                   PASS
+G4 settlements            4                   PASS
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        223/329 = 68%       PASS
+
+tool calls: {'world_move': 56, 'world_say': 45, 'world_look_around': 41, 'world_describe_place': 16, 'world_rest': 14, 'world_buy': 8, 'world_fell_timber': 8, 'world_list_places': 7, 'world_eat': 6, 'world_harvest': 6, 'world_find_people': 5, 'world_quote_action_cost': 3}
+
+largest gathering: 6 speakers at home:h_field, ticks 38-45
+   Liora Thorne -> Marta Thorne: Marta, can I ask something? You have any bread from yesterday?
+   Liora Thorne -> aloud: Asked. Waited. No answer yet.
+   Liora Thorne -> Marta Thorne: Marta, I'm asking directly: do you have bread you can give me, or not? I need to eat before college.
+   Liora Thorne -> Marta Thorne: Marta, I'm waiting on an answer. Do you have bread or not?
+   Liora Thorne -> Wren Thorne: Wren, don't make me ask three times. You have anything I can eat before I walk?
+   Liora Thorne -> Wren Thorne: Wren, why don't you just tell me — is there a problem with food? I can handle knowing. I can't handle not bein
+
+settlement: Marta Thorne said 300, paid at tick 43
+
+FAILED: G1 reply rate, G2 exchanges 4+ turns
+

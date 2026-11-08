@@ -1,0 +1,797 @@
+4 of 6 lanes have no inference profile and were NOT built: moonshotai.kimi-k2.5@us-east-1, moonshotai.kimi-k2.5@us-west-2, deepseek.v3.2@us-east-1, deepseek.v3.2@us-west-2. Aggregate throughput is 200 RPM, not 600.
+INFO:     Started server process [20056]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8200 (Press CTRL+C to quit)
+INFO:     127.0.0.1:44399 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44405 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44412 - "GET /admin/lanes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44413 - "GET /admin/lanes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44414 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45043 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45046 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45047 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45049 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45050 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45051 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45052 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45053 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45054 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45055 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45056 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45057 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45058 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45059 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45086 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45060 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45043 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45054 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45051 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45055 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45046 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45049 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45048 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45047 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45050 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45053 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45052 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45054 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45057 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45059 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45054 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45123 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45057 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45052 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45126 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45128 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45132 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45133 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45135 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45138 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45140 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45142 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45144 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45145 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45133 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45153 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45155 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45160 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45164 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45167 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45160 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45171 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45172 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45175 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45176 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45179 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45180 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45181 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45186 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45187 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45167 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45192 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45196 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45176 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45201 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45203 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45204 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45206 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45196 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45210 - "GET /admin/spend HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45208 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45209 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45214 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45215 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45203 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45176 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45206 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45201 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45208 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45209 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45214 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45215 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45206 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45204 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45203 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45176 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45201 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45208 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45209 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45201 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45214 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45215 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45204 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45206 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45208 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45209 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45201 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45203 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45215 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45206 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45208 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45201 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45206 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45209 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45203 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45204 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45201 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45208 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45206 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45209 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45203 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45201 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45209 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45208 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45201 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45289 - "GET /admin/spend HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45340 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45341 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45342 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45344 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45346 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45348 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45349 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45357 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45356 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45354 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45355 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45359 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45360 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45361 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45362 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45363 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45364 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45381 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45383 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45382 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45365 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45369 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45371 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45348 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45416 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45418 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45420 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45426 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45427 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45420 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45429 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45431 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45430 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45434 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45435 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45436 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45418 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45439 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45429 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45440 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45441 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45442 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45445 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45448 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45449 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45450 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45451 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45439 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45427 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45445 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45426 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45430 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45459 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45461 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45466 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45451 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45426 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45475 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45430 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45479 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45480 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45481 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45483 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45484 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45485 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45488 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45497 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45502 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45506 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45507 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45508 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45511 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45514 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45515 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45517 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45518 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45519 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45522 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45524 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45525 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45526 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45514 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45508 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45511 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45515 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45519 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45522 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45517 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45518 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45525 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45524 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45508 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45522 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45519 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45514 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45511 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45526 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45525 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45517 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45508 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45515 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45514 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45524 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45518 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45525 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45526 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45517 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45511 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45514 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45515 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45518 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45525 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45524 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45514 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45517 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45518 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45515 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45511 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45525 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45524 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45514 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45518 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45511 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45525 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45515 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45524 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45511 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45518 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45553 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45514 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45515 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45514 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45524 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30043 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30048 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45524 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30043 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30048 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45524 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30107 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30108 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30110 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30113 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30114 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30117 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30119 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30115 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30120 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30125 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30128 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30121 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30116 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30122 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30118 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30123 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30124 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30127 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30117 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30119 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30110 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30154 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30156 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30157 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30158 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30124 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30159 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30161 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30163 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30154 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30169 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30170 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30171 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30159 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30176 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30177 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30179 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30181 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30170 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30183 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30184 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30187 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30191 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30193 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30187 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30196 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30199 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30202 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30205 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30206 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30209 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30202 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30212 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30214 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30216 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30219 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30205 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30230 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30212 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30209 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30235 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30219 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30239 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30214 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30235 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30247 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30251 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30255 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30239 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30247 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30251 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30255 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30247 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30251 - "POST /v1/messages HTTP/1.1" 200 OK
+broker.service: CONTENT LOSS for agent 'n48' on moonshotai.kimi-k2.5@ap-south-1 - billed 1 output tokens and every recorded block is empty - the record shows structure and no words
+INFO:     127.0.0.1:30255 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30251 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30255 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30247 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30255 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30247 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30255 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30247 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30255 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30247 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30255 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30247 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30247 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30447 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30458 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30391 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30392 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30469 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30450 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30470 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30459 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30448 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30416 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30455 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30461 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30466 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30464 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30452 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30453 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30463 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30468 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30456 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30414 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30424 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30425 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30422 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30396 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30403 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30397 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30420 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30417 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30400 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30409 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30405 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30411 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30413 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30430 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30418 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30408 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30398 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30394 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30415 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30404 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30428 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30434 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30395 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30431 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30410 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30421 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30402 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30436 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30439 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30419 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30440 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30401 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30393 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30429 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30399 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30426 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30438 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30396 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30403 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30414 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30420 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30409 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30430 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30405 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30466 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30415 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30404 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30431 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30392 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30461 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30422 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30421 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30469 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30448 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30463 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30447 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30413 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30436 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30452 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30435 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30439 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30468 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30391 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30417 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30455 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30428 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30434 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30399 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30429 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30432 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30394 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30426 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30403 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30401 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30424 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30416 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30408 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30425 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30405 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30420 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30410 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30430 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30415 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30404 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30398 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30422 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30393 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30392 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30413 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30411 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30435 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30417 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30428 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30419 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30397 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30448 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30433 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30432 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30403 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30461 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30400 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30469 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30468 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30425 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30405 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30455 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30452 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30420 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30447 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30438 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30402 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30415 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30430 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30440 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30409 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30404 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30427 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30418 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30401 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30396 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30448 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30422 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30439 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30436 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30392 - "POST /v1/messages HTTP/1.1" 529 
+INFO:     127.0.0.1:30466 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30395 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30413 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30426 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30434 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30429 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30411 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30431 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30468 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30469 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30424 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30461 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30452 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30414 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30435 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30391 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30399 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30455 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30417 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30428 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30421 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30452 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30435 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30461 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30397 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30433 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30416 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30452 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30455 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30408 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30432 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30410 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30403 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30452 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30394 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30432 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30425 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30455 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30398 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30405 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30393 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30420 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30452 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30455 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30402 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30419 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30415 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30452 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30430 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30415 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30440 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30409 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30455 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30452 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30404 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30427 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30438 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30418 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30452 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30401 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30404 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30455 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30400 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30396 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30452 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30439 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30422 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30436 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30463 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30455 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30422 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30413 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30447 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30413 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30455 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30426 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30434 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30455 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30429 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30411 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30431 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30395 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30424 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30392 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30414 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30448 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30391 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30468 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30399 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30392 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30469 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30421 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30397 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30428 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30461 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30417 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30416 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30433 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30408 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30433 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30417 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30410 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30428 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30394 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30398 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30393 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30402 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30425 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30419 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30440 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30425 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30427 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30438 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30418 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30409 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30427 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30400 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30396 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:30396 - "POST /v1/messages HTTP/1.1" 200 OK
+broker.service: ledger debit failed for payer 'n07' (agent 'n07'), 1 cents credited back to be re-billed on the next call
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpcore\_async\connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpcore\_backends\auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpcore\_backends\anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: All connection attempts failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\service.py", line 786, in settle
+    await self.ledger.debit(
+    ...<8 lines>...
+    )
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\ledger.py", line 161, in debit
+    resp = await self.client.post(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_client.py", line 1859, in post
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<13 lines>...
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: All connection attempts failed
+broker.service: ledger debit failed for payer 'n37' (agent 'n37'), 1 cents credited back to be re-billed on the next call
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_transports\default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_transports\default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 256, in handle_async_request
+    raise exc from None
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpcore\_async\connection_pool.py", line 236, in handle_async_request
+    response = await connection.handle_async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        pool_request.request
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpcore\_async\connection.py", line 101, in handle_async_request
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpcore\_async\connection.py", line 78, in handle_async_request
+    stream = await self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpcore\_async\connection.py", line 124, in _connect
+    stream = await self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpcore\_backends\auto.py", line 31, in connect_tcp
+    return await self._backend.connect_tcp(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpcore\_backends\anyio.py", line 113, in connect_tcp
+    with map_exceptions(exc_map):
+         ~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpcore\_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: All connection attempts failed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\service.py", line 786, in settle
+    await self.ledger.debit(
+    ...<8 lines>...
+    )
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\ledger.py", line 161, in debit
+    resp = await self.client.post(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_client.py", line 1859, in post
+    return await self.request(
+           ^^^^^^^^^^^^^^^^^^^
+    ...<13 lines>...
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_client.py", line 1540, in request
+    return await self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_transports\default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+         ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\httpx\_transports\default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: All connection attempts failed
+INFO:     127.0.0.1:30538 - "GET /admin/spend HTTP/1.1" 200 OK

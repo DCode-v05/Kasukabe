@@ -1,0 +1,398 @@
+4 of 6 lanes have no inference profile and were NOT built: moonshotai.kimi-k2.5@us-east-1, moonshotai.kimi-k2.5@us-west-2, deepseek.v3.2@us-east-1, deepseek.v3.2@us-west-2. Aggregate throughput is 200 RPM, not 600.
+INFO:     Started server process [2680]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8200 (Press CTRL+C to quit)
+INFO:     127.0.0.1:59279 - "GET /admin/lanes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59280 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59336 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59338 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59339 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59341 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59338 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59336 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59339 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59336 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59338 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59341 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59339 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59336 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59341 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59338 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59336 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59341 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59336 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59341 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59341 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59341 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59341 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45971 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45976 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45978 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45977 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45971 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45977 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45978 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45976 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45978 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59341 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45977 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45978 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45971 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45976 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59341 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45975 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45973 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46006 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46007 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46008 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46009 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46008 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46006 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46007 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46009 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46007 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46008 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46008 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46009 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46007 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46008 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46008 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46007 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46021 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46022 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46023 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46024 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46025 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46021 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46024 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46021 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46025 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46022 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46023 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46021 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46024 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46022 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46023 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46025 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46039 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46040 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46041 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46042 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46041 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46040 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46041 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46039 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46042 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46042 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46051 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46050 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46052 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46050 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46051 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46050 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46052 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46050 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46050 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46050 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46050 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46050 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46050 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46050 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46050 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46050 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46050 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9364 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9365 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9366 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9368 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9365 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9364 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9368 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9366 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:21721 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:21723 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:21722 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:21724 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:21721 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:21723 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46050 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:21724 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:21722 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46050 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:21722 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57302 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57302 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57302 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36689 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36690 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36692 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36691 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36689 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36692 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36691 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36690 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36707 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36708 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36706 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36706 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36708 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36706 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36707 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46050 - "POST /v1/messages HTTP/1.1" 200 OK
+broker.app: unhandled exception in /v1/messages
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 162, in converse_stream
+    response = await asyncio.to_thread(self.call_converse_stream_sync, request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 182, in call_converse_stream_sync
+    return self.client.converse_stream(**self.resolved_request(request))
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.ValidationException: An error occurred (ValidationException) when calling the ConverseStream operation: The number of toolResult blocks at messages.6.content exceeds the number of toolUse blocks of previous turn.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 1281, in handle
+    await super().handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 145, in app
+    await response(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 273, in __call__
+    async with create_collapsing_task_group() as task_group:
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 235, in __aexit__
+    await self.gen.athrow(value)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_utils.py", line 93, in create_collapsing_task_group
+    raise exc from exc.__cause__ or context
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\anyio\_core\_tasks.py", line 275, in _run_coro
+    retval = await self._coro
+             ^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 276, in wrap
+    await func()
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 250, in stream_response
+    async for chunk in self.body_iterator:
+    ...<2 lines>...
+        await send({"type": "http.response.body", "body": chunk, "more_body": True})
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\app.py", line 329, in body
+    async for event in generator:
+        yield sse_line(event)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\service.py", line 824, in handle_messages_stream
+    async for event in anthropic_sse_events_from_converse_stream(
+    ...<3 lines>...
+        yield event
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\translate.py", line 570, in anthropic_sse_events_from_converse_stream
+    async for event in bedrock_events:
+    ...<110 lines>...
+            }
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 165, in converse_stream
+    raise classify_client_error(
+        error.get("Code", "UnknownError"), error.get("Message", str(e))
+    ) from e
+broker.errors.UpstreamError: Bedrock ValidationException: The number of toolResult blocks at messages.6.content exceeds the number of toolUse blocks of previous turn.
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 162, in converse_stream
+    response = await asyncio.to_thread(self.call_converse_stream_sync, request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 182, in call_converse_stream_sync
+    return self.client.converse_stream(**self.resolved_request(request))
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 606, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\context.py", line 123, in wrapper
+    return func(*args, **kwargs)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\botocore\client.py", line 1094, in _make_api_call
+    raise error_class(parsed_response, operation_name)
+botocore.errorfactory.ValidationException: An error occurred (ValidationException) when calling the ConverseStream operation: The number of toolResult blocks at messages.6.content exceeds the number of toolUse blocks of previous turn.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 422, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 670, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 2734, in app
+    await route.handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 1281, in handle
+    await super().handle(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\routing.py", line 280, in handle
+    await self.app(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 158, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\fastapi\routing.py", line 145, in app
+    await response(scope, receive, send)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 273, in __call__
+    async with create_collapsing_task_group() as task_group:
+               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\denis\AppData\Local\Programs\Python\Python313\Lib\contextlib.py", line 235, in __aexit__
+    await self.gen.athrow(value)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\_utils.py", line 93, in create_collapsing_task_group
+    raise exc from exc.__cause__ or context
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\anyio\_core\_tasks.py", line 275, in _run_coro
+    retval = await self._coro
+             ^^^^^^^^^^^^^^^^
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 276, in wrap
+    await func()
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\.venv\Lib\site-packages\starlette\responses.py", line 250, in stream_response
+    async for chunk in self.body_iterator:
+    ...<2 lines>...
+        await send({"type": "http.response.body", "body": chunk, "more_body": True})
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\app.py", line 329, in body
+    async for event in generator:
+        yield sse_line(event)
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\service.py", line 824, in handle_messages_stream
+    async for event in anthropic_sse_events_from_converse_stream(
+    ...<3 lines>...
+        yield event
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\translate.py", line 570, in anthropic_sse_events_from_converse_stream
+    async for event in bedrock_events:
+    ...<110 lines>...
+            }
+  File "D:\Deni\Mr.Tech\Experience\Internships\September Platforms\Production\BAP Product\Code\kasukabe\app\broker\bedrock.py", line 165, in converse_stream
+    raise classify_client_error(
+        error.get("Code", "UnknownError"), error.get("Message", str(e))
+    ) from e
+broker.errors.UpstreamError: Bedrock ValidationException: The number of toolResult blocks at messages.6.content exceeds the number of toolUse blocks of previous turn.
+INFO:     127.0.0.1:62181 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62181 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62181 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62181 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:21722 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:21722 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62181 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:21722 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:21722 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:21722 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:21722 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:21722 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62193 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62194 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62195 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62181 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62193 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62195 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62181 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62194 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62181 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62181 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62181 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62181 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62181 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62181 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62181 - "POST /v1/messages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62181 - "POST /v1/messages HTTP/1.1" 200 OK

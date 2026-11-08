@@ -1,0 +1,40 @@
+# Pre-commit hooks — the fast, staged-files-only pass over scripts/ci.sh.
+#
+# These hooks run against the files in your commit, NOT the whole repo, so the
+# existing repo-wide lint debt on untouched files won't block your commits.
+# Install once with:  pip install pre-commit && pre-commit install
+#
+# Matches `scripts/ci.sh lint`, which runs `ruff check` and
+# `ruff format --check` over all of src/ and tests/ and fails on a violation.
+# Here ruff auto-fixes what it can on just the files you touch, so a commit is
+# not blocked by pre-existing debt in files you did not open.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.16
+    hooks:
+      # Lint and auto-fix the staged files.
+      - id: ruff
+        args: [--fix]
+      # Format the staged files.
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-merge-conflict
+
+  # House-style gate (same script as `scripts/ci.sh style`): no em dashes and no
+  # new leading-underscore identifiers on changed Python. Diff-scoped against
+  # HEAD, so it judges only what your commit adds. The script does its own diff,
+  # so filenames are not passed.
+  - repo: local
+    hooks:
+      - id: style-gate
+        name: no em dashes / new leading underscores (py)
+        entry: python scripts/check_style_diff.py --base HEAD
+        language: system
+        types: [python]
+        pass_filenames: false

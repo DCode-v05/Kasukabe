@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kasukabe-app"
+version = "0.1.0"
+description = "Kasukabe app monorepo: world server, Bedrock broker, game client, research jobs"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi~=0.115",
+    "uvicorn[standard]~=0.34",
+    "pydantic~=2.9",
+    "boto3~=1.35",
+    "httpx~=0.27",
+    "websockets~=13.0",
+    # research/'s per-game-day Parquet export job (DESIGN.md section 9)
+    # and nothing else - it never touches Bedrock or S3 itself (that is
+    # supabase/s3_client.py's job), it only reads the trace store's
+    # SQLite file via DuckDB's sqlite scanner and writes Parquet.
+    "duckdb~=1.5",
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+]
+
+# uv-compatible: `uv sync` reads [project] directly, no extra uv config
+# needed. `uv run <cmd>` resolves and executes against the same lockfile.
+
+[tool.setuptools.packages.find]
+# Only the Python packages. infra/ has no Python of its own (deploy/ops
+# tooling only, see infra/README.md) so it stays excluded. supabase/ is a
+# real importable package (config.py, client.py, s3_client.py,
+# sqlite_client.py, factory.py, archiver.py) alongside its migrations/ SQL
+# (dormant, see supabase/README.md) and sqlite_schema.sql (the trace
+# store's live schema), which are not Python and are not picked up by
+# this finder - sqlite_schema.sql is applied by SqliteClient itself, not
+# imported.
+# game/ is now real Python too (game/server.py's town-view relay and
+# game/console/app.py's operator console - see game/__init__.py for why
+# the package as a whole outgrew its original "JS/TS frontend project,
+# not a Python package" description); "game*" picks up both game and
+# game.console. Their static/ subdirectories (JS/CSS/HTML/lifted Ville
+# assets) have no __init__.py so this finder does not treat them as
+# packages - both apps serve static/ straight from the source tree via
+# StaticFiles(directory=...), not as installed package data.
+# observatory/ is the read-only instrument on :8500 (Part C). Listed here
+# because this finder is an explicit allowlist, not a scan - a package left
+# out of it imports fine under pytest (pythonpath below) and then fails at
+# runtime in a container, which is the worst possible place to find out.
+include = ["world*", "broker*", "research*", "supabase*", "game*", "observatory*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
+# Lets `world.app`, `broker.app`, `research.*` import cleanly when pytest
+# is run from app/ without an editable install.
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100

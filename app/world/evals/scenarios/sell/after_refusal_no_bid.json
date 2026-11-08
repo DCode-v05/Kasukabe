@@ -1,0 +1,19 @@
+{
+  "tool": "sell",
+  "kind": "after_refusal",
+  "_why": "The refusal names `trade`; whether the resident takes it is the score.",
+  "resident": "n06",
+  "location": "Kasukabe Market",
+  "inventory": {
+    "wheat": 20
+  },
+  "sim": 40,
+  "people_here": [
+    "n10"
+  ],
+  "recent_speech": [],
+  "open_question_to_me": "You called sell and the world refused: 'sell: Corner Grocery has not posted what they pay for wheat. `trade` is how two people agree a price.'",
+  "expect": {
+    "verb": "trade"
+  }
+}

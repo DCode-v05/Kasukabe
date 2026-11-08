@@ -1,0 +1,20 @@
+{
+  "tool": "stock_shelf",
+  "kind": "positive",
+  "_why": "TRADE-07. The first act of the sale that failed in run deni-a6f9eb4-5h: a shopkeeper standing in its own shop, holding goods, with an empty shelf behind it. `stock_shelf` had NO scenario at all before this, and it is one of the two verbs in the morning that settled nothing.",
+  "resident": "n05",
+  "location": "Kasukabe Town Square",
+  "inventory": {
+    "bread": 8
+  },
+  "sim": 900,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You own b_bakery and you are standing in it. You are carrying 8 bread. The shelf holds nothing, so nobody who walks in can buy anything.",
+  "expect": {
+    "verb": "stock_shelf",
+    "params_include": {
+      "item": "bread"
+    }
+  }
+}

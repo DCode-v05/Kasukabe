@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+build/
+dist/
+.env
+
+# Trace store. SQLite grows without bound across runs - these reached 1.4GB
+# and 1.8GB in one session, plus 100MB+ WAL files. They are run OUTPUT, not
+# source, and GitHub rejects anything over 100MB outright.
+data/
+*.db
+*.db-wal
+*.db-shm
+realsim.log
+
+# Run logs — broker and runner stdout, large and per-run.
+logs/

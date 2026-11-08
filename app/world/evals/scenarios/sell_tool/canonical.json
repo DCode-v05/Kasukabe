@@ -1,0 +1,26 @@
+{
+  "tool": "sell_tool",
+  "kind": "positive",
+  "_why": "They want it outright, and the inventor is leaving the trade.",
+  "resident": "ada",
+  "location": "Kasukabe Workshop",
+  "inventory": {},
+  "sim": 200,
+  "people_here": [
+    "n09"
+  ],
+  "recent_speech": [
+    {
+      "from": "n09",
+      "text": "Ada. I will buy the rope-making off you outright. Five hundred, and it is mine, not borrowed."
+    }
+  ],
+  "open_question_to_me": "n09 is waiting on an answer. You own the tool rope_making.",
+  "expect": {
+    "verb": "sell_tool",
+    "params_include": {
+      "tool_name": "rope_making",
+      "buyer_id": "n09"
+    }
+  }
+}

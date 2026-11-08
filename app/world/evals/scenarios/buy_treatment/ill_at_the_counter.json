@@ -1,0 +1,15 @@
+{
+  "tool": "buy_treatment",
+  "kind": "positive",
+  "_why": "ECON-12. The pharmacy is the one genesis building whose advertised purpose - 'Buy treatment for short illnesses' - had no verb behind it: `treat_at_pharmacy` was written and tested ten times over and every reference to it in the tree was its own definition or a test. A resident standing in the shop, ill with the one thing the shop cures, holding more than the fee, is the plainest case there is. If a resident will not reach for it here it will never be reached at all.",
+  "resident": "n16",
+  "location": "business:b_pharmacy",
+  "inventory": {},
+  "sim": 1200,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You have been coughing since yesterday morning and it has not eased. You are standing in the pharmacy. Treatment here costs 500 sim and cures a short illness the same day.",
+  "expect": {
+    "verb": "buy_treatment"
+  }
+}

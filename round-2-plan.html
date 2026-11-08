@@ -1,0 +1,859 @@
+<title>Kasukabe Round 2 — The Complete Plan</title>
+
+<style>
+  :root {
+    --paper:      #F0F2F0;
+    --surface:    #FAFBFA;
+    --surface-2:  #E9EDEA;
+    --ink:        #141A18;
+    --ink-soft:   #4A5854;
+    --ink-faint:  #7C8A85;
+    --rule:       #D3DAD6;
+    --rule-soft:  #E3E8E5;
+    --accent:     #0E6B5C;
+    --accent-dim: #0E6B5C1A;
+    --crit:       #A32B1C;
+    --crit-dim:   #A32B1C14;
+    --warn:       #8A6207;
+    --warn-dim:   #8A620714;
+    --ok:         #256B4A;
+    --ok-dim:     #256B4A14;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0E1412; --surface: #151D1A; --surface-2: #1C2622;
+      --ink: #E2E9E5; --ink-soft: #A2B0AB; --ink-faint: #74827D;
+      --rule: #27332F; --rule-soft: #1D2825;
+      --accent: #46BCA3; --accent-dim: #46BCA31F;
+      --crit: #E0705E; --crit-dim: #E0705E1A;
+      --warn: #D3A43C; --warn-dim: #D3A43C1A;
+      --ok: #5FBD8D; --ok-dim: #5FBD8D1A;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0E1412; --surface: #151D1A; --surface-2: #1C2622;
+    --ink: #E2E9E5; --ink-soft: #A2B0AB; --ink-faint: #74827D;
+    --rule: #27332F; --rule-soft: #1D2825;
+    --accent: #46BCA3; --accent-dim: #46BCA31F;
+    --crit: #E0705E; --crit-dim: #E0705E1A;
+    --warn: #D3A43C; --warn-dim: #D3A43C1A;
+    --ok: #5FBD8D; --ok-dim: #5FBD8D1A;
+  }
+  :root[data-theme="light"] {
+    --paper: #F0F2F0; --surface: #FAFBFA; --surface-2: #E9EDEA;
+    --ink: #141A18; --ink-soft: #4A5854; --ink-faint: #7C8A85;
+    --rule: #D3DAD6; --rule-soft: #E3E8E5;
+    --accent: #0E6B5C; --accent-dim: #0E6B5C1A;
+    --crit: #A32B1C; --crit-dim: #A32B1C14;
+    --warn: #8A6207; --warn-dim: #8A620714;
+    --ok: #256B4A; --ok-dim: #256B4A14;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--sans); font-size: 16px; line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 62rem; margin: 0 auto; padding: 4rem 1.75rem 7rem; }
+  .prose { max-width: 40rem; }
+
+  .masthead { border-bottom: 2px solid var(--ink); padding-bottom: 1.5rem; margin-bottom: 2.5rem; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 0.688rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--ink-faint); margin: 0 0 1rem;
+  }
+  h1 {
+    font-family: var(--serif); font-size: clamp(2rem, 5vw, 2.9rem); line-height: 1.1;
+    font-weight: 600; letter-spacing: -0.015em; margin: 0 0 0.9rem; text-wrap: balance;
+  }
+  .standfirst { font-size: 1.06rem; color: var(--ink-soft); max-width: 42rem; margin: 0 0 1.5rem; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 0 2.25rem;
+    font-family: var(--mono); font-size: 0.75rem; color: var(--ink-faint);
+  }
+  .meta b { color: var(--ink-soft); font-weight: 500; }
+
+  section { margin-bottom: 4rem; scroll-margin-top: 2rem; }
+  h2 {
+    font-family: var(--serif); font-size: 1.6rem; font-weight: 600; letter-spacing: -0.01em;
+    line-height: 1.2; margin: 0 0 1.25rem; padding-top: 1rem; border-top: 1px solid var(--rule);
+    display: flex; gap: 1rem; align-items: baseline; text-wrap: balance;
+  }
+  h2 .num {
+    font-family: var(--mono); font-size: 0.75rem; font-weight: 500; letter-spacing: 0.1em;
+    color: var(--accent); flex: none; padding-top: 0.2rem;
+  }
+  h3 { font-family: var(--sans); font-size: 0.95rem; font-weight: 650; margin: 2.25rem 0 0.6rem; }
+  h4 {
+    font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 500; margin: 1.5rem 0 0.5rem;
+  }
+  p { margin: 0 0 1rem; max-width: 40rem; }
+  ul, ol { margin: 0 0 1rem; padding-left: 1.15rem; max-width: 42rem; }
+  li { margin-bottom: 0.4rem; }
+  li::marker { color: var(--ink-faint); }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+  code {
+    font-family: var(--mono); font-size: 0.855em; background: var(--accent-dim);
+    padding: 0.08em 0.34em; border-radius: 2px; overflow-wrap: break-word;
+  }
+  strong { font-weight: 650; }
+
+  pre {
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 3px;
+    padding: 1rem 1.1rem; overflow-x: auto; font-family: var(--mono); font-size: 0.78rem;
+    line-height: 1.65; margin: 1.25rem 0; max-width: 46rem;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  .c { color: var(--ink-faint); }
+  .g { color: var(--ok); }
+
+  .note {
+    background: var(--surface); border: 1px solid var(--rule); border-left: 3px solid var(--accent);
+    padding: 1rem 1.25rem; margin: 1.5rem 0; max-width: 44rem;
+  }
+  .note.warnbox { border-left-color: var(--warn); }
+  .note.warnbox .note-label { color: var(--warn); }
+  .note-label {
+    font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.13em; text-transform: uppercase;
+    color: var(--accent); display: block; margin-bottom: 0.4rem;
+  }
+  .note p:last-child, .note ul:last-child { margin-bottom: 0; }
+
+  figure {
+    margin: 2rem 0; padding: 1.5rem 1.25rem 1.1rem; background: var(--surface);
+    border: 1px solid var(--rule); border-radius: 3px; overflow-x: auto;
+  }
+  figure svg { display: block; width: 100%; height: auto; min-width: 34rem; }
+  figcaption {
+    font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.05em; color: var(--ink-faint);
+    margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--rule-soft); line-height: 1.6;
+  }
+  .svg-box { fill: var(--surface-2); stroke: var(--ink-soft); stroke-width: 1.2; }
+  .svg-box-accent { fill: var(--accent-dim); stroke: var(--accent); stroke-width: 1.6; }
+  .svg-box-done { fill: var(--ok-dim); stroke: var(--ok); stroke-width: 1.4; }
+  .svg-box-later { fill: none; stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 4 3; }
+  .svg-t { fill: var(--ink); font-family: var(--sans); font-size: 12.5px; font-weight: 600; }
+  .svg-t-b { fill: var(--ink-soft); font-family: var(--sans); font-size: 10.5px; }
+  .svg-t-lab { fill: var(--ink-faint); font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; }
+  .svg-line { stroke: var(--ink-faint); stroke-width: 1.3; fill: none; }
+  .svg-line-accent { stroke: var(--accent); stroke-width: 1.8; fill: none; }
+
+  .table-scroll { overflow-x: auto; margin: 1.25rem 0 1.5rem; }
+  table {
+    border-collapse: collapse; width: 100%; min-width: 36rem;
+    font-size: 0.855rem; font-variant-numeric: tabular-nums;
+  }
+  th {
+    text-align: left; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--ink-faint); font-weight: 500;
+    border-bottom: 1px solid var(--ink-soft); padding: 0 0.8rem 0.5rem 0; vertical-align: bottom;
+  }
+  td { border-bottom: 1px solid var(--rule-soft); padding: 0.55rem 0.8rem 0.55rem 0; vertical-align: top; }
+  td:last-child, th:last-child { padding-right: 0; }
+
+  .pill {
+    font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 0.15rem 0.42rem; border-radius: 2px; white-space: nowrap; display: inline-block;
+  }
+  .pill.done { background: var(--ok-dim); color: var(--ok); border: 1px solid var(--ok); }
+  .pill.now  { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+  .pill.next { background: var(--warn-dim); color: var(--warn); border: 1px solid var(--warn); }
+  .pill.hold { background: transparent; color: var(--ink-faint); border: 1px solid var(--ink-faint); }
+
+  /* track cards */
+  .track {
+    border: 1px solid var(--rule); border-radius: 3px; background: var(--surface);
+    padding: 1.35rem 1.5rem; margin-bottom: 1.1rem; max-width: 48rem;
+  }
+  .track.root { border-left: 3px solid var(--accent); }
+  .track-head {
+    display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: baseline;
+    margin-bottom: 0.85rem; padding-bottom: 0.7rem; border-bottom: 1px solid var(--rule-soft);
+  }
+  .track-id {
+    font-family: var(--mono); font-size: 0.8rem; font-weight: 600; color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+  .track-title { font-weight: 650; font-size: 1.02rem; flex: 1 1 14rem; }
+  .track-meta {
+    font-family: var(--mono); font-size: 0.68rem; color: var(--ink-faint);
+    display: flex; gap: 0 1.1rem; flex-wrap: wrap; margin-bottom: 0.9rem;
+  }
+  .track-meta b { color: var(--ink-soft); font-weight: 500; }
+  .track p { font-size: 0.925rem; margin-bottom: 0.7rem; max-width: none; }
+  .track ul { font-size: 0.9rem; max-width: none; }
+  .gate {
+    background: var(--paper); border: 1px solid var(--rule-soft); border-radius: 2px;
+    padding: 0.7rem 0.9rem; margin-top: 0.9rem; font-size: 0.875rem;
+  }
+  .gate .note-label { margin-bottom: 0.25rem; }
+  .gate p { margin: 0; font-size: 0.875rem; }
+
+  footer {
+    border-top: 1px solid var(--rule); padding-top: 1.5rem; margin-top: 4rem;
+    font-size: 0.82rem; color: var(--ink-faint);
+  }
+
+  @media (max-width: 620px) {
+    .wrap { padding: 2.5rem 1.1rem 4rem; }
+    h2 { flex-direction: column; gap: 0.25rem; }
+    .track { padding: 1.1rem; }
+  }
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">September &middot; Kasukabe &middot; Internal</p>
+  <h1>Round 2: the complete plan</h1>
+  <p class="standfirst">
+    Nine tracks, what each one actually changes, the order they have to happen in, and how
+    to run the thing locally while you build it. The base is live: one command stands a town
+    up and tells you what it recorded.
+  </p>
+  <div class="meta">
+    <span><b>Date</b> 2026-08-18</span>
+    <span><b>Owners</b> me, Sharan</span>
+    <span><b>Base</b> rung 1 green, 1690 tests passing</span>
+    <span><b>Companion</b> round-2-brief.html</span>
+  </div>
+</header>
+
+<section id="base">
+  <h2><span class="num">01</span> The local base</h2>
+  <div class="prose">
+    <p>
+      This is the loop everything else is built inside. One command generates a population,
+      runs the town, and reads the trace back.
+    </p>
+  </div>
+
+<pre><code><span class="c"># once, from a fresh clone: the Ville tilemap is a vendored checkout and</span>
+<span class="c"># is gitignored, so it has to be fetched. A full clone fails on Windows.</span>
+git clone --depth 1 https://github.com/joonspk-research/generative_agents.git smallville
+cd smallville
+git -c core.longpaths=true sparse-checkout set --no-cone \
+    environment/frontend_server/static_dirs/assets
+git -c core.longpaths=true checkout
+
+<span class="c"># then, from app/ - the ladder, locally</span>
+make rung1        <span class="c"># 10 agents, 2 game-days, mock inference, no spend</span>
+make rung2        <span class="c"># 50 agents, 5 game-days</span>
+make local-live   <span class="c"># real Bedrock through the broker on :8200</span>
+make test         <span class="c"># or: docker compose run --rm test</span>
+
+<span class="c"># the make targets shell out to `uv run`, matching the Makefile's existing</span>
+<span class="c"># targets. On a machine without make or uv (a Windows dev box), call the</span>
+<span class="c"># script directly - it is the same code path, uv only resolves the venv:</span>
+python scripts/local_run.py --population 10 --game-days 2
+python scripts/local_run.py --population 50 --game-days 5
+python scripts/local_run.py --population 10 --game-days 1 --live</code></pre>
+
+  <div class="prose">
+    <p>
+      <code>scripts/local_run.py</code> is a wrapper, not a second runner. It shells out to
+      <code>python -m world.run_genesis</code> with the same flags <code>start-genesis.sh</code>
+      uses in production, because a regression harness that exercises a different code path
+      from production is worse than no harness. What it adds is the three things around the
+      run: generating the population, pointing the trace store at a real file before any child
+      process imports the client, and reading that file back.
+    </p>
+    <p>
+      The trace report is the part that matters. Round 1's central finding was that two of
+      sixteen tables had rows and nobody noticed for eight game-days. So every run prints
+      every table, including the zeroes, with the reason attached:
+    </p>
+  </div>
+
+<pre><code>[3/3] trace report
+  ledger invariant declared at 52000 cents
+
+  agents                0   &lt;- TraceStore not mounted by the embedded harness (RC-3, fixed by T3)
+  events                0   &lt;- TraceStore not mounted by the embedded harness (RC-3, fixed by T3)
+  utterances            0   &lt;- no speech tool exists yet (RC-2, fixed by T2)
+  skills                0   &lt;- no skill artifact is distilled yet (fixed by T4)
+  llm_calls             0   &lt;- written by the broker, which mock mode never calls
+  <span class="g">world_snapshots       3</span>
+
+  world snapshots:
+    <span class="g">tick=144   agents=10   wallets=1926   treasury=50000   burned=74    total=52000</span>
+    <span class="g">tick=288   agents=10   wallets=1852   treasury=50000   burned=148   total=52000</span></code></pre>
+
+  <div class="prose">
+    <p>
+      Read that as a progress bar. Every zero above is a track in this plan, and the job of
+      Round 2 is to turn them into numbers. When <code>utterances</code> stops being zero, T2
+      landed. When <code>agents</code> and <code>events</code> stop being zero, T3 landed.
+      A run that records nothing now exits non-zero instead of looking green.
+    </p>
+  </div>
+
+  <div class="note">
+    <span class="note-label">What the base already guarantees</span>
+    <ul>
+      <li>Populations from 6 upward generate, and the 250-agent output is byte-identical to
+        the one round 1 ran on.</li>
+      <li>The ledger invariant is declared per run and enforced by database triggers, so a
+        10-agent town checks against its own 52,000 cents rather than a hardcoded $1000.</li>
+      <li>A failed trace write raises <code>TraceWriteFailed</code> and halts the run.</li>
+      <li>Checkpoints round-trip, and the runner boots on Windows as well as Linux.</li>
+      <li>1690 tests pass, 7 skip. The 7 are the same real-hardware and live-Postgres skips
+        STATUS.md recorded.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="shape">
+  <h2><span class="num">02</span> The shape of the work</h2>
+  <div class="prose">
+    <p>
+      Two tracks are roots and everything else hangs off them. <strong>T1</strong> gives an agent
+      an identity, and until it lands every behavioural gate in the round is unmeasurable,
+      because a model with an empty system prompt is not a character failing to socialise,
+      it is an orchestrator doing its job. <strong>T3</strong> puts the real world server on the
+      wire, and until it lands nothing an agent does is written down.
+    </p>
+    <p>
+      They are independent of each other, which is the single most useful fact in this plan:
+      two people can start at the same time on the two things that unblock everything.
+    </p>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 880 400" role="img" aria-label="Dependency graph of the nine Round 2 tracks. T1 character layering and T3 one world one contract are roots; T2, T4, T7 and T9 depend on them; T5, T6 and T8 come later.">
+      <text class="svg-t-lab" x="0" y="12">ROOTS</text>
+      <text class="svg-t-lab" x="320" y="12">DEPEND ON A ROOT</text>
+      <text class="svg-t-lab" x="672" y="12">BACK HALF</text>
+
+      <rect class="svg-box-accent" x="0" y="32" width="196" height="66" rx="3"/>
+      <text class="svg-t" x="14" y="56">T1 &middot; Character layering</text>
+      <text class="svg-t-b" x="14" y="74">ConsciousnessManager in the seam.</text>
+      <text class="svg-t-b" x="14" y="89">Fixes RC-1: no system prompt.</text>
+
+      <rect class="svg-box-accent" x="0" y="130" width="196" height="66" rx="3"/>
+      <text class="svg-t" x="14" y="154">T3 &middot; One world, one contract</text>
+      <text class="svg-t-b" x="14" y="172">world/main.py becomes the only</text>
+      <text class="svg-t-b" x="14" y="187">server. Fixes RC-3: no trace.</text>
+
+      <rect class="svg-box-done" x="0" y="240" width="196" height="52" rx="3"/>
+      <text class="svg-t" x="14" y="262">Rung 1</text>
+      <text class="svg-t-b" x="14" y="279">Done. The harness this all runs on.</text>
+
+      <path class="svg-line" d="M98 292 V318 H438 V318"/>
+      <text class="svg-t-b" x="150" y="312">every gate below is proven at rung 1 first</text>
+
+      <rect class="svg-box" x="320" y="32" width="180" height="52" rx="3"/>
+      <text class="svg-t" x="332" y="53">T2 &middot; Speech</text>
+      <text class="svg-t-b" x="332" y="71">say / tell, overhearing</text>
+
+      <rect class="svg-box" x="320" y="102" width="180" height="52" rx="3"/>
+      <text class="svg-t" x="332" y="123">T4 &middot; Learning</text>
+      <text class="svg-t-b" x="332" y="141">the world as corrector</text>
+
+      <rect class="svg-box" x="320" y="172" width="180" height="52" rx="3"/>
+      <text class="svg-t" x="332" y="193">T7 &middot; Observation</text>
+      <text class="svg-t-b" x="332" y="211">look, price, cost, trade</text>
+
+      <rect class="svg-box" x="320" y="242" width="180" height="52" rx="3"/>
+      <text class="svg-t" x="332" y="263">T9 &middot; Voice lane</text>
+      <text class="svg-t-b" x="332" y="281">operator voice</text>
+
+      <path class="svg-line-accent" d="M196 65 H300 V58 H316"/>
+      <path class="svg-line-accent" d="M196 74 H260 V128 H316"/>
+      <path class="svg-line-accent" d="M196 163 H240 V198 H316"/>
+      <path class="svg-line-accent" d="M196 180 H272 V268 H316"/>
+
+      <rect class="svg-box-later" x="672" y="32" width="180" height="52" rx="3"/>
+      <text class="svg-t" x="684" y="53">T5 &middot; Tool economy</text>
+      <text class="svg-t-b" x="684" y="71">depth 3, licence, sell, teach</text>
+
+      <rect class="svg-box-later" x="672" y="102" width="180" height="52" rx="3"/>
+      <text class="svg-t" x="684" y="123">T6 &middot; Rulesets</text>
+      <text class="svg-t-b" x="684" y="141">charter as a ruleset</text>
+
+      <rect class="svg-box-later" x="672" y="172" width="180" height="52" rx="3"/>
+      <text class="svg-t" x="684" y="193">T8 &middot; Context budget</text>
+      <text class="svg-t-b" x="684" y="211">compaction on the wallet</text>
+
+      <path class="svg-line" d="M500 58 H600 V58 H668"/>
+      <path class="svg-line" d="M500 198 H580 V128 H668"/>
+      <path class="svg-line" d="M196 196 H540 V198 H668"/>
+
+      <text class="svg-t-b" x="512" y="50">T5 needs the patent office on the wire</text>
+      <text class="svg-t-b" x="512" y="120">T6 enforces at dispatch, so T5 first</text>
+
+      <rect class="svg-box-later" x="672" y="242" width="180" height="52" rx="3"/>
+      <text class="svg-t" x="684" y="263">Round 2 exit</text>
+      <text class="svg-t-b" x="684" y="281">rung 1 twice, then rung 2</text>
+
+      <path class="svg-line" d="M762 224 V238"/>
+
+      <text class="svg-t-lab" x="0" y="356">SOLID ARROW = HARD DEPENDENCY</text>
+      <text class="svg-t-lab" x="0" y="374">DASHED BOX = NOT IN THE FIRST CUT</text>
+    </svg>
+    <figcaption>
+      T1 and T3 are independent of each other and block almost everything else, so they start
+      in parallel. T5 needs the patent office reachable through the real server; T6 enforces
+      rulesets on the same dispatch path T5's invented tools travel.
+    </figcaption>
+  </figure>
+
+  <h3>Board</h3>
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr><th>Track</th><th>State</th><th>Owner</th><th>Blocks</th><th>Turns which zero into a number</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Rung 1</strong></td><td><span class="pill done">Done</span></td><td>me</td><td>everything</td><td><code>world_snapshots</code></td></tr>
+        <tr><td><strong>T1</strong> Character layering</td><td><span class="pill now">Now</span></td><td>me</td><td>every behavioural gate</td><td>&mdash; (makes the others meaningful)</td></tr>
+        <tr><td><strong>T3</strong> One world, one contract</td><td><span class="pill now">Now</span></td><td>Sharan</td><td>T2 gate, T5, T6, T9</td><td><code>agents</code>, <code>events</code>, <code>transactions</code>, <code>memories</code>, <code>relationships</code></td></tr>
+        <tr><td><strong>T2</strong> Speech</td><td><span class="pill next">Next</span></td><td>Sharan</td><td>T6 negotiation evidence</td><td><code>utterances</code></td></tr>
+        <tr><td><strong>T4</strong> Learning</td><td><span class="pill next">Next</span></td><td>me</td><td>compounding 1 and 2</td><td><code>skills</code>, background share of <code>llm_calls</code></td></tr>
+        <tr><td><strong>T7</strong> Observation</td><td><span class="pill next">Next</span></td><td>me</td><td>T2's price discovery</td><td><code>tools_registry</code></td></tr>
+        <tr><td><strong>T9</strong> Voice lane</td><td><span class="pill hold">After</span></td><td>me</td><td>&mdash;</td><td>voice-tagged <code>llm_calls</code></td></tr>
+        <tr><td><strong>T5</strong> Tool economy</td><td><span class="pill hold">After</span></td><td>Sharan</td><td>T6</td><td><code>tools_registry</code> depth &gt; 1</td></tr>
+        <tr><td><strong>T6</strong> Rulesets</td><td><span class="pill hold">After</span></td><td>Sharan</td><td>&mdash;</td><td><code>organizations</code>, <code>cases</code></td></tr>
+        <tr><td><strong>T8</strong> Context budget</td><td><span class="pill hold">After</span></td><td>me</td><td>rung 3 economics</td><td>p95 input tokens</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note warnbox">
+    <span class="note-label">On the milestone</span>
+    <p>
+      More than half of Round 2 means five of nine tracks. The five in the first cut are
+      <strong>T1, T3, T2, T4 and T7</strong>, chosen because T1 and T3 unblock the rest and the
+      other three are the ones whose gates can be demonstrated rather than argued. T3 is by
+      some distance the largest and it is Sharan's, so the split matters more than the order.
+      T9, T5, T6 and T8 are the back half.
+    </p>
+  </div>
+</section>
+
+<section id="tracks">
+  <h2><span class="num">03</span> The nine tracks</h2>
+
+  <div class="track root">
+    <div class="track-head">
+      <span class="track-id">T1</span>
+      <span class="track-title">Character layering</span>
+      <span class="pill now">Now</span>
+    </div>
+    <div class="track-meta">
+      <span><b>Owner</b> me</span><span><b>Fixes</b> RC-1</span><span><b>Depends on</b> nothing</span>
+    </div>
+    <p>
+      Round 1's agents ran with no system prompt at all.
+      <code>engine/src/sim/pinned_boot.py</code> constructs <code>Coordinator(...)</code> with no
+      <code>consciousness_mgr</code>, and the only place one is ever built is
+      <code>engine/src/bootstrap.py:636</code>, the production boot path <code>pinned_boot</code>
+      deliberately bypasses. So <code>sys_prompt</code> stayed <code>None</code> for every turn of
+      every agent, and the persona was never on the wire.
+    </p>
+    <p>Build one in the seam and layer the character across its section stabilities:</p>
+    <ul>
+      <li><strong>STABLE</strong>, cached globally: name, age, sex, household, occupation, the
+        persona block from <code>genesis.json</code>, and the law of the town from
+        <code>build_soul_seed()</code> &mdash; which has zero production call sites today, only its
+        own test.</li>
+      <li><strong>DYNAMIC</strong>, per session: the evolved soul from
+        <code>Soul.get_evolved_soul()</code> and the agent's own social graph, so opinions about
+        named neighbours arrive as things it knows rather than things it is told each turn.</li>
+      <li><strong>VOLATILE</strong>, recomputed every turn: energy, money, burn rate, today's
+        upkeep and tax, dependents, and what the next action costs, from
+        <code>app/world/tools/cost_disclosure.py</code> &mdash; 28KB of finished code that nothing
+        imports.</li>
+    </ul>
+    <p>
+      Then wire the learning centre's <code>write_social_updates()</code> and
+      <code>update_evolved_soul()</code> so the layers actually move. A character that cannot
+      change is a costume.
+    </p>
+    <div class="gate">
+      <span class="note-label">Gate</span>
+      <p>
+        In 500 sampled turns, zero contain orchestration JSON, sub-agent charters, or the word
+        "NPC". An agent asked who it is answers with its name. Compounding quantity 4 is met:
+        one evolved soul diverges from its genesis persona traceably to a specific event.
+      </p>
+    </div>
+  </div>
+
+  <div class="track root">
+    <div class="track-head">
+      <span class="track-id">T3</span>
+      <span class="track-title">One world, one contract, institutions as tools</span>
+      <span class="pill now">Now</span>
+    </div>
+    <div class="track-meta">
+      <span><b>Owner</b> Sharan</span><span><b>Fixes</b> RC-3, STATUS.md risk 2</span><span><b>Depends on</b> nothing</span>
+    </div>
+    <p>
+      Four contract surfaces exist and no two of them match. The engine speaks
+      <code>GET /tools/registry</code> and <code>POST /agents/{id}/tool_calls</code>; the embedded
+      harness serves those plus ledger and admin; the real world server serves
+      <code>POST /tools/{tool_name}</code> plus governance, social, crime, map and
+      <code>/ws/events</code>, and cannot host an engine at all; the console calls twenty-odd
+      <code>/admin/*</code> routes nobody serves. Round 1 ran the embedded harness, which mounts
+      no <code>TraceStore</code>, which is the entire explanation for two of sixteen tables
+      having rows.
+    </p>
+    <ul>
+      <li>Collapse onto <code>world/main.py</code> as the only world server: add the engine's two
+        routes and the console's <code>/admin/*</code> surface. Demote
+        <code>build_embedded_world_app</code> to a test fixture.</li>
+      <li>Every run mounts the real <code>TraceStore</code> and a real <code>MapService</code>, so
+        <code>move</code> produces walked routes instead of instant jumps.</li>
+      <li>Give every institution a complete tool surface, so nothing an institution does can
+        happen off the registry: government (convene, amend, vote, tax, jobs, permits, tenders,
+        appoint police, petition); elections (declare, campaign, vote in person, concede, take
+        office, with the government namespace transferring atomically); courts and police
+        (complain, open a case, interview, warrant, subpoena, testify, rule, fine, jail,
+        release, arrest); temple (ordain, rite, marry, donate, pray); business (register, hire,
+        fire, set and pay a wage, grant and revoke tool access, sell, bequeath).</li>
+    </ul>
+    <div class="gate">
+      <span class="note-label">Gate</span>
+      <p>
+        A rung-1 run through <code>world/main.py</code> writes rows to <code>agents</code>,
+        <code>events</code>, <code>utterances</code>, <code>transactions</code>, <code>memories</code>,
+        <code>relationships</code> and <code>skills</code>; the console drives a live world;
+        <code>move</code> produces walked routes on the real tilemap; every institutional action
+        above is callable and gate-checked, with no institutional path reachable except through
+        the registry.
+      </p>
+    </div>
+  </div>
+
+  <div class="track">
+    <div class="track-head">
+      <span class="track-id">T2</span>
+      <span class="track-title">Agent-to-agent speech</span>
+      <span class="pill next">Next</span>
+    </div>
+    <div class="track-meta">
+      <span><b>Owner</b> Sharan</span><span><b>Fixes</b> RC-2</span><span><b>Gate needs</b> T3</span>
+    </div>
+    <p>
+      Thirty primitives are registered and none of them is <code>say</code>, <code>tell</code>,
+      <code>ask</code> or any other act of speech. DESIGN.md states that negotiation is
+      conversation and settlement is tool calls, but conversation was never made physics, so
+      every mechanic requiring two agents to agree was unreachable: price discovery, wage
+      bargaining, hiring, marriage, teaching, campaigning, preaching, conspiring, testifying.
+    </p>
+    <ul>
+      <li><code>say</code> addresses everyone at the location. <code>tell</code> addresses one named
+        co-located agent, and others present may overhear at reduced fidelity, because that is
+        what a whispered aside is and because who overheard what is exactly the data gossip
+        research needs.</li>
+      <li>Delivery uses the substrate that already exists and has never carried anything:
+        <code>world/core/perception.py</code>'s <code>hearing_window_ticks</code> and
+        <code>heard_events</code>, which already distinguish what an agent heard at its own
+        location from what reached it from elsewhere. No listen tool is required.</li>
+      <li>Speech costs energy like any other action, so talking is a real economic choice.
+        Group conversation emerges from repeated <code>say</code> in one place rather than from a
+        conversation object &mdash; threading, turn-taking and interruption are behaviours to be
+        measured, not mechanics to be imposed.</li>
+    </ul>
+    <div class="gate">
+      <span class="note-label">Gate</span>
+      <p>
+        Two agents negotiate a price in language and settle it with <code>buy</code> and
+        <code>sell</code> at the agreed number. A group of five in one place hold an exchange in
+        which at least one aside is overheard by a non-addressee. Both fully reconstructible
+        from the trace alone.
+      </p>
+    </div>
+    <div class="note warnbox" style="margin: 0.9rem 0 0; max-width: none;">
+      <span class="note-label">Watch</span>
+      <p>
+        Conversation storms are the obvious failure mode and a live cost risk the moment this
+        lands. Rung 1 catches it at a dollar a day, which is the entire reason rung 1 was built
+        first.
+      </p>
+    </div>
+  </div>
+
+  <div class="track">
+    <div class="track-head">
+      <span class="track-id">T4</span>
+      <span class="track-title">Learning: make the world the corrector</span>
+      <span class="pill next">Next</span>
+    </div>
+    <div class="track-meta">
+      <span><b>Owner</b> me</span><span><b>Fixes</b> RC-5</span><span><b>Depends on</b> T1</span>
+    </div>
+    <p>
+      The spine of the roadmap. <code>learning_centre/pipeline.py:826</code>'s
+      <code>step11_skill_evolution</code> reads
+      <code>WHERE type = 'correction' AND source = 'user'</code>. In production that signal is a
+      person telling the engine it got something wrong. Kasukabe has no person, so skill
+      evolution could not fire once no matter how long the run went, and this was invisible in
+      the trace.
+    </p>
+    <ul>
+      <li>The world supplies the correction instead. Its signals are unambiguous and already
+        happen: a tool call rejected for wrong location or insufficient funds, a negotiation
+        that ended without settlement, a crop that spoiled, a build that failed inspection, a
+        debt called in, a bankruptcy, a conviction. Emit each as a <code>LearningSignal</code>
+        through <code>SignalStore.write()</code> from the sim seam, in the shape the pipeline
+        already reads. The engine is unchanged; the world starts telling it when it was wrong.</li>
+      <li>Unify the two skill systems. <code>world/ledger/action_costs.py</code>'s integer
+        proficiency stays the money discount; the engine's distilled artifacts become the
+        cognition discount. One skill, two effects, one number the agent can see in its
+        disclosure.</li>
+      <li>Tag purposes so learning is affordable. <code>broker/service.py:307</code> classifies by
+        <code>X-Kasukabe-Purpose</code> and the engine sends that header nowhere, which is why the
+        trace shows 100 percent cognition and zero background. Send it from the sim's herald
+        adapter on every call.</li>
+    </ul>
+    <div class="gate">
+      <span class="note-label">Gate</span>
+      <p>
+        Background share of calls is greater than zero and matches the number of sleep-onset
+        edges. At least one skill artifact exists per agent by game-day 5. Compounding
+        quantities 1 and 2 are met: median tokens per task type falls, and proficiency rises
+        with repetition and lowers real cost.
+      </p>
+    </div>
+  </div>
+
+  <div class="track">
+    <div class="track-head">
+      <span class="track-id">T7</span>
+      <span class="track-title">Navigation, observation and the missing primitives</span>
+      <span class="pill next">Next</span>
+    </div>
+    <div class="track-meta">
+      <span><b>Owner</b> me</span><span><b>Depends on</b> T3 for the map</span>
+    </div>
+    <p>
+      <code>look_around</code>, <code>describe_place</code> and <code>list_places</code> landed after
+      round 1, because the town had 27 tools and no way to answer "where can I go". That work
+      continues: an agent needs to query its own inventory and balances, the prices and stock
+      where it stands, who is present, what tools this location permits, what a given action
+      will cost before committing to it, who owes it and whom it owes, what rulesets bind it,
+      and what has recently happened here. DESIGN.md requires all of it and none of it is
+      implemented. Plus <code>trade</code>, an atomic two-sided swap distinct from <code>buy</code>
+      and <code>sell</code> against a posted price.
+    </p>
+    <div class="gate">
+      <span class="note-label">Gate</span>
+      <p>
+        An agent that has never been told a place exists can find it, walk there, learn what
+        acting there costs, and act, using only tools.
+      </p>
+    </div>
+  </div>
+
+  <div class="track">
+    <div class="track-head">
+      <span class="track-id">T9</span>
+      <span class="track-title">The voice lane</span>
+      <span class="pill hold">After</span>
+    </div>
+    <div class="track-meta">
+      <span><b>Owner</b> me</span><span><b>Depends on</b> T1, T3</span><span><b>Scope</b> operator voice</span>
+    </div>
+    <p>
+      A seventh broker lane, separate from the six cognition and background lanes. It does not
+      think about the world and never mutates it: the engine does the work through the tool
+      registry as usual and the voice lane speaks the answer the engine produced, so Law 2 is
+      untouched because the voice lane calls no tools. The shape is GPT-Live's delegation
+      architecture with the world server in place of the application server and the September
+      engine in place of GPT-5.5.
+    </p>
+    <p>
+      Round 2 ships operator voice: the President and God console gains a spoken channel.
+      Agent voice &mdash; <code>say</code> and <code>tell</code> rendered as audio, with prosody and
+      hesitation as measurable social signals &mdash; is its own track behind its own gate in
+      Round 3, because it stacks cost and storm risk on top of T2. Mistral Large 3 is admitted
+      for voice-lane non-cognition work only and may never serve an agent turn.
+    </p>
+    <div class="gate">
+      <span class="note-label">Gate</span>
+      <p>
+        The operator holds a spoken exchange with a named agent during a live rung-1 run; the
+        answer spoken is the answer the engine produced, and the trace shows the engine's tool
+        calls behind it; no world state changes except through the registry; the voice lane's
+        calls are tagged and separable from cognition in the trace.
+      </p>
+    </div>
+  </div>
+
+  <div class="track">
+    <div class="track-head">
+      <span class="track-id">T5</span>
+      <span class="track-title">The tool economy: create, evolve, convey</span>
+      <span class="pill hold">After</span>
+    </div>
+    <div class="track-meta">
+      <span><b>Owner</b> Sharan</span><span><b>Depends on</b> T3</span>
+    </div>
+    <p>
+      <code>world/tools/meta.py</code> is genuinely well built &mdash; <code>define_tool</code> files a
+      composition of primitives at the patent office for a fee, <code>approve_patent</code> wires
+      it in, and the composite handler replays filed steps through the same gate-checked
+      <code>dispatch()</code> path under the inventor's own agent id, so an invented tool is data
+      and never a new code path. But <code>validate_steps</code> checks every step against the
+      frozen <code>primitive_names</code> set and never against <code>registry.tools</code>, so an
+      invented tool can never cite another invented tool and invention depth is capped at 1 by
+      construction.
+    </p>
+    <ul>
+      <li>Lift depth to a bounded 3, with cycle detection at file time and the same gate-checked
+        replay at call time. Every leaf stays a primitive, so "no new physics" remains true by
+        construction &mdash; it becomes a depth bound rather than a flat ban.</li>
+      <li>Conveyance, all as tools: <code>license_tool</code> (revocable, priceable, term-bounded),
+        <code>sell_tool</code> (ownership transfers, patent record follows), <code>grant_tool_access</code>
+        and revoke (the business and organization ACL the trade-secret path assumes and never
+        got), <code>teach_tool</code> (co-located, consensual, refusable, priceable, transferring
+        at reduced proficiency), and inheritance through the existing estate path.</li>
+    </ul>
+    <div class="gate">
+      <span class="note-label">Gate</span>
+      <p>
+        An agent invents a tool, files it, has it approved and calls it; a second files a
+        depth-2 tool citing the first; a third acquires one by teaching, licence or sale and
+        calls it; a business tool granted to an employee stops working the moment that employee
+        is fired; a dead agent's tools reach an heir. Compounding quantity 3 is met.
+      </p>
+    </div>
+  </div>
+
+  <div class="track">
+    <div class="track-head">
+      <span class="track-id">T6</span>
+      <span class="track-title">Rulesets</span>
+      <span class="pill hold">After</span>
+    </div>
+    <div class="track-meta">
+      <span><b>Owner</b> Sharan</span><span><b>Depends on</b> T5</span>
+    </div>
+    <p>
+      An organization or business registers a ruleset: a first-class object stating who may
+      call which of its tools, on what terms, with what obligations, and what happens on
+      breach. Membership conditions, fees and dues, revenue shares, price floors, wage floors,
+      exclusivity, expulsion. Enforcement happens at dispatch time on the same gate-checked
+      path every tool call already takes, so a breach is a world event that can reach the
+      complaints desk and the courts.
+    </p>
+    <p>
+      This is what makes a guild, a cartel, a union, a priesthood or an employment contract
+      expressible in the registry rather than only in conversation, and therefore measurable.
+      The Town Charter is the government organization's ruleset and should be implemented as
+      one: charter amendment and cartel rule-making become the same machinery, and the
+      political and economic research read the same table. The A2A prototype's tighten-only
+      policy engine &mdash; rules folded most-restrictive-wins over a lattice, evaluated on every
+      request, never able to loosen &mdash; is the working reference for the enforcement half.
+    </p>
+    <div class="gate">
+      <span class="note-label">Gate</span>
+      <p>
+        An organization registers a ruleset; a member's call is permitted under it and a
+        non-member's is refused; a breach by a member produces a world event that reaches the
+        complaints desk; the ruleset is amended by the organization's own procedure and the
+        change takes effect on the next call.
+      </p>
+    </div>
+  </div>
+
+  <div class="track">
+    <div class="track-head">
+      <span class="track-id">T8</span>
+      <span class="track-title">Context bound to the wallet</span>
+      <span class="pill hold">After</span>
+    </div>
+    <div class="track-meta">
+      <span><b>Owner</b> me</span><span><b>Fixes</b> RC-4</span><span><b>Depends on</b> T1</span>
+    </div>
+    <p>
+      One pinned thread per agent, never reset, accumulating every tick of an eight-day run.
+      Compaction is real and does run, but <code>compact_if_needed</code> triggers against the
+      model's context window, and Kimi's window is enormous relative to a $2 wallet, so history
+      grew freely to 10,431 tokens per call and the compactor had no reason to fire. The
+      economic constraint and the context constraint were never connected, and 132 of 250
+      agents thought themselves bankrupt with nothing in the loop noticing.
+    </p>
+    <p>
+      Give each agent a per-turn input-token budget derived from its balance and burn rate, make
+      compaction trigger on that budget rather than the model's window, and publish the budget
+      through the cost disclosure so thinking hard is a choice the agent makes knowingly. This
+      is also the rung-3 economics argument: at a 4,000-token budget the same call volume costs
+      about $15 a game-day instead of $26.75, so $500 buys roughly 30 game-days instead of 8.
+    </p>
+    <div class="gate">
+      <span class="note-label">Gate</span>
+      <p>
+        p95 input tokens per call at or below 4,000 across a rung-2 run, with no agent bankrupt
+        from context growth alone.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="exit">
+  <h2><span class="num">04</span> Exit, and what is still blocking</h2>
+  <div class="prose">
+    <p>
+      Round 2 exits when rung 1 is green twice on fresh seeds and then rung 2 is green once:
+      five game-days with no agent bankrupt from harness defects, a complete trace, a console
+      that can steer a live run, every institutional action reachable only through tools, and
+      all four compounding quantities moving. It publishes an engineering note plus the round-1
+      negative result, and the existing 62,466-call dataset.
+    </p>
+  </div>
+
+  <h4>Blocking, and only you can clear it</h4>
+  <ul>
+    <li>
+      <strong>Bedrock credentials and a dev spend cap.</strong> Everything proven so far ran in
+      mock mode, which never constructs an engine session. The stripped transport layers are
+      therefore entirely unexercised, and that is the largest unknown in this plan &mdash; it sits
+      on the critical path for T1, since a character layer that cannot reach a model cannot be
+      tested. <code>make local-live</code> is wired and waiting.
+    </li>
+    <li>
+      <strong>Sharan's split.</strong> The plan gives him T3 then T2 then T5 and T6, which is the
+      whole world-server and tool-registry column. The alternative is splitting by layer rather
+      than by track. Worth ten minutes at the start rather than discovering the seam later.
+    </li>
+    <li>
+      <strong>The Ville assets.</strong> Currently each developer sparse-checks them out by hand.
+      A submodule or a bucket would be better, and it is a five-minute decision.
+    </li>
+  </ul>
+
+  <h4>Risks I am carrying</h4>
+  <ul>
+    <li>T3 is the biggest single track in the round and it is on the critical path for four
+      others. If it slips, T5, T6 and T9 slip with it.</li>
+    <li>Conversation storms once T2 lands. Mitigated by proving at rung 1 first, which now
+      exists.</li>
+    <li>The engine core is fixed by Law 1. If T1 or T4 turns out to need a change under
+      <code>engine/src/</code> outside <code>sim/</code>, that is a finding about the engine and gets
+      written up rather than patched around &mdash; and it would be a schedule event.</li>
+  </ul>
+</section>
+
+<footer>
+  <p>
+    Sources: <code>kasukabe/ROADMAP.md</code> (T1&ndash;T9, gates, compounding quantities),
+    <code>kasukabe/DESIGN.md</code>, <code>kasukabe/app/STATUS.md</code>,
+    <code>kasukabe/round-2-brief.html</code> (readings and decisions),
+    <code>Prototype/A2A/</code> (policy engine reference for T6).
+    Local base: <code>app/scripts/local_run.py</code>, <code>app/Makefile</code>.
+  </p>
+</footer>
+
+</div>

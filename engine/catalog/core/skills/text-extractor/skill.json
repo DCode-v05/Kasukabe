@@ -1,0 +1,37 @@
+{
+  "name": "text-extractor",
+  "version": "1.0.0",
+  "description": "Extract structured data (names, dates, amounts, emails, URLs, phone numbers) from unstructured text. This skill should be used when pulling contact info from a document, extracting dates and amounts from contracts, or parsing entities from freeform text. Triggers: 'extract names from', 'pull out the dates', 'find all emails in', 'what amounts are mentioned', 'parse this text for entities'.",
+  "category": "data",
+  "capabilities": ["entity_extraction", "pattern_matching", "structured_data_extraction", "contact_parsing"],
+  "input_signature": {
+    "type": "object",
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "Unstructured text to extract data from"
+      }
+    }
+  },
+  "output_signature": {
+    "type": "object",
+    "properties": {
+      "names": {
+        "type": "array"
+      },
+      "dates": {
+        "type": "array"
+      },
+      "amounts": {
+        "type": "array"
+      },
+      "emails": {
+        "type": "array"
+      }
+    }
+  },
+  "has_prompt": false,
+  "has_scripts": true,
+  "has_references": false,
+  "has_gotchas": false
+}

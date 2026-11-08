@@ -1,0 +1,26 @@
+{
+  "tool": "set_wage",
+  "kind": "positive",
+  "_why": "Addendum section 5's first positive row: owner at the premises, employee hired, employee asking what they will be paid. Before A5 a job was a label - hire_employee grants tool access and pays nobody.",
+  "resident": "n05",
+  "location": "Kasukabe Town Square",
+  "inventory": {},
+  "sim": 1250,
+  "people_here": [
+    "n14"
+  ],
+  "recent_speech": [
+    {
+      "from": "n14",
+      "text": "Marta. I have swept and hauled for two days. What will you pay me?"
+    }
+  ],
+  "open_question_to_me": "n14 is waiting on an answer. You own b_bakery and n14 is an employee of it. No wage is promised.",
+  "expect": {
+    "verb": "set_wage",
+    "params_include": {
+      "business_id": "b_bakery",
+      "employee_id": "n14"
+    }
+  }
+}

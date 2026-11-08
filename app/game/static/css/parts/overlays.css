@@ -1,0 +1,362 @@
+/* ═══════════════════════════════════════════════════════════════════
+   OVERLAYS — the cards that float on the map, and the live feeds
+   ───────────────────────────────────────────────────────────────────
+   Two jobs live in this file, and they want opposite things.
+
+   The cards (#mapCard, #placeCard) sit ON the diorama. Underneath them
+   is grass, water and midday roof tile, so they cannot be a tint over
+   the map: they need a near-opaque smoked pane, a blur that pushes the
+   town out of focus behind them, and a lit hairline so the edge stays
+   findable against whatever colour the map is drawing there.
+
+   The feeds (chat, occupancy, work, government) sit inside panels on a
+   near-black page and want the reverse: almost no chrome at all, so
+   ruled rows and tabular figures carry the reading on their own.
+
+   Copper appears nowhere below. It means one thing on this page — an
+   artefact an agent authored — and none of these surfaces is one. The
+   conversation feed takes its voice from the serif instead of a hue,
+   which is what keeps copper rare enough to still mean something.
+
+   Nothing here touches the canvas or the viewport that holds it.
+   ═══════════════════════════════════════════════════════════════════ */
+
+
+/* ── cards over the map: the shared pane ─────────────────────────────
+   The rgba() values are --void and --paper written out. A custom
+   property holding a hex cannot be given an alpha channel, and this
+   background has to be translucent or the blur behind it has nothing
+   to do. The alpha stays high: at .8 a white cottage roof reads
+   straight through the type. */
+.map-card, .place-card {
+  background: linear-gradient(180deg, rgba(22,30,40,.96), rgba(10,14,19,.97));
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  border: 1px solid var(--line-lit); border-radius: var(--rl);
+  box-shadow: var(--shadow-lift), var(--rim);
+  color: var(--ink-soft); font-family: var(--font-body); font-size: 12px; font-weight: 500;
+}
+/* Both scrolling regions get a hairline gutter, so the platform's pale
+   default scrollbar does not cut a light stripe down a dark card. */
+.pc-scroll, #chatLog { scrollbar-width: thin; scrollbar-color: var(--line-lit) transparent; overscroll-behavior: contain; }
+
+/* Closing is mildly destructive, so it warms to rust on approach
+   rather than lighting up like something you are meant to press. */
+.mc-close {
+  position: absolute; top: var(--s2); right: var(--s2); width: 22px; height: 22px; padding: 0;
+  display: grid; place-items: center; background: transparent;
+  border: 1px solid transparent; border-radius: var(--rs);
+  color: var(--ink-faint); font-size: 15px; line-height: 1; cursor: pointer;
+  transition: color .16s ease, border-color .16s ease, background .16s ease;
+}
+.mc-close:hover { color: var(--rust); border-color: var(--rust-dim); background: var(--rust-soft); }
+.mc-close:focus-visible { outline: 2px solid var(--line-lit); outline-offset: 1px; }
+
+
+/* ── the resident card (#mapCard) ────────────────────────────────────
+   Anchored to a walking person, so it stays small and dense and every
+   line in it is a fact about them right now. */
+.map-card { position: absolute; z-index: 6; width: 240px; padding: var(--s3); }
+/* The pointer ties the card to the resident, so it has to carry the
+   card's own border colour or the join reads as a seam. */
+.map-card::after { border-top-color: var(--line-lit); }
+.map-card.below::after { border-bottom-color: var(--line-lit); }
+
+.mc-head {
+  display: flex; align-items: center; gap: var(--s2);
+  padding: 0 var(--s5) var(--s2) 0; margin-bottom: var(--s2);
+  border-bottom: 1px solid var(--line-soft);
+}
+/* The avatar's fill is an occupation colour set inline and can be very
+   bright, so it is rimmed in --void: a white rim would be the lightest
+   thing on the card and would pull the eye off the name. */
+.mc-avatar { width: 32px; height: 32px; border-radius: var(--rs); border: 1.5px solid var(--void); box-shadow: var(--rim); }
+.mc-id b { font-family: var(--font-display); font-variation-settings: 'opsz' 40; font-weight: 600; font-size: 15px; color: var(--ink); letter-spacing: -.01em; }
+.mc-id em { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-style: normal; font-size: 10px; font-weight: 400; color: var(--ink-faint); }
+
+/* Health in the three states the signal palette already names: healthy
+   is alive, an ailment is worth watching, and terminal sits with dead
+   because by that point it is the same finding. */
+.mc-status {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  padding: 3px var(--s2); margin-bottom: var(--s2); border-radius: 100px;
+  border: 1px solid var(--mint-dim); background: var(--mint-soft); color: var(--mint);
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase;
+}
+.mc-status .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.mc-status.ill { border-color: var(--brass-dim); background: var(--brass-soft); color: var(--brass); }
+.mc-status.crit, .mc-status.dead { border-color: var(--rust-dim); background: var(--rust-soft); color: var(--rust); }
+
+/* What they are doing this second is the one line that changes while
+   you watch it, so it takes the mint rule that marks a live reading. */
+.mc-doing {
+  padding: var(--s2) var(--s3); margin-bottom: var(--s2); border-radius: var(--rs);
+  background: var(--surface); border-left: 2px solid var(--mint-dim);
+  color: var(--ink); font-size: 12px; font-weight: 600; line-height: 1.35;
+}
+.mc-doing em { display: block; margin-top: 2px; font-family: var(--font-mono); font-style: normal; font-size: 9.5px; letter-spacing: .05em; color: var(--ink-faint); }
+
+.mc-rows { display: flex; flex-direction: column; gap: 3px; font-size: 11px; line-height: 1.4; }
+.mc-rows b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 500; color: var(--ink); }
+/* Two kinds of money, one inch apart. The balance is the town's own
+   sim currency; the spend beside it is real dollars off a real card,
+   and the two must never be skimmed as the same figure — so the real
+   one is the one that gets boxed. */
+#mapCardBal { color: var(--ember); }
+#mapCardSpend { color: var(--ember); background: var(--ember-soft); border: 1px solid var(--ember-dim); border-radius: var(--rs); padding: 0 5px; }
+
+.map-card .mc-trait { margin-top: var(--s2); font-size: 11px; font-weight: 500; color: var(--ink-soft); line-height: 1.45; }
+.map-card .mc-quote {
+  margin-top: var(--s1); padding-left: var(--s2); border-left: 2px solid var(--line-lit);
+  font-family: var(--font-display); font-variation-settings: 'opsz' 30;
+  font-style: italic; font-weight: 400; font-size: 12px; color: var(--ink-faint); line-height: 1.45;
+}
+.mc-more {
+  width: 100%; margin-top: var(--s3); padding: var(--s2); cursor: pointer;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--rs);
+  font-family: var(--font-body); font-size: 11px; font-weight: 600; letter-spacing: .03em; color: var(--ink-soft);
+  transition: border-color .16s ease, color .16s ease;
+}
+.mc-more:hover { border-color: var(--line-lit); color: var(--ink); }
+.mc-more:focus-visible { outline: 2px solid var(--line-lit); outline-offset: 1px; }
+
+
+/* ── the place card (#placeCard) ─────────────────────────────────────
+   Pinned to the map's corner rather than to a person, and long: it
+   lists everyone inside a building. Fixed head over a scrolling body,
+   so the name of the place never leaves while you read the roll. */
+.place-card {
+  position: absolute; top: var(--s3); right: var(--s3); z-index: 7;
+  width: min(340px, 45vw); max-height: calc(100% - var(--s6));
+  display: flex; flex-direction: column; overflow: hidden; padding: var(--s3);
+}
+/* display:flex above outranks the UA rule for [hidden], so the card
+   has to be told a second time that hidden means gone. */
+.place-card[hidden] { display: none; }
+.pc-head {
+  flex: 0 0 auto; display: flex; align-items: center; gap: var(--s2);
+  padding: 0 var(--s5) var(--s2) 0; border-bottom: 1px solid var(--line-soft);
+}
+.pc-icon { font-size: 20px; }
+.pc-id b { display: block; font-family: var(--font-display); font-variation-settings: 'opsz' 60; font-weight: 600; font-size: 16px; color: var(--ink); letter-spacing: -.01em; }
+.pc-id em { display: block; font-style: normal; font-weight: 400; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 9.5px; letter-spacing: .04em; color: var(--ink-faint); }
+/* min-height:0 is what actually lets a flex child scroll rather than
+   grow past its parent and carry the card off the map with it. */
+.pc-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 2px; }
+.place-card .section-lbl {
+  display: flex; align-items: center; gap: var(--s2); margin: var(--s3) 0 var(--s1);
+  font-family: var(--font-mono); font-size: 9.5px; font-weight: 500;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+}
+.pc-count {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 9.5px;
+  letter-spacing: 0; color: var(--ink-soft); background: var(--surface-2);
+  border: 1px solid var(--line-soft); border-radius: 100px; padding: 1px 6px;
+}
+.pc-person {
+  display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s1);
+  border-bottom: 1px solid var(--line-soft); cursor: pointer; transition: background .14s ease;
+}
+.pc-person:hover { background: var(--surface-2); }
+.pc-dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--void); }
+.pc-who b { display: block; font-size: 12px; font-weight: 600; color: var(--ink); }
+.pc-who em { display: block; font-style: normal; font-size: 10px; font-weight: 400; font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink-faint); }
+/* Holding a seat is a fact about the government, not about the person,
+   so it is brass here exactly as it is in the Government panel. */
+.pc-seat { font-family: var(--font-body); font-weight: 600; letter-spacing: .02em; color: var(--brass); }
+.pc-doing { font-size: 10.5px; color: var(--ink-soft); text-align: right; max-width: 46%; }
+.pc-empty { padding: var(--s3) var(--s1); font-size: 11.5px; font-style: italic; color: var(--ink-faint); }
+
+/* Shelves read on the same three states as health: in stock is real
+   supply, low is worth watching, sold out is what starves people. */
+.place-card .shelf-row { display: flex; align-items: center; gap: var(--s2); padding: var(--s2) var(--s1); border-bottom: 1px solid var(--line-soft); }
+.place-card .sh-good { flex: 1 1 auto; font-size: 11.5px; color: var(--ink); text-transform: capitalize; }
+.place-card .sh-state { font-family: var(--font-mono); font-size: 8.5px; letter-spacing: .08em; padding: 2px 5px; border-radius: var(--rs); border: 1px solid transparent; }
+.place-card .shelf-row.in  .sh-state { color: var(--mint);  background: var(--mint-soft);  border-color: var(--mint-dim); }
+.place-card .shelf-row.low .sh-state { color: var(--brass); background: var(--brass-soft); border-color: var(--brass-dim); }
+.place-card .shelf-row.out .sh-state { color: var(--rust);  background: var(--rust-soft);  border-color: var(--rust-dim); }
+.place-card .sh-days, .place-card .sh-price { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 10.5px; }
+.place-card .sh-days { color: var(--ink-faint); }
+.place-card .sh-price { color: var(--ember); }
+.place-card .score-note, .gov-body .score-note { padding: var(--s2) 0; font-size: 10.5px; line-height: 1.5; color: var(--ink-faint); }
+
+
+/* ── the empty-town notice's contents ────────────────────────────────
+   The pane itself is already right and is left alone. Only the words
+   inside it are set here, and they are set as a sentence: an unbound
+   viewer is an idle run, not a fault. */
+.empty-town b { font-family: var(--font-display); font-variation-settings: 'opsz' 90; font-weight: 600; font-size: 16px; color: var(--ink); letter-spacing: -.01em; }
+.empty-town span { font-family: var(--font-body); font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
+.empty-town code {
+  display: block; margin-top: var(--s2); padding: var(--s2) var(--s3);
+  font-family: var(--font-mono); font-size: 11px; color: var(--ember);
+  background: var(--ember-soft); border: 1px solid var(--ember-dim); border-radius: var(--rs);
+}
+
+
+/* ── live conversation (#chatLog) ────────────────────────────────────
+   Addressed by id, because the shell's floating drawer also carries
+   the class `chat` and a bare `.chat` rule would land on it too.
+
+   Speech is the most human thing on this page, so it is the only text
+   here set in the display serif, italic, at reading size. The speaker
+   sits above it, smaller and in the UI face: you should read what was
+   said before you read who said it. */
+/* gap:0 is deliberate — the rows are separated by a rule now, and the
+   gap the older stack used would leave the hairline floating in the
+   middle of the space instead of sitting under a row. */
+#chatLog { padding: var(--s3) var(--s4) var(--s4); max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 0; }
+#chatLog .chat-row { display: flex; gap: var(--s3); padding: var(--s3) 0; border-bottom: 1px solid var(--line-soft); }
+#chatLog .chat-row:last-child { border-bottom: 0; }
+#chatLog .chat-avatar { width: 28px; height: 28px; border-radius: var(--rs); border: 1.5px solid var(--void); box-shadow: var(--rim); }
+#chatLog .chat-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s1) 6px; }
+#chatLog .chat-who {
+  font-family: var(--font-body); font-size: 10.5px; font-weight: 600; letter-spacing: .04em;
+  color: var(--ink-soft); background: none; border: 0; padding: 0; cursor: pointer; transition: color .14s ease;
+}
+#chatLog .chat-who:hover { color: var(--ink); text-decoration: underline; }
+#chatLog .chat-who:focus-visible { outline: 2px solid var(--line-lit); outline-offset: 2px; border-radius: 2px; }
+#chatLog .chat-arrow { color: var(--ink-faint); font-size: 10px; }
+/* A stated kinship is real and an inferred one is the viewer's guess.
+   They have to be told apart at a glance, or the guess gets quoted
+   back as fact. */
+#chatLog .chat-rel {
+  font-family: var(--font-mono); font-size: 8.5px; letter-spacing: .06em; padding: 1px 5px;
+  border-radius: 100px; color: var(--mint); background: var(--mint-soft); border: 1px solid var(--mint-dim);
+}
+#chatLog .chat-rel.inferred { color: var(--brass); background: var(--brass-soft); border-color: var(--brass-dim); }
+#chatLog .chat-text {
+  margin: var(--s1) 0 3px; font-family: var(--font-display); font-variation-settings: 'opsz' 24;
+  font-style: italic; font-weight: 400; font-size: 14px; line-height: 1.5; color: var(--ink);
+}
+#chatLog .chat-meta { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 9px; letter-spacing: .05em; color: var(--ink-faint); }
+#chatLog .chat-empty { margin: var(--s2) 0; font-size: 12px; line-height: 1.6; font-style: italic; color: var(--ink-faint); }
+
+
+/* ── census readouts (#occupancy, #workBody) ─────────────────────────
+   Where everyone is, and what everyone is doing: two counts of the
+   same 314 people. A census is a list, not a set of cards — label,
+   rule, figure, and nothing else on the row. */
+.occupancy { padding: var(--s3) var(--s4) var(--s4); }
+.occ-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s2) 0; border-bottom: 1px solid var(--line-soft); }
+.occ-row:last-child { border-bottom: 0; }
+.occ-row .occ-name { flex: 1 1 auto; min-width: 0; font-family: var(--font-body); font-size: 11.5px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-soft); }
+/* These bars measure people, not currency, so they are deliberately
+   not the ember meter money uses elsewhere: an orange bar here would
+   read as spend sitting against a figure that counts residents. The
+   descendant form is what it takes to outrank the older
+   `.occ-row .occ-bar` pair rather than merely follow it. */
+.occ-row .occ-bar { flex: 0 0 auto; width: 84px; height: 3px; background: var(--surface-3); border: 0; border-radius: 100px; overflow: hidden; }
+.occ-row .occ-bar > span { display: block; height: 100%; border-radius: 100px; background: var(--line-lit); box-shadow: none; transition: width .3s ease; }
+.occ-row .occ-n { flex: 0 0 auto; width: 30px; text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 11.5px; color: var(--ink); }
+/* The two totals over the work list are live readings off the running
+   town, which is the one thing mint is for. */
+.work-head {
+  display: flex; justify-content: space-between; gap: var(--s3);
+  padding-bottom: var(--s3); margin-bottom: var(--s1); border-bottom: 1px solid var(--line);
+  font-size: 10.5px; letter-spacing: .04em; color: var(--ink-faint);
+}
+.work-head b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 500; color: var(--mint); }
+
+
+/* ── government (#govBody) ───────────────────────────────────────────
+   Brass throughout: the charter, the five seats, the money the town
+   takes and the things it has built with it. */
+.gov-body { padding: var(--s3) var(--s4) var(--s4); }
+.gov-body .section-lbl { margin: var(--s5) 0 var(--s2); font-family: var(--font-mono); font-size: 9.5px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--brass-dim); }
+.gov-body .section-lbl:first-child, .gov-body .stat-drill .section-lbl { margin-top: 0; }
+
+.seat-list { display: flex; flex-direction: column; }
+.seat-row { display: flex; align-items: center; gap: var(--s3); padding: var(--s2) var(--s1); border-bottom: 1px solid var(--line-soft); cursor: pointer; transition: background .14s ease; }
+.seat-row:hover { background: var(--surface-2); }
+.seat-row:focus-visible { outline: 2px solid var(--brass-dim); outline-offset: -2px; }
+.seat-badge {
+  flex: 0 0 auto; font-family: var(--font-mono); font-size: 8.5px; letter-spacing: .06em;
+  padding: 2px 7px; border-radius: 100px; color: var(--brass);
+  background: var(--brass-soft); border: 1px solid var(--brass-dim);
+}
+/* One seat in five is the Prime Minister's, so that one takes the lit
+   edge and the four ministers stay dim. */
+.seat-badge.pm { border-color: var(--brass); box-shadow: var(--rim); }
+.seat-who { flex: 1 1 auto; min-width: 0; }
+.seat-who b { display: block; font-size: 12px; font-weight: 600; color: var(--ink); }
+/* A minister's salary is money the treasury pays out every day, so it
+   is ember rather than another brass line in a brass panel. */
+.seat-who em { display: block; font-style: normal; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 9.5px; color: var(--ember); }
+.seat-where { flex: 0 0 auto; font-size: 10px; color: var(--ink-faint); text-align: right; }
+
+/* The charter facts are a key/value ledger, so they are ruled rows and
+   not tiles: a dozen bordered boxes down a column reads as a dozen
+   unrelated findings instead of one document. */
+.gov-body .gov-fact {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s3); row-gap: 2px;
+  padding: var(--s2) 0; background: transparent; border: 0;
+  border-bottom: 1px solid var(--line-soft); border-radius: 0; box-shadow: none;
+}
+.gov-body .gov-fact .k { flex: 1 1 auto; min-width: 0; font-size: 11.5px; font-weight: 500; color: var(--ink-soft); }
+.gov-body .gov-fact .v { flex: 0 0 auto; margin-left: auto; text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 11.5px; font-weight: 500; color: var(--ink); }
+.gov-body .gov-help { flex: 1 1 100%; font-size: 10.5px; line-height: 1.5; color: var(--ink-faint); }
+.gov-body .gov-fact.openable { cursor: pointer; }
+.gov-body .gov-fact.openable:hover { background: var(--brass-soft); border-color: var(--brass-dim); }
+.gov-body .gov-fact.openable:hover .k { color: var(--brass); }
+.gov-body .gov-fact.openable:focus-visible { outline: 2px solid var(--brass-dim); outline-offset: -2px; }
+.gov-body .stat-caret { margin-left: var(--s1); font-size: 9px; color: var(--brass-dim); }
+.gov-body .stat-drill { margin: var(--s2) 0; padding: var(--s3); background: var(--void); border: 1px solid var(--line-soft); border-radius: var(--rm); }
+
+.gov-body .rules-list { margin: var(--s3) 0 0; padding-left: var(--s5); font-size: 11.5px; line-height: 1.65; color: var(--ink-soft); }
+.gov-body .rules-list li { margin-bottom: var(--s1); }
+.gov-body .rules-list li::marker { color: var(--brass-dim); }
+
+.gov-body .init { display: flex; align-items: flex-start; gap: var(--s3); padding: var(--s2) var(--s1); border-bottom: 1px solid var(--line-soft); }
+.gov-body .init.pending { opacity: .6; }
+.gov-body .init-icon { width: 20px; font-size: 15px; text-align: center; }
+.gov-body .init-main { flex: 1 1 auto; min-width: 0; }
+.gov-body .init-main b { display: block; font-size: 12px; font-weight: 600; color: var(--ink); }
+.gov-body .init-main em { display: block; font-style: normal; font-size: 10.5px; line-height: 1.45; color: var(--ink-faint); }
+/* The state pill holds one of two things: the day it was built, or the
+   price it still costs. Built is a real thing standing in the town;
+   the price is money not spent yet. Different facts, different hues. */
+.gov-body .init-state {
+  flex: 0 0 auto; white-space: nowrap; font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: 9.5px; padding: 2px 7px; border-radius: 100px;
+  color: var(--ember); background: var(--ember-soft); border: 1px solid var(--ember-dim);
+}
+.gov-body .init.done .init-state { color: var(--mint); background: var(--mint-soft); border-color: var(--mint-dim); }
+.gov-body .init-note { margin-top: var(--s2); font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 10px; color: var(--ink-faint); }
+.gov-body .clerk-chip {
+  display: inline-block; margin: 3px 3px 0 0; padding: 3px var(--s2); cursor: pointer;
+  font-size: 10.5px; color: var(--ink-soft); background: var(--surface-2);
+  border: 1px solid var(--line-soft); border-radius: var(--rs);
+  transition: border-color .14s ease, color .14s ease;
+}
+.gov-body .clerk-chip:hover { border-color: var(--brass-dim); color: var(--brass); }
+
+
+/* ── legend, cue, credit ─────────────────────────────────────────────
+   The furniture under the map: three things you read once and then
+   stop seeing, so none of them competes with the town. */
+.legend { display: flex; flex-wrap: wrap; gap: var(--s2); padding: var(--s3) var(--s4); border-top: 1px solid var(--line-soft); }
+.legend span {
+  padding: 2px var(--s2); font-family: var(--font-mono); font-size: 10px; letter-spacing: .02em;
+  color: var(--ink-faint); background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--rs);
+}
+
+/* There is a second page of books and records below the fold and no
+   other sign of it, so the cue drifts a little to say so. */
+.scroll-cue {
+  text-align: center; padding: var(--s2) 0 var(--s4);
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; color: var(--ink-faint);
+  animation: cueDrift 2.6s ease-in-out infinite;
+}
+@keyframes cueDrift { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+@media (prefers-reduced-motion: reduce) { .scroll-cue { animation: none; } }
+
+/* Matched as `footer.sig` as well, because the rule this replaces is
+   element-qualified and sets the whole credit italic — which would
+   swallow the paper titles that are meant to be the only italic in
+   it. */
+.sig, footer.sig {
+  margin-top: var(--s6); padding-top: var(--s3); border-top: 1px solid var(--line-soft);
+  font-family: var(--font-body); font-size: 10.5px; font-style: normal; line-height: 1.7; color: var(--ink-faint);
+}
+.sig i { font-family: var(--font-display); font-variation-settings: 'opsz' 20; font-style: italic; color: var(--ink-soft); }

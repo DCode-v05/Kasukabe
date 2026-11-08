@@ -1,0 +1,27 @@
+
+==================================================================
+RUN data/run9.db
+==================================================================
+calls 394  ok 394  spend $2.14  last tick 0
+utterances 40
+
+GATE                      VALUE               RESULT
+G1 reply rate             18/34 = 53%         FAIL
+G2 exchanges 4+ turns     2                   FAIL
+G3 group (3+ speakers)    2                   PASS
+G4 settlements            0                   FAIL
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        213/307 = 69%       PASS
+
+tool calls: {'world_move': 51, 'world_say': 40, 'world_look_around': 34, 'world_craft': 14, 'world_fell_timber': 10, 'world_harvest': 9, 'world_list_places': 8, 'world_sell': 8, 'world_describe_place': 7, 'world_find_people': 6, 'world_describe_primitives': 5, 'world_rest': 5}
+
+largest gathering: 5 speakers at home:h_field, ticks 37-50
+   Liora Thorne -> Marta Thorne: Marta, do you have any food I could eat? I don't have anything and I need to get to college.
+   Idris Thorne -> aloud: Aye.
+   Corwin Thorne -> Liora Thorne: Liora, there's no food yet. We're starting the day empty-handed. I'm heading to the forest to work—I'll bring 
+   Wren Thorne -> aloud: I'll get to harvesting. We're all in this household together.
+   Wren Thorne -> aloud: There's more to bring in. The day's just starting.
+   Marta Thorne -> aloud: Sit down, Liora. I'll not have you walking hollow, but my hands are empty same as yours. Wren, what came of th
+
+FAILED: G1 reply rate, G2 exchanges 4+ turns, G4 settlements
+

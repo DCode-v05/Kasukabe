@@ -1,0 +1,27 @@
+
+==================================================================
+RUN data/final4.db
+==================================================================
+calls 239  ok 239  spend $1.09  last tick 0
+utterances 34
+
+GATE                      VALUE               RESULT
+G1 reply rate             11/30 = 37%         FAIL
+G2 exchanges 4+ turns     3                   PASS
+G3 group (3+ speakers)    3                   PASS
+G4 settlements            0                   FAIL
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        122/182 = 67%       PASS
+
+tool calls: {'world_say': 34, 'world_move': 23, 'world_look_around': 19, 'world_rest': 9, 'world_mine': 5, 'world_describe_primitives': 5, 'world_describe_place': 4, 'world_find_people': 4, 'world_fell_timber': 4, 'world_list_places': 3, 'world_cook': 3, 'world_eat': 3}
+
+largest gathering: 5 speakers at home:h_quarry, ticks 37-47
+   Marta Thorne -> Ainsley Holloway: Ainsley. You look well. Is Bram at the mines today?
+   Marta Thorne -> aloud: I baked extra yesterday. Thought his children might like a loaf, him being at the copper all day.
+   Marta Thorne -> Ainsley Holloway: Sit down, I'm talking too much and baking too little. I'll find Bram later. You need anything from my oven tod
+   Perrin Holloway -> Ainsley Holloway: I've been carrying this as if it were a secret I discovered, as if finding it made me responsible for solving 
+   Nell Holloway -> Marta Thorne: Marta. Ainsley. Bram's at the copper because someone's got to be. Perrin, that marker between our strips - the
+   Tobias Holloway -> Marta Thorne: Marta—sorry, sorry, didn't mean to cut—just, that loaf you mentioned, if it's still going? I haven't broken my
+
+FAILED: G1 reply rate, G4 settlements
+

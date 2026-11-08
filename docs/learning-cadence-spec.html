@@ -1,0 +1,602 @@
+<title>The 30-Minute Snapshot</title>
+<style>
+  :root {
+    --paper:      #F4F7F7;
+    --surface:    #FFFFFF;
+    --surface-2:  #ECF1F1;
+    --ink:        #10191A;
+    --ink-muted:  #566868;
+    --ink-faint:  #7E9091;
+    --hairline:   #D6E0E0;
+    --accent:     #0B6E75;
+    --accent-bg:  #E1EFEF;
+    --counter:    #3D5A80;
+    --counter-bg: #E4EAF2;
+    --gap:        #A63D2E;
+    --gap-bg:     #F6E3DE;
+    --have:       #3F6B33;
+    --have-bg:    #E4EFDE;
+    --caution:    #8A6612;
+    --caution-bg: #F3EAD3;
+
+    --display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+
+    --col: 68ch;
+    --plate-w: 1120px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0D1415;
+      --surface:    #141E1F;
+      --surface-2:  #1A2627;
+      --ink:        #E3ECEB;
+      --ink-muted:  #93A7A7;
+      --ink-faint:  #6F8384;
+      --hairline:   #253233;
+      --accent:     #45B3B8;
+      --accent-bg:  #10312F;
+      --counter:    #86A5CE;
+      --counter-bg: #182635;
+      --gap:        #E28A70;
+      --gap-bg:     #35201A;
+      --have:       #91C67D;
+      --have-bg:    #1B2C1A;
+      --caution:    #DCB661;
+      --caution-bg: #2E2717;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #0D1415;
+    --surface:    #141E1F;
+    --surface-2:  #1A2627;
+    --ink:        #E3ECEB;
+    --ink-muted:  #93A7A7;
+    --ink-faint:  #6F8384;
+    --hairline:   #253233;
+    --accent:     #45B3B8;
+    --accent-bg:  #10312F;
+    --counter:    #86A5CE;
+    --counter-bg: #182635;
+    --gap:        #E28A70;
+    --gap-bg:     #35201A;
+    --have:       #91C67D;
+    --have-bg:    #1B2C1A;
+    --caution:    #DCB661;
+    --caution-bg: #2E2717;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16.5px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: var(--plate-w); margin: 0 auto; padding: 0 24px 96px; }
+
+  header.masthead { padding: 64px 0 32px; border-bottom: 2px solid var(--ink); margin-bottom: 8px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.13em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 18px;
+  }
+  h1 {
+    font-family: var(--display); font-weight: 600;
+    font-size: clamp(32px, 5.2vw, 52px); line-height: 1.08;
+    letter-spacing: -0.015em; text-wrap: balance; margin: 0 0 20px; max-width: 22ch;
+  }
+  .standfirst {
+    font-family: var(--display); font-size: clamp(17px, 2.1vw, 20.5px);
+    line-height: 1.5; color: var(--ink-muted); max-width: 62ch; margin: 0 0 26px;
+  }
+  .sourceline {
+    display: flex; flex-wrap: wrap; gap: 8px 26px;
+    font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint);
+  }
+  .sourceline b { color: var(--ink-muted); font-weight: 500; }
+
+  nav.toc {
+    display: flex; flex-wrap: wrap; gap: 6px 20px;
+    padding: 18px 0 40px; border-bottom: 1px solid var(--hairline); margin-bottom: 48px;
+    font-family: var(--mono); font-size: 12px;
+  }
+  nav.toc a { color: var(--ink-muted); text-decoration: none; border-bottom: 1px solid transparent; }
+  nav.toc a:hover, nav.toc a:focus-visible { color: var(--accent); border-bottom-color: var(--accent); }
+
+  section { margin-bottom: 68px; scroll-margin-top: 24px; }
+  h2 {
+    font-family: var(--display); font-size: clamp(25px, 3.4vw, 34px); font-weight: 600;
+    line-height: 1.15; letter-spacing: -0.012em; text-wrap: balance; margin: 0 0 6px; max-width: 26ch;
+  }
+  h2 .num {
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.1em; color: var(--accent);
+    display: block; margin-bottom: 12px; font-weight: 400;
+  }
+  h3 { font-size: 17.5px; font-weight: 650; letter-spacing: -0.005em; margin: 42px 0 10px; max-width: var(--col); }
+  h4 {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 500; margin: 30px 0 10px;
+  }
+  p, ul, ol { max-width: var(--col); }
+  p { margin: 0 0 18px; }
+  ul, ol { margin: 0 0 18px; padding-left: 20px; }
+  li { margin-bottom: 8px; }
+  li::marker { color: var(--ink-faint); }
+  a { color: var(--accent); }
+  strong { font-weight: 650; }
+  em { font-style: italic; }
+  code {
+    font-family: var(--mono); font-size: 0.86em; background: var(--surface-2);
+    border-radius: 2px; padding: 1.5px 4px; color: var(--ink);
+  }
+  .lede {
+    font-family: var(--display); font-size: 19px; line-height: 1.5;
+    color: var(--ink-muted); margin: 0 0 28px; max-width: 60ch;
+  }
+
+  .claim {
+    border-left: 3px solid var(--accent); background: var(--accent-bg);
+    padding: 18px 22px; margin: 28px 0; max-width: var(--col);
+    font-family: var(--display); font-size: 18.5px; line-height: 1.48;
+  }
+  .claim.warn { border-left-color: var(--gap); background: var(--gap-bg); }
+  .claim.note { border-left-color: var(--caution); background: var(--caution-bg); }
+  .claim.good { border-left-color: var(--have); background: var(--have-bg); }
+
+  .frame {
+    font-family: var(--mono); font-size: 12.5px; background: var(--surface);
+    border: 1px solid var(--hairline); border-radius: 3px; padding: 20px 22px;
+    margin: 26px 0; overflow-x: auto; line-height: 1.75; white-space: pre;
+    color: var(--ink);
+  }
+  .frame .k { color: var(--counter); }
+  .frame .note { color: var(--ink-faint); }
+  .frame .hl { color: var(--accent); font-weight: 600; }
+  .frame .bad { color: var(--gap); font-weight: 600; }
+  .frame .ok { color: var(--have); font-weight: 600; }
+
+  .tablewrap { overflow-x: auto; margin: 26px 0; border: 1px solid var(--hairline); border-radius: 3px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; background: var(--surface); }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+  th {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 500; background: var(--surface-2); white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td code { background: none; padding: 0; font-size: 13px; }
+  td.w { min-width: 170px; }
+  td.n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .chip {
+    display: inline-block; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em;
+    text-transform: uppercase; padding: 2px 7px; border-radius: 2px; white-space: nowrap; font-weight: 500;
+  }
+  .chip.now  { background: var(--gap-bg);     color: var(--gap); }
+  .chip.new  { background: var(--accent-bg);  color: var(--accent); }
+  .chip.ok   { background: var(--have-bg);    color: var(--have); }
+  .chip.open { background: var(--caution-bg); color: var(--caution); }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin: 28px 0; }
+  .card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 3px; padding: 16px 18px; }
+  .card .n {
+    font-family: var(--display); font-size: 30px; line-height: 1.05; font-variant-numeric: tabular-nums;
+    color: var(--accent); display: block; margin-bottom: 8px;
+  }
+  .card .l {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-faint); display: block; margin-bottom: 8px;
+  }
+  .card p { font-size: 13.5px; line-height: 1.5; margin: 0; color: var(--ink-muted); }
+
+  .verdict {
+    border: 1px solid var(--hairline); border-left: 3px solid var(--ink-faint);
+    background: var(--surface); border-radius: 3px; padding: 16px 18px; margin: 14px 0; max-width: var(--col);
+  }
+  .verdict.take { border-left-color: var(--have); }
+  .verdict.open { border-left-color: var(--caution); }
+  .verdict.warn { border-left-color: var(--gap); }
+  .verdict h5 { margin: 0 0 6px; font-size: 15px; font-weight: 650; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .verdict p { font-size: 14.5px; margin: 0 0 8px; color: var(--ink-muted); max-width: none; }
+  .verdict p:last-child { margin-bottom: 0; }
+
+  ol.steps { counter-reset: s; list-style: none; padding-left: 0; max-width: var(--col); }
+  ol.steps > li { counter-increment: s; position: relative; padding-left: 40px; margin-bottom: 20px; }
+  ol.steps > li::before {
+    content: counter(s); position: absolute; left: 0; top: 1px;
+    font-family: var(--mono); font-size: 12px; color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 50%;
+    width: 24px; height: 24px; display: grid; place-items: center;
+  }
+  ol.steps .check {
+    display: block; font-family: var(--mono); font-size: 12px; color: var(--ink-faint);
+    margin-top: 6px; padding-left: 10px; border-left: 2px solid var(--hairline);
+  }
+
+  footer {
+    border-top: 2px solid var(--ink); padding-top: 24px;
+    font-family: var(--mono); font-size: 12px; color: var(--ink-faint); line-height: 1.7;
+  }
+
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    header.masthead { padding-top: 40px; }
+  }
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Engine · learning centre · cadence</p>
+  <h1>The 30-Minute Snapshot</h1>
+  <p class="standfirst">
+    A correction the user gives at 10:00 is not encoded until the batch runs — up to six hours later,
+    or never on a session that stays busy. The snapshot idea is right and this specifies it. But the
+    symptom you described has a second cause that no cadence change fixes, and it is one line of
+    missing code in the read path.
+  </p>
+  <div class="sourceline">
+    <span><b>status</b> brainstorm → spec, nothing built</span>
+    <span><b>checked against</b> engine @ pull-model</span>
+    <span><b>date</b> 2026-08-31</span>
+    <span><b>companion</b> Measuring What It Learns</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#split">Two problems, not one</a>
+  <a href="#read">Fix one · the fourth leg</a>
+  <a href="#cut">Fix two · the snapshot cut</a>
+  <a href="#breaks">What breaks at 48× the rate</a>
+  <a href="#claim">The claim, in SQL</a>
+  <a href="#cost">What it costs</a>
+  <a href="#risks">Where this could fail</a>
+  <a href="#plan">Plan</a>
+</nav>
+
+<section id="split">
+  <h2><span class="num">Diagnosis</span>Two problems, not one</h2>
+
+  <p class="lede">
+    “The user specifies a change; the context compacts an hour later; the rule gets missed.” That
+    sentence describes one experience and two independent defects. Only one of them is about cadence.
+  </p>
+
+  <h3>What is <em>not</em> broken: capture</h3>
+  <p>
+    The post-turn hook writes the signal synchronously at the end of the turn the correction happened
+    in — through <code>guard_content</code>, into SQLite, committed. Compaction cannot lose it;
+    the row outlives the context window by design. So the correction is safe on disk within seconds.
+    The problem is downstream of that.
+  </p>
+
+  <h3>Defect one: nothing reads a signal until the batch encodes it</h3>
+  <div class="frame"><span class="k">Coordinator.prefetch_memory</span>  fans out to →  episodes · knowledge · social
+<span class="k">Search.signals()</span>            exists, FTS5 over learning_signals, <span class="bad">never called by a turn</span>
+<span class="k">Search.unified()</span>            calls all four — and is not the recall path</div>
+
+  <div class="claim warn">
+    The correction is durable, searchable and <strong>invisible</strong>. Recall reads the three
+    batch-written stores; the row sits in <code>learning_signals</code> being matched by nobody until
+    the batch turns it into knowledge. That is the six-hour blind window, and it is a
+    <strong>read-side</strong> defect — moving the batch to 30 minutes shortens it to thirty minutes
+    but does not close it.
+  </div>
+
+  <h3>Defect two: the batch may not run at all</h3>
+  <p>
+    <code>opportunity()</code> fires on IDLE/DETACHED and is rate-limited by a 6-hour interval;
+    <code>final_drain()</code> fires on QUIESCENT; <code>loop()</code> is a 6-hour backstop for a
+    session that never goes idle. Ten to fifteen threads working continuously is exactly the shape
+    that never goes idle — so the backstop is the only trigger, and it fires four times a day.
+  </p>
+
+  <div class="claim good">
+    So: fix the read so a correction applies on the <em>next turn</em>, and fix the cadence so it
+    becomes durable memory within thirty minutes. The first is small and immediate; the second is the
+    snapshot design. They are complementary, and shipping only the second still leaves a turn unable
+    to see what the user said ten minutes ago.
+  </div>
+</section>
+
+<section id="read">
+  <h2><span class="num">Fix one</span>The fourth leg</h2>
+
+  <p>
+    <code>prefetch_memory</code> gains a fourth parallel call. Everything it needs already exists:
+    the FTS5 index, the search method, a configured limit
+    (<code>SEARCH_UNIFIED_SIGNALS_LIMIT</code>) and a default score for pending rows — all built for
+    <code>unified()</code> and never wired to the turn.
+  </p>
+
+  <div class="frame">bundle = {episodes, knowledge, social, <span class="hl">pending</span>, query_embedding, embedding_tokens}
+
+<span class="note">pending rows are LABELLED in the recall reminder:
+  "Recent, not yet consolidated:" — so the model can weigh a raw
+  signal against an encoded fact rather than treating them alike.</span></div>
+
+  <p>Four properties this must keep:</p>
+  <ul>
+    <li><strong>Uncached, deliberately.</strong> <code>signals()</code> is the one search that is not
+      cached, because <code>learning_signals</code> is written on every turn and a cached
+      pending-signal result would be stale inside the same conversation. That reasoning is already in
+      the tree and applies doubly here.</li>
+    <li><strong>Keyword-only.</strong> Signals have no embedding leg; FTS5 rank is the whole score.
+      A small limit (start at 3) keeps a weak match from crowding out an encoded fact.</li>
+    <li><strong>Correction-biased.</strong> A pending <code>correction</code> is worth more at recall
+      than a pending <code>event</code>. Order by type before rank, or filter to the types that carry
+      instruction.</li>
+    <li><strong>Duplication is acceptable and must be visible.</strong> Once the batch encodes the
+      signal, recall may surface both the raw row and the derived fact until the row is deleted. The
+      label is what makes that legible rather than confusing.</li>
+  </ul>
+
+  <div class="claim">
+    Latency from “user states a rule” to “a turn can see it” goes from ≤6 hours to
+    <strong>the next turn</strong>. No model call, no schema change, no cadence dependency.
+  </div>
+</section>
+
+<section id="cut">
+  <h2><span class="num">Fix two</span>The snapshot cut</h2>
+
+  <p class="lede">
+    Your instinct — take what exists at the tick, let in-flight writes fall into the next batch — is
+    already how the read behaves. What is missing is that the behaviour is <em>implicit</em>, and
+    three things that survive at four batches a day do not survive at forty-eight.
+  </p>
+
+  <h3>The snapshot you want mostly exists</h3>
+  <div class="frame"><span class="k">run_batch()</span>
+  signals = pull_unprocessed()        <span class="note">SELECT … WHERE processed = 0 ORDER BY created_at</span>
+  … three encoding agents run on `signals` …
+  mark_processed(ids, batch_id)       <span class="note">happens AFTER the agents, not before</span>
+  delete_processed()  /  unmark_processed(batch_id)</div>
+
+  <p>
+    A row inserted while the agents are running has <code>processed = 0</code> and is simply not in
+    <code>signals</code>. It waits for the next batch. That is the “set aside whatever is currently
+    being written” behaviour, and it needs no locking because the pull is one SELECT against a
+    committed table. The defects are elsewhere.
+  </p>
+</section>
+
+<section id="breaks">
+  <h2><span class="num">Risk</span>What breaks at 48× the rate</h2>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Defect</th><th>Why it is survivable today</th><th>Why 30 minutes changes that</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="w"><strong><code>delete_processed()</code> is <code>WHERE processed = 1</code></strong> — it deletes every processed row, not this batch's.</td>
+          <td>Two batches almost never overlap at a 6-hour interval, so the flag effectively identifies one batch.</td>
+          <td>A batch that finishes while another is mid-run deletes the other's claimed rows before they are encoded. Silent loss, no error, no log.</td>
+        </tr>
+        <tr>
+          <td class="w"><strong>No overlap guard.</strong> <code>loop()</code>, <code>opportunity()</code>, <code>trigger_now()</code> and <code>final_drain()</code> all call <code>run_batch()</code> with nothing serialising them.</td>
+          <td>Rare enough to never have been seen.</td>
+          <td>A 30-minute tick plus a QUIESCENT drain plus a manual trigger is three entry points into a window that is now short. Two batches pulling the same unprocessed set means every signal is encoded twice.</td>
+        </tr>
+        <tr>
+          <td class="w"><strong>The mark→delete crash window.</strong> Rows are marked <code>processed = 1</code> mid-batch; if the process dies before Phase 5, no later <code>pull_unprocessed</code> (which reads <code>processed = 0</code>) ever sees them again.</td>
+          <td>Four windows a day.</td>
+          <td>Forty-eight. And the next successful batch's <code>delete_processed()</code> removes the orphans unread — the loss is completed by the recovery path.</td>
+        </tr>
+        <tr>
+          <td class="w"><strong><code>pull_unprocessed()</code> has no LIMIT.</strong></td>
+          <td>A 6-hour backlog is large but is pulled once.</td>
+          <td>Mostly better — 30 minutes of signals is a smaller pull. But the first tick after downtime still pulls everything at once, and that is the tick that will blow the model budget.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="claim warn">
+    None of these are caused by the cadence change. They are pre-existing, and the cadence change is
+    what makes them likely. That is the honest reason this proposal is more than editing one
+    constant.
+  </div>
+</section>
+
+<section id="claim">
+  <h2><span class="num">Design</span>The claim, in SQL</h2>
+
+  <p>
+    Move the claim from mid-batch to the cut, make it atomic, and address every later step by
+    <code>batch_id</code> instead of by the flag.
+  </p>
+
+  <div class="frame"><span class="ok">1 · CLAIM</span>  one statement, at the tick
+
+  UPDATE learning_signals
+     SET processed = 1, batch_id = :batch, claimed_at = datetime('now')
+   WHERE id IN (
+     SELECT id FROM learning_signals
+      WHERE processed = 0
+        AND <span class="hl">created_at &lt;= :cutoff</span>          <span class="note">the snapshot line</span>
+      ORDER BY created_at ASC, <span class="hl">id ASC</span>       <span class="note">second-resolution tiebreak</span>
+      LIMIT :max_per_batch
+   )
+
+<span class="ok">2 · READ</span>   SELECT … WHERE batch_id = :batch ORDER BY created_at ASC, id ASC
+
+<span class="ok">3 · FINISH</span> wrote_something ? delete_batch(:batch) : release_batch(:batch)
+
+  delete_batch   DELETE FROM learning_signals WHERE batch_id = :batch
+  release_batch  UPDATE … SET processed = 0, batch_id = NULL, claimed_at = NULL
+                 WHERE batch_id = :batch
+
+<span class="ok">4 · RECLAIM</span> on boot and in every sweep
+
+  UPDATE learning_signals SET processed = 0, batch_id = NULL, claimed_at = NULL
+   WHERE processed = 1 AND claimed_at &lt; datetime('now', '-:stale_seconds seconds')</div>
+
+  <h4>Why each part is there</h4>
+  <ul>
+    <li><strong><code>created_at &lt;= :cutoff</code></strong> is the snapshot line, stated rather
+      than implied. A row written a second after the tick is outside the claim by a rule anyone can
+      read, not by an accident of statement ordering.</li>
+    <li><strong>Claiming first</strong> means an overlapping batch's claim matches zero rows — SQLite
+      serialises the writes, so the second UPDATE simply finds nothing left. The overlap guard is the
+      statement itself; an <code>asyncio.Lock</code> on top is belt-and-braces for the same-process
+      case and costs nothing.</li>
+    <li><strong><code>id ASC</code> as tiebreak</strong> — <code>created_at</code> is second
+      resolution and a busy engine writes many signals inside one second. Step 11 already learned
+      this the hard way; the claim needs the same rule or the LIMIT cuts an arbitrary subset of one
+      second.</li>
+    <li><strong><code>delete_batch</code></strong> ends the cross-batch deletion. This is the one
+      change that must land <em>before</em> the cadence change, not with it.</li>
+    <li><strong><code>claimed_at</code> + reclaim</strong> closes the crash window that currently has
+      no recovery at all. Stale threshold well above the longest plausible batch — start at 30
+      minutes, i.e. one full tick.</li>
+    <li><strong><code>LIMIT :max_per_batch</code></strong> makes a backlog drain over several ticks
+      instead of one enormous call. Suggested start: 500 signals.</li>
+  </ul>
+
+  <p>
+    Schema cost is one nullable column, <code>claimed_at</code>, on a table that already carries
+    <code>processed</code> and <code>batch_id</code>. One migration, no rewrite.
+  </p>
+
+  <h3>The scheduler change itself</h3>
+  <div class="frame"><span class="k">lc_batch_interval_hours</span>  6.0 → <span class="hl">0.5</span>     <span class="note">single-source default, already read off the dataclass</span>
+
+loop()          the PRIMARY trigger now, not the backstop
+opportunity()   kept — an idle moment inside the window is still a fine time,
+                and it is already rate-limited by the same interval
+final_drain()   unchanged; QUIESCENT still ignores the interval
+empty tick      run_batch returns early when the claim is empty — free</div>
+</section>
+
+<section id="cost">
+  <h2><span class="num">Budget</span>What it costs</h2>
+
+  <p class="lede">
+    Forty-eight batches a day instead of four. The number that matters is not batches, it is model
+    calls, and the batch's call count scales with threads — which is precisely the situation you were
+    worried about.
+  </p>
+
+  <div class="frame">calls per batch  =  1 (social)
+                  +  N clusters      <span class="note">knowledge, cosine &gt; 0.7 grouping</span>
+                  +  M threads       <span class="note">episode, one per non-trivial thread_id</span>
+
+with 12 active threads and 3 clusters:  ~16 calls per tick
+                                        ~768 calls per day     <span class="bad">vs ~64 today</span></div>
+
+  <div class="claim note">
+    That is a 12× increase in call volume, not 12× in tokens — each call carries thirty minutes of
+    signals instead of six hours, so per-call context shrinks by roughly the same factor. Total
+    tokens should land close to flat; <strong>total requests will not</strong>, and requests are what
+    hits rate limits. Producing that number is the job of the companion note, <em>Measuring What It Learns</em>, and it has to land before the cadence flips.
+  </div>
+
+  <p>Three mitigations, in the order I would apply them:</p>
+  <ol>
+    <li><strong>Episode encoding needs a floor.</strong> One call per thread per tick is the cost
+      driver. A thread with two new signals does not need an episode every thirty minutes — gate on
+      a per-thread signal count or reuse the existing <code>FLUSH_TURN_THRESHOLD</code> watermark
+      pattern.</li>
+    <li><strong>Batch the social call across ticks.</strong> Social extraction takes the whole signal
+      context and runs once; at 30-minute cadence most ticks will have no new people. Skip when no
+      signal in the claim carries a <code>person</code> or <code>relationship</code> type.</li>
+    <li><strong>Respect the quota cooldown</strong> — <code>loop()</code> already skips a cycle while
+      citadel's window is exhausted. At 48 ticks a day that guard goes from theoretical to load-bearing.</li>
+  </ol>
+</section>
+
+<section id="risks">
+  <h2><span class="num">Honesty</span>Where this could fail</h2>
+
+  <div class="verdict warn">
+    <h5>Thirty minutes may be the wrong number in both directions</h5>
+    <p>Too slow to feel live — a user correcting the engine expects it to stick now, and thirty
+    minutes is not now. Too fast to be cheap — 12× the requests. The read-side fix is what makes
+    “now” true; the cadence only has to be fast enough that memory does not drift, and 30 minutes
+    may be over-buying. Worth testing 60 against 30 once both land.</p>
+  </div>
+  <div class="verdict warn">
+    <h5>Small batches may encode worse than large ones</h5>
+    <p>Knowledge clustering groups by embedding similarity across the whole claim. Thirty minutes of
+    signals from one thread may not cluster into anything meaningful, and consolidation explicitly
+    looks for <em>cross-batch</em> patterns — a pattern spread thinner across 48 batches may be
+    harder to see, not easier. This is measurable: run the end-to-end track with a 6-hour claim and a
+    30-minute claim over the same seeded corpus and compare what each produces.</p>
+  </div>
+  <div class="verdict open">
+    <h5>The pending-signal leg could make recall noisier</h5>
+    <p>Raw signals are unencoded, unranked by embedding, and sometimes wrong. Surfacing three of them
+    every turn may crowd out better-scored encoded memory. Mitigation is the small limit and the
+    label; the check is whether recall quality on the existing corpus moves.</p>
+  </div>
+  <div class="verdict take">
+    <h5>What is not risky</h5>
+    <p>The claim SQL, the batch-scoped delete, and the reclaim are fixes to defects that exist right
+    now. They are worth landing whatever happens to the cadence.</p>
+  </div>
+</section>
+
+<section id="plan">
+  <h2><span class="num">Sequence</span>Plan</h2>
+
+  <ol class="steps">
+    <li>
+      <strong>Batch-scoped delete and reclaim.</strong> <code>delete_batch</code>,
+      <code>release_batch</code>, <code>claimed_at</code>, the reclaim sweep. Cadence untouched.
+      Fixes real data loss today.
+      <span class="check">check · two overlapping batches each keep their own rows; a batch killed after mark has its rows reclaimed and re-encoded on the next tick</span>
+    </li>
+    <li>
+      <strong>The fourth leg in recall.</strong> Pending signals in <code>prefetch_memory</code>,
+      labelled, limit 3, correction-biased.
+      <span class="check">check · a correction written this turn is present in the next turn's recall bundle, labelled unconsolidated, with no batch having run</span>
+    </li>
+    <li>
+      <strong>The atomic claim with a cutoff and a LIMIT.</strong> Still at 6 hours — proving the
+      mechanism separately from the frequency.
+      <span class="check">check · a signal written mid-batch lands in the following batch, never in the current one, and never twice</span>
+    </li>
+    <li>
+      <strong>The pipeline evaluation.</strong> Specified separately in
+      <em>Measuring What It Learns</em>. It is the <strong>gate</strong> on step 5, not a report
+      after it: a 12× rise in request volume onto an encoder whose cost and failure rate are
+      unmeasured is a change nobody can size.
+      <span class="check">check · cost per simulated tick and wall-clock per batch are known numbers before the interval moves</span>
+    </li>
+    <li>
+      <strong>Interval to 30 minutes, behind the setting that already exists.</strong>
+      <code>lc_batch_interval_hours</code> is one value with a single source; the episode floor and
+      the social skip land with it.
+      <span class="check">check · a busy 12-thread session encodes within one tick, and the daily request count matches what step 4 predicted</span>
+    </li>
+  </ol>
+
+  <h3>Decisions I need from you</h3>
+  <ul>
+    <li><strong>Should step 2 ship ahead of everything else?</strong> It is small, it is the fix for
+      the symptom you actually described, and it is independent of the rest.</li>
+    <li><strong>Is 30 the right number, or is 60?</strong> The read-side fix in step 2 is what makes
+      a correction feel immediate. Once it lands, the batch only has to be fast enough that durable
+      memory does not drift — and 30 minutes may be over-buying. Both are one setting.</li>
+    <li><strong>Does the episode floor ship with step 5 or before it?</strong> One episode call per
+      thread per tick is the whole cost story; a floor makes the increase far smaller than the
+      arithmetic in §Budget suggests.</li>
+  </ul>
+</section>
+
+<footer>
+  The 30-Minute Snapshot · brainstorm → spec, nothing built · engine @ pull-model<br />
+  Companion: Measuring What It Learns — the evaluation that gates step 5.<br />
+  Every statement about current behaviour was read out of the tree on 2026-08-31.
+</footer>
+
+</div>

@@ -1,0 +1,15 @@
+{
+  "tool": "define_tool",
+  "kind": "after_refusal",
+  "_why": "The filing fee is most of a resident's wallet. Refused for funds, the useful recovery is the free path (`toolify`), not abandoning the invention - and whether the model finds it is exactly what this measures.",
+  "resident": "n13",
+  "location": "Kasukabe Government Complex",
+  "inventory": {},
+  "sim": 120,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You called define_tool and the world refused: you cannot afford the patent filing fee. The routine you wanted to record is still worth recording.",
+  "expect": {
+    "verb": "toolify"
+  }
+}

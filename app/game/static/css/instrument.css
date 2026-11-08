@@ -1,0 +1,368 @@
+/* ═══════════════════════════════════════════════════════════════════
+   THE INSTRUMENT — everything on this page that is not the map
+   ───────────────────────────────────────────────────────────────────
+   township.css owns the tokens (the four signal hues, the type, the
+   chrome) and 402 var() references depend on them, so this layer
+   extends that vocabulary rather than replacing it. What it DOES
+   replace is the component surface, which had drifted:
+
+     - three drawers with three different heads, paddings and scroll
+       behaviours, because each was added on its own;
+     - panel heads that were an emoji and a bold string;
+     - badges still carrying mint-on-white from a light theme that no
+       longer exists, sitting inside a near-black instrument;
+     - a roster card putting a fabricated skill chip an inch from a
+       real balance, which is the one thing this app must never do.
+
+   Loaded AFTER township.css, so it wins on equal specificity and the
+   old rules stay readable as history rather than being deleted.
+
+   COPPER is the single hue this layer adds, and it is spent on exactly
+   one idea: SOMETHING AN AGENT AUTHORED. An invented tool, a written
+   workflow, a resident mid-procedure. It is the colour of the spec's
+   own diagram and it appears nowhere else — so copper anywhere on this
+   page means the town made this, not us.
+
+   The map is not touched by a single rule in this file.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --copper:      #C9803C;
+  --copper-lit:  #E9A063;
+  --copper-dim:  #7A4A20;
+  --copper-soft: #26150A;
+
+  /* One spacing ramp, so every drawer, sheet and row in this layer is
+     measured off the same scale rather than off whatever looked right
+     in the moment it was written. */
+  --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+  --s5: 22px; --s6: 30px; --s7: 44px;
+  --rs: 6px;  --rm: 10px; --rl: 14px;
+}
+
+/* ── docks: one drawer, three positions ──────────────────────────── */
+
+.dock {
+  background: linear-gradient(180deg, rgba(16,22,30,.97), rgba(10,14,19,.99));
+  backdrop-filter: blur(20px) saturate(130%);
+  -webkit-backdrop-filter: blur(20px) saturate(130%);
+  box-shadow: var(--shadow-lift);
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+}
+.dock[hidden] { display: none; }
+.dock.left  { width: min(620px, 48vw); }
+.dock.right { width: min(460px, 40vw); }
+
+.dock-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s3);
+  padding: var(--s4) var(--s4) var(--s3);
+  border-bottom: 1px solid var(--line-soft);
+  background: linear-gradient(180deg, rgba(29,39,50,.55), transparent);
+}
+.dock-head b {
+  font-family: var(--font-display);
+  font-weight: 600; font-size: 17px; letter-spacing: .01em; color: var(--ink);
+}
+.dock-close {
+  width: 30px; height: 30px; border-radius: var(--rs);
+  border: 1px solid var(--line-soft); background: transparent;
+  color: var(--ink-faint); font-size: 17px; line-height: 1; cursor: pointer;
+  transition: background .16s ease, color .16s ease, border-color .16s ease;
+}
+.dock-close:hover { background: var(--surface-2); color: var(--ink); border-color: var(--line-lit); }
+
+/* Book tabs are ruled labels, not pills: a row of pills inside a drawer
+   inside a page is three nested containers competing for the same edge. */
+.dock-tabs {
+  display: flex; gap: 2px; flex-wrap: wrap;
+  padding: var(--s3) var(--s4) 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.book-tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px var(--s3); border: 0; background: transparent;
+  border-bottom: 2px solid transparent;
+  color: var(--ink-faint); cursor: pointer;
+  font-family: var(--font-body); font-size: 12px; font-weight: 600;
+  letter-spacing: .04em; text-transform: uppercase;
+  transition: color .16s ease, border-color .16s ease;
+}
+.book-tab:hover { color: var(--ink-soft); }
+.book-tab.on { color: var(--copper-lit); border-bottom-color: var(--copper); }
+
+.dock-body { padding: var(--s4); overflow-y: auto; scrollbar-width: thin; }
+.dock-body::-webkit-scrollbar { width: 10px; }
+.dock-body::-webkit-scrollbar-thumb {
+  background: var(--surface-3); border-radius: 99px;
+  border: 3px solid transparent; background-clip: content-box;
+}
+
+.dock-tab {
+  border-radius: 99px; padding: 10px var(--s4);
+  background: linear-gradient(180deg, rgba(29,39,50,.95), rgba(13,18,24,.95));
+  border: 1px solid var(--line); color: var(--ink-soft);
+  box-shadow: var(--shadow), var(--rim);
+  font-family: var(--font-body); font-size: 12px; font-weight: 600;
+  letter-spacing: .05em; text-transform: uppercase;
+  transition: transform .18s cubic-bezier(.2,.7,.3,1), color .18s ease, border-color .18s ease;
+}
+.dock-tab:hover { transform: translateY(-2px); color: var(--ink); border-color: var(--line-lit); }
+
+/* ── panels become ruled sheets ──────────────────────────────────────
+   A stack of bordered cards inside a drawer is a box in a box in a box.
+   Hairline rules separate them instead. */
+.book-page > .panel,
+.dock-body .panel {
+  background: transparent; border: 0; border-radius: 0; box-shadow: none;
+  border-top: 1px solid var(--line-soft);
+  padding: var(--s5) 0 var(--s3); margin: 0;
+}
+.book-page > .panel:first-child,
+.dock-body .panel:first-child { border-top: 0; padding-top: var(--s2); }
+
+.panel-head {
+  display: flex; align-items: baseline; gap: var(--s2); flex-wrap: wrap;
+  font-family: var(--font-display);
+  font-size: 15px; font-weight: 600; letter-spacing: .01em;
+  color: var(--ink); margin-bottom: var(--s3);
+}
+.panel-head .hint {
+  font-family: var(--font-body); font-size: 11px; font-weight: 400;
+  letter-spacing: .02em; color: var(--ink-faint); text-transform: none;
+}
+
+/* ── badges: correcting the light-theme leftovers ────────────────── */
+.live-badge {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 7px var(--s3); border-radius: var(--rs);
+  border: 1px solid var(--line); background: var(--surface);
+  color: var(--ink-faint);
+  display: inline-flex; align-items: center; gap: var(--s2);
+}
+.live-badge.on { background: var(--mint-soft); color: var(--mint); border-color: var(--mint-dim); }
+.live-badge.on::before { background: var(--mint); box-shadow: 0 0 0 3px rgba(74,222,155,.16); }
+.live-badge.off { background: var(--surface); color: var(--ink-faint); border-color: var(--line); }
+.live-badge.off::before { background: var(--ink-faint); }
+
+.cost-readout {
+  font-family: var(--font-mono); font-size: 12px;
+  padding: 7px var(--s3); border-radius: var(--rs);
+  border: 1px solid var(--ember-dim); background: var(--ember-soft); color: var(--ember);
+}
+.cost-readout.idle { border-color: var(--line); background: var(--surface); color: var(--ink-faint); }
+
+/* ── E.1 — a skill is a document, so show the document ───────────── */
+.skills-tab { display: flex; flex-direction: column; gap: var(--s3); }
+.skills-summary {
+  font-size: 12px; color: var(--ink-soft);
+  padding-bottom: var(--s3); border-bottom: 1px solid var(--line-soft);
+}
+.skills-summary b { color: var(--ink); font-family: var(--font-mono); }
+.skills-summary .dim { color: var(--ink-faint); }
+.walking-now { color: var(--copper-lit); }
+
+.skill-card {
+  border: 1px solid var(--line-soft); border-radius: var(--rm);
+  background: var(--surface); overflow: hidden;
+}
+/* The workflow being walked right now is the one you came to read. */
+.skill-card.walking {
+  border-color: var(--copper-dim);
+  background: linear-gradient(180deg, var(--copper-soft), var(--surface) 60%);
+}
+.skill-head {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s3); padding: var(--s3) var(--s4) var(--s2);
+  background: transparent; border: 0; cursor: pointer; text-align: left;
+}
+.skill-name {
+  font-family: var(--font-display); font-size: 15px; font-weight: 600; color: var(--ink);
+  display: inline-flex; align-items: center; gap: var(--s2); flex-wrap: wrap;
+}
+.skill-sub { padding: 0 var(--s4) var(--s3); font-size: 11px; color: var(--ink-faint); }
+.skill-sub b { color: var(--ink-soft); font-family: var(--font-mono); }
+.skill-step {
+  font-family: var(--font-mono); color: var(--copper-lit);
+  border: 1px solid var(--copper-dim); border-radius: 99px;
+  padding: 1px 8px; margin-left: var(--s1);
+}
+.skill-body { padding: 0 var(--s4) var(--s3); }
+.skill-nodoc {
+  font-size: 11px; color: var(--ink-faint); font-style: italic; padding: var(--s2) 0 var(--s3);
+}
+
+/* Eight cells. A count read at a glance beats a percentage parsed. */
+.prof-bar { display: inline-flex; gap: 3px; align-items: center; }
+.prof-bar i { width: 7px; height: 12px; border-radius: 2px; background: var(--surface-3); display: inline-block; }
+.prof-bar i.on { background: var(--copper); }
+.prof-num {
+  font-family: var(--font-mono); font-size: 12px; color: var(--ink-soft);
+  margin-left: var(--s2); min-width: 2ch; display: inline-block;
+}
+
+.skill-steps { list-style: none; margin: 0; padding: 0; }
+.skill-steps li {
+  display: grid; grid-template-columns: 16px 20px 1fr; align-items: baseline;
+  gap: var(--s2); padding: 5px 0; font-size: 12px; color: var(--ink-soft);
+  border-top: 1px solid var(--line-soft);
+}
+.skill-steps li:first-child { border-top: 0; }
+.skill-steps li.done { color: var(--ink-faint); }
+.skill-steps li.done .st-mark { color: var(--mint-dim); }
+/* The step expected next: the only loud thing in the list. */
+.skill-steps li.here {
+  color: var(--ink); background: var(--copper-soft);
+  margin: 0 calc(var(--s3) * -1); padding-left: var(--s3); padding-right: var(--s3);
+  border-radius: var(--rs); border-top-color: transparent;
+}
+.skill-steps li.here .st-mark { color: var(--copper-lit); }
+.st-mark { color: var(--ink-faint); font-size: 11px; }
+.st-n { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); }
+.st-kind {
+  font-family: var(--font-mono); font-size: 10px; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--ink-faint);
+}
+.st-check { font-style: italic; color: var(--ink-soft); }
+.st-note { color: var(--ink-faint); }
+
+/* ── E.2 — the step, wherever a resident is listed ────────────────── */
+.char-follow { padding: var(--s2) 0 0; font-size: 11px; }
+.follow.none { color: var(--ink-faint); font-style: italic; }
+.follow.on { color: var(--copper-lit); }
+.follow-step { font-family: var(--font-mono); color: var(--ink-soft); }
+
+/* ── E.3 / E.4 — the Workshop and the Council ─────────────────────── */
+.workshop, .council { display: flex; flex-direction: column; gap: var(--s6); }
+.ws-section h3, .cn-section h3 {
+  font-family: var(--font-display); font-size: 13px; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft);
+  margin: 0 0 var(--s3); padding-bottom: var(--s2);
+  border-bottom: 1px solid var(--line-soft);
+  display: flex; align-items: baseline; gap: var(--s2);
+}
+.ws-count { font-family: var(--font-mono); font-size: 12px; color: var(--copper-lit); letter-spacing: 0; }
+.ws-row {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: var(--s3) 0; border-bottom: 1px solid var(--line-soft);
+}
+.ws-row:last-child { border-bottom: 0; }
+.ws-main b { font-size: 14px; color: var(--ink); }
+.ws-by { font-size: 11px; color: var(--ink-faint); margin-left: var(--s2); }
+.ws-stat {
+  font-size: 11px; color: var(--ink-soft); font-family: var(--font-mono);
+  display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap;
+}
+.ws-stat b { color: var(--copper-lit); }
+.ws-rev { font-size: 10px; color: var(--ink-faint); font-style: italic; }
+.ws-none { font-size: 12px; color: var(--ink-faint); font-style: italic; padding: var(--s2) 0; }
+/* A filing nobody adopted: dimmed, not alarmed. The town is telling you
+   which ideas did not take, which is as interesting as the ones that did. */
+.ws-row.orphan { opacity: .72; }
+.orphan-mark { color: var(--brass); cursor: help; }
+.spreading { color: var(--mint); }
+
+.cn-row {
+  padding: var(--s3); border-radius: var(--rm);
+  border: 1px solid var(--line-soft); background: var(--surface);
+  margin-bottom: var(--s2);
+}
+.cn-row.before { border-color: var(--brass-dim); background: var(--brass-soft); }
+.cn-row.force { border-color: var(--mint-dim); }
+.cn-row.refused { opacity: .78; }
+.cn-title { font-family: var(--font-display); font-size: 15px; color: var(--ink); }
+.cn-by, .cn-when, .cn-then { font-size: 11px; color: var(--ink-faint); }
+.cn-then { font-style: italic; margin-top: var(--s1); }
+.cn-note { font-size: 11px; color: var(--ink-faint); margin: 0 0 var(--s2); font-style: italic; }
+.seatbar { display: flex; align-items: center; gap: var(--s2); margin: var(--s2) 0; }
+.seats { display: inline-flex; gap: 3px; }
+.seats i { width: 14px; height: 8px; border-radius: 2px; background: var(--surface-3); }
+.seats i.on { background: var(--brass); }
+.seat-text { font-family: var(--font-mono); font-size: 11px; color: var(--ink-soft); }
+
+.tag {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: .06em;
+  text-transform: uppercase; padding: 2px 6px; border-radius: 3px;
+  border: 1px solid var(--line); color: var(--ink-faint);
+}
+.tag.gov { color: var(--brass); border-color: var(--brass-dim); background: var(--brass-soft); }
+.tag.secret { color: var(--rust); border-color: var(--rust-dim); background: var(--rust-soft); }
+.tag.walking { color: var(--copper-lit); border-color: var(--copper-dim); background: var(--copper-soft); }
+.tag.pending { color: var(--brass); border-color: var(--brass-dim); }
+
+/* An empty view must say WHICH empty it is. Nothing filed yet and no
+   world server look identical otherwise, and one is a finding while the
+   other is a broken pipe. */
+.book-empty {
+  display: flex; flex-direction: column; gap: var(--s2);
+  padding: var(--s6) var(--s4); text-align: center;
+  border: 1px dashed var(--line); border-radius: var(--rl); color: var(--ink-faint);
+}
+.book-empty b { font-family: var(--font-display); font-size: 15px; color: var(--ink-soft); }
+.book-empty span { font-size: 12px; line-height: 1.6; }
+.book-body { display: block; }
+
+/* ── roster cards ─────────────────────────────────────────────────── */
+.char-card {
+  background: var(--surface); border: 1px solid var(--line-soft);
+  border-radius: var(--rm); padding: var(--s3); text-align: left;
+  cursor: pointer; width: 100%;
+  transition: border-color .16s ease, transform .16s cubic-bezier(.2,.7,.3,1);
+}
+.char-card:hover { border-color: var(--line-lit); transform: translateY(-1px); }
+.char-name { font-family: var(--font-display); font-size: 15px; color: var(--ink); }
+.char-occ { font-size: 11px; color: var(--copper-lit); }
+.char-meta { font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); }
+
+/* ── the resident file's own tab strip ────────────────────────────── */
+.tab {
+  padding: 7px var(--s3); border: 0; background: transparent;
+  border-bottom: 2px solid transparent; cursor: pointer;
+  font-family: var(--font-body); font-size: 11px; font-weight: 600;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--ink-faint);
+  transition: color .16s ease, border-color .16s ease;
+}
+.tab:hover { color: var(--ink-soft); }
+.tab.on { color: var(--copper-lit); border-bottom-color: var(--copper); font-weight: 600; }
+
+.inspector-empty {
+  padding: var(--s6) var(--s4); text-align: center;
+  font-size: 12px; line-height: 1.7; color: var(--ink-faint);
+}
+.inspector-empty .dim { color: var(--ink-faint); opacity: .8; }
+
+/* ── focus and motion ─────────────────────────────────────────────── */
+:where(button, a, input, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--copper-lit); outline-offset: 2px; border-radius: var(--rs);
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* A narrow window gives the drawer the whole width: a remaining sliver
+   of map is too small to read and too small to pan. */
+@media (max-width: 780px) {
+  .dock.left, .dock.right, .dock.controls { width: 100%; }
+}
+
+/* The roster on this page and the world it is pointed at can name the same
+   id differently - a subset genesis renumbers the town. The header says so
+   in place rather than letting a modelled biography sit silently under a
+   real name. */
+.agent-sub2.modelled {
+  color: var(--brass);
+  font-size: 11px;
+  line-height: 1.5;
+  border-left: 2px solid var(--brass-dim);
+  padding-left: var(--s2);
+  margin-top: var(--s1);
+}
+/* Typography the older rules left in monospace: names and headings belong
+   to the display face, and only figures belong in mono. */
+.ws-main b, .cn-title, .skill-name { font-family: var(--font-display); }
+.panel-head .hint, .book-empty span, .ws-by { font-family: var(--font-body); }

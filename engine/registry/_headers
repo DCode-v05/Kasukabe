@@ -1,0 +1,13 @@
+/servers
+  Content-Type: application/json; charset=utf-8
+  Cache-Control: public, max-age=300
+  Access-Control-Allow-Origin: *
+
+/client-metadata.json
+  Content-Type: application/json; charset=utf-8
+  Cache-Control: public, max-age=3600
+  Access-Control-Allow-Origin: *
+
+/icons/*
+  Cache-Control: public, max-age=86400
+  Access-Control-Allow-Origin: *

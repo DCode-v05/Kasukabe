@@ -1,0 +1,27 @@
+
+==================================================================
+RUN data/v3.db
+==================================================================
+calls 410  ok 410  spend $2.48  last tick 0
+utterances 34
+
+GATE                      VALUE               RESULT
+G1 reply rate             11/27 = 41%         FAIL
+G2 exchanges 4+ turns     2                   FAIL
+G3 group (3+ speakers)    2                   PASS
+G4 settlements            0                   FAIL
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        244/334 = 73%       PASS
+
+tool calls: {'world_move': 82, 'world_look_around': 35, 'world_say': 34, 'world_fell_timber': 15, 'world_describe_place': 14, 'world_sell': 13, 'world_craft': 11, 'world_list_places': 8, 'world_harvest': 7, 'world_give': 6, 'world_eat': 6, 'world_describe_primitives': 4}
+
+largest gathering: 5 speakers at home:h_quarry, ticks 37-40
+   Perrin Holloway -> Bram Holloway: Bram. You eaten yet? I've got nothing in my hands and the day starting.
+   Bram Holloway -> Ainsley Holloway: Do we have food in storage, or did the household get charged already this morning? I'm walking to the outcrop.
+   Perrin Holloway -> Ainsley Holloway: Ainsley. You asked about storage. Did anybody answer? Or are we all just... walking out the door, hoping the n
+   Perrin Holloway -> Bram Holloway: Bram. If you're walking to the outcrop—that's five sim, and then mining, and no food yet. Is that the plan?
+   Ainsley Holloway -> aloud: No food in my hands, and no stores I've seen this morning. We're starting the day empty.
+   Nell Holloway -> Bram Holloway: I'm going to carpentry. Bram, you're at the outcrop - bring something back. Ainsley, Perrin, someone needs to 
+
+FAILED: G1 reply rate, G2 exchanges 4+ turns, G4 settlements
+

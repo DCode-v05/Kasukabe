@@ -1,0 +1,211 @@
+services:
+  # Runs the pytest suite. This is the harness every other track depends
+  # on: `docker compose build test && docker compose run --rm test`.
+  #
+  # Named so a pre-built image is reused across repeated `docker compose
+  # run` calls instead of rebuilding every time; `docker compose build
+  # test` produces and tags it after any pyproject.toml change.
+  test:
+    image: kasukabe-app-test:local
+    build:
+      context: .
+      target: test
+    # Force x86_64 to match production (the m5.metal genesis host, DESIGN.md
+    # section 9). On Apple Silicon this runs under QEMU emulation (slower
+    # but correct); the alternative - testing native aarch64 and hoping it
+    # matches prod - is exactly the kind of local/production drift
+    # Vat/CLAUDE.md rules out.
+    platform: linux/amd64
+    # Bind-mount the working tree so host edits are live with no rebuild.
+    # Each package gets its own mount (not one `.:/app` bind) so the image's
+    # baked-in pyproject.toml install step still only invalidates on a real
+    # dependency change, matching engine/docker-compose.yml's layering.
+    volumes:
+      - ./world:/app/world
+      - ./broker:/app/broker
+      - ./game:/app/game
+      - ./research:/app/research
+      - ./supabase:/app/supabase
+      - ./tests:/app/tests
+      - ./pyproject.toml:/app/pyproject.toml:ro
+      - ./CONVENTIONS.md:/app/CONVENTIONS.md:ro
+      # world/map/tests/conftest.py's `ville_dir` fixture walks up four
+      # parents from its own file to find
+      # smallville/environment/frontend_server/static_dirs/assets/the_ville
+      # (the real Apache-2.0 Ville tilemap DESIGN.md section 1 lifts from).
+      # /app's parent is "/" in the container, so mounting the repo's
+      # sibling smallville/ at /smallville reproduces that same relative
+      # layout and lets the real-data integration tests run instead of
+      # skipping. Read-only: this is reference asset data, nothing under
+      # test ever writes to it.
+      - ../smallville:/smallville:ro
+    working_dir: /app
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      # Deliberately NOT setting MOCK_MODE here. It sounds like a safety
+      # belt-and-suspenders, but it is not: BrokerSettings/GameSettings'
+      # build_from_env() reads os.environ with priority over the env_vars
+      # dict a test passes in explicitly (broker/config.py's get()), so
+      # setting MOCK_MODE in this service's real environment overrides
+      # broker/tests/test_config.py and game/tests/test_game_config.py's
+      # own "MOCK_MODE": "false" fixtures and breaks them - confirmed by
+      # running this suite with it set. No test needs it: CONVENTIONS.md's
+      # "Never call a real LLM API in a test" is enforced by mocking the
+      # gateway itself (broker/bedrock.py's MockBedrockGateway), not by an
+      # env var, and this container has no AWS credentials mounted anyway.
+    # Default: full suite via bare `pytest`, matching `make test`
+    # (`uv run pytest`) and pytest's rootdir-based discovery, which finds
+    # every package's own tests/ directory (app/CONVENTIONS.md "Test
+    # conventions") plus the cross-module tests in the top-level tests/.
+    # Override with: docker compose run --rm test pytest world/ledger/tests/ -k foo
+    command: ["pytest", "--tb=short"]
+
+  # World server for local bring-up: map, ticks, tool registry, ledger,
+  # charter, health, crime (app/CONVENTIONS.md). Talks to broker over HTTP
+  # for nothing - broker calls world, never the reverse.
+  #
+  # world.main:app (wiring.build_world_server(), the "wire-world" track's
+  # real composition root), not world.app:app - that module is a
+  # deliberate health-check-only scaffold (see its own module docstring)
+  # that predates world/ having any real state to serve. world.main:app is
+  # a complete implementation (map, ledger, charter, tools, crime, the
+  # President/God routes, /ws/events) that was built but never pointed at
+  # by this file - main.py's own docstring names this exact compose file
+  # as the thing that still needed to change. The /smallville mount below
+  # matches the "test" service's own (see that service's comment): main.py
+  # boots with WorldConfig(require_map=True) by default, and
+  # wiring.py's build_world_server() raises a RuntimeError naming this
+  # exact compose file if the Ville assets are not mounted here.
+  world:
+    image: kasukabe-app:local
+    build:
+      context: .
+      target: prod
+    platform: linux/amd64
+    volumes:
+      - ./world:/app/world
+      - ../smallville:/smallville:ro
+    ports:
+      - "127.0.0.1:8100:8100"
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+    command: ["uvicorn", "world.main:app", "--host", "0.0.0.0", "--port", "8100", "--reload"]
+    networks:
+      - kasukabe_net
+
+  # Bedrock broker for local bring-up: allowlist, RPM buckets, wallet
+  # metering, traces (app/CONVENTIONS.md). Only package allowed to import
+  # boto3 - enforced by app/tests/test_module_boundaries.py, not just this
+  # comment.
+  broker:
+    image: kasukabe-app:local
+    build:
+      context: .
+      target: prod
+    platform: linux/amd64
+    volumes:
+      - ./broker:/app/broker
+    ports:
+      - "127.0.0.1:8200:8200"
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      # Pre-wired for the day a local dev flips MOCK_MODE=false and wants
+      # broker's ledger debits to reach the world container over the
+      # compose network instead of localhost. Unused while mock_mode=true.
+      - WORLD_BASE_URL=http://world:8100
+      # Local bring-up only. The in-memory mock ledger has never been
+      # seeded with the genesis agent ids that real engines authenticate
+      # with, so without this every inference call 404s ("agent 'a0001' is
+      # not known to the ledger") and each engine turns that into a 500
+      # from its own /tick - a whole run with no agent activity at all.
+      # 200 cents matches world/genesis.json's usd_wallet_cents.
+      #
+      # Safe here because it is read ONLY when MOCK_MODE=true; real mode
+      # uses HttpLedgerClient against world's actual ledger and ignores it.
+      # Note a provisioning ledger cannot run out, so a mock run can never
+      # show insolvency - survival results need a real run.
+      # INFRA-28: documented here as a mock-mode knob the broker
+      # can no longer enter - `BrokerSettings.build_from_env`
+      # rejects MOCK_MODE outright, so this line described a mode
+      # that cannot be reached. Left for a mock-mode compose
+      # profile to use, and marked as inert for the real one.
+      - MOCK_LEDGER_BALANCE_CENTS=200  # inert unless mock mode
+    command: ["uvicorn", "broker.app:app", "--host", "0.0.0.0", "--port", "8200", "--reload"]
+    networks:
+      - kasukabe_net
+    depends_on:
+      - world
+
+  # The viewer. Not previously in compose at all - it only ever ran on the
+  # host - so "run the system in docker" could not include the UI.
+  #
+  # It talks to the world over the compose network. There is no MOCK_MODE:
+  # game/ serves a real world server or nothing, and the map draws only the
+  # residents that world reports.
+  # Part C / E.6: the observatory, read-only, on its own port and its own
+  # budget. It reads the broker's trace DB directly rather than asking the
+  # world, so it still answers "is this run believable" when the world is
+  # the thing that is broken.
+  observatory:
+    image: kasukabe-app:local
+    build:
+      context: .
+      target: prod
+    platform: linux/amd64
+    volumes:
+      - ./observatory:/app/observatory
+      - ./data:/data
+    ports:
+      - "127.0.0.1:8500:8500"
+    environment:
+      - PYTHONPATH=/app
+      # UI-11: the path a containerised run actually writes.
+      #
+      # This said `/data/run.db`, and nothing in this repo has ever
+      # written a file by that name - `start-genesis.sh` writes
+      # `/data/kasukabe.db` and the series harness writes
+      # `data/<name>.db`. So the observatory came up, found no trace,
+      # and reported "no trace database ... has a run written one yet?"
+      # on every compose run, which reads as "the run has not started".
+      #
+      # Same default as `observatory/app.py`'s own DEFAULT_TRACE_DB, so
+      # the container and a bare `uvicorn observatory.app:app` now watch
+      # the same file.
+      - TRACE_SQLITE_PATH=/data/kasukabe.db
+      # INFRA-28: was `http://genesis:8100`, and no `genesis`
+      # service is defined in this file - so the observatory
+      # asked a hostname that does not resolve and reported the
+      # world unreachable on every compose run.
+      - WORLD_BASE_URL=http://world:8100
+    networks:
+      - kasukabe_net
+    command: uvicorn observatory.app:app --host 0.0.0.0 --port 8500
+
+  game:
+    image: kasukabe-app:local
+    build:
+      context: .
+      target: prod
+    platform: linux/amd64
+    volumes:
+      - ./game:/app/game
+      - ../smallville:/smallville:ro
+    ports:
+      - "127.0.0.1:8400:8400"
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      - WORLD_BASE_URL=http://world:8100
+      - WORLD_WS_URL=ws://world:8100/ws/events
+      # /api/engine reads the broker's lanes and spend for the readout.
+      - BROKER_BASE_URL=http://broker:8200
+    command: ["uvicorn", "game.server:app", "--host", "0.0.0.0", "--port", "8400", "--reload"]
+    networks:
+      - kasukabe_net
+
+networks:
+  kasukabe_net:
+    driver: bridge

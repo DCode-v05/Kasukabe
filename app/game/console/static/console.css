@@ -1,0 +1,261 @@
+/* Kasukabe operator console - dark ops-room theme. Self-contained, no
+   external fonts/icons (this page has to work with no network access
+   beyond the console's own origin - it talks to nothing but /api/*). */
+
+:root {
+  --bg: #0d1117;
+  --panel: #151b23;
+  --panel-border: #262d38;
+  --text: #e6edf3;
+  --text-dim: #8b96a5;
+  --accent: #6ea8fe;
+  --ok: #3fb950;
+  --warn: #d29922;
+  --danger: #f85149;
+  --ghost: #30363d;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+h1, h2, h3 { margin: 0 0 0.4em 0; font-weight: 600; }
+h1 { font-size: 1.15rem; }
+h2 { font-size: 1rem; color: var(--text); }
+h3.panel-subhead { font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 1em; }
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 1.2rem;
+  background: var(--panel);
+  border-bottom: 1px solid var(--panel-border);
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.topbar-title { display: flex; align-items: center; gap: 0.6rem; }
+.crest { font-size: 1.6rem; color: var(--accent); }
+.subtitle { margin: 0; color: var(--text-dim); font-size: 0.8rem; }
+
+.token-box { display: flex; align-items: center; gap: 0.4rem; }
+.token-box label { color: var(--text-dim); font-size: 0.78rem; }
+.token-box input[type="password"] {
+  width: 220px;
+}
+
+.dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  display: inline-block;
+}
+.dot-unknown { background: var(--text-dim); }
+.dot-ok { background: var(--ok); }
+.dot-bad { background: var(--danger); }
+
+.control-strip {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  padding: 0.6rem 1.2rem;
+  background: #10151c;
+  border-bottom: 1px solid var(--panel-border);
+  flex-wrap: wrap;
+}
+.control-item { display: flex; align-items: center; gap: 0.4rem; }
+.control-label { color: var(--text-dim); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.status-readout { font-variant-numeric: tabular-nums; color: var(--text-dim); font-size: 0.85rem; }
+
+/* Spend + burn rate - shown first in the control strip, deliberately the
+   most visually weighted item there (task spec: "show live spend + burn
+   rate prominently"). */
+.spend-strip { padding-right: 1rem; border-right: 1px solid var(--panel-border); }
+.spend-burned {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text);
+}
+.spend-rate {
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  font-size: 0.82rem;
+  min-width: 5.5em;
+}
+.spend-bar {
+  width: 90px;
+  height: 8px;
+  border-radius: 999px;
+  background: #0b0f14;
+  border: 1px solid var(--panel-border);
+  overflow: hidden;
+}
+.spend-bar-fill { height: 100%; width: 0%; transition: width 0.3s ease, background-color 0.3s ease; }
+.spend-bar-ok { background: var(--ok); }
+.spend-bar-warn { background: var(--warn); }
+.spend-bar-danger { background: var(--danger); }
+
+.tabs {
+  display: flex;
+  gap: 0.2rem;
+  padding: 0 1.2rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--panel-border);
+}
+.tab-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  border-bottom: 2px solid transparent;
+}
+.tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+.tab-btn:hover { color: var(--text); }
+
+.tab-panel { display: none; padding: 1.2rem; }
+.tab-panel.active { display: block; }
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 1rem;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 1rem;
+}
+.panel-wide { grid-column: 1 / -1; }
+.panel-hint { color: var(--text-dim); font-size: 0.78rem; margin: 0 0 0.6rem 0; }
+
+.list { display: flex; flex-direction: column; gap: 0.5rem; max-height: 320px; overflow-y: auto; }
+.list-compact .list-item { padding: 0.4rem 0.6rem; font-size: 0.82rem; }
+.list-empty { color: var(--text-dim); font-size: 0.82rem; font-style: italic; }
+
+.list-item {
+  background: #0f151c;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+}
+.list-item-head { display: flex; justify-content: space-between; gap: 0.5rem; align-items: baseline; }
+.list-item-title { font-weight: 600; }
+.list-item-meta { color: var(--text-dim); font-size: 0.75rem; }
+.list-item-body { margin: 0.35rem 0; color: var(--text); font-size: 0.85rem; }
+.list-item-actions { display: flex; gap: 0.4rem; margin-top: 0.4rem; flex-wrap: wrap; }
+
+input, select, textarea {
+  background: #0b0f14;
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.form-row { display: flex; gap: 0.5rem; }
+.form-row > * { flex: 1; }
+.dials-row { flex-wrap: wrap; }
+.dials-row label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.75rem; color: var(--text-dim); flex: 1; min-width: 140px; }
+
+.btn {
+  background: var(--ghost);
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.btn:hover { filter: brightness(1.15); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-accent { background: var(--accent); color: #06121f; border-color: var(--accent); font-weight: 600; }
+.btn-ok { background: var(--ok); color: #06210c; border-color: var(--ok); }
+.btn-warn { background: var(--warn); color: #221a04; border-color: var(--warn); }
+.btn-danger { background: var(--danger); color: #240404; border-color: var(--danger); font-weight: 600; }
+.btn-ghost { background: transparent; }
+
+/* UI-31: an armed irreversible action. The label already says
+   "Confirm: ...", so this only has to be impossible to miss out of the
+   corner of an eye - the whole point is that the operator notices the
+   state changed rather than clicking twice by reflex. */
+.btn.armed {
+  background: var(--danger);
+  color: #240404;
+  border-color: #fff;
+  font-weight: 700;
+  box-shadow: 0 0 0 2px var(--danger);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: var(--ghost);
+}
+.badge-pending { color: var(--warn); }
+.badge-visible { color: var(--ok); }
+.badge-silent { color: var(--text-dim); border: 1px dashed var(--text-dim); }
+
+.banner {
+  margin: 0.8rem 1.2rem 0 1.2rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+.banner-error { background: #2a0f0f; border: 1px solid var(--danger); color: #ffb4ae; }
+.banner-ok { background: #0f2a17; border: 1px solid var(--ok); color: #b6f0c2; }
+
+
+/* -- B7: framed results (The 250 section 19.7) --------------------------
+   "Nothing is shown as a bare number without also saying how much to
+   trust it." The confidence chip is therefore part of the card, not an
+   optional decoration - a framed result without one is a bug. */
+.framed-list { display: flex; flex-direction: column; gap: 12px; }
+.framed {
+  border: 1px solid var(--line, #d8d4cc);
+  border-left: 4px solid var(--line, #d8d4cc);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: var(--surface, #fff);
+}
+.framed.watch    { border-left-color: #D9A02B; }
+.framed.critical { border-left-color: #C6362A; }
+.framed .q {
+  font-weight: 700; font-size: 13px; letter-spacing: .01em;
+  color: var(--ink-soft, #5c5750); margin-bottom: 4px;
+}
+.framed .a { font-size: 15px; line-height: 1.45; margin-bottom: 8px; }
+.framed .meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chip {
+  font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+  background: #ECE8DF; color: #4a453e; white-space: nowrap;
+}
+.chip.high     { background: #D6EBD8; color: #24632c; }
+.chip.moderate { background: #E2EAD6; color: #46612a; }
+.chip.medium   { background: #F3E9CE; color: #6b5620; }
+.chip.low      { background: #F4E0D4; color: #7d4526; }
+.chip.none     { background: #EDEDED; color: #666; }
+.framed .basis { font-size: 11.5px; color: var(--ink-faint, #8a857d); }
+.framed .breakdown {
+  margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px 14px;
+  font-size: 11.5px; color: var(--ink-faint, #8a857d);
+}
+.framed .breakdown b { color: var(--ink, #2c2822); font-weight: 700; }

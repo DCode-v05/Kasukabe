@@ -1,0 +1,15 @@
+{
+  "tool": "describe_primitives",
+  "kind": "after_refusal",
+  "_why": "Run 25: one resident described calling a tool that does not exist, and several guessed parameter names out of English. This is the verb that answers what the town actually has.",
+  "resident": "n17",
+  "location": "street",
+  "inventory": {},
+  "sim": 1273,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You called world_barter and the world refused: no tool registered under that name. You want to swap goods with somebody standing here.",
+  "expect": {
+    "verb": "describe_primitives"
+  }
+}

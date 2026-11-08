@@ -1,0 +1,29 @@
+
+==================================================================
+RUN data/final2.db
+==================================================================
+calls 457  ok 450  spend $2.53  last tick 0
+utterances 39
+
+GATE                      VALUE               RESULT
+G1 reply rate             13/30 = 43%         FAIL
+G2 exchanges 4+ turns     2                   FAIL
+G3 group (3+ speakers)    2                   PASS
+G4 settlements            2                   PASS
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        201/329 = 61%       PASS
+
+tool calls: {'world_move': 54, 'world_say': 41, 'world_look_around': 38, 'world_craft': 11, 'world_rest': 7, 'world_mine': 6, 'world_describe_place': 6, 'world_find_people': 6, 'world_harvest': 6, 'world_list_places': 5, 'world_describe_primitives': 4, 'world_fell_timber': 4}
+
+largest gathering: 7 speakers at home:h_field, ticks 37-44
+   Liora Thorne -> aloud: Morning. I'm heading out early—need to find Perrin before college. Anyone seen which way they went?
+   Marta Thorne -> Wren Thorne: Wren, love—have you the wheat from the field, or are we feeding the birds this morning? I need grain in hand b
+   Marta Thorne -> Wren Thorne: Wren, I've loaves to set and no grain milled yet. Have you brought wheat up from the field, or shall I go down
+   Wren Thorne -> Marta Thorne: The thing is... I've not brought it in yet. Been walking the boundary since before sun-up, checking the rows. 
+   Idris Thorne -> aloud: Fire needs wood same as bread needs grain.
+   Idris Thorne -> Corwin Thorne: Corwin. The yard—do we buy timber there now, or only store it?
+
+settlement: Ainsley Holloway said 30, paid at tick 42
+
+FAILED: G1 reply rate, G2 exchanges 4+ turns
+

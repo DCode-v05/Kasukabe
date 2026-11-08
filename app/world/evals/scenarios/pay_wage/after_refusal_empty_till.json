@@ -1,0 +1,17 @@
+{
+  "tool": "pay_wage",
+  "kind": "after_refusal",
+  "_why": "Addendum section 5's after-refusal row: refused for insufficient business sim, and the refusal names `transfer` from the owner's own hand.",
+  "resident": "n05",
+  "location": "Kasukabe Town Square",
+  "inventory": {},
+  "sim": 900,
+  "people_here": [
+    "n14"
+  ],
+  "recent_speech": [],
+  "open_question_to_me": "You called pay_wage and the world refused: 'pay_wage: Thornes Bakery holds 4 sim, not 40. `transfer` from your own hand is the other way to pay.'",
+  "expect": {
+    "verb": "transfer"
+  }
+}

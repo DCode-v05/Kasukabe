@@ -1,0 +1,26 @@
+{
+  "tool": "license_tool",
+  "kind": "positive",
+  "_why": "Addendum section 9: an inventor holding an approved tool and a co-located resident who has just asked to USE it. A tool invented once could never reach a second pair of hands - diffusion was zero by construction, not as a finding.",
+  "resident": "ada",
+  "location": "Kasukabe Workshop",
+  "inventory": {},
+  "sim": 800,
+  "people_here": [
+    "n09"
+  ],
+  "recent_speech": [
+    {
+      "from": "n09",
+      "text": "Ada. Let me use that rope-making of yours for a few days. I will pay for the use of it."
+    }
+  ],
+  "open_question_to_me": "n09 is waiting on an answer. You own the tool rope_making.",
+  "expect": {
+    "verb": "license_tool",
+    "params_include": {
+      "tool_name": "rope_making",
+      "licensee_id": "n09"
+    }
+  }
+}

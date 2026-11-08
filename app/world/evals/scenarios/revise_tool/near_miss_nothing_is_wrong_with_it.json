@@ -1,0 +1,17 @@
+{
+  "tool": "revise_tool",
+  "kind": "near_miss",
+  "_why": "A tool that works does not need revising; the job in front of the resident is to use it. `revise_tool` has been reachable the whole time and was never called, so the risk runs both ways - never revising, and revising instead of acting.",
+  "resident": "n09",
+  "location": "business:b_mill",
+  "inventory": {
+    "wheat": 8
+  },
+  "sim": 700,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "Your own milling tool worked this morning and the wheat is in front of you.",
+  "expect": {
+    "verb": "craft"
+  }
+}

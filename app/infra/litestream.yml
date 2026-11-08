@@ -1,0 +1,79 @@
+# Litestream: continuous replication of the trace store's SQLite WAL to S3
+# (DESIGN.md section 9, decided 2026-07-30: "Litestream streams the WAL
+# continuously to S3 (spot-death safe, restores to seconds-old state)").
+#
+# This file is consumed directly by the `litestream` binary, not by any
+# Python in this repo - systemd/kasukabe-litestream.service runs
+# `litestream replicate -config /opt/kasukabe/app/infra/litestream.yml`
+# after kasukabe-world and kasukabe-broker (both of which open the
+# database and create it on first write). Litestream expands $VAR /
+# ${VAR} references against its own process environment at load time
+# (its EnvironmentFile= in that unit is infra/env/litestream.env), the
+# same substitution style every other *.env file in infra/env/ already
+# assumes.
+#
+# ── required env vars (infra/env/litestream.env) ──────────────────────
+#   KASUKABE_SQLITE_PATH   the exact same path world.env / broker.env set
+#                           (world.env.example's own comment: "all three
+#                           MUST agree on this exact path" - this file is
+#                           the third). /opt/kasukabe/data/kasukabe.db on
+#                           the genesis host.
+#   KASUKABE_S3_BUCKET     the bucket scripts/01-setup-s3-and-iam.sh
+#                           creates (its own output calls this
+#                           BUCKET_NAME; export it into
+#                           infra/env/litestream.env under THIS name so
+#                           supabase/config.py's archiver and this file
+#                           agree on one bucket without a second lookup).
+#                           NOT YET added to infra/env/litestream.env as
+#                           of this writing (that file only has
+#                           AWS_REGION) - infra/'s owner adds the line,
+#                           this trace-store track does not touch
+#                           infra/env/ (STAY IN YOUR LANE).
+#   AWS_REGION             already set in infra/env/litestream.env
+#                           (ap-south-1). No access-key-id /
+#                           secret-access-key below on purpose: omitting
+#                           them makes Litestream fall through to the AWS
+#                           SDK's default credential chain, which on this
+#                           host resolves to the EC2 instance profile
+#                           scripts/01-setup-s3-and-iam.sh attaches - the
+#                           exact same "static env vars, else IMDSv2 role"
+#                           order supabase/s3_client.py implements by hand
+#                           for the Python side, so both halves of S3
+#                           writes on this host authenticate the same way
+#                           without a static credential ever touching disk.
+#
+# The "litestream/" replica path below is not a free choice - it is the
+# prefix scripts/01-setup-s3-and-iam.sh already carved out and printed as
+# "litestream.yml's replica target" when it creates the bucket. The
+# sibling prefixes (archives/payloads/, archives/checkpoints/,
+# exports/parquet/) are supabase/s3_client.py's and research/'s targets,
+# not this file's - see supabase/README.md and research/README.md.
+
+dbs:
+  - path: ${KASUKABE_SQLITE_PATH}
+    replicas:
+      - type: s3
+        bucket: ${KASUKABE_S3_BUCKET}
+        path: litestream
+        region: ${AWS_REGION}
+        # Litestream's own default (1s) is unusually short. Kept explicit
+        # rather than left implicit: a genesis run measured in single-digit
+        # dollars of infra cost (DESIGN.md section 11: "~$6 infra total")
+        # can afford it, and DESIGN.md section 9's "restores to
+        # seconds-old state" promise is only true if sync-interval is
+        # actually seconds, not whatever a future edit's idea of a
+        # reasonable default is.
+        sync-interval: 1s
+        # 7 days, not "however long one genesis run takes": DESIGN.md
+        # section 9 puts a full run at roughly 6 game-days of wall clock,
+        # but the same replica should survive a restart, a second
+        # shorter validation run, or a few days of post-run research
+        # access to recent snapshots without Litestream pruning WAL
+        # segments the operator still wants. Old segments beyond this
+        # window are exactly what the per-game-day Parquet export
+        # (research/) and the world_snapshots checkpoint archive
+        # (supabase/archiver.py) exist to make durable for the long term
+        # instead - this retention window is about operational recovery,
+        # not the permanent research record.
+        retention: 168h
+        retention-check-interval: 1h

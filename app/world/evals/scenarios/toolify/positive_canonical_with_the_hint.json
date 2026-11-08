@@ -1,0 +1,22 @@
+{
+  "tool": "toolify",
+  "kind": "positive",
+  "_why": "The same four primitives, in the same order, for the fourth morning running. Compounding is the thing this project is named for and `toolify` is how a repeated sequence stops costing a decision every time; three live runs measured zero reach for it. This variant shows the authoring hint a live resident reads at this point, which the description-only variant does not: the L1 run of 2026-09-12 scored 0% reach here against the descriptions alone, and the pair measures whether the nudge or the description is what is missing.",
+  "resident": "n09",
+  "location": "mill",
+  "inventory": {
+    "wheat": 12
+  },
+  "sim": 1200,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "you have moved to the mill, milled wheat, bagged the flour and carried it to the bakery on each of the last four mornings",
+  "expect": {
+    "verb": "toolify",
+    "params_include": {}
+  },
+  "shows_authoring_hint": {
+    "what": "'move' then 'craft'",
+    "times": 4
+  }
+}

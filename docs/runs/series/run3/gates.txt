@@ -1,0 +1,29 @@
+
+==================================================================
+RUN data/run3.db
+==================================================================
+calls 206  ok 205  spend $1.04  last tick 0
+utterances 36
+
+GATE                      VALUE               RESULT
+G1 reply rate             14/31 = 45%         FAIL
+G2 exchanges 4+ turns     2                   FAIL
+G3 group (3+ speakers)    2                   PASS
+G4 settlements            2                   PASS
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        111/161 = 69%       PASS
+
+tool calls: {'world_say': 36, 'world_look_around': 21, 'world_move': 21, 'world_craft': 7, 'world_mine': 3, 'world_give': 3, 'world_list_places': 3, 'world_describe_primitives': 3, 'world_find_people': 3, 'world_describe_place': 3, 'world_harvest': 2, 'world_quote_action_cost': 2}
+
+largest gathering: 6 speakers at home:h_field, ticks 37-47
+   Liora Thorne -> aloud: Can I take something for the road? College today.
+   Marta Thorne -> Wren Thorne: Wren. The oven's cold and I'm thinking barley bread today. Walk with me to the mill? We'll talk about what's c
+   Liora Thorne -> aloud: Marta. Before you go to the mill—do you have something I can eat? I'm walking to the college and I have nothin
+   Wren Thorne -> Marta Thorne: The thing is... a cold oven means business is slow, doesn't it?
+   Idris Thorne -> Wren Thorne: Wren. You asked about the trade. Come to the forest today. See what the work is.
+   Idris Thorne -> Corwin Thorne: Corwin. Show your cousin how to judge a stand. I'll be behind you.
+
+settlement: Marta Thorne said 48, paid at tick 38
+
+FAILED: G1 reply rate, G2 exchanges 4+ turns
+

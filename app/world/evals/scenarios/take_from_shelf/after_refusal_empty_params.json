@@ -1,0 +1,15 @@
+{
+  "tool": "take_from_shelf",
+  "kind": "after_refusal",
+  "_why": "The exact refusal five residents hit in run deni-a6f9eb4-5h - `take_from_shelf({})` - now that the message names what the tool takes (TRADE-01). Does the second attempt succeed, or does the resident give up?",
+  "resident": "n07",
+  "location": "Kasukabe Town Square",
+  "inventory": {},
+  "sim": 600,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You called take_from_shelf and the world refused: 'take_from_shelf: invalid params: business_id: Field required; item: Field required; quantity: Field required. take_from_shelf takes: business_id, item, quantity.' You work at b_mill, you are standing in it, and its shelf holds 23 flour.",
+  "expect": {
+    "verb": "take_from_shelf"
+  }
+}

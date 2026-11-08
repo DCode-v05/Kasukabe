@@ -1,0 +1,23 @@
+record_ui: recording http://127.0.0.1:8400/township-v2.html?book=town&roofs=off at 1920x1080, a frame every 2.0s -> ../docs/runs/series/trial-day2-20/video/town-without-buildings/frames
+Traceback (most recent call last):
+  File "/Users/sharan/Downloads/kasukabe/app/scripts/record_ui.py", line 247, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/Users/sharan/Downloads/kasukabe/app/scripts/record_ui.py", line 243, in main
+    return asyncio.run(record(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/sharan/Downloads/kasukabe/app/scripts/record_ui.py", line 199, in record
+    shot = await page.call("Page.captureScreenshot", format="jpeg", quality=args.quality)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sharan/Downloads/kasukabe/app/scripts/record_ui.py", line 143, in call
+    raise RuntimeError(f"{method}: {message['error']}")
+RuntimeError: Page.captureScreenshot: {'code': -32603, 'message': 'Internal error'}

@@ -1,0 +1,24 @@
+{
+  "tool": "toolify",
+  "kind": "negative",
+  "_why": "PROG-02. A harness that only scores positives measures eagerness, not judgement. Composing a tool for something done once costs a decision to save nothing, and a resident that files a program for every errand has learned the verb and not the reason for it. Expects the VERB and a reach at or under the negative bar: with `\"verb\": null` this scenario scored reach 0 whatever the model did, so it passed by construction and measured nothing.",
+  "resident": "n17",
+  "location": "street",
+  "inventory": {
+    "copper_ingot": 3
+  },
+  "sim": 1200,
+  "people_here": [
+    "n15"
+  ],
+  "recent_speech": [
+    {
+      "from": "n15",
+      "text": "Three twenty for the lot, take it or carry them to another buyer."
+    }
+  ],
+  "open_question_to_me": "Ezra has just named a price for the three ingots you are holding. You have never sold him ingots before and do not expect to again.",
+  "expect": {
+    "verb": "toolify"
+  }
+}

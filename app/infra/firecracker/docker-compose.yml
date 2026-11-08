@@ -1,0 +1,26 @@
+services:
+  # Standalone test harness for this track only. Not part of
+  # app/docker-compose.yml's shared "test" service (see Dockerfile.test's
+  # header comment for why: that file is out of this track's lane while
+  # another track is actively editing it).
+  #
+  # Usage: docker compose run --rm test
+  #        docker compose run --rm test pytest tests/test_vm_manager_lifecycle.py -v
+  test:
+    image: kasukabe-firecracker-test:local
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    # Pinned to match the m5.metal genesis host (DESIGN.md section 9,
+    # x86_64), same reasoning app/docker-compose.yml's own test service
+    # documents: testing aarch64-native on this Mac and hoping it matches
+    # production would be exactly the local/production drift this repo's
+    # conventions rule out.
+    platform: linux/amd64
+    volumes:
+      - .:/app/infra/firecracker
+    working_dir: /app/infra/firecracker
+    environment:
+      - PYTHONPATH=/app/infra/firecracker
+      - PYTHONDONTWRITEBYTECODE=1
+    command: ["pytest", "tests/", "-v", "--tb=short"]

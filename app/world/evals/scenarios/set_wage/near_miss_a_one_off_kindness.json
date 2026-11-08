@@ -1,0 +1,22 @@
+{
+  "tool": "set_wage",
+  "kind": "near_miss",
+  "_why": "Addendum section 5's near-miss row: the owner wants to give the employee twenty sim for lunch and owes no wage. `transfer` or `give`.",
+  "resident": "n05",
+  "location": "Kasukabe Town Square",
+  "inventory": {},
+  "sim": 1250,
+  "people_here": [
+    "n14"
+  ],
+  "recent_speech": [
+    {
+      "from": "n14",
+      "text": "Marta, I have no coin for lunch today."
+    }
+  ],
+  "open_question_to_me": "n14 is waiting on an answer. No wage is owed to anyone.",
+  "expect": {
+    "verb": "transfer"
+  }
+}

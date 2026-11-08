@@ -1,0 +1,34 @@
+{
+  "name": "pros-cons-analyzer",
+  "version": "1.0.0",
+  "description": "Produce structured pros/cons/recommendation analysis for decisions. This skill should be used when weighing options, evaluating tradeoffs, choosing between alternatives, or making a go/no-go decision. Triggers: 'pros and cons of', 'should I choose X or Y', 'evaluate this option', 'what are the tradeoffs', 'help me decide'.",
+  "category": "analysis",
+  "capabilities": ["decision_analysis", "option_comparison", "risk_assessment", "recommendation_generation"],
+  "input_signature": {
+    "type": "object",
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "Topic or decision to analyze"
+      }
+    }
+  },
+  "output_signature": {
+    "type": "object",
+    "properties": {
+      "pros": {
+        "type": "array"
+      },
+      "cons": {
+        "type": "array"
+      },
+      "recommendation": {
+        "type": "string"
+      }
+    }
+  },
+  "has_prompt": true,
+  "has_scripts": false,
+  "has_references": false,
+  "has_gotchas": false
+}

@@ -1,0 +1,29 @@
+
+==================================================================
+RUN data/final1.db
+==================================================================
+calls 414  ok 407  spend $2.53  last tick 0
+utterances 61
+
+GATE                      VALUE               RESULT
+G1 reply rate             16/50 = 32%         FAIL
+G2 exchanges 4+ turns     4                   PASS
+G3 group (3+ speakers)    4                   PASS
+G4 settlements            1                   PASS
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        305/359 = 85%       PASS
+
+tool calls: {'world_move': 64, 'world_say': 61, 'world_look_around': 42, 'world_describe_place': 22, 'world_find_people': 20, 'world_rest': 19, 'world_list_places': 16, 'world_eat': 9, 'world_craft': 9, 'world_harvest': 7, 'world_give': 7, 'recall_memories': 6}
+
+largest gathering: 5 speakers at home:h_quarry, ticks 37-46
+   Perrin Holloway -> Tobias Holloway: Tobias, I have no food for today. Do you have anything you can give me?
+   Bram Holloway -> Ainsley Holloway: Going to the seam. Eat something yourself. I'll be back when it's dark.
+   Bram Holloway -> Ainsley Holloway: Mined three copper from the seam today. Need to turn them to sim. The supply store was empty.
+   Nell Holloway -> Perrin Holloway: Perrin, I've got nothing in my hands right now. Tobias, what do you hold? Bram said the supply store's empty, 
+   Ainsley Holloway -> Bram Holloway: You mined three copper. That's good work. Copper's at what, 280 sim at the supply store when they have stock. 
+   Tobias Holloway -> Perrin Holloway: Perrin, I've got nothing on me—just 1200 sim and empty hands. But Bram's got copper he needs to sell, and I'm 
+
+settlement: Ainsley Holloway said 400, paid at tick 40
+
+FAILED: G1 reply rate
+

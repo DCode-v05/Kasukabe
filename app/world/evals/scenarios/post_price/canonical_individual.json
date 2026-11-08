@@ -1,0 +1,27 @@
+{
+  "tool": "post_price",
+  "kind": "positive",
+  "_why": "Addendum section 3's second positive row: Wren holding three cabbage, asked his price. The spec scores `trade` as a reach here too.",
+  "resident": "n06",
+  "location": "Kasukabe Market",
+  "inventory": {
+    "cabbage": 3
+  },
+  "sim": 300,
+  "people_here": [
+    "n10"
+  ],
+  "recent_speech": [
+    {
+      "from": "n10",
+      "text": "Wren. What are you asking for the cabbage?"
+    }
+  ],
+  "open_question_to_me": "n10 is waiting on a price for cabbage",
+  "expect": {
+    "verb": "post_price",
+    "params_include": {
+      "item": "cabbage"
+    }
+  }
+}

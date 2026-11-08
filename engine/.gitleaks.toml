@@ -1,0 +1,22 @@
+# gitleaks config for engine.
+#
+# Extends the default ruleset and allowlists files whose PURPOSE is to contain
+# fake/example secrets — they are NOT real credentials:
+#   - tests/test_secret_scanner.py   the secret scanner's own fixtures
+#   - tests/test_logging_redaction.py asserts logs redact secret-shaped strings
+#   - docs/guide/examples.md          a documented curl auth-header example
+#   - platform-api-design.md          an example API key in the design doc
+#
+# The live .env is gitignored and never committed, so it is never scanned. Any
+# secret outside these paths still fails the (blocking) job.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fake secrets in test fixtures and documentation examples"
+paths = [
+  '''tests/test_secret_scanner\.py''',
+  '''tests/test_logging_redaction\.py''',
+  '''docs/guide/examples\.md''',
+  '''platform-api-design\.md''',
+]

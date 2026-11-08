@@ -1,0 +1,25 @@
+{
+  "tool": "hire_employee",
+  "kind": "positive",
+  "_why": "Run 25, tick 55. Marta and Tova negotiated a wage out loud and Tova said \"I agree. Fifteen a day, six days, paid weekly. I will start now.\" hire_employee refused six times and no wage was ever paid in the whole run - because `employee_consent` was defaulted rather than required, so it was absent from the index row Marta was sent and she could not have set it. That is fixed; this measures whether a resident who has heard the yes now sets the flag the schema finally shows it, which is the only version of reaching for this verb that ends in an employee.",
+  "resident": "n07",
+  "location": "business:b_bakery",
+  "inventory": {},
+  "sim": 4400,
+  "people_here": [
+    "n18"
+  ],
+  "recent_speech": [
+    {
+      "from": "n18",
+      "text": "I agree. Fifteen a day, six days, paid weekly. I will start now."
+    }
+  ],
+  "open_question_to_me": "You own Thorne's Bakery. Tova Okonjo is standing in it and has just agreed out loud to the terms you offered.",
+  "expect": {
+    "verb": "hire_employee",
+    "params_include": {
+      "employee_consent": true
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "tool": "sell",
+  "kind": "near_miss",
+  "_why": "Somebody standing here wants the wheat and has posted nothing. `trade` is the verb, and `sell` naming it is the fix run 19 earned.",
+  "resident": "n06",
+  "location": "Kasukabe Farmland",
+  "inventory": {
+    "wheat": 20
+  },
+  "sim": 40,
+  "people_here": [
+    "n05"
+  ],
+  "recent_speech": [
+    {
+      "from": "n05",
+      "text": "Wren. Forty-five a unit for five of that wheat."
+    }
+  ],
+  "open_question_to_me": "n05 is waiting on an answer. Nothing is priced here.",
+  "expect": {
+    "verb": "trade"
+  }
+}

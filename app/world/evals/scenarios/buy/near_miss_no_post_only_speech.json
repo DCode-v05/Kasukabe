@@ -1,0 +1,25 @@
+{
+  "tool": "buy",
+  "kind": "near_miss",
+  "_why": "Addendum section 4's near-miss row: planks, a price named out loud, nothing posted. That is `trade`. Run 19's zero-transaction morning is exactly this moment going the wrong way. n09 has just spoken to the resident, so they are in a conversation and `buy` is in hand - which is what makes reaching for `trade` rather than `buy` the real test here.",
+  "resident": "n05",
+  "location": "Kasukabe Carpentry",
+  "inventory": {},
+  "sim": 900,
+  "people_here": [
+    "n09"
+  ],
+  "recent_speech": [
+    {
+      "from": "n09",
+      "text": "Thirty-six for the three planks. I will not go lower."
+    }
+  ],
+  "open_question_to_me": "n09 is waiting on an answer. Nothing is priced here.",
+  "expect": {
+    "verb": "trade"
+  },
+  "in_conversation_with": [
+    "n09"
+  ]
+}

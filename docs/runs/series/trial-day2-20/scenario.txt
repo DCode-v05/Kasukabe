@@ -1,0 +1,6 @@
+Scenario **a-trial-day-two-20** - Twenty residents, an election held on game-day 2, and a town that opens with food on its shelves, materials in its yard and a price board on every counter. The first live test of the seeded economy: whether residents buy, sell, cook and pay each other when there is something to buy with and something to buy. Extended to tick 440 so the $20 cap, not the tick range, is what ends the run.
+Cast: `world/genesis_20_funded.json`.
+The world starts at tick 324 and stops at tick 440.
+The election opens at tick 324: candidacy closes 342, voting opens 360, and the vote is counted at tick 378.
+Already in office when it starts: prime minister n02; ministers n06, n08 - they may stand again, against anyone who stands for the first time.
+Spend cap $20.00.

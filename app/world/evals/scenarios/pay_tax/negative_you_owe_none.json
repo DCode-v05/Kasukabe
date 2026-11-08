@@ -1,0 +1,15 @@
+{
+  "tool": "pay_tax",
+  "kind": "negative",
+  "_why": "Run 25: pay_tax was refused twice with \"you owe no head tax\" - residents reaching for a bill that had not been raised. The verb must not be reached for when nothing is owed. Names the verb rather than `null`: a negative is scored as \"reach stayed at or under 10%\", so with no verb named reach was 0 whatever the model did and the scenario passed by construction.",
+  "resident": "n11",
+  "location": "Kasukabe Government Complex",
+  "inventory": {},
+  "sim": 3755,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You are standing in the government complex. Your debts show nothing owed today: no head tax has been charged to you.",
+  "expect": {
+    "verb": "pay_tax"
+  }
+}

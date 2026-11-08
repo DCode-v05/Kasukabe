@@ -1,0 +1,20 @@
+{
+  "tool": "buy",
+  "kind": "negative",
+  "_why": "Standing in a shop, talking to the shopkeeper, with nothing priced. `say` and `trade` are acceptable; buy is not. In a conversation so that `buy` is really offered - a negative for a tool the model cannot see measures nothing.",
+  "resident": "n09",
+  "location": "Kasukabe Market",
+  "inventory": {},
+  "sim": 200,
+  "people_here": [
+    "n05"
+  ],
+  "recent_speech": [],
+  "open_question_to_me": "Nothing is priced here.",
+  "expect": {
+    "verb": "buy"
+  },
+  "in_conversation_with": [
+    "n05"
+  ]
+}

@@ -1,0 +1,27 @@
+
+==================================================================
+RUN data/run10.db
+==================================================================
+calls 284  ok 284  spend $1.45  last tick 0
+utterances 21
+
+GATE                      VALUE               RESULT
+G1 reply rate             7/19 = 37%          FAIL
+G2 exchanges 4+ turns     2                   FAIL
+G3 group (3+ speakers)    2                   PASS
+G4 settlements            0                   FAIL
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        121/206 = 59%       PASS
+
+tool calls: {'world_move': 32, 'world_look_around': 25, 'world_say': 23, 'world_describe_place': 6, 'world_harvest': 6, 'world_fell_timber': 4, 'world_find_people': 4, 'world_describe_primitives': 3, 'world_list_places': 3, 'world_give': 3, 'world_describe_person': 3, 'world_mine': 2}
+
+largest gathering: 5 speakers at home:h_field, ticks 37-40
+   Liora Thorne -> Wren Thorne: Wren, why don't you just tell me—do we have any food in the house, or are we all going to stand here pretendin
+   Wren Thorne -> Liora Thorne: ...I'll check the barley stores. The thing is, we're low. I know it.
+   Liora Thorne -> aloud: Also—I'm a contributor now. Did you know? I'm officially in this. So when I ask about food, I'm not just askin
+   Idris Thorne -> Corwin Thorne: Corwin Thorne. Forest with me.
+   Liora Thorne -> Idris Thorne: Idris, Corwin—if Wren won't say, you tell me. What's in the forest right now that we could sell or eat? Timber
+   Liora Thorne -> Wren Thorne: I'll ask simpler. Do we have household sim to buy food today, or do I need to go harvest something myself? Wre
+
+FAILED: G1 reply rate, G2 exchanges 4+ turns, G4 settlements
+

@@ -1,0 +1,18 @@
+{
+  "tool": "toolify",
+  "kind": "positive",
+  "_why": "PROG-02. The sequence is the same every morning and one step of it is conditional - stock the shelf only when the shelf is empty. Before control flow the only way to file this was a fixed list that stocked whether or not it needed to, so the resident kept the sequence in its head and paid a decision per step. This is the situation the feature was built for; if a model does not reach for it here it will not reach for it anywhere.",
+  "resident": "n11",
+  "location": "business:b_mill",
+  "inventory": {
+    "flour": 6
+  },
+  "sim": 3200,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "For four mornings you have done the same thing: looked at the mill's shelf, and if it was empty put your flour on it and posted a price. On two of those mornings the shelf still had flour and you stocked it anyway.",
+  "expect": {
+    "verb": "toolify",
+    "params_include": {}
+  }
+}

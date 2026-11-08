@@ -1,0 +1,24 @@
+{
+  "tool": "skillify",
+  "kind": "negative",
+  "_why": "A procedure is worth writing when it is a procedure. One neighbour asking one favour is a conversation and an act, and a resident that files a workflow for it has learned the verb and not the reason. The negative bar is reach at or under 10%.",
+  "resident": "n18",
+  "location": "street",
+  "inventory": {
+    "bread": 2
+  },
+  "sim": 700,
+  "people_here": [
+    "n02"
+  ],
+  "recent_speech": [
+    {
+      "from": "n02",
+      "text": "Could you spare one of those loaves? I will pay you back tomorrow."
+    }
+  ],
+  "open_question_to_me": "n02 is waiting for an answer about the one loaf.",
+  "expect": {
+    "verb": "skillify"
+  }
+}

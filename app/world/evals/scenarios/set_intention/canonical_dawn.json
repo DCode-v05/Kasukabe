@@ -1,0 +1,24 @@
+{
+  "tool": "set_intention",
+  "kind": "positive",
+  "_why": "Addendum section 7's positive row: dawn, at home, the standing brief and a household conversation about the day. Aldous Vance decided to go to Oak Hill College on four consecutive ticks and never went - each tick he arrived at the decision fresh.",
+  "resident": "n14",
+  "location": "home:h_vance",
+  "inventory": {
+    "bread": 1
+  },
+  "sim": 120,
+  "people_here": [
+    "n01"
+  ],
+  "recent_speech": [
+    {
+      "from": "n01",
+      "text": "Aldous. What are you doing with your day?"
+    }
+  ],
+  "open_question_to_me": "n01 is waiting on an answer. It is 06:10.",
+  "expect": {
+    "verb": "set_intention"
+  }
+}

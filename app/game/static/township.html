@@ -1,0 +1,223 @@
+<!doctype html>
+<!--
+  ============================================================================
+  UI-28: THIS PAGE IS THE v1 TOWNSHIP AND EVERYTHING ON IT IS SIMULATED.
+
+  It is kept for comparison against township-v2.html, and it is served at
+  /township.html on the live game server - so it is reachable during a real
+  run, and there is nothing in the rendering to tell a viewer that none of
+  what it shows came from that run.
+
+  Its residents walk a schedule this file invents. Its money, health,
+  government and conversations are computed in the browser. No world server
+  is consulted, and a run being live changes nothing on this page.
+
+  For the live town use township-v2.html, which binds to the world and says
+  so in its badge. Whether this page survives at all is operator decision
+  12 (docs/review/09-roadmap-and-acceptance.md): keep the file-only
+  showcase, or delete the browser simulation. Until that is answered it
+  stays, labelled.
+  ============================================================================
+-->
+<!--
+  Kasukabe Township - the live isometric village for all 250 residents
+  (DESIGN.md section 8's Viewers, AGENT_LIFE_FRAMEWORK.md "The 250").
+  Self-contained and read-only: open this file straight off disk, or serve
+  game/static/ over http. Sibling pages: agents.html (agent views),
+  views.html (world/governance/social), console/static/index.html (the
+  separate, write-capable President/God console).
+
+  Population, families, occupations, personas, balances and the fiscal
+  constants are real, read from world/genesis.json and world/ledger/* at
+  build time (js/township/build_characters.py, which also writes one full
+  JSON file per resident into data/characters/). The daily schedule,
+  conversations and spend ticker are a deterministic client-side model - a
+  visualisation of the environment, not a socket into the Python engine.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kasukabe — Township</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&amp;family=Nunito:wght@600;700;800;900&amp;family=JetBrains+Mono:wght@500;600;700;800&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/township.css" />
+</head>
+<body>
+<div style="background:#7f1d1d;color:#fff;padding:10px 14px;font:600 14px/1.4
+     system-ui,sans-serif;text-align:center">
+  SIMULATED TOWNSHIP (v1). Everything on this page is invented in the
+  browser - no live run is being shown.
+  <a href="township-v2.html" style="color:#fff;text-decoration:underline">
+    Open the live township</a>.
+</div>
+<div class="wrap">
+
+  <header class="top">
+    <div class="titles">
+      <h1>🏘️ Kasukabe Township</h1>
+      <span class="kicker">314 residents · live village</span>
+    </div>
+  </header>
+
+
+
+  <div class="console">
+    <div class="clock"><span class="day" id="dayLabel">Day 1</span><span id="clockLabel">06:00</span></div>
+    <div class="phase-pill" id="phasePill">town waking</div>
+    <div class="controls">
+      <button class="ctl primary" id="playBtn" type="button" aria-pressed="true">⏸ Pause</button>
+      <button class="ctl speed" data-speed="1" type="button" aria-pressed="true">1×</button>
+      <button class="ctl speed" data-speed="6" type="button" aria-pressed="false">6×</button>
+      <button class="ctl speed" data-speed="20" type="button" aria-pressed="false">20×</button>
+      <span class="zoom-group">
+        <button class="ctl zoom" id="zoomOutBtn" type="button" aria-label="Zoom out">−</button>
+        <span class="zoom-level" id="zoomLevel">100%</span>
+        <button class="ctl zoom" id="zoomInBtn" type="button" aria-label="Zoom in">+</button>
+      </span>
+      <button class="ctl" id="recentreBtn" type="button">⌖ Fit whole town</button>
+      <button class="ctl" id="fullscreenBtn" type="button">⛶ Fullscreen map</button>
+      <button class="ctl" id="roofBtn" type="button" data-off="1" title="Put the roofs back on">🏚️ Interiors</button>
+      <button class="ctl" id="themeBtn" type="button" title="Switch theme">🌙 Night</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="hud-stats">
+      <span class="hud-stat" title="Modelled, not metered. No API call is made by this page."><span class="ico">💰</span>Model spend <b id="hudSpend">$0.00</b> / <span id="hudSpendCap">$628.00</span> <em class="sim-tag">modelled</em></span>
+      <span class="hud-stat"><span class="ico">🪙</span>Town wealth <b id="hudWealth">0</b> sim</span>
+      <span class="hud-stat"><span class="ico">🏛️</span>Treasury <b id="hudTreasury">0</b> sim</span>
+      <span class="hud-stat alive"><span class="ico">💚</span>Alive <b id="hudAlive">250</b></span>
+      <span class="hud-stat dead"><span class="ico">✝</span>Deceased <b id="hudDead">0</b></span>
+    </div>
+  </div>
+
+  <div class="hero" id="hero">
+    <div class="panel" id="mapPanel">
+      <div class="panel-head">
+        <span>Village map</span>
+        <span class="hint">click anyone to open their file · scroll to zoom · drag to pan</span>
+      </div>
+      <div class="viewport">
+        <canvas id="village"></canvas>
+        <div class="map-card" id="mapCard" hidden></div>
+      </div>
+      <div class="legend">
+        <span>🏘️ housing</span><span>🏛️ government</span><span>🎓 college</span>
+        <span>☕ cafe</span><span>🛒 grocery</span><span>💊 pharmacy</span>
+        <span>🏗️ construction</span><span>🏪 market</span><span>⛲ square</span>
+        <span>🌾 farmland</span><span>⛏️ ore</span><span>🌲 forest</span>
+        <span>🏥 hospital</span><span>🚓 police</span><span>🚒 fire</span><span>🥖 bakery</span>
+        <span>🍽️ restaurant</span><span>🏫 school</span><span>📚 library</span><span>🏦 bank</span><span>🛏️ inn</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="scroll-cue" id="scrollCue">↓ scroll for the town’s books, people and records</div>
+
+  <div class="panel" id="profilePanel" hidden>
+    <div class="panel-head">
+      <span>🧍 Resident file</span>
+      <button class="ctl tiny" id="profileClose" type="button">✕ Close</button>
+    </div>
+    <div class="inspector-body" id="modalBody"></div>
+  </div>
+
+  <div class="stage" style="margin-top:18px;">
+    <div class="rail">
+      <div class="panel">
+        <div class="panel-head">💬 Live conversation <span class="hint">who is talking, where</span></div>
+        <div class="chat" id="chatLog"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">🔨 What the town is doing <span class="hint">right now</span></div>
+        <div class="occupancy" id="workBody"></div>
+      </div>
+    </div>
+    <div class="rail">
+      <div class="panel">
+        <div class="panel-head">🏛️ Government <span class="hint">real charter</span></div>
+        <div class="gov-body" id="govBody"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">Where everyone is <span class="hint">live</span></div>
+        <div class="occupancy" id="occupancy"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-up" style="margin-top:18px;">
+    <div class="panel">
+      <div class="panel-head">🩺 Health &amp; mortality <span class="hint">real rates from world/life/constants.py</span></div>
+      <div class="score-body single" id="healthBody"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">🏗️ What the town has built <span class="hint">genesis gave it almost nothing</span></div>
+      <div class="score-body single" id="buildBody"></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:18px;">
+    <div class="panel-head">🏛️ Treasury — income and spending <span class="hint">tax in, salaries and building out</span></div>
+    <div class="score-body single" id="treasuryBody"></div>
+  </div>
+
+  <div class="panel" style="margin-top:18px;">
+    <div class="panel-head">📊 Money scoreboard <span class="hint">every resident, live</span></div>
+    <div class="score-body" id="scoreBody"></div>
+  </div>
+
+  <div class="panel" id="characters" style="margin-top:18px;">
+    <div class="panel-head">
+      <span>👥 Characters — all 250 residents</span>
+      <span class="hint" id="rosterCount">250 shown</span>
+    </div>
+    <div class="roster-controls">
+      <input type="search" id="rosterSearch" class="roster-search"
+             placeholder="Search by name, relative, occupation, household, or genesis name…"
+             aria-label="Search residents" />
+      <div class="filter-group" role="group" aria-label="Filter by age bracket">
+        <button class="filter-chip" data-filter="br" data-value="all" aria-pressed="true">Everyone</button>
+        <button class="filter-chip" data-filter="br" data-value="working" aria-pressed="false">Working-age</button>
+        <button class="filter-chip" data-filter="br" data-value="minor" aria-pressed="false">Minors</button>
+        <button class="filter-chip" data-filter="br" data-value="elderly" aria-pressed="false">Elderly</button>
+      </div>
+      <select id="rosterOcc" class="roster-select" aria-label="Filter by occupation">
+        <option value="all">All occupations</option>
+      </select>
+      <select id="rosterSort" class="roster-select" aria-label="Sort residents">
+        <option value="name">Sort: name</option>
+        <option value="age">Sort: age</option>
+        <option value="occ">Sort: occupation</option>
+        <option value="hh">Sort: household</option>
+        <option value="wealth">Sort: wealth</option>
+        <option value="family">Sort: family size</option>
+      </select>
+    </div>
+    <div class="roster-grid" id="rosterGrid"></div>
+    <p class="roster-empty" id="rosterEmpty" hidden>No resident matches that search.</p>
+  </div>
+
+  <div class="panel" style="margin-top:18px;">
+    <div class="panel-head">Census — the real population behind the map</div>
+    <div class="census-strip">
+      <div class="census-block"><h3>Occupation</h3><div id="occChart"></div></div>
+      <div class="census-block"><h3>Age bracket</h3><div id="ageChart"></div></div>
+      <div class="census-block"><h3>Household size</h3><div id="hhChart"></div></div>
+      <div class="census-block"><h3>Kinship ties</h3><div id="relChart"></div></div>
+    </div>
+  </div>
+
+  <footer class="sig">
+    September · internal research · Track A live-environment prototype · data from world/genesis.json (seeded 2026-08-01) ·
+    memory format after Park et al., <i>Generative Agents</i>, UIST ’23 · expert reflection after Park et al. 2024, <i>Generative Agent Simulations of 1,000 People</i>
+  </footer>
+</div>
+
+
+
+<script src="js/township/agents.js"></script>
+<script src="js/township/village.js"></script>
+<script src="js/township/township.js"></script>
+</body>
+</html>

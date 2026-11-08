@@ -1,0 +1,23 @@
+{
+  "tool": "vote",
+  "kind": "positive",
+  "_why": "An election is open and this resident is eligible. DESIGN's institutions only mean something if the town uses them, and no run has recorded a vote.",
+  "resident": "n09",
+  "location": "Kasukabe Government Complex",
+  "inventory": {},
+  "sim": 400,
+  "people_here": [
+    "n05"
+  ],
+  "recent_speech": [
+    {
+      "from": "n05",
+      "text": "The ballot closes at dusk. Two candidates, and I have cast mine."
+    }
+  ],
+  "open_question_to_me": "an election is open and closes at dusk today",
+  "expect": {
+    "verb": "vote",
+    "params_include": {}
+  }
+}

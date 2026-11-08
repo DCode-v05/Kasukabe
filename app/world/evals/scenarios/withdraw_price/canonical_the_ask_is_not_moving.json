@@ -1,0 +1,24 @@
+{
+  "tool": "withdraw_price",
+  "kind": "positive",
+  "_why": "Run 25: Silas held planks at 300 all day, Corwin undercut him at 200, and two prices in the whole run were withdrawn. The situation is real and the verb is nearly untouched.",
+  "resident": "n12",
+  "location": "street",
+  "inventory": {
+    "planks": 3
+  },
+  "sim": 2911,
+  "people_here": [
+    "n09"
+  ],
+  "recent_speech": [
+    {
+      "from": "n09",
+      "text": "Ironwood, ten planks, and mine is better wood. Two hundred the lot."
+    }
+  ],
+  "open_question_to_me": "Your planks have been priced at 300 since the morning and nobody has bought. Somebody standing here is selling better wood cheaper.",
+  "expect": {
+    "verb": "withdraw_price"
+  }
+}

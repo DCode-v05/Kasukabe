@@ -1,0 +1,23 @@
+{
+  "tool": "mine",
+  "kind": "positive",
+  "_why": "Run 25: Bram mined at the copper outcrop after Rosalind called a 260 sim milling debt to his face and Marta's 400 was still open.",
+  "resident": "n01",
+  "location": "ore_outcrop:copper",
+  "inventory": {},
+  "sim": 3055,
+  "people_here": [],
+  "recent_speech": [
+    {
+      "from": "n11",
+      "text": "Bram. The 260 sim - it is recorded. My household needs it. Can you pay today?"
+    }
+  ],
+  "open_question_to_me": "You are the town's miner, standing at the copper seam. Two debts have been called on you today.",
+  "expect": {
+    "verb": "mine",
+    "params_include": {
+      "metal": "copper"
+    }
+  }
+}

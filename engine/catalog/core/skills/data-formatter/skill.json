@@ -1,0 +1,36 @@
+{
+  "name": "data-formatter",
+  "version": "1.0.0",
+  "description": "Transform data between formats: JSON, CSV, markdown table, YAML. This skill should be used when data needs to be converted from one format to another, when building tables for reports, or when restructuring data for display. Triggers: 'convert this to CSV', 'make a table', 'format as markdown', 'turn this JSON into YAML', 'reformat this data'.",
+  "category": "data",
+  "capabilities": ["data_transformation", "format_conversion", "table_generation", "serialization"],
+  "input_signature": {
+    "type": "object",
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "Data to transform"
+      },
+      "input_format": {
+        "type": "string",
+        "description": "json/csv"
+      },
+      "output_format": {
+        "type": "string",
+        "description": "json/csv/markdown/yaml"
+      }
+    }
+  },
+  "output_signature": {
+    "type": "object",
+    "properties": {
+      "output": {
+        "type": "string"
+      }
+    }
+  },
+  "has_prompt": false,
+  "has_scripts": true,
+  "has_references": false,
+  "has_gotchas": false
+}

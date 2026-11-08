@@ -1,0 +1,29 @@
+
+==================================================================
+RUN data/run2.db
+==================================================================
+calls 225  ok 225  spend $1.11  last tick 0
+utterances 21
+
+GATE                      VALUE               RESULT
+G1 reply rate             3/12 = 25%          FAIL
+G2 exchanges 4+ turns     1                   FAIL
+G3 group (3+ speakers)    1                   PASS
+G4 settlements            1                   PASS
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        148/187 = 79%       PASS
+
+tool calls: {'world_move': 43, 'world_say': 24, 'world_look_around': 20, 'world_craft': 9, 'world_list_places': 8, 'world_harvest': 7, 'world_find_people': 7, 'world_describe_place': 7, 'world_rest': 7, 'world_fell_timber': 5, 'world_describe_person': 3, 'world_describe_primitives': 2}
+
+largest gathering: 6 speakers at home:h_quarry, ticks 36-43
+   Tobias Holloway -> Bram Holloway: Bram—right, so I'm heading to the farmland today, need to eat first. You got anything I could take? I'll pay b
+   Wren Thorne -> Ainsley Holloway: ...Ainsley. Was going to say—the field's near ready. If you're wanting to talk... figures. For the season. Soi
+   Perrin Holloway -> Bram Holloway: You're both circling something. Bram—if Wren's field's not ready for planting yet, and you're not talking cont
+   Ainsley Holloway -> Wren Thorne: Now then, Wren. Cold soil and dry—that's two weeks yet, three if the wind turns. You talk figures, I'm listeni
+   Bram Holloway -> aloud: There's no food here, friend. I wish there was. Ainsley'll know where it can be bought. I've got to work.
+   Wren Thorne -> Ainsley Holloway: ...the thing is, Ainsley, you're right. Not just numbers. Soil does what it wants. Drying fast though. Fast en
+
+settlement: Ainsley Holloway said 40, paid at tick 40
+
+FAILED: G1 reply rate, G2 exchanges 4+ turns
+

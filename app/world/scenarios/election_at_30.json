@@ -1,0 +1,46 @@
+{
+  "name": "election-at-30",
+  "description": "Thirty residents, a government sitting from the first tick and told so in its own perception, an election inside the first day, and up to two game-days. The largest cast an election has been held with. Funded at $6.00 a resident - the level the 50-resident run and run 29 both used - so the $100 model budget is the thing that ends the run, not empty wallets.",
+
+  "world": {
+    "genesis": "world/genesis_30_town.json",
+    "start_tick": 36,
+    "stop_tick": 324,
+    "budget_cap_usd": 100.0,
+    "max_game_days": 3
+  },
+
+  "charter": {
+    "candidacy_window_hours": 4,
+    "campaign_period_hours": 4,
+    "voting_window_hours": 4,
+    "election_interval_hours": 24,
+    "pm_seats": 1,
+    "minister_seats": 2,
+    "suffrage_min_age": 18
+  },
+
+  "election": {
+    "opens_at": "start"
+  },
+
+  "government": {
+    "incumbents": [
+      {"agent_id": "a0047", "seat": "prime_minister"},
+      {"agent_id": "a0090", "seat": "minister"},
+      {"agent_id": "a0042", "seat": "minister"}
+    ]
+  },
+
+  "recording": {
+    "url": "http://127.0.0.1:8400/township-v2.html?book=election&roofs=off&camera=government:2.2",
+    "interval_s": 2,
+    "fps": 30,
+    "width": 1920,
+    "height": 1080
+  },
+
+  "report": {
+    "out": "../docs/runs/series/election30"
+  }
+}

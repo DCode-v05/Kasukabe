@@ -1,0 +1,11 @@
+{
+  "client_name": "September Engine",
+  "client_uri": "https://september.wtf",
+  "redirect_uris": [
+    "https://api.bap.wtf/api/assets/oauth/callback",
+    "https://connect.september.wtf/oauth/callback"
+  ],
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"],
+  "token_endpoint_auth_method": "none"
+}

@@ -1,0 +1,940 @@
+/* ============================================================================
+   The non-map surfaces, rebuilt.
+   ----------------------------------------------------------------------------
+   Everything the map does not draw: the two docks, the resident file, and the
+   controls inside them. The canvas is untouched - not one rule here reaches
+   `.viewport`, `#village` or anything village2.js paints.
+
+   Reference: Linear's instrument chrome. It is the closest well-solved version
+   of this exact problem - a dense, dark, read-mostly panel where the data is
+   the interesting thing and the frame should get out of the way. What is
+   borrowed is the discipline, not the look: one accent, a fixed spacing
+   scale, uniform control heights, borders instead of shadows, and numbers in
+   tabular mono so they stop jittering as they tick.
+
+   township.css already ships a good palette (--ember money, --mint alive,
+   --rust death, --brass government, three families, four radii). Nothing here
+   invents a colour. The problem was never the palette - it was that the
+   components ignored it: a yellow Pause beside a blue 1x beside a green
+   Labels, three different label styles per panel, and stat rows with no gap
+   between them so "1,572,961 sim" ran into "Treasury".
+
+   Loads last, so it wins on equal specificity.
+   ========================================================================= */
+
+:root {
+  /* The scale that was missing. Every gap, pad and inset below is one of
+     these six numbers - which is the whole point, because six choices
+     produce rhythm and thirty produce the ragged stacking this replaces. */
+  --u1: 4px;  --u2: 8px;   --u3: 12px;
+  --u4: 16px; --u5: 24px;  --u6: 32px;
+
+  /* One control height for every button, input and stepper in the UI. The
+     old strip had 26px, 28px, 30px and 36px controls sitting in one row. */
+  --ctl-h: 30px;
+  --ctl-h-sm: 24px;
+
+  /* Type ramp. Four sizes, and a single uppercase label treatment - the
+     resident file previously had five different ways of writing a heading. */
+  --t-micro: 10px;   /* uppercase eyebrow labels */
+  --t-sm: 11.5px;    /* secondary text, captions */
+  --t-base: 13px;    /* body */
+  --t-lg: 15px;      /* section titles */
+
+  --dock-w: 400px;
+  --ease: cubic-bezier(.2, .9, .3, 1);
+}
+
+/* ── The bug this revamp exists around ──────────────────────────────────────
+   `.map-search` began life absolutely positioned over the canvas, with
+   `top: 82px` to clear the old top bar. Moved into the controls drawer it
+   keeps `position: relative`, and a relative box with `top: 82px` is shifted
+   82px DOWN from where flow put it - straight on top of the clock beneath.
+   That is why the drawer showed a stray "0" (the tail of "06:00:00" poking
+   out to the left of the input) and ghost digits behind the placeholder.
+   `.in-pane` reset `margin` but never reset the offsets.
+   The offset is set by `body.shell-on .map-search` in township.css, which is
+   specificity (0,2,1) - so a plain `.map-search.in-pane` rule (0,2,0) loses
+   to it no matter how late it loads. Matching that context is what makes the
+   reset stick; this is the one place in this file that needs a compound
+   selector rather than a component one. */
+body.shell-on .map-search.in-pane {
+  top: auto; right: auto; bottom: auto; left: auto;
+  width: 100%; margin: 0;
+}
+
+/* ── Dock chrome ─────────────────────────────────────────────────────────── */
+
+.dock {
+  width: var(--dock-w);
+  background: var(--paper);
+  border-color: var(--line-soft);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, .55);
+}
+.dock.left { border-right: 1px solid var(--line); }
+.dock.controls { border-left: 1px solid var(--line); }
+
+.dock-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--u3);
+  height: 46px; padding: 0 var(--u3) 0 var(--u4);
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--surface);
+  font-family: var(--font-body);
+  font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.dock-head > span:first-child { font-family: var(--font-body); }
+
+.dock-close {
+  display: grid; place-items: center;
+  width: var(--ctl-h-sm); height: var(--ctl-h-sm);
+  border: 1px solid transparent; border-radius: var(--r-sm);
+  background: transparent; color: var(--ink-faint);
+  font-size: 15px; line-height: 1; cursor: pointer;
+  transition: background .12s var(--ease), color .12s var(--ease);
+}
+.dock-close:hover { background: var(--surface-2); color: var(--ink); }
+
+.dock-body { padding: var(--u4); }
+
+/* The two pills that open the docks. They are the ONLY chrome over the map
+   when everything is shut, so they earn a real button rather than a floating
+   text label. */
+.dock-tab {
+  display: inline-flex; align-items: center; gap: var(--u2);
+  height: 34px; padding: 0 var(--u4);
+  border: 1px solid var(--line); border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  color: var(--ink-soft);
+  font-family: var(--font-body); font-size: var(--t-sm); font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
+  cursor: pointer;
+  transition: color .14s var(--ease), border-color .14s var(--ease),
+              background .14s var(--ease);
+}
+.dock-tab:hover { color: var(--ink); border-color: var(--line-lit); }
+.dock-tab .dt-icon { font-size: 14px; }
+
+/* ── Controls drawer ─────────────────────────────────────────────────────── */
+
+.dock.controls .dock-body {
+  display: flex; flex-direction: column; gap: var(--u5);
+  /* Without this the stats at the foot are clipped by the drawer rather than
+     reachable - the panel is taller than the viewport at 1050px and there is
+     no reason it should not scroll. */
+  max-height: calc(100vh - 46px);
+  overflow-y: auto;
+  padding-bottom: var(--u6);
+}
+.dock.controls .console { gap: var(--u5); }
+
+.dock.controls .titles h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 19px; font-weight: 600; letter-spacing: -.01em;
+  color: var(--ink);
+}
+.dock.controls .titles .kicker {
+  display: block; margin-top: var(--u1);
+  font-family: var(--font-mono); font-size: var(--t-micro);
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* The clock. Dropped from 44px to 30px: at 44 it was the loudest thing in
+   the UI, and the time is context, not the finding. */
+.dock.controls .clock { padding: 0; }
+.dock.controls .clock .time { font-size: 30px; letter-spacing: -.03em; }
+.dock.controls .clock .meridiem {
+  font-size: var(--t-sm); font-weight: 500;
+  letter-spacing: .1em; color: var(--ink-faint);
+}
+
+#mapSearch {
+  width: 100%; height: var(--ctl-h);
+  padding: 0 var(--u6) 0 var(--u3);
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body); font-size: var(--t-base);
+  transition: border-color .14s var(--ease), background .14s var(--ease);
+}
+#mapSearch::placeholder { color: var(--ink-faint); }
+#mapSearch:focus {
+  outline: none; border-color: var(--ember);
+  background: var(--surface-2);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ember) 16%, transparent);
+}
+
+/* Status strip. Three read-only rows that were three different shapes; now
+   one row type, with the colour carrying the state. */
+.dock.controls .phase-pill,
+.dock.controls .live-badge,
+.dock.controls .cost-readout {
+  display: flex; align-items: center; gap: var(--u2);
+  min-height: var(--ctl-h); padding: 0 var(--u3);
+  border: 1px solid var(--line-soft); border-radius: var(--r-md);
+  background: var(--surface);
+  font-family: var(--font-mono); font-size: var(--t-micro);
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.dock.controls .live-badge::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ink-faint); flex: none;
+}
+.dock.controls .live-badge.on { color: var(--mint); border-color: var(--mint-dim); }
+.dock.controls .live-badge.on::before { background: var(--mint); }
+.dock.controls .cost-readout.spending { color: var(--ember); border-color: var(--ember-dim); }
+
+/* Buttons. ONE accent. Pause was yellow, 1x was blue, Labels was green -
+   three accents in nine buttons, none of them meaning anything. Now: a
+   pressed control is ember, everything else is quiet, and colour means
+   "this is on" rather than "this button is important". */
+.dock.controls .ctl,
+.dock.controls .zoom-group {
+  height: var(--ctl-h);
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-family: var(--font-body); font-size: var(--t-sm); font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+  transition: color .14s var(--ease), border-color .14s var(--ease),
+              background .14s var(--ease);
+}
+.dock.controls .ctl { padding: 0 var(--u3); cursor: pointer; }
+.dock.controls .ctl:hover { color: var(--ink); border-color: var(--line-lit); }
+.dock.controls .ctl[aria-pressed="true"],
+.dock.controls .ctl.primary {
+  color: var(--ember);
+  border-color: var(--ember-dim);
+  background: var(--ember-soft);
+}
+.dock.controls .ctl:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ember) 20%, transparent);
+}
+
+/* Six columns rather than three, so the row shapes this strip actually needs
+   - full width, halves, and thirds - are all expressible. It also means the
+   `grid-column: span 2` the speed buttons already carry lands them three
+   across on one row instead of stacking, without overriding it. */
+.dock.controls .controls {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--u2);
+}
+.dock.controls .ctl.primary,
+.dock.controls .zoom-group,
+.dock.controls #recentreBtn { grid-column: span 6; }
+.dock.controls #labelBtn,
+.dock.controls #insideBtn,
+.dock.controls #exportBtn,
+.dock.controls #themeBtn { grid-column: span 3; }
+
+.dock.controls .zoom-group {
+  display: grid; grid-template-columns: var(--ctl-h) 1fr var(--ctl-h);
+  align-items: center; padding: 0; overflow: hidden;
+}
+.dock.controls .zoom-group .ctl.zoom {
+  height: 100%; border: 0; border-radius: 0; background: transparent;
+  font-size: 15px;
+}
+.dock.controls .zoom-group .ctl.zoom:hover { background: var(--surface-2); }
+.dock.controls .zoom-level {
+  font-family: var(--font-mono); font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums; text-align: center; color: var(--ink);
+}
+
+/* Stats. The run-together bug: `.hud-stat` spans sat inline with no gap, so
+   "1,572,961 sim" butted straight into "Treasury" and read as one word. A
+   grid gives each figure its own cell and cannot collide. */
+.dock.controls .hud-stats {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  padding: 1px;
+  border: 1px solid var(--line-soft); border-radius: var(--r-md);
+  background: var(--line-soft);
+}
+.dock.controls .hud-stat {
+  display: flex; flex-direction: column; gap: var(--u1);
+  margin: 0; padding: var(--u3);
+  background: var(--paper);
+  font-family: var(--font-body); font-size: var(--t-micro);
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+.dock.controls .hud-stat b {
+  font-family: var(--font-mono); font-size: 17px; font-weight: 500;
+  letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+  text-transform: none; color: var(--ink);
+}
+.dock.controls .hud-stat.alive b { color: var(--mint); }
+.dock.controls .hud-stat.dead b { color: var(--rust); }
+
+/* ── Town books ──────────────────────────────────────────────────────────── */
+
+/* Eight tabs wrapped onto two ragged rows, and the panel's height jumped as
+   they re-flowed. `flex-wrap: nowrap` is the operative line - the wrap comes
+   from an earlier rule, and without overriding it the overflow never engages
+   because there is nothing to overflow. */
+.dock.left .dock-tabs {
+  display: flex; flex-wrap: nowrap; gap: var(--u1);
+  padding: var(--u2) var(--u3);
+  overflow-x: auto; scrollbar-width: none;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--surface);
+}
+.dock.left .dock-tabs::-webkit-scrollbar { display: none; }
+.dock.left .book-tab {
+  flex: none;
+  height: var(--ctl-h-sm); padding: 0 var(--u3);
+  border: 1px solid transparent; border-radius: var(--r-sm);
+  background: transparent; color: var(--ink-faint);
+  font-family: var(--font-body); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase;
+  white-space: nowrap; cursor: pointer;
+  transition: color .12s var(--ease), background .12s var(--ease);
+}
+.dock.left .book-tab:hover { color: var(--ink-soft); background: var(--surface-2); }
+.dock.left .book-tab.on {
+  color: var(--ember);
+  background: var(--ember-soft);
+  border-color: var(--ember-dim);
+}
+
+.dock.left .panel-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--u3);
+  margin-bottom: var(--u4); padding-bottom: var(--u2);
+  border-bottom: 1px solid var(--line-soft);
+  font-family: var(--font-display); font-size: var(--t-lg); font-weight: 600;
+  color: var(--ink);
+}
+.dock.left .panel-head .hint {
+  font-family: var(--font-body); font-size: var(--t-sm); font-weight: 400;
+  letter-spacing: 0; text-transform: none; color: var(--ink-faint);
+}
+
+/* The scoreboard: six figures laid out four-then-two, with mismatched column
+   widths and a vertical rule that stopped halfway. A fixed three-up grid of
+   equal cells tiles any number of figures and cannot go ragged. */
+.dock.left .score-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+  margin-bottom: var(--u5); padding: 1px;
+  border: 1px solid var(--line-soft); border-radius: var(--r-md);
+  background: var(--line-soft);
+}
+.dock.left .score-stat {
+  display: flex; flex-direction: column; gap: var(--u1);
+  margin: 0; padding: var(--u3);
+  border: 0 !important;
+  background: var(--paper);
+}
+/* .sv is the figure, .sk the caption under it. */
+.dock.left .score-stat .sv {
+  font-family: var(--font-mono); font-size: 17px; font-weight: 500;
+  letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+  color: var(--ember);
+}
+.dock.left .score-stat .sk {
+  font-family: var(--font-body); font-size: var(--t-micro);
+  letter-spacing: .1em; text-transform: uppercase; line-height: 1.35;
+  color: var(--ink-faint);
+}
+
+.dock.left .section-lbl {
+  display: block;
+  margin: var(--u5) 0 var(--u2);
+  padding-bottom: var(--u2);
+  border-bottom: 1px solid var(--line-soft);
+  font-family: var(--font-body); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint);
+}
+
+/* Roster rows were 71px tall with the trade floated far from the name. Two
+   columns, name over trade, figure right - so a long occupation wraps under
+   its own name instead of pushing the balance off the edge. */
+.dock.left .score-row {
+  display: grid; grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: var(--u1) var(--u3);
+  padding: var(--u2) var(--u1);
+  border-bottom: 1px solid var(--line-soft);
+}
+.dock.left .score-row:last-child { border-bottom: 0; }
+.dock.left .score-row:hover { background: var(--surface); }
+.dock.left .score-name {
+  grid-column: 1; grid-row: 1;
+  font-family: var(--font-body); font-size: var(--t-base); font-weight: 600;
+  color: var(--ink);
+}
+.dock.left .score-occ {
+  grid-column: 1; grid-row: 2;
+  font-size: var(--t-sm); color: var(--ink-faint);
+}
+.dock.left .score-bal {
+  grid-column: 2; grid-row: 1 / span 2;
+  align-self: center;
+  font-family: var(--font-mono); font-size: var(--t-base);
+  font-variant-numeric: tabular-nums; color: var(--ember);
+}
+
+/* Roster filter chips + search, so they match the controls drawer. */
+.dock.left .roster-search {
+  width: 100%; height: var(--ctl-h);
+  padding: 0 var(--u3);
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--surface); color: var(--ink);
+  font-family: var(--font-body); font-size: var(--t-base);
+}
+.dock.left .roster-search:focus {
+  outline: none; border-color: var(--ember);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ember) 16%, transparent);
+}
+.dock.left .filter-group { display: flex; flex-wrap: wrap; gap: var(--u1); }
+.dock.left .filter-chip {
+  height: var(--ctl-h-sm); padding: 0 var(--u3);
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--surface); color: var(--ink-faint);
+  font-family: var(--font-body); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+}
+.dock.left .filter-chip:hover { color: var(--ink-soft); border-color: var(--line-lit); }
+.dock.left .filter-chip.on,
+.dock.left .filter-chip[aria-pressed="true"] {
+  color: var(--ember); border-color: var(--ember-dim); background: var(--ember-soft);
+}
+
+.dock.left .book-empty {
+  padding: var(--u6) var(--u4);
+  border: 1px dashed var(--line); border-radius: var(--r-md);
+  text-align: center; color: var(--ink-faint); font-size: var(--t-base);
+}
+
+/* ── Resident file ───────────────────────────────────────────────────────── */
+
+#profilePanel .panel-head {
+  height: 46px; padding: 0 var(--u3) 0 var(--u4);
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--surface);
+  font-family: var(--font-body); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint);
+}
+#profilePanel .inspector-body { padding: var(--u5) var(--u4); }
+
+#profilePanel .agent-name {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 26px; font-weight: 600; letter-spacing: -.015em;
+  line-height: 1.1; color: var(--ink);
+}
+#profilePanel .agent-sub {
+  display: block; margin-top: var(--u1);
+  font-family: var(--font-mono); font-size: var(--t-sm);
+  letter-spacing: .04em; color: var(--ink-faint);
+}
+#profilePanel .insp-head {
+  display: grid; grid-template-columns: 44px 1fr;
+  align-items: start; gap: var(--u3);
+  margin-bottom: var(--u5);
+}
+#profilePanel .insp-avatar {
+  width: 44px; height: 44px;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+
+/* The name-mismatch note was a filled amber banner directly under the name,
+   as loud as the name itself. It reports a real inconsistency - the live
+   world and this page's roster disagree about who a0046 is - so it stays,
+   but as a margin note. A permanent warning styled like an alert teaches a
+   reader to ignore alerts. */
+#profilePanel .agent-sub2,
+#profilePanel .modelled {
+  display: block; margin-top: var(--u3);
+  padding: var(--u2) var(--u3);
+  border-left: 2px solid var(--brass);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  background: var(--brass-soft);
+  font-family: var(--font-body); font-size: var(--t-sm); font-weight: 400;
+  line-height: 1.45; letter-spacing: 0; text-transform: none;
+  color: var(--ink-soft);
+}
+
+#profilePanel .tabs {
+  display: flex; flex-wrap: nowrap; gap: var(--u1);
+  margin: 0 0 var(--u4); padding-bottom: var(--u2);
+  overflow-x: auto; scrollbar-width: none;
+  border-bottom: 1px solid var(--line-soft);
+}
+#profilePanel .tabs::-webkit-scrollbar { display: none; }
+#profilePanel .tab {
+  flex: none; height: var(--ctl-h-sm); padding: 0 var(--u3);
+  border: 0; border-radius: var(--r-sm);
+  background: transparent; color: var(--ink-faint);
+  font-family: var(--font-body); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase; cursor: pointer;
+  transition: color .12s var(--ease), background .12s var(--ease);
+}
+#profilePanel .tab:hover { color: var(--ink-soft); background: var(--surface-2); }
+#profilePanel .tab.on { color: var(--ember); background: var(--ember-soft); }
+
+/* One label treatment for every section heading. There were five. */
+#profilePanel .section-lbl,
+#profilePanel .lbl {
+  display: block; margin: var(--u5) 0 var(--u2);
+  font-family: var(--font-body); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint);
+}
+
+#profilePanel .status-line,
+#profilePanel .now-box {
+  /* align-items, because the status block inherited a centred layout while
+     every other row in the file is left-aligned - one centred island in a
+     left-aligned column reads as a mistake even when nothing else is wrong
+     with it. */
+  /* Row-wrap, not column: the dot belongs beside "Alive", not stacked above
+     it. The label is a bare text node so it cannot be given a grid cell of
+     its own - wrapping does the same job without touching the markup. */
+  display: flex; flex-flow: row wrap; align-items: center;
+  gap: var(--u1) var(--u2);
+  padding: var(--u3);
+  border: 1px solid var(--line-soft); border-left-width: 2px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  text-align: left;
+}
+#profilePanel .status-line > *,
+#profilePanel .now-box > * { text-align: left; }
+#profilePanel .status-dot { flex: none; }
+#profilePanel .status-line.ok { border-left-color: var(--mint); }
+#profilePanel .now-box { border-left-color: var(--ember); }
+#profilePanel .status-detail,
+#profilePanel .now-at {
+  width: 100%;
+  font-size: var(--t-sm); color: var(--ink-faint);
+}
+
+#profilePanel .agent-bio { font-size: var(--t-base); line-height: 1.6; color: var(--ink-soft); }
+
+/* Trait / habit / workplace read as a config dump: mono, right-aligned, with
+   a long habit sentence pushed hard against the panel edge. It is prose, not
+   a settings table - label left in the eyebrow style, value left in body
+   text, so a long habit reads as a sentence. */
+#profilePanel .facts { margin: 0; }
+#profilePanel .facts > div {
+  display: grid; grid-template-columns: 104px 1fr;
+  align-items: baseline; gap: var(--u3);
+  padding: var(--u2) 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+#profilePanel .facts > div:last-child { border-bottom: 0; }
+#profilePanel .facts dt {
+  font-family: var(--font-body); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint);
+}
+#profilePanel .facts dd {
+  margin: 0;
+  font-family: var(--font-body); font-size: var(--t-base);
+  text-align: left; color: var(--ink);
+}
+
+#profilePanel .skill-chip {
+  display: inline-flex; align-items: center; gap: var(--u2);
+  height: var(--ctl-h-sm); padding: 0 var(--u3);
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--surface);
+  font-family: var(--font-body); font-size: var(--t-sm); color: var(--ink-soft);
+}
+#profilePanel .skill-chip.locked { color: var(--ink-faint); border-style: dashed; }
+
+/* A scrolling tab strip with a hard cut at the edge looks like a truncation
+   bug rather than an invitation to scroll. A fade over the last few pixels
+   is the smallest honest signal that there is more. */
+.dock.left .dock-tabs,
+#profilePanel .tabs {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+          mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+}
+
+/* ── Shared: scrollbars, focus, motion ───────────────────────────────────── */
+
+.dock-body::-webkit-scrollbar,
+#profilePanel .inspector-body::-webkit-scrollbar { width: 10px; }
+.dock-body::-webkit-scrollbar-thumb,
+#profilePanel .inspector-body::-webkit-scrollbar-thumb {
+  border: 3px solid transparent; border-radius: 999px;
+  background: var(--line); background-clip: content-box;
+}
+.dock-body::-webkit-scrollbar-thumb:hover,
+#profilePanel .inspector-body::-webkit-scrollbar-thumb:hover { background: var(--line-lit); background-clip: content-box; }
+.dock-body, #profilePanel .inspector-body { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dock, .dock-tab, .ctl, #mapSearch { transition: none !important; }
+}
+
+/* ── Talk: agent-to-agent speech ─────────────────────────────────────────
+   Newest first, because a live feed is read from the top. The speaker is the
+   only thing set in the body face - everything else is metadata and stays
+   quiet, so a column of thirty lines reads as a conversation rather than a
+   log. */
+.talk-feed { display: flex; flex-direction: column; gap: var(--u1); }
+.talk-line {
+  padding: var(--u2) var(--u1);
+  border-bottom: 1px solid var(--line-soft);
+}
+.talk-line:last-child { border-bottom: 0; }
+.talk-meta {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--u2);
+  margin-bottom: 2px;
+  font-family: var(--font-mono); font-size: var(--t-micro);
+  letter-spacing: .06em; color: var(--ink-faint);
+}
+.talk-who {
+  font-family: var(--font-body); font-size: var(--t-base); font-weight: 600;
+  letter-spacing: 0; color: var(--ink);
+}
+.talk-to { color: var(--ember); }
+.talk-open { color: var(--ink-faint); font-style: italic; }
+.talk-at { color: var(--ink-faint); }
+.talk-tick { margin-left: auto; font-variant-numeric: tabular-nums; }
+.talk-said {
+  font-size: var(--t-base); line-height: 1.5; color: var(--ink-soft);
+}
+
+/* ── What this resident has authored ─────────────────────────────────────
+   The Workshop book answers "is the town inventing anything". This answers
+   "did THIS person invent it", which was not answerable anywhere. */
+.authored-strip {
+  margin-top: var(--u5); padding-top: var(--u4);
+  border-top: 1px solid var(--line-soft);
+}
+.authored-strip .lbl {
+  margin-bottom: var(--u3);
+  font-family: var(--font-body); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint);
+}
+.auth-row {
+  display: grid; grid-template-columns: 116px 1fr;
+  align-items: baseline; gap: var(--u3);
+  padding: var(--u2) 0;
+}
+.auth-k {
+  font-family: var(--font-body); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint);
+}
+.auth-v { display: flex; flex-wrap: wrap; gap: var(--u1); }
+.auth-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: var(--ctl-h-sm); padding: 0 var(--u3);
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--surface);
+  font-size: var(--t-sm); color: var(--ink-soft);
+}
+.auth-chip.tool  { border-color: var(--ember-dim); color: var(--ember); background: var(--ember-soft); }
+.auth-chip.skill { border-color: var(--mint-dim);  color: var(--mint);  background: var(--mint-soft); }
+.auth-chip b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+.auth-chip .dim, .talk-said .dim { color: var(--ink-faint); }
+
+/* ── Talk, as exchanges ──────────────────────────────────────────────────
+   Grouped so "who spoke to who, and what came back" is answerable at a
+   glance. A flat list of lines cannot show a conversation. */
+.talk-thread {
+  margin-bottom: var(--u3); padding: var(--u3);
+  border: 1px solid var(--line-soft); border-radius: var(--r-md);
+  background: var(--surface);
+}
+.th-head {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--u2);
+  margin-bottom: var(--u2); padding-bottom: var(--u2);
+  border-bottom: 1px solid var(--line-soft);
+  font-family: var(--font-mono); font-size: var(--t-micro);
+  letter-spacing: .08em; color: var(--ink-faint);
+}
+.th-who {
+  font-family: var(--font-body); font-size: var(--t-base); font-weight: 600;
+  letter-spacing: 0; color: var(--ink);
+}
+.th-at { color: var(--ink-faint); }
+.th-count { color: var(--mint); }
+.th-count.one { color: var(--ink-faint); font-style: italic; }
+.th-tick { margin-left: auto; font-variant-numeric: tabular-nums; }
+.th-line {
+  display: grid; grid-template-columns: 108px 1fr;
+  gap: var(--u3); padding: var(--u1) 0;
+}
+.th-speaker {
+  font-family: var(--font-body); font-size: var(--t-sm); font-weight: 600;
+  color: var(--ember);
+}
+.th-said { font-size: var(--t-base); line-height: 1.5; color: var(--ink-soft); }
+
+/* ── Authored: who reached for skillify / toolify ───────────────────────── */
+.ab-summary {
+  display: flex; flex-wrap: wrap; gap: var(--u4);
+  margin-bottom: var(--u4); padding-bottom: var(--u3);
+  border-bottom: 1px solid var(--line-soft);
+  font-size: var(--t-sm); color: var(--ink-faint);
+}
+.ab-summary b {
+  font-family: var(--font-mono); font-size: 17px; font-weight: 500;
+  color: var(--ember); margin-right: 4px;
+}
+.ab-author { margin-bottom: var(--u4); }
+.ab-name {
+  display: flex; align-items: baseline; gap: var(--u2);
+  margin-bottom: var(--u2);
+  font-family: var(--font-display); font-size: var(--t-lg); font-weight: 600;
+  color: var(--ink);
+}
+.ab-id { font-family: var(--font-mono); font-size: var(--t-micro); color: var(--ink-faint); }
+.ab-item {
+  display: grid; grid-template-columns: 76px 1fr;
+  align-items: baseline; gap: var(--u2) var(--u3);
+  padding: var(--u2) 0 var(--u2) var(--u3);
+  border-left: 2px solid var(--line);
+  margin-bottom: 2px;
+}
+.ab-item.tool  { border-left-color: var(--ember); }
+.ab-item.skill { border-left-color: var(--mint); }
+.ab-verb {
+  font-family: var(--font-mono); font-size: var(--t-micro);
+  letter-spacing: .08em; text-transform: lowercase;
+}
+.ab-item.tool  .ab-verb { color: var(--ember); }
+.ab-item.skill .ab-verb { color: var(--mint); }
+.ab-what { font-size: var(--t-base); font-weight: 600; color: var(--ink); }
+.ab-note {
+  grid-column: 2; font-size: var(--t-sm); color: var(--ink-faint);
+}
+.ab-note b { font-family: var(--font-mono); color: var(--ink); }
+
+/* ── Vitals: health, built, food, treasury — all live ────────────────────
+   One shape for four panels that used to each invent their own, and a stat
+   block that reads the same as the controls drawer so a figure means the
+   same thing wherever it appears. */
+.vit-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1px; margin-bottom: var(--u4); padding: 1px;
+  border: 1px solid var(--line-soft); border-radius: var(--r-md);
+  background: var(--line-soft);
+}
+.vit-stat { padding: var(--u3); background: var(--paper); }
+.vit-n {
+  font-family: var(--font-mono); font-size: 19px; font-weight: 500;
+  letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--ink);
+}
+.vit-n.good { color: var(--mint); }
+.vit-n.warn { color: var(--brass); }
+.vit-n.bad  { color: var(--rust); }
+.vit-l {
+  margin-top: var(--u1);
+  font-family: var(--font-body); font-size: var(--t-micro);
+  letter-spacing: .1em; text-transform: uppercase; line-height: 1.35;
+  color: var(--ink-faint);
+}
+.vit-rows { display: flex; flex-direction: column; }
+.vit-row {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--u3); padding: var(--u2) var(--u1);
+  border-bottom: 1px solid var(--line-soft);
+  font-size: var(--t-base); color: var(--ink-soft);
+}
+.vit-row:last-child { border-bottom: 0; }
+.vit-v {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  color: var(--ember);
+}
+.vit-sub {
+  margin: var(--u4) 0 var(--u2);
+  font-family: var(--font-body); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint);
+}
+.vit-note {
+  margin: var(--u3) 0 0; max-width: none;
+  font-size: var(--t-sm); line-height: 1.5; color: var(--ink-faint);
+}
+
+/* ── Preflight: the fifteen checks, on screen ──────────────────────────────
+ *
+ * Loud on failure, quiet on success. A ready run collapses to one summary
+ * row; a blocked run keeps every failing line open, with its fix, because
+ * the fix is the entire reason a failing check is worth printing.
+ *
+ * The panel's left edge carries the state so the answer is legible from the
+ * far side of the screen without reading a word of it.
+ */
+#preflightPanel { border-left: 3px solid var(--line-soft); }
+#preflightPanel[data-state="ready"]   { border-left-color: var(--mint); }
+#preflightPanel[data-state="warn"]    { border-left-color: var(--brass); }
+#preflightPanel[data-state="blocked"] { border-left-color: var(--rust); }
+
+.pf-recheck {
+  margin-left: auto; height: var(--ctl-h-sm); padding: 0 var(--u3);
+  background: transparent; color: var(--ink-faint);
+  border: 1px solid var(--line-soft); border-radius: 999px;
+  font-family: var(--font-body); font-size: var(--t-micro);
+  letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+  transition: color .15s var(--ease), border-color .15s var(--ease);
+}
+.pf-recheck:hover { color: var(--ember); border-color: var(--ember); }
+
+.pf-summary {
+  display: flex; align-items: baseline; gap: var(--u3); flex-wrap: wrap;
+  padding: var(--u3) var(--u1) var(--u3);
+  border-bottom: 1px solid var(--line-soft);
+}
+.pf-count {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: var(--t-base); color: var(--ink-soft);
+}
+.pf-verdict { font-size: var(--t-sm); color: var(--ink-faint); }
+.pf-summary.blocked .pf-count,
+.pf-summary.blocked .pf-verdict { color: var(--rust); font-weight: 600; }
+.pf-toggle {
+  margin-left: auto; padding: 0; background: none; border: 0;
+  font-family: var(--font-body); font-size: var(--t-micro);
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-faint); cursor: pointer; text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.pf-toggle:hover { color: var(--ember); }
+
+.pf-list { list-style: none; margin: 0; padding: 0; }
+.pf-row {
+  display: grid; grid-template-columns: 16px 1fr; gap: 0 var(--u2);
+  padding: var(--u2) var(--u1);
+  border-bottom: 1px solid var(--line-soft);
+  font-size: var(--t-base);
+}
+.pf-row:last-child { border-bottom: 0; }
+.pf-mark {
+  grid-row: 1 / span 3; align-self: start;
+  font-family: var(--font-mono); line-height: 1.5;
+}
+.pf-ok   .pf-mark { color: var(--mint); }
+.pf-warn .pf-mark { color: var(--brass); }
+.pf-fail .pf-mark { color: var(--rust); }
+.pf-name { color: var(--ink-soft); }
+.pf-fail .pf-name { color: var(--rust); font-weight: 600; }
+.pf-detail {
+  grid-column: 2; font-family: var(--font-mono);
+  font-size: var(--t-sm); color: var(--ink-faint); line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+/* The fix is an instruction, not a reading - it gets the emphasis. */
+.pf-fix {
+  grid-column: 2; margin-top: var(--u1);
+  padding-left: var(--u2); border-left: 2px solid var(--rust);
+  font-size: var(--t-sm); line-height: 1.5;
+  color: color-mix(in srgb, var(--rust) 78%, var(--ink-soft));
+}
+.pf-warn .pf-fix { border-left-color: var(--brass);
+  color: color-mix(in srgb, var(--brass) 72%, var(--ink-soft)); }
+
+/* ── "Doing": what a resident is actually up to ────────────────────────────
+ *
+ * Sits directly under the head of the resident card, above the tabs, because
+ * "what is this person doing right now" is the question a click on a sprite
+ * is asking and it should not be behind a tab.
+ */
+.doing-now {
+  margin: var(--u3) 0 var(--u4);
+  padding: var(--u3); border-radius: 8px;
+  background: color-mix(in srgb, var(--ember) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ember) 20%, transparent);
+}
+.doing-now.idle {
+  background: transparent; border-color: var(--line-soft);
+}
+.doing-head { display: flex; align-items: baseline; gap: var(--u2); flex-wrap: wrap; }
+.doing-lbl {
+  font-family: var(--font-body); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink-faint);
+}
+.doing-line {
+  font-size: var(--t-lg); line-height: 1.3;
+  color: var(--ember); overflow-wrap: anywhere;
+}
+.doing-now.idle .doing-line { font-size: var(--t-base); color: var(--ink-faint); }
+.doing-tick, .doing-approx {
+  margin-left: auto; font-family: var(--font-mono);
+  font-size: var(--t-micro); color: var(--ink-faint);
+}
+.doing-approx {
+  margin-left: var(--u2); padding: 1px var(--u2);
+  border: 1px dashed var(--brass); border-radius: 999px; color: var(--brass);
+}
+
+.act-list {
+  list-style: none; margin: var(--u3) 0 0; padding: 0;
+  max-height: 210px; overflow-y: auto;
+}
+.act {
+  display: grid; grid-template-columns: 62px 1fr; gap: 0 var(--u2);
+  padding: var(--u1) 0; border-top: 1px solid var(--line-soft);
+  font-size: var(--t-sm); line-height: 1.5;
+}
+.act-t {
+  font-family: var(--font-mono); font-size: var(--t-micro);
+  color: var(--ink-faint); padding-top: 2px;
+}
+.act-w { font-family: var(--font-mono); color: var(--ink-soft); overflow-wrap: anywhere; }
+/* Authoring is the thing this whole run exists to observe - it does not
+ * read as one more line of `harvest wheat`. */
+.act.authored .act-w { color: var(--brass); font-weight: 600; }
+.act-a, .act-q {
+  grid-column: 2; font-size: var(--t-micro); color: var(--ink-faint);
+  overflow-wrap: anywhere;
+}
+.act-q { font-style: italic; color: var(--ink-soft); }
+.act.said .act-w { color: var(--mint); }
+
+/* A reply, in the Talk book.
+ *
+ * Every line used to render identically, so an exchange read as two people
+ * talking past each other - "who spoke to who, and what did they say back"
+ * was the one question the panel could not answer. A line whose speaker is
+ * the previous line's listener is the answer to it, and now looks like one.
+ */
+.th-to {
+  margin-left: var(--u1);
+  font-family: var(--font-mono); font-size: var(--t-micro);
+  color: var(--ink-faint);
+}
+.th-line.reply {
+  margin-left: var(--u4);
+  padding-left: var(--u3);
+  border-left: 2px solid color-mix(in srgb, var(--mint) 55%, transparent);
+}
+.th-badge {
+  margin-left: var(--u2); padding: 0 var(--u2);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mint) 14%, transparent);
+  font-family: var(--font-body); font-size: var(--t-micro);
+  letter-spacing: .08em; text-transform: uppercase; color: var(--mint);
+}
+
+/* Wall-clock time on a remark.
+ *
+ * The Talk panel showed a tick number and nothing else. A tick locates a
+ * line inside the simulation and nowhere inside the run - a reader could
+ * not line a conversation up against the API calls, the spend, or their own
+ * memory of the evening. IST, 12-hour, matching the run report exactly, so
+ * the same line reads identically in the browser and in docs/runs/.
+ */
+.th-clock, .talk-clock {
+  margin-left: var(--u2);
+  font-family: var(--font-mono); font-size: var(--t-micro);
+  color: var(--ink-faint); font-variant-numeric: tabular-nums;
+}
+.th-at-time {
+  margin-right: var(--u2);
+  font-family: var(--font-mono); font-size: var(--t-micro);
+  color: var(--ink-faint); font-variant-numeric: tabular-nums;
+  opacity: .75;
+}

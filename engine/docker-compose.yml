@@ -1,0 +1,125 @@
+services:
+  engine:
+    build:
+      context: .
+      target: prod
+    env_file: .env
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1   # don't write .pyc into the read-only rootfs
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./catalog:/catalog:ro
+      - engine_data:/data
+    networks:
+      - engine_net
+    restart: unless-stopped
+    # Run tini as PID 1 so terminated orphans get reaped.
+    #
+    # The sandbox spawns process trees, and src/sandbox/orphan_detector.py walks
+    # /proc every 30s looking for sandbox processes that were reparented to init
+    # and tree_kills them. Without an init that calls wait(), those killed
+    # processes stay in the table as zombies forever: PID 1 here is uvicorn,
+    # which only reaps children it spawned itself, never the orphans the kernel
+    # reparents to it. The detector therefore manufactured zombies it could not
+    # clean up, one per orphan per scan, until the container ran out of PIDs.
+    # tini reaps them the moment they die and costs nothing else.
+    init: true
+    # ── Hardening (Step 1, container-level) ───────────────────────────
+    # The engine process is the TRUSTED zone; untrusted agent code runs one
+    # ring deeper inside bwrap+seccomp+Landlock (src/sandbox/executor.py).
+    # cap_drop/no-new-privileges/read_only shrink the container's own blast
+    # radius on the shared host kernel — and (verified) they do NOT block bwrap.
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+      # Docker's DEFAULT seccomp profile blocks the unprivileged user-namespace
+      # clone() + the mount/pivot_root that bwrap needs, so we ship a tailored
+      # profile = Docker default + exactly those namespace/mount syscalls. The
+      # untrusted agent code is still confined by the strict INNER seccomp BPF
+      # (src/sandbox/seccomp.py) one ring deeper.
+      - seccomp=./seccomp/engine.json
+      # Docker masks /proc by default, which "locks" the proc mount and stops
+      # bwrap from mounting a fresh /proc inside its PID namespace. Unmask it so
+      # the inner sandbox can build its own proc view. (Only affects the trusted
+      # engine's container view; untrusted code gets bwrap's own fresh /proc.)
+      - systempaths=unconfined
+    read_only: true        # rootfs is immutable; only the mounts below are writable
+    tmpfs:
+      # Writable scratch on a read-only rootfs. /tmp must be `exec` because the
+      # sandbox writes a shell script there and bwrap execve()s it; a default
+      # noexec tmpfs makes every bash run fail with "Permission denied".
+      - /tmp:exec
+    # The image already runs as non-root (USER engineuser, uid 1000 — see Dockerfile).
+
+  test:
+    # Named so a pre-built image is reused by `docker compose run` instead of
+    # triggering a fresh build. `docker compose build test` produces and tags it;
+    # scripts/ci.sh then reuses it for both the test run and the trivy scan.
+    #
+    # NB: this service's default command is a bare pytest with no coverage, which
+    # is NOT the gate. `scripts/ci.sh test` runs the real invocation, with the
+    # stress-test ignores and --cov-fail-under. Reaching for `docker compose run
+    # --rm test` directly and calling the result green is how a coverage
+    # regression gets missed.
+    image: september-engine-test:local
+    build:
+      context: .
+      target: test
+    # Force x86_64 to match production: prod runs Linux x86_64, so aarch64-native
+    # testing would diverge from production reality. On Apple Silicon this runs
+    # under QEMU emulation (~5x slower).
+    #   NB: the aarch64 seccomp syscall numbers in src/sandbox/seccomp.py are now
+    #   correct (clone is no longer wrongly blocked), so native arm64 works too —
+    #   we force amd64 here purely for prod parity, not to dodge that bug.
+    # QEMU x86_64 cannot load seccomp BPF; tests/conftest.py probes for this and
+    # drops the seccomp_fd at the bwrap arg-builder layer.
+    platform: linux/amd64
+    # Bind-mount the working tree so edits land without rebuild.
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./tui.py:/app/tui.py
+      - ./migrations:/app/migrations
+      - ./catalog:/app/catalog:ro
+      - ./pyproject.toml:/app/pyproject.toml
+      - ./scripts:/app/scripts
+      - ./contract:/app/contract
+      # The engine states its version in four files and tests/test_version_consistency.py
+      # compares all four. Two of them live outside the mounts above, and an
+      # unmounted file does not make that test lenient, it makes it error at
+      # collection. Mounted read-write to match ./contract, so scripts that
+      # regenerate either one work the same inside the container as outside.
+      - ./llms.txt:/app/llms.txt
+      - ./architecture:/app/architecture
+      # tests/test_home_restore.py asserts the prod image pins SEPTEMBER_HOME at
+      # a writable volume. The prod rootfs is read-only and this container is
+      # not, so that class of bug is only catchable by reading the file itself.
+      - ./Dockerfile:/app/Dockerfile:ro
+    working_dir: /app
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+    # bwrap (bubblewrap) sandbox tests need full kernel access to create user
+    # namespaces and set up loopback inside an unshared netns. `privileged: true`
+    # is acceptable for a dev/test container running trusted code. The prod
+    # `engine` service above remains unprivileged.
+    privileged: true
+    # Same reaper as the prod service above, and for the same reason rather than
+    # to make a test pass: without it PID 1 is pytest, which reaps only the
+    # children it spawned, so any grandchild the kernel reparents to it survives
+    # as a zombie after being killed. is_process_alive() is a signal-0 probe and
+    # a zombie still accepts signal 0, so the process-tree tests could not tell
+    # "still running" from "dead, waiting to be reaped" and read every killed
+    # grandchild as a leak.
+    init: true
+    # Default: run the full suite. Override with: docker compose run --rm test pytest tests/test_foo.py
+    command: ["pytest", "tests/", "--tb=short"]
+
+volumes:
+  engine_data:
+
+networks:
+  engine_net:
+    driver: bridge

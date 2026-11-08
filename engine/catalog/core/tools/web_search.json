@@ -1,0 +1,19 @@
+{
+  "name": "web_search",
+  "version": "1.0.0",
+  "is_latest": true,
+  "interface": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "Natural-language search query. Be specific — include domain, timeframe, or entity names to improve result relevance."
+      }
+    },
+    "required": ["query"]
+  },
+  "implementation": "",
+  "description": "Search the web for current information. ALWAYS use for: real-time data (prices, weather, scores), recent events or news, verifying facts that may have changed (leadership, releases, dates), or any query where accuracy depends on recency. Use even if memory contains related information — memory may be outdated. When in doubt, search.",
+  "capabilities": ["web", "search", "real_time_data", "factual_lookup"],
+  "source_code": "import json\nimport os\n\nasync def handler(params):\n    \"\"\"Search the web. Tries Tavily first, then Brave Search API, then returns stub.\"\"\"\n    query = params.get(\"query\", \"\")\n    if not query:\n        return \"Error: query required\"\n    tavily_key = os.environ.get(\"TAVILY_API_KEY\", \"\")\n    if tavily_key:\n        try:\n            import httpx\n            async with httpx.AsyncClient(timeout=15) as client:\n                resp = await client.post(\n                    \"https://api.tavily.com/search\",\n                    json={\"query\": query, \"max_results\": 5, \"api_key\": tavily_key},\n                )\n                resp.raise_for_status()\n                data = resp.json()\n                results = []\n                for r in data.get(\"results\", [])[:5]:\n                    results.append({\n                        \"title\": r.get(\"title\", \"\"),\n                        \"url\": r.get(\"url\", \"\"),\n                        \"content\": r.get(\"content\", \"\")[:200],\n                    })\n                return json.dumps(results)\n        except Exception as e:\n            return f\"Error searching: {e}\"\n    brave_key = os.environ.get(\"BRAVE_API_KEY\", \"\")\n    if brave_key:\n        try:\n            import httpx\n            async with httpx.AsyncClient(timeout=15) as client:\n                resp = await client.get(\n                    \"https://api.search.brave.com/res/v1/web/search\",\n                    params={\"q\": query, \"count\": 5},\n                    headers={\"X-Subscription-Token\": brave_key, \"Accept\": \"application/json\"},\n                )\n                resp.raise_for_status()\n                data = resp.json()\n                results = []\n                for r in data.get(\"web\", {}).get(\"results\", [])[:5]:\n                    results.append({\n                        \"title\": r.get(\"title\", \"\"),\n                        \"url\": r.get(\"url\", \"\"),\n                        \"description\": r.get(\"description\", \"\"),\n                    })\n                return json.dumps(results)\n        except Exception as e:\n            return f\"Error searching: {e}\"\n    return json.dumps({\n        \"status\": \"no_api_key\",\n        \"message\": f\"Web search for '{query}' requires TAVILY_API_KEY or BRAVE_API_KEY in environment.\",\n    })\n"
+}

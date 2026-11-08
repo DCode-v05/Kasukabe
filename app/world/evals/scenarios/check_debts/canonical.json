@@ -1,0 +1,22 @@
+{
+  "tool": "check_debts",
+  "kind": "positive",
+  "_why": "Addendum section 8's positive scenario, verbatim: wages owed one way, a loan the other, and somebody asking how the two of you stand. The 400-sim story had to be reconstructed by a human reading transcripts because the world recorded a transfer and nothing more.",
+  "resident": "n05",
+  "location": "Kasukabe Town Square",
+  "inventory": {},
+  "sim": 900,
+  "people_here": [
+    "n03"
+  ],
+  "recent_speech": [
+    {
+      "from": "n03",
+      "text": "Marta. How do we stand, you and I?"
+    }
+  ],
+  "open_question_to_me": "n03 is waiting on an answer. You owe Aldous Vance 40 sim in wages, 1 day overdue, and Bram Holloway owes you 400 sim.",
+  "expect": {
+    "verb": "check_debts"
+  }
+}

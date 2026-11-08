@@ -1,0 +1,659 @@
+<title>Memory On Demand</title>
+<style>
+  :root {
+    --paper:      #F6F5F7;
+    --surface:    #FFFFFF;
+    --surface-2:  #EFEDF2;
+    --ink:        #17141C;
+    --ink-muted:  #5C566A;
+    --ink-faint:  #857E93;
+    --hairline:   #DEDAE4;
+    --accent:     #5B3E9B;
+    --accent-bg:  #EBE4F6;
+    --counter:    #3D5A80;
+    --counter-bg: #E4EAF2;
+    --gap:        #A63D2E;
+    --gap-bg:     #F6E3DE;
+    --have:       #3F6B33;
+    --have-bg:    #E4EFDE;
+    --caution:    #8A6612;
+    --caution-bg: #F3EAD3;
+
+    --display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+
+    --col: 68ch;
+    --plate-w: 1120px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #121016;
+      --surface:    #1A171F;
+      --surface-2:  #221E29;
+      --ink:        #E9E5EE;
+      --ink-muted:  #A29AAF;
+      --ink-faint:  #7E7689;
+      --hairline:   #2E2937;
+      --accent:     #B49AE8;
+      --accent-bg:  #271C3B;
+      --counter:    #86A5CE;
+      --counter-bg: #182635;
+      --gap:        #E28A70;
+      --gap-bg:     #35201A;
+      --have:       #91C67D;
+      --have-bg:    #1B2C1A;
+      --caution:    #DCB661;
+      --caution-bg: #2E2717;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #121016;
+    --surface:    #1A171F;
+    --surface-2:  #221E29;
+    --ink:        #E9E5EE;
+    --ink-muted:  #A29AAF;
+    --ink-faint:  #7E7689;
+    --hairline:   #2E2937;
+    --accent:     #B49AE8;
+    --accent-bg:  #271C3B;
+    --counter:    #86A5CE;
+    --counter-bg: #182635;
+    --gap:        #E28A70;
+    --gap-bg:     #35201A;
+    --have:       #91C67D;
+    --have-bg:    #1B2C1A;
+    --caution:    #DCB661;
+    --caution-bg: #2E2717;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16.5px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: var(--plate-w); margin: 0 auto; padding: 0 24px 96px; }
+
+  header.masthead { padding: 64px 0 32px; border-bottom: 2px solid var(--ink); margin-bottom: 8px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.13em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 18px;
+  }
+  h1 {
+    font-family: var(--display); font-weight: 600;
+    font-size: clamp(32px, 5.2vw, 52px); line-height: 1.08;
+    letter-spacing: -0.015em; text-wrap: balance; margin: 0 0 20px; max-width: 22ch;
+  }
+  .standfirst {
+    font-family: var(--display); font-size: clamp(17px, 2.1vw, 20.5px);
+    line-height: 1.5; color: var(--ink-muted); max-width: 62ch; margin: 0 0 26px;
+  }
+  .sourceline {
+    display: flex; flex-wrap: wrap; gap: 8px 26px;
+    font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint);
+  }
+  .sourceline b { color: var(--ink-muted); font-weight: 500; }
+
+  nav.toc {
+    display: flex; flex-wrap: wrap; gap: 6px 20px;
+    padding: 18px 0 40px; border-bottom: 1px solid var(--hairline); margin-bottom: 48px;
+    font-family: var(--mono); font-size: 12px;
+  }
+  nav.toc a { color: var(--ink-muted); text-decoration: none; border-bottom: 1px solid transparent; }
+  nav.toc a:hover, nav.toc a:focus-visible { color: var(--accent); border-bottom-color: var(--accent); }
+
+  section { margin-bottom: 68px; scroll-margin-top: 24px; }
+  h2 {
+    font-family: var(--display); font-size: clamp(25px, 3.4vw, 34px); font-weight: 600;
+    line-height: 1.15; letter-spacing: -0.012em; text-wrap: balance; margin: 0 0 6px; max-width: 26ch;
+  }
+  h2 .num {
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.1em; color: var(--accent);
+    display: block; margin-bottom: 12px; font-weight: 400;
+  }
+  h3 { font-size: 17.5px; font-weight: 650; letter-spacing: -0.005em; margin: 42px 0 10px; max-width: var(--col); }
+  h4 {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 500; margin: 30px 0 10px;
+  }
+  p, ul, ol { max-width: var(--col); }
+  p { margin: 0 0 18px; }
+  ul, ol { margin: 0 0 18px; padding-left: 20px; }
+  li { margin-bottom: 8px; }
+  li::marker { color: var(--ink-faint); }
+  a { color: var(--accent); }
+  strong { font-weight: 650; }
+  em { font-style: italic; }
+  code {
+    font-family: var(--mono); font-size: 0.86em; background: var(--surface-2);
+    border-radius: 2px; padding: 1.5px 4px; color: var(--ink);
+  }
+  .lede {
+    font-family: var(--display); font-size: 19px; line-height: 1.5;
+    color: var(--ink-muted); margin: 0 0 28px; max-width: 60ch;
+  }
+
+  .claim {
+    border-left: 3px solid var(--accent); background: var(--accent-bg);
+    padding: 18px 22px; margin: 28px 0; max-width: var(--col);
+    font-family: var(--display); font-size: 18.5px; line-height: 1.48;
+  }
+  .claim.warn { border-left-color: var(--gap); background: var(--gap-bg); }
+  .claim.note { border-left-color: var(--caution); background: var(--caution-bg); }
+  .claim.good { border-left-color: var(--have); background: var(--have-bg); }
+
+  .frame {
+    font-family: var(--mono); font-size: 12.5px; background: var(--surface);
+    border: 1px solid var(--hairline); border-radius: 3px; padding: 20px 22px;
+    margin: 26px 0; overflow-x: auto; line-height: 1.75; white-space: pre;
+    color: var(--ink);
+  }
+  .frame .k { color: var(--counter); }
+  .frame .note { color: var(--ink-faint); }
+  .frame .hl { color: var(--accent); font-weight: 600; }
+  .frame .bad { color: var(--gap); font-weight: 600; }
+  .frame .ok { color: var(--have); font-weight: 600; }
+
+  .tablewrap { overflow-x: auto; margin: 26px 0; border: 1px solid var(--hairline); border-radius: 3px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; background: var(--surface); }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+  th {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 500; background: var(--surface-2); white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td code { background: none; padding: 0; font-size: 13px; }
+  td.w { min-width: 165px; }
+  td.n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .chip {
+    display: inline-block; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em;
+    text-transform: uppercase; padding: 2px 7px; border-radius: 2px; white-space: nowrap; font-weight: 500;
+  }
+  .chip.done { background: var(--have-bg);    color: var(--have); }
+  .chip.new  { background: var(--accent-bg);  color: var(--accent); }
+  .chip.miss { background: var(--gap-bg);     color: var(--gap); }
+  .chip.open { background: var(--caution-bg); color: var(--caution); }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin: 28px 0; }
+  .card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 3px; padding: 16px 18px; }
+  .card .n {
+    font-family: var(--display); font-size: 30px; line-height: 1.05; font-variant-numeric: tabular-nums;
+    color: var(--accent); display: block; margin-bottom: 8px;
+  }
+  .card .l {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-faint); display: block; margin-bottom: 8px;
+  }
+  .card p { font-size: 13.5px; line-height: 1.5; margin: 0; color: var(--ink-muted); }
+
+  .verdict {
+    border: 1px solid var(--hairline); border-left: 3px solid var(--ink-faint);
+    background: var(--surface); border-radius: 3px; padding: 16px 18px; margin: 14px 0; max-width: var(--col);
+  }
+  .verdict.take { border-left-color: var(--have); }
+  .verdict.open { border-left-color: var(--caution); }
+  .verdict.warn { border-left-color: var(--gap); }
+  .verdict h5 { margin: 0 0 6px; font-size: 15px; font-weight: 650; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .verdict p { font-size: 14.5px; margin: 0 0 8px; color: var(--ink-muted); max-width: none; }
+  .verdict p:last-child { margin-bottom: 0; }
+
+  ol.steps { counter-reset: s; list-style: none; padding-left: 0; max-width: var(--col); }
+  ol.steps > li { counter-increment: s; position: relative; padding-left: 40px; margin-bottom: 20px; }
+  ol.steps > li::before {
+    content: counter(s); position: absolute; left: 0; top: 1px;
+    font-family: var(--mono); font-size: 12px; color: var(--accent);
+    border: 1px solid var(--accent); border-radius: 50%;
+    width: 24px; height: 24px; display: grid; place-items: center;
+  }
+  ol.steps .check {
+    display: block; font-family: var(--mono); font-size: 12px; color: var(--ink-faint);
+    margin-top: 6px; padding-left: 10px; border-left: 2px solid var(--hairline);
+  }
+
+  footer {
+    border-top: 2px solid var(--ink); padding-top: 24px;
+    font-family: var(--mono); font-size: 12px; color: var(--ink-faint); line-height: 1.7;
+  }
+
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    header.masthead { padding-top: 40px; }
+  }
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Engine · spec · memory retrieval</p>
+  <h1>Memory On Demand</h1>
+  <p class="standfirst">
+    A thread gets one shot at recall, at the top of the turn, on the user's opening words. If it
+    misses, there is no second question — no tool, no fallback. The retrieval this needs is already
+    written, already routed through a cache every thread shares, and called by nothing.
+  </p>
+  <div class="sourceline">
+    <span><b>status</b> spec — nothing built</span>
+    <span><b>checked against</b> engine @ pull-model</span>
+    <span><b>new surface</b> 1 tool · 0 new retrieval logic</span>
+    <span><b>companions</b> The 30-Minute Snapshot · Sub-Agent Output Store</span>
+    <span><b>date</b> 2026-08-31</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#finding">Two findings first</a>
+  <a href="#centralized">Part 1 · already centralized</a>
+  <a href="#unified">The retrieval that exists</a>
+  <a href="#tool">Part 2 · the tool</a>
+  <a href="#sharing">Cross-thread sharing, precisely</a>
+  <a href="#prompt">When the model should call it</a>
+  <a href="#risks">What could go wrong</a>
+  <a href="#plan">Plan</a>
+</nav>
+
+<section id="finding">
+  <h2><span class="num">Summary</span>Two findings first</h2>
+
+  <p class="lede">
+    Both halves of the request were checked against the tree. One is already done; the other is one
+    tool away from done, because its hardest part is written and dead.
+  </p>
+
+  <div class="cards">
+    <div class="card">
+      <span class="l">Part 1 · centralize caching</span>
+      <span class="n">done</span>
+      <p>One <code>Search</code> instance, constructed at boot, handed to the coordinator and to
+      every thread. Its cache is already shared across all of them.</p>
+    </div>
+    <div class="card">
+      <span class="l">Part 2 · the query tool</span>
+      <span class="n">missing</span>
+      <p>No memory tool exists in the registry. A thread that misses at prefetch has no way to ask
+      again.</p>
+    </div>
+    <div class="card">
+      <span class="l">The retrieval it needs</span>
+      <span class="n">dead</span>
+      <p><code>Search.unified()</code> — hybrid, cross-store, cached, with entity fusion — has
+      <strong>no callers anywhere in <code>src/</code></strong>.</p>
+    </div>
+  </div>
+
+  <div class="claim">
+    So this is not a build. It is a wiring job: expose retrieval that already exists, through a tool
+    that does not, onto a cache that is already shared. The interesting decisions are about
+    <em>behaviour</em> — when the model may call it, what it costs, and what it must not be allowed
+    to do — not about plumbing.
+  </div>
+</section>
+
+<section id="centralized">
+  <h2><span class="num">Part one</span>Already centralized</h2>
+
+  <p>
+    The target state described — memory operations integrated into the <code>search.py</code> caching
+    layer, optimized across concurrent threads — is what the tree does today. The chain:
+  </p>
+
+  <div class="frame"><span class="k">bootstrap.py:1800</span>   state.search = Search(db, episodic, knowledge, social, embedder, catalog)
+<span class="k">coordinator</span>          self.search = search          <span class="note">one object, injected</span>
+<span class="k">every thread</span>         search=self.search            <span class="note">the SAME object, not a copy</span>
+
+<span class="k">Search.__init__</span>      self.cache = TTLCache(default_ttl=900, max_entries=256)</div>
+
+  <p>
+    Ten concurrent threads hold ten references to one <code>Search</code>, and therefore one
+    <code>TTLCache</code>. Everything that goes through <code>episodes()</code>,
+    <code>knowledge()</code> or <code>social()</code> is already shared between them, with three
+    properties that were added deliberately and matter here:
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Property</th><th>What it does for concurrent threads</th></tr></thead>
+      <tbody>
+        <tr><td class="w"><code>get_or_load</code></td><td>Collapses concurrent misses on one key into a <strong>single</strong> store read. Ten threads asking the same question at once produce one query, not ten.</td></tr>
+        <tr><td class="w">Row-level copies (<code>_detach</code>)</td><td>Each caller gets its own dicts, so one thread's <code>_source</code> tagging or social-boost rescoring cannot land in the cache and reach the next reader.</td></tr>
+        <tr><td class="w">Writer-announced invalidation</td><td>The batch's <code>on_data_changed</code> and <code>POST /memory/import</code> both clear it, so the 900s TTL is a backstop rather than the whole correctness story.</td></tr>
+        <tr><td class="w">LRU bound at 256</td><td>Keys carry user text; recency is a read property, so the most-asked query survives eviction.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="claim good">
+    This means the cross-thread optimization in the request is not something to build — it is
+    something the new tool inherits by calling the same accessors. The one rule to keep is that the
+    tool must go <strong>through</strong> <code>Search</code>, never around it to a store, or it
+    silently opts out of all four properties above.
+  </div>
+
+  <h4>The one thing that is not shared</h4>
+  <p>
+    <code>Search.embed()</code> keeps a separate 256-entry LRU keyed on the exact string. It is on
+    the same object, so it is shared too — but it is keyed on <em>exact</em> text, so two threads
+    asking the same question in different words share the result cache only if their phrasings match
+    exactly. That is a cost floor on the tool: distinct phrasings pay for distinct embeddings.
+  </p>
+</section>
+
+<section id="unified">
+  <h2><span class="num">Discovery</span>The retrieval that exists</h2>
+
+  <p class="lede">
+    <code>Search.unified(query, limit)</code> is the hybrid cross-memory retrieval this tool needs.
+    It is complete, commented, configured — and nothing in the engine calls it. The only mentions of
+    it outside its own definition are two comments in <code>config.py</code> describing the settings
+    it reads.
+  </p>
+
+  <div class="frame"><span class="k">async def unified(query, limit=20)</span>
+
+  embed once                                   <span class="note">one round trip, not four</span>
+  gather:
+    episodes(query, limit, emb)   <span class="ok">→ cached</span>       30% keyword / 70% semantic
+    knowledge(query, limit, emb)  <span class="ok">→ cached</span>       30% keyword / 70% semantic
+    social(query, limit, emb)     <span class="ok">→ cached</span>       50 / 50
+    signals(query, limit)         <span class="hl">→ uncached</span>     FTS5 over pending signals
+
+  tag each row with _source
+  collect person names from the social leg
+  boost episode/knowledge rows that mention those people   <span class="note">word-boundary regex</span>
+  sort by score, return top-<span class="k">limit</span></div>
+
+  <h3>Three things this gives the tool for free</h3>
+  <ul>
+    <li><strong>The hybrid pipeline, unchanged.</strong> Same weights, same recency boost, same
+      keyword fallback for rows without embeddings — the request's "re-use the existing retrieval
+      logic" is satisfied by calling this rather than by copying anything.</li>
+    <li><strong>Entity fusion.</strong> A query that surfaces a person also lifts the episodes and
+      knowledge mentioning them. Prefetch does not do this; it fans out three ways and folds the
+      results in flat.</li>
+    <li><strong>Pending signals.</strong> <code>unified()</code> reads
+      <code>learning_signals</code> — the rows a correction lands in before the batch encodes it.
+      This is the exact blind spot described in <em>The 30-Minute Snapshot</em>: recall cannot see an
+      unencoded correction. The dead function already reads it.</li>
+  </ul>
+
+  <div class="claim warn">
+    That last point makes the two specs overlap, and the overlap should be resolved deliberately
+    rather than by both landing a fix. <strong>The cadence spec adds pending signals to the
+    <em>push</em> path (prefetch); this spec exposes them on the <em>pull</em> path (the
+    tool).</strong> Both are worth having — push means a correction applies without the model
+    thinking to ask; pull means it can dig when the push missed — but they must share one labelling
+    convention so a pending row reads the same either way.
+  </div>
+
+  <h4>Why it is dead, and what that implies</h4>
+  <p>
+    Nothing is wrong with it; it was written for a caller that never arrived — the same shape as four
+    other subsystems that shipped wired to nothing and were caught in <code>bc20dec</code>. Two
+    consequences worth stating before building on it: it has <strong>never run in production</strong>,
+    and the deterministic corpus does not cover it. Treat its correctness as unverified, and give it
+    tests as part of this work rather than assuming the code's completeness implies it works.
+  </p>
+</section>
+
+<section id="tool">
+  <h2><span class="num">Part two</span>The tool</h2>
+
+  <div class="frame">name:   <span class="hl">search_memory</span>
+input:
+  query   <span class="k">string, required</span>    what to look for, in natural language
+  scope   <span class="k">enum, optional</span>      all | episodes | knowledge | people | pending
+                              default: all
+  limit   <span class="k">integer, optional</span>   default 10, hard cap 25
+
+behaviour:
+  is_read_only         → true
+  is_concurrency_safe  → true      <span class="note">must not serialize a parallel batch</span>
+  routes to            → Search.unified()  (scope=all)
+                         Search.episodes/knowledge/social/signals  (narrowed)</div>
+
+  <h3>Naming</h3>
+  <p>
+    <code>search_memory</code> over <code>query_memory</code>, for consistency with the existing tool
+    namespace: <code>search_content</code>, <code>search_files</code>, <code>tool_search</code> — the
+    engine's verb for retrieval is already <em>search</em>. A namespace where one member says
+    <em>query</em> is one people get wrong from memory. (The same argument produced
+    <code>read_sub_agent_output</code> over <code>read_subagent_output</code> in the companion spec.)
+  </p>
+
+  <h3>Why <code>scope</code> is worth the extra parameter</h3>
+  <p>
+    <code>unified()</code> costs one embedding plus four store reads. A thread that knows it wants a
+    person — "who is Priya" — should not pay for the episode and knowledge legs. Narrow scopes route
+    straight to the single cached accessor, and the default stays <code>all</code> so the model never
+    has to choose to get the good behaviour.
+  </p>
+
+  <h3>Output shape</h3>
+  <p>
+    Rows come back tagged with <code>_source</code>; the tool renders them grouped by source with the
+    source named, and <strong>pending signals labelled as unconsolidated</strong>:
+  </p>
+  <div class="frame"><span class="k">EPISODES</span>
+  2026-08-14 | Debugged the payment queue race condition
+  …
+
+<span class="k">KNOWLEDGE</span>
+  deploy cadence — the team deploys on Tuesdays        <span class="note">(confidence 1.0)</span>
+
+<span class="k">PEOPLE</span>
+  Priya — platform team lead
+
+<span class="hl">RECENT, NOT YET CONSOLIDATED</span>          <span class="note">← pending signals, labelled</span>
+  correction · "lead meeting notes with decisions, not attendees"</div>
+
+  <p>
+    Confidence is shown for knowledge rows because the store distinguishes a user-stated fact (1.0)
+    from an inference (≤0.8), and a model weighing two conflicting memories needs to know which is
+    which. Scores are not shown — they are a ranking device, not information, and printing them
+    invites the model to reason about numbers that mean nothing outside the sort.
+  </p>
+
+  <h3>Bounds</h3>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Bound</th><th>Value</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td class="w">Rows per call</td><td class="n">10 default, 25 cap</td><td>Recall competes with the turn's real work for context. A tool that can return 100 rows is a tool that will.</td></tr>
+        <tr><td class="w">Chars per row</td><td class="n">~300, then elide</td><td>An episode's <code>value</code> is deliberately excluded from search results already — the K+D match is the index, and the body is fetched separately.</td></tr>
+        <tr><td class="w">Calls per turn</td><td class="n">soft cap, then a notice</td><td>Not a hard refusal: a legitimate multi-part question may need two. But a loop of near-identical queries is a failure mode worth naming to the model rather than absorbing silently.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="sharing">
+  <h2><span class="num">Mechanics</span>Cross-thread sharing, precisely</h2>
+
+  <p class="lede">
+    The claim in the request — one thread's retrieval becomes instantly available to the other nine —
+    is true, with two qualifications worth knowing before relying on it.
+  </p>
+
+  <div class="frame"><span class="k">key</span>  mem:{kind}:{limit}:{'e'|'k'}:{query}
+
+thread 3  search_memory("payment queue race")   <span class="note">→ miss, one store read, cached</span>
+thread 7  search_memory("payment queue race")   <span class="ok">→ hit, no store read</span>
+thread 9  search_memory("payment queue race")   <span class="ok">→ hit</span>          <span class="note">(concurrent: get_or_load</span>
+                                                             <span class="note">collapses to ONE read)</span>
+thread 5  search_memory("payment queue bug")    <span class="bad">→ miss</span>        <span class="note">different string,</span>
+                                                             <span class="note">different key AND</span>
+                                                             <span class="note">different embedding</span></div>
+
+  <div class="verdict warn">
+    <h5>Qualification one · the key is the exact query string</h5>
+    <p>Sharing is <strong>exact-match</strong>, not semantic. Two threads investigating the same thing
+    in different words share nothing. That is the correct conservative behaviour — a semantic cache
+    key would need an embedding to compute, which is the expensive half of what it saves — but it
+    means the "nine other threads benefit" case is strongest for repeated identical queries (retries,
+    fan-out over one brief) and weakest for genuinely independent work.</p>
+  </div>
+
+  <div class="verdict warn">
+    <h5>Qualification two · <code>limit</code> and the embedding flag are in the key</h5>
+    <p>A cached result for <code>limit=10</code> cannot answer <code>limit=25</code>, and a
+    keyword-only result is a different key from an embedded one. Both are deliberate — the stores
+    rank differently with and without a vector. Practical effect: keep the tool's default
+    <code>limit</code> fixed rather than letting the model choose freely, or every call becomes a
+    distinct key and the sharing evaporates. <strong>Recommendation:</strong> accept
+    <code>limit</code> but snap it to one of two values (10, 25) so the key space stays small.</p>
+  </div>
+
+  <div class="verdict take">
+    <h5>What is genuinely free</h5>
+    <p>Invalidation. When the batch writes, one <code>on_data_changed</code> clears the cache for
+    every thread at once — there is no per-thread state to reconcile, and no thread can be left
+    holding a stale view after a write it did not make.</p>
+  </div>
+
+  <div class="verdict open">
+    <h5>The pending leg is uncached, on purpose</h5>
+    <p><code>signals()</code> is not cached because <code>learning_signals</code> is written on every
+    turn, so a cached pending result would be stale inside the same conversation. With ten threads
+    each calling <code>search_memory</code>, that leg is the one that scales linearly with calls. It
+    is an FTS5 query against a table with a shadow index, so it is cheap — but it is the part of this
+    design that does <em>not</em> get cheaper with sharing, and worth watching.</p>
+  </div>
+</section>
+
+<section id="prompt">
+  <h2><span class="num">Behaviour</span>When the model should call it</h2>
+
+  <p>
+    A tool the model does not know when to reach for is a tool it either ignores or overuses. The
+    description has to name the <em>trigger</em>, not the capability — the same rule that makes the
+    existing <code>spawn_sub_agent</code> description work.
+  </p>
+
+  <div class="frame">Search durable memory — past episodes, learned facts, people, and recent
+corrections not yet consolidated.
+
+Recall runs automatically at the start of a turn against the user's
+opening words. <span class="hl">Use this when that was not enough:</span> the conversation has
+moved to a subject the opening message did not name, the user refers
+to something earlier you cannot see, or you need to check whether a
+preference or decision on this topic already exists before assuming
+one does not.
+
+Do not call it to confirm something already in your context.</div>
+
+  <div class="claim note">
+    The last line is doing real work. The failure mode of a memory tool is not underuse — it is a
+    model that queries memory before every action, spending a store read and 300 characters of
+    context to re-learn what it was told two messages ago. Prefetch already covers the opening; this
+    covers the drift.
+  </div>
+
+  <h4>One thing it must not become</h4>
+  <p>
+    A write surface. <code>search_memory</code> reads. Durable memory is written by the batch, and
+    that asymmetry is load-bearing — it is why LC-inferred knowledge is capped at 0.8 confidence
+    while user-stated facts reach 1.0, and why nothing in a turn can promote its own guess into a
+    permanent fact. If a "remember this" tool is ever wanted, it is a separate decision with its own
+    confidence policy, not a parameter on this one.
+  </p>
+</section>
+
+<section id="risks">
+  <h2><span class="num">Honesty</span>What could go wrong</h2>
+
+  <div class="verdict warn">
+    <h5>Recall noise displaces the actual task</h5>
+    <p>Ten rows of loosely-related memory in the middle of a turn can pull a model off the thing it
+    was doing. Mitigated by the low default limit, the elision, and the trigger-shaped description —
+    but the honest position is that this is a prompt-behaviour change, and no eval here measures
+    whether recall improves or degrades task completion. That is a gap this spec creates and does not
+    close.</p>
+  </div>
+
+  <div class="verdict warn">
+    <h5><code>unified()</code> has never run</h5>
+    <p>Complete, configured, and unexercised. Its social-boost pass mutates <code>score</code> on
+    rows it received from the cached accessors — safe today only because <code>_detach</code> hands
+    out copies. That interaction has never been exercised under concurrency, and it is exactly the
+    class of bug <code>f91635a</code> found by reading rather than by testing. Needs a concurrency
+    test before it carries traffic.</p>
+  </div>
+
+  <div class="verdict warn">
+    <h5>Cost is per-call and unbounded across threads</h5>
+    <p>One <code>unified()</code> call is one embedding plus four store reads. Ten threads calling it
+    twice a turn is twenty embeddings and eighty reads per turn-round, minus whatever the cache
+    absorbs — and the cache absorbs only exact repeats. The sharing story is real but it is not a
+    substitute for a per-turn cap.</p>
+  </div>
+
+  <div class="verdict take">
+    <h5>What is low-risk</h5>
+    <p>The plumbing. One tool registration, routing to an existing method, on an existing shared
+    cache, read-only, with no schema change and no new store.</p>
+  </div>
+</section>
+
+<section id="plan">
+  <h2><span class="num">Sequence</span>Plan</h2>
+
+  <ol class="steps">
+    <li>
+      <strong>Test <code>unified()</code> before exposing it.</strong> It has never run: cover the
+      social-boost pass, the empty-store case, and two threads racing one key.
+      <span class="check">check · concurrent identical calls produce one store read per leg; a caller's rescoring never reaches the cache</span>
+    </li>
+    <li>
+      <strong>Register <code>search_memory</code>, scope=all only.</strong> Routes to
+      <code>unified()</code>, renders grouped output, labels pending rows, read-only and
+      concurrency-safe.
+      <span class="check">check · a fact written by a prior batch is retrievable mid-turn by a query that does not restate it</span>
+    </li>
+    <li>
+      <strong>Add the narrow scopes.</strong> <code>episodes</code>, <code>knowledge</code>,
+      <code>people</code>, <code>pending</code> routing straight to the single cached accessor.
+      <span class="check">check · scope=people performs one store read, not four</span>
+    </li>
+    <li>
+      <strong>Per-turn call cap and the notice.</strong> Soft, with a message naming the repetition
+      rather than a silent refusal.
+      <span class="check">check · a third near-identical query in one turn returns the cached rows plus the notice</span>
+    </li>
+    <li>
+      <strong>Reconcile with the push-path change.</strong> One labelling convention for pending
+      signals across prefetch and the tool, decided once.
+      <span class="check">check · a pending correction reads identically whether it arrived by push or by pull</span>
+    </li>
+  </ol>
+
+  <h3>Decisions I need from you</h3>
+  <ul>
+    <li><strong>Does the tool ship before or after the prefetch pending-signal leg?</strong> They
+      overlap on the same rows. My recommendation is push first — it is smaller and needs no model
+      cooperation — then this as the fallback for when push misses.</li>
+    <li><strong>Snap <code>limit</code> to two values, or let the model pass any integer?</strong>
+      Free choice fragments the cache key space and quietly kills the cross-thread sharing this spec
+      is partly for.</li>
+    <li><strong>Is a "remember this" write tool wanted eventually?</strong> If yes, the confidence
+      policy is the decision, not the tool — and it should be settled before the read tool trains
+      anyone to expect a write one.</li>
+  </ul>
+</section>
+
+<footer>
+  Memory On Demand · spec, nothing built · engine @ pull-model<br />
+  Companions: The 30-Minute Snapshot (the push path) · Sub-Agent Output Store (the same
+  retrieval-not-truncation argument, one layer down).
+</footer>
+
+</div>

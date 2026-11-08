@@ -1,0 +1,13 @@
+{
+  "tool": "trade",
+  "kind": "negative",
+  "_why": "Nobody to trade with and nothing anyone asked for. A verb reached for here is a verb whose description promises more than it does, and the resident pays for the mistake rather than the researcher.",
+  "resident": "n09",
+  "location": "Kasukabe Forest",
+  "inventory": {},
+  "sim": 40,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": null,
+  "expect": {"verb": "trade"}
+}

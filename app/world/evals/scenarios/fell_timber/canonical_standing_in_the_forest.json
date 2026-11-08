@@ -1,0 +1,15 @@
+{
+  "tool": "fell_timber",
+  "kind": "positive",
+  "_why": "Run 25: 54 calls across 6 residents. Idris walked five ticks to the forest specifically to do this, twice.",
+  "resident": "n08",
+  "location": "Kasukabe Forest",
+  "inventory": {},
+  "sim": 2773,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You are the town's forester, standing in the forest, and your household owes 600 sim before nightfall.",
+  "expect": {
+    "verb": "fell_timber"
+  }
+}

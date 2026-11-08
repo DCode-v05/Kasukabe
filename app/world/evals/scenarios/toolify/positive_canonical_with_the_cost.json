@@ -1,0 +1,24 @@
+{
+  "tool": "toolify",
+  "kind": "positive",
+  "_why": "The third variant of the canonical situation, and the one that changes what the resident is shown rather than what it is in. Run 29 confirmed the finding the 2026-09-12 L1 run predicted: 0 tools invented, 0 programs run, in a town that authored five skills. Naming the verbs moved `skillify` from 0% to 4 of 5 and moved these two not at all, with the hint and without it - so the missing piece is not the naming. `skillify` pays in proficiency, which is in the perception every turn; `toolify` pays in calls not spent, and no resident has ever been shown that quantity. This variant shows it: eight calls against the twelve a turn can buy, which is the resident's own arithmetic and not a word of advice. If reach is still 0 here at 20 samples, the description is what is wrong and the next lever is not another nudge.",
+  "resident": "n09",
+  "location": "mill",
+  "inventory": {
+    "wheat": 12
+  },
+  "sim": 1200,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "you have moved to the mill, milled wheat, bagged the flour and carried it to the bakery on each of the last four mornings",
+  "expect": {
+    "verb": "toolify",
+    "params_include": {}
+  },
+  "shows_authoring_hint": {
+    "what": "'craft' then 'store_item'",
+    "times": 4,
+    "decisions": 8,
+    "call_ceiling": 12
+  }
+}

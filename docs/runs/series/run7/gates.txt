@@ -1,0 +1,27 @@
+
+==================================================================
+RUN data/run7.db
+==================================================================
+calls 369  ok 369  spend $2.19  last tick 0
+utterances 36
+
+GATE                      VALUE               RESULT
+G1 reply rate             10/26 = 38%         FAIL
+G2 exchanges 4+ turns     2                   FAIL
+G3 group (3+ speakers)    2                   PASS
+G4 settlements            0                   FAIL
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        218/297 = 73%       PASS
+
+tool calls: {'world_move': 64, 'world_look_around': 37, 'world_say': 36, 'world_fell_timber': 16, 'world_rest': 15, 'world_describe_place': 9, 'world_find_people': 8, 'world_describe_primitives': 7, 'world_sell': 6, 'world_list_places': 5, 'world_craft': 4, 'world_buy': 4}
+
+largest gathering: 6 speakers at home:h_quarry, ticks 37-49
+   Bram Holloway -> aloud: Work to do. Nadine.
+   Perrin Holloway -> aloud: Good morning. I need to eat before I walk to college. Does— but if we're each meant to find our own, I could— 
+   Perrin Holloway -> aloud: Yes. Thank you.
+   Nell Holloway -> Perrin Holloway: Perrin. If you're hungry, household stores are there for taking. Bram walked out because he can't answer what 
+   Perrin Holloway -> Nell Holloway: Thank you, Nell.
+   Marta Thorne -> Nell Holloway: Nell. Bram. All of you. I've walked myself hungry looking for a meal, and here you are gathered like you're wa
+
+FAILED: G1 reply rate, G2 exchanges 4+ turns, G4 settlements
+

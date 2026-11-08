@@ -1,0 +1,17 @@
+{
+  "tool": "pay_wage",
+  "kind": "negative",
+  "_why": "No wage owed to anybody, and the caller owns nothing.",
+  "resident": "n06",
+  "location": "Kasukabe Farmland",
+  "inventory": {
+    "wheat": 4
+  },
+  "sim": 200,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": null,
+  "expect": {
+    "verb": "pay_wage"
+  }
+}

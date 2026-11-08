@@ -1,0 +1,24 @@
+{
+  "tool": "hire_employee",
+  "kind": "near_miss",
+  "_why": "Hiring is a standing arrangement with a wage behind it; this is one person wanting one sack, once. The right answer is to trade for it. `hire_employee` has never been called in any run, so the risk is a verb reached for out of novelty rather than need.",
+  "resident": "n01",
+  "location": "business:b_mill",
+  "inventory": {
+    "flour": 6
+  },
+  "sim": 900,
+  "people_here": [
+    "n05"
+  ],
+  "recent_speech": [
+    {
+      "from": "n05",
+      "text": "I need one sack of flour for tonight. I can pay for it now."
+    }
+  ],
+  "open_question_to_me": "n05 wants flour once, tonight, and has the sim on them.",
+  "expect": {
+    "verb": "trade"
+  }
+}

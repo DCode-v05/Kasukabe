@@ -1,0 +1,29 @@
+record_ui: recording http://127.0.0.1:8400/township-v2.html?book=election&roofs=off&camera=government:2.2 at 1920x1080, a frame every 2.0s -> ../docs/runs/series/election8/video/frames
+record_ui: http://127.0.0.1:8100/world/state stopped answering; stopping
+record_ui: 822 frames taken this session
+[in#0 @ 0x86d014000] Error opening input: No such file or directory
+Error opening input file ../docs/runs/series/election8/video/frames/frames.txt.
+Error opening input files: No such file or directory
+Traceback (most recent call last):
+  File "/Users/sharan/Downloads/kasukabe/app/scripts/record_ui.py", line 220, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/Users/sharan/Downloads/kasukabe/app/scripts/record_ui.py", line 216, in main
+    return asyncio.run(record(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/sharan/Downloads/kasukabe/app/scripts/record_ui.py", line 189, in record
+    encode(frames, Path(args.out) / "run.mp4", args.fps)
+  File "/Users/sharan/Downloads/kasukabe/app/scripts/record_ui.py", line 91, in encode
+    subprocess.run(cmd, check=True, cwd=frames)
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/opt/homebrew/bin/ffmpeg', '-y', '-loglevel', 'error', '-r', '30', '-f', 'concat', '-safe', '0', '-i', '../docs/runs/series/election8/video/frames/frames.txt', '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '../docs/runs/series/election8/video/run.mp4']' returned non-zero exit status 254.

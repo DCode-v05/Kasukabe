@@ -1,0 +1,31 @@
+{
+  "name": "web_fetch",
+  "version": "1.1.0",
+  "is_latest": true,
+  "interface": {
+    "type": "object",
+    "properties": {
+      "url": {
+        "type": "string",
+        "description": "Full URL to fetch (must be http or https). The page content will be extracted as plain text, stripped of scripts and styles, capped at 10K characters."
+      },
+      "prompt": {
+        "type": "string",
+        "description": "Optional extraction prompt — if provided, used to focus on specific information from the page rather than returning the full text."
+      }
+    },
+    "required": [
+      "url"
+    ]
+  },
+  "implementation": "",
+  "description": "Fetch and extract readable content from a specific URL. Use when a URL is provided and needs reading, when web_search returned a link that needs deeper inspection, or when the user says 'read this page'. Follows redirects, 30s timeout, 10K char cap, SSRF-protected.",
+  "capabilities": [
+    "web",
+    "fetch",
+    "http",
+    "content_extraction",
+    "page_reading"
+  ],
+  "source_code": "import ipaddress\nimport json\nimport re\nimport socket\nfrom urllib.parse import urlparse\n\nfrom src.infra.memoize import TTLCache\n\n# 15-minute URL cache: repeat fetches of the same page inside the window\n# (agent retries, sub-agents re-reading a source) skip the network round\n# trip. Successful extractions only - errors and SSRF blocks are never\n# cached (the memoize module invariant: a failure must not persist for the\n# TTL). Catalog tools exec in-process at boot, so importing engine infra\n# is the platform-tool norm.\nURL_CACHE_TTL_S = 900\nurl_cache = TTLCache(default_ttl=URL_CACHE_TTL_S)\n\nBLOCKED_HOSTNAMES = frozenset({\n    \"localhost\",\n    \"localhost.localdomain\",\n    \"metadata.google.internal\",\n})\n\nBLOCKED_HOSTNAME_SUFFIXES = (\n    \".localhost\",\n    \".local\",\n    \".internal\",\n)\n\n\ndef _validate_url(url):\n    \"\"\"Validate a URL for SSRF. Returns error message or None if safe.\"\"\"\n    try:\n        parsed = urlparse(url)\n    except Exception:\n        return \"Malformed URL\"\n\n    if parsed.scheme not in (\"http\", \"https\"):\n        return f\"Scheme '{parsed.scheme}' is not allowed — only http and https\"\n\n    hostname = parsed.hostname\n    if not hostname:\n        return \"No hostname in URL\"\n\n    hostname_lower = hostname.lower().rstrip(\".\")\n\n    if hostname_lower in BLOCKED_HOSTNAMES:\n        return f\"Hostname '{hostname}' is blocked\"\n    for suffix in BLOCKED_HOSTNAME_SUFFIXES:\n        if hostname_lower.endswith(suffix):\n            return f\"Hostname '{hostname}' is blocked\"\n\n    try:\n        addr_info = socket.getaddrinfo(hostname, None, socket.AF_UNSPEC, socket.SOCK_STREAM)\n    except socket.gaierror:\n        return f\"Cannot resolve hostname '{hostname}'\"\n\n    for family, _, _, _, sockaddr in addr_info:\n        ip = ipaddress.ip_address(sockaddr[0])\n        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:\n            return f\"Resolved IP {ip} is blocked (private/loopback/link-local/reserved)\"\n\n    return None\n\n\nasync def handler(params):\n    \"\"\"Fetch and extract readable content from a URL.\"\"\"\n    url = params.get(\"url\", \"\")\n    if not url:\n        return \"Error: url required\"\n    violation = _validate_url(url)\n    if violation:\n        return f\"Error: blocked URL — {violation}\"\n    cached = url_cache.get(url)\n    if cached is not None:\n        return cached\n    try:\n        import httpx\n        async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:\n            resp = await client.get(url, headers={\"User-Agent\": \"IntelligenceEngine/1.0\"})\n            resp.raise_for_status()\n            content_type = resp.headers.get(\"content-type\", \"\")\n            if \"text/html\" in content_type:\n                text = re.sub(r'<script[^>]*>.*?</script>', '', resp.text, flags=re.DOTALL)\n                text = re.sub(r'<style[^>]*>.*?</style>', '', text, flags=re.DOTALL)\n                text = re.sub(r'<[^>]+>', ' ', text)\n                text = re.sub(r'\\s+', ' ', text).strip()\n                result = text[:10000]\n            else:\n                result = resp.text[:10000]\n            url_cache.set(url, result)\n            return result\n    except ImportError:\n        return \"Error: httpx not installed — run 'pip install httpx'\"\n    except Exception as e:\n        return f\"Error fetching {url}: {e}\"\n"
+}

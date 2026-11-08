@@ -1,0 +1,1 @@
+record_ui: recording http://127.0.0.1:8400/township-v2.html?book=town&roofs=on at 1920x1080, a frame every 4.0s -> ../docs/runs/series/fifty-test3-20260929/video/town-with-buildings/frames

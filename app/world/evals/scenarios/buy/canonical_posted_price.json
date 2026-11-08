@@ -1,0 +1,29 @@
+{
+  "tool": "buy",
+  "kind": "positive",
+  "_why": "A posted price, hungry, coin in hand - and, since 2026-09-21, talking to the baker. `buy` is offered only in a conversation, so the positive has to be one.",
+  "resident": "n09",
+  "location": "Thornes Bakery",
+  "inventory": {},
+  "sim": 200,
+  "people_here": [
+    "n07"
+  ],
+  "recent_speech": [
+    {
+      "from": "n07",
+      "text": "Morning. Fresh bread today, thirty a loaf."
+    }
+  ],
+  "open_question_to_me": "Priced where you stand: Thornes Bakery (b_bakery): bread 30 to buy. You have not eaten today.",
+  "expect": {
+    "verb": "buy",
+    "params_include": {
+      "seller_id": "b_bakery",
+      "item": "bread"
+    }
+  },
+  "in_conversation_with": [
+    "n07"
+  ]
+}

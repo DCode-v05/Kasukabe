@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kasukabe — President &amp; God Console</title>
+  <link rel="stylesheet" href="/static/console.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-title">
+      <span class="crest">卍</span>
+      <div>
+        <h1>Kasukabe Console</h1>
+        <p class="subtitle">Operator: President &amp; God, one console, two hats</p>
+      </div>
+    </div>
+
+    <div class="token-box">
+      <label for="operator-token">Operator token</label>
+      <input id="operator-token" type="password" autocomplete="off" placeholder="paste operator token" />
+      <button id="token-save" class="btn btn-ghost">Save</button>
+      <span id="connection-dot" class="dot dot-unknown" title="connection status"></span>
+    </div>
+  </header>
+
+  <section class="control-strip" id="control-strip">
+    <div class="control-item spend-strip" id="spend-strip" title="Live USD burn from the ledger's $1000 pool (DESIGN.md section 3)">
+      <span class="control-label">Spend</span>
+      <span id="spend-burned" class="spend-burned">$0.00 burned</span>
+      <span id="spend-rate" class="spend-rate">warming up…</span>
+      <div class="spend-bar"><div id="spend-bar-fill" class="spend-bar-fill spend-bar-ok"></div></div>
+      <span id="spend-cap-note" class="control-label">of $400 cap</span>
+    </div>
+    <div class="control-item">
+      <span class="control-label">Sim</span>
+      <button id="btn-pause" class="btn btn-warn">Pause</button>
+      <button id="btn-resume" class="btn btn-ok">Resume</button>
+    </div>
+    <div class="control-item">
+      <span class="control-label">Pacing</span>
+      <select id="pacing-mode">
+        <option value="continuous">continuous</option>
+        <option value="burst">burst</option>
+      </select>
+      <input id="pacing-interval" type="number" min="0" step="0.1" value="0" title="continuous_interval_s" />
+      <button id="btn-apply-pacing" class="btn">Apply</button>
+    </div>
+    <div class="control-item">
+      <button id="btn-checkpoint" class="btn btn-accent">Checkpoint now</button>
+    </div>
+    <div class="control-item status-readout" id="status-readout">
+      tick — · day — · pacing — · —
+    </div>
+  </section>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="president">🏛 President</button>
+    <button class="tab-btn" data-tab="god">⚡ God</button>
+    <button class="tab-btn" data-tab="town">🏘 Town</button>
+    <button class="tab-btn" data-tab="alerts">🚨 Alerts</button>
+  </nav>
+
+  <main id="banner-region"></main>
+
+  <!-- ================= PRESIDENT TAB ================= -->
+  <section class="tab-panel active" id="tab-president">
+    <div class="grid-2">
+      <article class="panel">
+        <h2>Land petitions</h2>
+        <p class="panel-hint">Approving triggers a real map expansion (edge/depth).</p>
+        <div id="petitions-list" class="list"></div>
+      </article>
+
+      <article class="panel">
+        <h2>Amendments awaiting signature</h2>
+        <div id="amendments-list" class="list"></div>
+      </article>
+
+      <article class="panel">
+        <h2>Address the nation</h2>
+        <textarea id="broadcast-message" rows="3" placeholder="Message to every citizen of Kasukabe..."></textarea>
+        <button id="btn-broadcast" class="btn btn-accent">Broadcast</button>
+        <h3 class="panel-subhead">Recent broadcasts</h3>
+        <div id="broadcasts-list" class="list list-compact"></div>
+      </article>
+
+      <article class="panel">
+        <h2>Honors</h2>
+        <div class="form-row">
+          <input id="honor-agent" placeholder="agent id" />
+          <input id="honor-title" placeholder="title, e.g. Order of the Ville" />
+        </div>
+        <input id="honor-citation" placeholder="citation (optional)" />
+        <button id="btn-grant-honor" class="btn btn-accent">Grant honor</button>
+        <h3 class="panel-subhead">Granted</h3>
+        <div id="honors-list" class="list list-compact"></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ================= GOD TAB ================= -->
+  <section class="tab-panel" id="tab-god">
+    <div class="grid-2">
+      <article class="panel">
+        <h2>Prayer feed</h2>
+        <p class="panel-hint">Silent deny leaves no trace visible to the agent.</p>
+        <div id="prayers-list" class="list"></div>
+      </article>
+
+      <article class="panel">
+        <h2>Baby blessing queue</h2>
+        <div id="blessings-list" class="list"></div>
+      </article>
+
+      <article class="panel">
+        <h2>Disaster picker</h2>
+        <div class="form-row">
+          <select id="disaster-type">
+            <option value="crop_blight">crop blight</option>
+            <option value="storm">storm</option>
+            <option value="quake">quake</option>
+            <option value="plague">plague</option>
+          </select>
+          <select id="disaster-scope-type">
+            <option value="town">town-wide</option>
+            <option value="district">district</option>
+            <option value="zone">zone</option>
+          </select>
+        </div>
+        <input id="disaster-target" placeholder="district/zone id (required unless town-wide)" />
+        <div class="form-row">
+          <input id="disaster-magnitude" type="number" min="0.01" step="0.1" value="1.0" title="magnitude" />
+          <input id="disaster-note" placeholder="note (optional)" />
+        </div>
+        <button id="btn-disaster" class="btn btn-danger">Unleash disaster</button>
+        <h3 class="panel-subhead">Recent disasters</h3>
+        <div id="disasters-list" class="list list-compact"></div>
+      </article>
+
+      <article class="panel">
+        <h2>Miracle / misfortune</h2>
+        <div class="form-row">
+          <input id="mm-agent" placeholder="target agent id" />
+        </div>
+        <input id="mm-description" placeholder="description" />
+        <div class="form-row">
+          <button id="btn-miracle" class="btn btn-ok">Cast miracle</button>
+          <button id="btn-misfortune" class="btn btn-danger">Cast misfortune</button>
+        </div>
+      </article>
+
+      <article class="panel panel-wide">
+        <h2>Population dials</h2>
+        <div class="form-row dials-row">
+          <label>target band min <input id="dial-min" type="number" min="0" /></label>
+          <label>target band max <input id="dial-max" type="number" min="0" /></label>
+          <label>death hazard × <input id="dial-death" type="number" min="0" step="0.05" /></label>
+          <label>blessing throttle <input id="dial-throttle" type="number" min="0" max="1" step="0.05" /></label>
+        </div>
+        <button id="btn-update-dials" class="btn btn-accent">Update dials</button>
+        <span id="dials-current" class="panel-hint"></span>
+      </article>
+    </div>
+  </section>
+
+  <!-- ================= ALERTS TAB ================= -->
+  <!-- B7 (The 250 section 19.7): every view B3-B6 built, framed as a
+       question with an explicit confidence on the answer. The sentences
+       come from game/console/framing.py, not from this page - a
+       confidence label is a claim, and claims are tested in Python. -->
+  <section class="tab-panel" id="tab-town">
+    <div class="card">
+      <h2>Is the town making it?</h2>
+      <p class="hint" id="town-observed">&nbsp;</p>
+      <div id="town-headlines" class="framed-list"></div>
+    </div>
+
+    <div class="card">
+      <h2>Households closest to the edge</h2>
+      <div id="town-at-risk" class="framed-list"></div>
+    </div>
+
+    <div class="card">
+      <h2>Businesses</h2>
+      <div id="town-businesses" class="framed-list"></div>
+    </div>
+
+    <div class="card">
+      <h2>Who has been in office, and what changed under them</h2>
+      <div id="town-terms"></div>
+    </div>
+  </section>
+
+  <section class="tab-panel" id="tab-alerts">
+    <article class="panel panel-wide">
+      <h2>Alert feed</h2>
+      <p class="panel-hint">Crime spikes, cult centralization, tabled amendments, regime change.</p>
+      <div id="alerts-list" class="list"></div>
+    </article>
+  </section>
+
+  <script src="/static/console.js"></script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!doctype html>
+<!--
+  Kasukabe Agent Views - DESIGN.md section 8's Viewers: agent finder,
+  agent activity, agent reasoning (the research centrepiece). Read-only;
+  see game/static/views.html for the world/governance/social sibling page
+  and game/console/static/index.html for the (separate, write-capable)
+  President/God console.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kasukabe — Agent Views</title>
+  <link rel="stylesheet" href="css/agentviews.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-title">
+      <span class="crest">卍</span>
+      <div>
+        <h1>Kasukabe Agent Views</h1>
+        <p class="subtitle">Finder · Activity · Reasoning — read-only</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap">
+      <a class="nav-link" href="index.html">🏙 Town</a>
+      <a class="nav-link" href="views.html">🏛 World View</a>
+      <div class="api-box">
+        <label for="api-base-url">World API</label>
+        <input id="api-base-url" type="text" autocomplete="off" placeholder="http://localhost:8100" />
+        <button id="api-save" class="btn btn-ghost btn-sm">Save</button>
+        <span id="api-dot" class="dot dot-unknown" title="connection status"></span>
+      </div>
+    </div>
+  </header>
+
+  <div id="agent-strip" class="agent-strip empty">No agent selected — pick one in Finder.</div>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="finder">🔎 Finder</button>
+    <button class="tab-btn" data-tab="activity" disabled>🧭 Activity</button>
+    <button class="tab-btn" data-tab="reasoning" disabled>🧠 Reasoning</button>
+  </nav>
+
+  <!-- ================= FINDER TAB ================= -->
+  <section class="tab-panel active" id="tab-finder">
+    <article class="panel panel-wide">
+      <h2>Agent finder</h2>
+      <p class="panel-hint">Search, sort, filter all 250. Click a row to open Activity for that agent.</p>
+      <div id="finder-filters" class="filter-bar">
+        <input id="finder-q" type="text" placeholder="search name or id" />
+        <select id="finder-sex"><option value="">any sex</option><option value="male">male</option><option value="female">female</option></select>
+        <select id="finder-status"><option value="">alive/dormant/dead</option><option value="alive">alive</option><option value="dormant">dormant</option><option value="dead">dead</option></select>
+        <input id="finder-occupation" type="text" placeholder="occupation" />
+        <input id="finder-household" type="text" placeholder="household id" />
+        <input id="finder-place" type="text" placeholder="place" />
+        <input id="finder-org" type="text" placeholder="organization" />
+        <select id="finder-arm">
+          <option value="">any ablation arm</option>
+          <option value="full">full</option>
+          <option value="no_reflection">no_reflection</option>
+          <option value="no_learning">no_learning</option>
+          <option value="deepseek_locked">deepseek_locked</option>
+        </select>
+      </div>
+      <div id="finder-count" class="result-count"></div>
+      <div id="finder-results" class="list-loading">Loading…</div>
+    </article>
+  </section>
+
+  <!-- ================= ACTIVITY TAB ================= -->
+  <section class="tab-panel" id="tab-activity">
+    <article class="panel panel-wide">
+      <h2>Agent activity</h2>
+      <p class="panel-hint">What this agent is doing right now, where, with whom, and its wallet/health/skills/relationships/utterances.</p>
+      <div id="activity-body" class="list-loading">Loading…</div>
+    </article>
+  </section>
+
+  <!-- ================= REASONING TAB ================= -->
+  <section class="tab-panel" id="tab-reasoning">
+    <article class="panel panel-wide">
+      <h2>Agent reasoning</h2>
+      <p class="panel-hint">Per decision: retrieved memories → prompt → reasoning text → chosen tool call → result, with model, lane, tokens and cost.</p>
+      <div class="split">
+        <div id="reasoning-list" class="list-loading">Loading…</div>
+        <div id="reasoning-detail" class="panel" style="position:sticky;top:60px">
+          <div class="panel-hint">Select a call on the left.</div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <footer class="attribution">Kasukabe — internal research instrument. Windows onto the world, never an authority over it.</footer>
+
+  <script type="module" src="js/agentviews/main.js"></script>
+</body>
+</html>

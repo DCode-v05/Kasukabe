@@ -1,0 +1,15 @@
+{
+  "tool": "rest",
+  "kind": "positive",
+  "_why": "Run 25: rest was the second most repeated verb in the run, almost always to ride out a walk - nine consecutive rests by one resident on one street are in the transcript. Whether a model reaches for it is worth knowing precisely because the cost of that pattern is the finding.",
+  "resident": "n06",
+  "location": "street",
+  "inventory": {},
+  "sim": 4348,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You are four ticks into a seven-tick walk to the farmland and there is nothing to do here.",
+  "expect": {
+    "verb": "rest"
+  }
+}

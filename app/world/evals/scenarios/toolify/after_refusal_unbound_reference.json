@@ -1,0 +1,17 @@
+{
+  "tool": "toolify",
+  "kind": "after_refusal",
+  "_why": "PROG-02. The commonest way a first program is wrong: it reads a step result nothing bound. The refusal names the binding and carries the vocabulary, so the second attempt should not be blind - which is the whole claim `ToolError.context` makes. Does the resident fix it, or abandon the verb?",
+  "resident": "n11",
+  "location": "business:b_mill",
+  "inventory": {
+    "flour": 3
+  },
+  "sim": 3000,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You called toolify and the world refused: 'toolify: this program will not run: step 2 (post_price) `when.left` reads \"@shelf.quantity\" before any step binds \"shelf\". A step may only read results from steps ABOVE it.' Bind a step with \"bind\": \"shelf\" and read it back as \"@shelf\" or \"@shelf.quantity\".",
+  "expect": {
+    "verb": "toolify"
+  }
+}

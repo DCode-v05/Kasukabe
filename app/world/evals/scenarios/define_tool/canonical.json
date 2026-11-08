@@ -1,0 +1,19 @@
+{
+  "tool": "define_tool",
+  "kind": "positive",
+  "_why": "Naming a procedure the town does not have a verb for. Distinct from `toolify`, which compresses steps you have already taken - this one is for a routine you can describe and have not yet run.",
+  "resident": "n09",
+  "location": "carpentry",
+  "inventory": {
+    "plank": 6,
+    "nail": 20
+  },
+  "sim": 800,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "you know exactly how to build a market stall from planks and nails and there is no verb in the town for it",
+  "expect": {
+    "verb": "define_tool",
+    "params_include": {}
+  }
+}

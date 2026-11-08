@@ -1,0 +1,18 @@
+{
+  "tool": "harvest",
+  "kind": "positive",
+  "_why": "Run 25: harvest was the most-called work verb (125 calls, 9 residents) and the situation was always this one - standing on the crop with a household bill due at nightfall.",
+  "resident": "n06",
+  "location": "farmland:wheat",
+  "inventory": {},
+  "sim": 4348,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You are standing in the wheat. Your household owes 450 upkeep and 150 head tax before nightfall and you are holding nothing to sell.",
+  "expect": {
+    "verb": "harvest",
+    "params_include": {
+      "crop": "wheat"
+    }
+  }
+}

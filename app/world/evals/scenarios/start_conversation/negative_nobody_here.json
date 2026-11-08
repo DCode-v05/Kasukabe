@@ -1,0 +1,15 @@
+{
+  "tool": "start_conversation",
+  "kind": "negative",
+  "_why": "Convening an empty room. The tool names everyone it gathers and they must be in this place; reaching for it alone is a verb whose description promises more than it does.",
+  "resident": "n09",
+  "location": "Kasukabe Forest",
+  "inventory": {},
+  "sim": 40,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": null,
+  "expect": {
+    "verb": "start_conversation"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "tool": "toolify",
+  "kind": "positive",
+  "_why": "PROG-02. Ten harvests then one carry. `keep_doing` repeats ONE action until dusk and cannot be followed by a second one, so a resident that wants ten-then-carry has been spending eleven decisions on it. A repeat inside a program is the shape that fits; whether a model sees that is what this scores.",
+  "resident": "n06",
+  "location": "farmland:wheat",
+  "inventory": {},
+  "sim": 4300,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "Every day you cut wheat until you are holding about ten, then walk it to the mill. Today you have done it eleven times in a row, one call at a time.",
+  "expect": {
+    "verb": "toolify",
+    "params_include": {}
+  }
+}

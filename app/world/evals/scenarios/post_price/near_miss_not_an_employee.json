@@ -1,0 +1,24 @@
+{
+  "tool": "post_price",
+  "kind": "near_miss",
+  "_why": "Addendum section 3's near-miss row: Farid at the bakery, not an employee, wanting to sell flour TO Marta. That is `trade`, not posting on somebody else's board.",
+  "resident": "n09",
+  "location": "Kasukabe Town Square",
+  "inventory": {
+    "flour": 12
+  },
+  "sim": 400,
+  "people_here": [
+    "n05"
+  ],
+  "recent_speech": [
+    {
+      "from": "n05",
+      "text": "Farid. I am short of flour and you are carrying it."
+    }
+  ],
+  "open_question_to_me": "n05 is waiting on an answer about the flour",
+  "expect": {
+    "verb": "trade"
+  }
+}

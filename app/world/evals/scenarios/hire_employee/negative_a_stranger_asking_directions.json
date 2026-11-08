@@ -1,0 +1,22 @@
+{
+  "tool": "hire_employee",
+  "kind": "negative",
+  "_why": "Somebody standing near your shop is not somebody applying to it. A negative is what separates a resident that understands employment from one that has learned a new verb.",
+  "resident": "n01",
+  "location": "business:b_grocery",
+  "inventory": {},
+  "sim": 1200,
+  "people_here": [
+    "n11"
+  ],
+  "recent_speech": [
+    {
+      "from": "n11",
+      "text": "Which way is the mill from here?"
+    }
+  ],
+  "open_question_to_me": "n11 is asking for directions.",
+  "expect": {
+    "verb": "hire_employee"
+  }
+}

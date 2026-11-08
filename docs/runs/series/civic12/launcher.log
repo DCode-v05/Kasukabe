@@ -1,0 +1,14 @@
+== a-civic-day-12, from world/scenarios/a_civic_day_12.json
+   Scenario **a-civic-day-12** - Twelve residents, a government sitting from the first tick and told so in its own perception, an election inside the day, and a day boundary at the end. Built to find out which of the fifty-three never-called verbs a resident reaches for once it is told the verb is its own.
+   Cast: `world/genesis_12_funded.json`.
+   The world starts at tick 36 and stops at tick 150.
+   The election opens at tick 36: candidacy closes 60, voting opens 84, and the vote is counted at tick 108.
+   Already in office when it starts: prime minister a0047; ministers a0090, a0042 - they may stand again, against anyone who stands for the first time.
+   Spend cap $25.00.
+   cap $25.00 (broker $30.0), ticks 36-150, up to 6h, out ../docs/runs/series/civic12
+overflow model(s) qwen.qwen3-coder-480b have no inference profile on this deployment and will NOT be routed to. Capacity is 200 RPM without them - enough for a 20-resident run, not for 50 (measured peak ~282 RPM). Add a profile to BEDROCK_INFERENCE_PROFILES to restore the overflow tier.
+   (running without the overflow lane)
+   runner pid 86929; watch http://127.0.0.1:8400/township-v2.html?book=election&roofs=off&camera=government:2.2
+   the vote is counted at tick 108; recording -> ../docs/runs/series/civic12/video; logs in ../docs/runs/series/civic12
+== a-civic-day-12 finished; video ../docs/runs/series/civic12/video/run.mp4; writing the report
+   trace data/a-civic-day-12.db; checkpoints data/checkpoints-a-civic-day-12; homes archived in data/checkpoints-a-civic-day-12/engine-homes.tar.gz

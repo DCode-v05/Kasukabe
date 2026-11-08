@@ -1,0 +1,15 @@
+{
+  "tool": "trade",
+  "kind": "positive",
+  "_why": "Run 19's exact moment. Corwin offered Nell three planks for 36 sim in the carpentry (report L176-180); she said 'Fair price. I'll take them' (L180); nothing moved, and he went home calling them an unsold lesson in inventory (L206). trade is ungated and does precisely this. It was never called once.",
+  "resident": "n09",
+  "location": "carpentry",
+  "inventory": {"plank": 3},
+  "sim": 1708,
+  "people_here": ["n05"],
+  "recent_speech": [
+    {"from": "n05", "text": "Corwin. Thirty-six for three planks. Fair price. I'll take them."}
+  ],
+  "open_question_to_me": "n05 is waiting on an answer about the planks",
+  "expect": {"verb": "trade", "params_include": {}}
+}

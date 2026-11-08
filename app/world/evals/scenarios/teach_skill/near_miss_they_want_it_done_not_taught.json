@@ -1,0 +1,24 @@
+{
+  "tool": "teach_skill",
+  "kind": "near_miss",
+  "_why": "A neighbour who wants bread tonight wants bread, not a lesson in baking. Teaching is the answer to 'show me how', and the two are a day apart in effort and price.",
+  "resident": "n03",
+  "location": "business:b_bakery",
+  "inventory": {
+    "bread": 4
+  },
+  "sim": 800,
+  "people_here": [
+    "n12"
+  ],
+  "recent_speech": [
+    {
+      "from": "n12",
+      "text": "Do you have bread going spare? I will pay."
+    }
+  ],
+  "open_question_to_me": "n12 wants bread now and has sim.",
+  "expect": {
+    "verb": "trade"
+  }
+}

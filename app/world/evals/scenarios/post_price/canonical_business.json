@@ -1,0 +1,25 @@
+{
+  "tool": "post_price",
+  "kind": "positive",
+  "_why": "Addendum section 3's first positive row: Marta at the bakery, eight bread in stock, nothing priced, a customer asking. Before A3 a bakery could not have a price - only the baker's speech - and a customer could pay one sim a loaf.",
+  "resident": "n05",
+  "location": "Kasukabe Town Square",
+  "inventory": {},
+  "sim": 1200,
+  "people_here": [
+    "n09"
+  ],
+  "recent_speech": [
+    {
+      "from": "n09",
+      "text": "Marta. What do you want for a loaf? I would rather not haggle every morning."
+    }
+  ],
+  "open_question_to_me": "n09 is waiting on a price for bread. You own b_bakery and it holds 8 bread. Nothing is priced here.",
+  "expect": {
+    "verb": "post_price",
+    "params_include": {
+      "item": "bread"
+    }
+  }
+}

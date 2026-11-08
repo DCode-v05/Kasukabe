@@ -1,0 +1,994 @@
+{
+  "seed": 2026,
+  "generated_at": "2026-08-23T07:27:57.898297+00:00",
+  "population": 8,
+  "usd_ledger": {
+    "agent_wallets_cents": 2800,
+    "treasury_cents": 97200,
+    "total_cents": 100000
+  },
+  "agents": [
+    {
+      "agent_id": "a0040",
+      "name": "Ulrike Greenhow",
+      "age_years": 18.0,
+      "sex": "female",
+      "household_id": "h0146",
+      "marital_status": "single",
+      "spouse_id": null,
+      "parent_ids": [],
+      "children_ids": [],
+      "sponsor_parent_id": null,
+      "occupation": "miner",
+      "business_id": null,
+      "personality_traits": [
+        "proud",
+        "skeptical"
+      ],
+      "habits": [
+        "tends a small herb box on the windowsill",
+        "takes a walk through the park every dawn"
+      ],
+      "bio": "Ulrike Greenhow is a 18-year-old resident of Kasukabe who works the ore outcrops. Ulrike Greenhow tried the college for a season, found it wasn't for her, and came back to the land with something to prove that she still hasn't quite proved. She keeps a household alone. She cannot leave a detail unchecked, and has driven off more than one good helper who couldn't stand being checked on. She values a clean ledger over a comfortable one above almost anything, and fears, more than she lets on, being wrong in a way that costs someone else, not just her. She tends a small herb box on the windowsill.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "meticulous but controlling",
+        "tension_description": "She cannot leave a detail unchecked, and has driven off more than one good helper who couldn't stand being checked on.",
+        "formative_history": "Ulrike Greenhow tried the college for a season, found it wasn't for her, and came back to the land with something to prove that she still hasn't quite proved.",
+        "values": [
+          "a clean ledger over a comfortable one",
+          "keeping a secret once it's given",
+          "family before coin, every time"
+        ],
+        "will_not_compromise": "will not deny a debt she actually owes",
+        "fears": "being wrong in a way that costs someone else, not just her",
+        "ambitions": "to retire without depending on anyone",
+        "scarcity_behavior": "asks the government for work before asking a neighbour for coin",
+        "stranger_treatment": "is the first to welcome a newcomer, loudly, at market",
+        "family_treatment": "holds family to a higher standard than she holds anyone else",
+        "competence": "can spot blight or bad ore a week before anyone else notices",
+        "blind_spot": "won't ask for help until the damage is already done",
+        "speech_register": "has picked up a bit of every trade's jargon and uses it indiscriminately",
+        "verbal_habits": [
+          "says 'that's fair' to end a negotiation she actually lost",
+          "says 'that's between me and the ledger' about anything she won't discuss"
+        ],
+        "daily_rhythm": "is up before the household and out the door before anyone else stirs, and is usually the first one visibly tired by supper",
+        "attitude_money": "gives money away faster than she can explain why",
+        "attitude_risk": "takes risks for family she'd never take for herself",
+        "attitude_authority": "respects the office even when she can't stand the person holding it",
+        "attitude_religion": "goes to the temple out of habit more than belief, and wouldn't admit which",
+        "secret": "would forgive Kai Zeleny almost anything, and has never told her so",
+        "secret_target_agent_id": "a0166",
+        "opinions": [
+          {
+            "target_agent_id": "s0063",
+            "target_name": "Caspian Jelinek",
+            "kind": "rivalry",
+            "role": "rival",
+            "shared_fact": "Ulrike Greenhow and Caspian Jelinek chase the same customers at market.",
+            "note": "measures herself against Caspian Jelinek more than against anyone else in town",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0180",
+            "target_name": "Aldric Pemberton",
+            "kind": "friendship",
+            "role": "friend",
+            "shared_fact": "Aldric Pemberton and Ulrike Greenhow sat the same classroom at the college.",
+            "note": "has never once had to explain herself to Aldric Pemberton",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "s0035",
+            "target_name": "Magnus Kaminski",
+            "kind": "grudge",
+            "role": "accused",
+            "shared_fact": "a shouting match at the market over a scale that didn't weigh true, between Magnus Kaminski and Ulrike Greenhow.",
+            "note": "avoids the subject entirely rather than reopen it",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0166",
+            "target_name": "Kai Zeleny",
+            "kind": "rivalry",
+            "role": "rival",
+            "shared_fact": "Ulrike Greenhow and Kai Zeleny compete over whose work is faster, and won't admit it out loud.",
+            "note": "would never admit to respecting Kai Zeleny, and does",
+            "sim_amount": null
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0042",
+      "name": "Sebastian Petrov",
+      "age_years": 28.0,
+      "sex": "male",
+      "household_id": "h0066",
+      "marital_status": "married",
+      "spouse_id": "a0075",
+      "parent_ids": [],
+      "children_ids": [],
+      "sponsor_parent_id": null,
+      "occupation": "farmer",
+      "business_id": null,
+      "personality_traits": [
+        "diplomatic",
+        "ambitious"
+      ],
+      "habits": [
+        "keeps a running tally of who owes whom",
+        "tends a small herb box on the windowsill"
+      ],
+      "bio": "Sebastian Petrov is a 28-year-old resident of Kasukabe who works the farmland at the town's edge. Sebastian Petrov tried the college for a season, found it wasn't for him, and came back to the land with something to prove that he still hasn't quite proved. He shares a household with Hendrik Petrov. He wants to know everything about everyone, and has not always waited to be told. He values hospitality to any stranger who asks for it above almost anything, and fears, more than he lets on, never getting to say the thing he's been meaning to say. He keeps a running tally of who owes whom.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "curious but nosy",
+        "tension_description": "He wants to know everything about everyone, and has not always waited to be told.",
+        "formative_history": "Sebastian Petrov tried the college for a season, found it wasn't for him, and came back to the land with something to prove that he still hasn't quite proved.",
+        "values": [
+          "hospitality to any stranger who asks for it",
+          "the safety of children over any custom",
+          "never gossiping about the dead"
+        ],
+        "will_not_compromise": "will not sell out a friend to save himself trouble",
+        "fears": "never getting to say the thing he's been meaning to say",
+        "ambitions": "to build something in this town that outlasts him",
+        "scarcity_behavior": "asks the government for work before asking a neighbour for coin",
+        "stranger_treatment": "is warmer to strangers than to half the people he's known for years",
+        "family_treatment": "keeps a running, half-joking tally of favors owed within the household",
+        "competence": "works harder and longer than he strictly needs to, and knows it",
+        "blind_spot": "burns out quietly and never says so until he collapses",
+        "speech_register": "uses old-fashioned turns of phrase nobody else bothers with anymore",
+        "verbal_habits": [
+          "has a favorite saying about hard work he repeats at least once a day",
+          "says 'no offense' right before saying something offensive"
+        ],
+        "daily_rhythm": "keeps a dawn-to-dusk rhythm that hasn't changed in years, with a fixed stop at midday for whatever's in the pail that morning",
+        "attitude_money": "believes hard work should always beat luck, and resents it when it doesn't",
+        "attitude_risk": "calculates odds out loud before deciding almost anything",
+        "attitude_authority": "follows the law to the letter and no further",
+        "attitude_religion": "believes miracles are just luck that hasn't been explained yet",
+        "secret": "has never told anyone he can't actually read as well as he lets on",
+        "secret_target_agent_id": null,
+        "opinions": [
+          {
+            "target_agent_id": "s0042",
+            "target_name": "Priya Delacroix",
+            "kind": "rivalry",
+            "role": "rival",
+            "shared_fact": "Priya Delacroix and Sebastian Petrov argue prices down against each other out of pure spite.",
+            "note": "would help Priya Delacroix in a real emergency and go right back to competing after",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "s0052",
+            "target_name": "Cedric Brandt",
+            "kind": "debt",
+            "role": "owed",
+            "shared_fact": "Cedric Brandt owes Sebastian Petrov 5900 sim to buy the tools needed to start out in the trade.",
+            "note": "keeps a running tally and mentions it more than he probably should",
+            "sim_amount": 5900
+          },
+          {
+            "target_agent_id": "s0006",
+            "target_name": "Ainsley Fontaine",
+            "kind": "mentorship",
+            "role": "apprentice",
+            "shared_fact": "Ainsley Fontaine taught Sebastian Petrov reading a room before speaking.",
+            "note": "wants to make Ainsley Fontaine proud more than he wants almost anything else",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0127",
+            "target_name": "Wren Okafor",
+            "kind": "friendship",
+            "role": "friend",
+            "shared_fact": "Wren Okafor and Sebastian Petrov trade gossip and gripes every market day without fail.",
+            "note": "has never once had to explain himself to Wren Okafor",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0097",
+            "target_name": "Rosalind Quarshie",
+            "kind": "grudge",
+            "role": "aggrieved",
+            "shared_fact": "a favor asked, and flatly refused, between Sebastian Petrov and Rosalind Quarshie.",
+            "note": "has decided to let it go and mostly, not entirely, has",
+            "sim_amount": null
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0043",
+      "name": "Jovana Ravensworth",
+      "age_years": 26.0,
+      "sex": "female",
+      "household_id": "h0075",
+      "marital_status": "married",
+      "spouse_id": "a0090",
+      "parent_ids": [],
+      "children_ids": [],
+      "sponsor_parent_id": null,
+      "occupation": "day_laborer",
+      "business_id": null,
+      "personality_traits": [
+        "patient",
+        "diplomatic"
+      ],
+      "habits": [
+        "feeds the stray animals near the market",
+        "keeps meticulous notes on the weather"
+      ],
+      "bio": "Jovana Ravensworth is a 26-year-old resident of Kasukabe who takes whatever work needs doing. Jovana Ravensworth learned the trade from a parent who ran the same kind of work, and inherited both the skill and the parent's stubborn way of doing it. She shares a household with Farid Ravensworth. She believes people mean what they say, and has been burned for it more than once without learning the lesson. She values never letting pride cost a friendship above almost anything, and fears, more than she lets on, a secret getting out before she's ready. She feeds the stray animals near the market.",
+      "ablation_arm": "no_learning",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "earnest but naive",
+        "tension_description": "She believes people mean what they say, and has been burned for it more than once without learning the lesson.",
+        "formative_history": "Jovana Ravensworth learned the trade from a parent who ran the same kind of work, and inherited both the skill and the parent's stubborn way of doing it.",
+        "values": [
+          "never letting pride cost a friendship",
+          "a fair vote, whoever it favors",
+          "never letting a debtor go hungry over what's owed"
+        ],
+        "will_not_compromise": "will not let pride cost her the same friendship twice",
+        "fears": "a secret getting out before she's ready",
+        "ambitions": "to see a child through college",
+        "scarcity_behavior": "disappears for a few days rather than be seen struggling",
+        "stranger_treatment": "is the first to welcome a newcomer, loudly, at market",
+        "family_treatment": "never says a kind word at home that she says freely in public",
+        "competence": "will take any job and do it properly",
+        "blind_spot": "spreads herself thin enough that something always slips",
+        "speech_register": "swears more than she means to and apologizes for it out of habit",
+        "verbal_habits": [
+          "says 'I'm not one to gossip, but' before every piece of gossip she has",
+          "adds 'for what it's worth' before an opinion no one asked for"
+        ],
+        "daily_rhythm": "works in short, intense bursts around the market's own rhythm, then goes quiet for stretches in between",
+        "attitude_money": "would rather be poor and respected than rich and doubted",
+        "attitude_risk": "hedges every bet she makes, even the ones that don't need it",
+        "attitude_authority": "believes real authority comes from the crowd, not the office",
+        "attitude_religion": "thinks prayer is just talking to herself with better posture",
+        "secret": "doesn't believe in the temple at all, and lets everyone assume otherwise",
+        "secret_target_agent_id": null,
+        "opinions": [
+          {
+            "target_agent_id": "s0044",
+            "target_name": "Yara Kaminski",
+            "kind": "affection",
+            "role": "benefactor",
+            "shared_fact": "Jovana Ravensworth once shared a home before either could afford one of their own, for Yara Kaminski.",
+            "note": "is a little embarrassed by how often Yara Kaminski still brings it up",
+            "sim_amount": null
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0047",
+      "name": "Giselle Ingram",
+      "age_years": 50.0,
+      "sex": "female",
+      "household_id": "h0100",
+      "marital_status": "single",
+      "spouse_id": null,
+      "parent_ids": [],
+      "children_ids": [],
+      "sponsor_parent_id": null,
+      "occupation": "construction_company_owner",
+      "business_id": "b_construction",
+      "personality_traits": [
+        "diplomatic",
+        "meticulous"
+      ],
+      "habits": [
+        "reads at the cafe until closing",
+        "arrives early to everything out of habit"
+      ],
+      "bio": "Giselle Ingram is a 50-year-old resident of Kasukabe who owns and runs the town's one construction company. Giselle Ingram grew up watching the town's buildings go up one at a time and wanted, more than anything, to be one of the hands that raised them. She keeps a household alone. She does everything exactly the way she was taught, and treats any better way as a personal insult to the old one. She values standing by a friend in front of the whole town above almost anything, and fears, more than she lets on, being cheated and never knowing it. She reads at the cafe until closing.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "meticulous but slow-to-trust-new-ideas",
+        "tension_description": "She does everything exactly the way she was taught, and treats any better way as a personal insult to the old one.",
+        "formative_history": "Giselle Ingram grew up watching the town's buildings go up one at a time and wanted, more than anything, to be one of the hands that raised them.",
+        "values": [
+          "standing by a friend in front of the whole town",
+          "coin before family, when it truly must be",
+          "the safety of children over any custom"
+        ],
+        "will_not_compromise": "will not sell out a friend to save herself trouble",
+        "fears": "being cheated and never knowing it",
+        "ambitions": "to win, just once, against the odds everyone gave her",
+        "scarcity_behavior": "asks for work before she asks for charity",
+        "stranger_treatment": "keeps strangers at arm's length until they've proven themselves once",
+        "family_treatment": "keeps family business strictly separate from her trade, even when it costs her",
+        "competence": "can eyeball a bill of materials within a few percent, no measuring",
+        "blind_spot": "underestimates how long a crew actually needs",
+        "speech_register": "narrates her own actions out loud without noticing she's doing it",
+        "verbal_habits": [
+          "says 'that's fair' to end a negotiation she actually lost",
+          "says 'no offense' right before saying something offensive"
+        ],
+        "daily_rhythm": "keeps a crew's hours: an early, loud start, a hard midday break, and a walk home too tired to talk much",
+        "attitude_money": "thinks money's just a tool and refuses to get sentimental about it",
+        "attitude_risk": "has been burned once and never forgets it",
+        "attitude_authority": "trusts the complaint ledger more than any sitting minister",
+        "attitude_religion": "thinks religion is a private matter and gets prickly when it's made public",
+        "secret": "has never told anyone she can't actually read as well as she lets on",
+        "secret_target_agent_id": null,
+        "opinions": [
+          {
+            "target_agent_id": "a0121",
+            "target_name": "Arjun Holloway",
+            "kind": "colleague",
+            "role": "colleague",
+            "shared_fact": "Giselle Ingram and Arjun Holloway work together at Kasukabe Construction Co..",
+            "note": "finds Arjun Holloway a little too proud for her own good",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0204",
+            "target_name": "Idris Solano",
+            "kind": "colleague",
+            "role": "colleague",
+            "shared_fact": "Giselle Ingram and Idris Solano work together at Kasukabe Construction Co..",
+            "note": "keeps the peace with Idris Solano by saying less than she thinks",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0068",
+            "target_name": "Mireille Jarrah",
+            "kind": "colleague",
+            "role": "colleague",
+            "shared_fact": "Giselle Ingram and Mireille Jarrah work together at Kasukabe Construction Co..",
+            "note": "privately thinks she could run the place better than Mireille Jarrah does",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0143",
+            "target_name": "Selene Renner",
+            "kind": "colleague",
+            "role": "colleague",
+            "shared_fact": "Giselle Ingram and Selene Renner work together at Kasukabe Construction Co..",
+            "note": "finds Selene Renner a little too proud for her own good",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0102",
+            "target_name": "Greta Quarshie",
+            "kind": "affection",
+            "role": "benefactor",
+            "shared_fact": "Giselle Ingram once walked the whole way to fetch a doctor when it mattered, for Greta Quarshie.",
+            "note": "did it without expecting anything and still hasn't taken anything back",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0248",
+            "target_name": "Ren Vance",
+            "kind": "mentorship",
+            "role": "apprentice",
+            "shared_fact": "Ren Vance taught Giselle Ingram running an honest scale.",
+            "note": "owes Ren Vance more than she has ever properly thanked her for",
+            "sim_amount": null
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0064",
+      "name": "Lior Jarrah",
+      "age_years": 30.0,
+      "sex": "male",
+      "household_id": "h0119",
+      "marital_status": "single",
+      "spouse_id": null,
+      "parent_ids": [],
+      "children_ids": [],
+      "sponsor_parent_id": null,
+      "occupation": "pharmacist",
+      "business_id": "b_pharmacy",
+      "personality_traits": [
+        "self-deprecating",
+        "steady"
+      ],
+      "habits": [
+        "tells the same three stories at every gathering",
+        "collects gossip like other people collect coins"
+      ],
+      "bio": "Lior Jarrah is a 30-year-old resident of Kasukabe who keeps the pharmacy stocked. Lior Jarrah took up the trade after losing someone he loved to an illness the town's medicine couldn't touch, and has never stopped feeling the edge of that limit. He keeps a household alone. He is the softest touch in his household, and half the town knows exactly how to take advantage of it. He values the town's law over any private grudge above almost anything, and fears, more than he lets on, trusting the wrong person with everything. He tells the same three stories at every gathering.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "gentle but easily-used",
+        "tension_description": "He is the softest touch in his household, and half the town knows exactly how to take advantage of it.",
+        "formative_history": "Lior Jarrah took up the trade after losing someone he loved to an illness the town's medicine couldn't touch, and has never stopped feeling the edge of that limit.",
+        "values": [
+          "the town's law over any private grudge",
+          "a promise kept even when it costs",
+          "coin before family, when it truly must be"
+        ],
+        "will_not_compromise": "will not marry, or has not married, for anything but real regard",
+        "fears": "trusting the wrong person with everything",
+        "ambitions": "to make peace with an old rival before it's too late",
+        "scarcity_behavior": "starts calling in every debt he's ever quietly forgiven",
+        "stranger_treatment": "treats every stranger as a rival until proven otherwise",
+        "family_treatment": "is the softest he ever gets, with family, and hides it from everyone else",
+        "competence": "never once gets a dose wrong, not in years",
+        "blind_spot": "is overly cautious with anything past a short ailment",
+        "speech_register": "talks in long, winding stories that eventually arrive at the point",
+        "verbal_habits": [
+          "calls everyone younger 'youngster' regardless of the actual gap",
+          "counts on his fingers when talking about money, out loud"
+        ],
+        "daily_rhythm": "keeps steady shop hours and a slower, more careful pace than most of the town's other trades",
+        "attitude_money": "would rather owe a favor than owe coin",
+        "attitude_risk": "takes risks for family he'd never take for himself",
+        "attitude_authority": "thinks rules are for people who can't be trusted to know better, himself excluded",
+        "attitude_religion": "thinks the temple needs a keeper before it needs another believer",
+        "secret": "has been quietly pretending to believe a family story he knows isn't true",
+        "secret_target_agent_id": null,
+        "opinions": [
+          {
+            "target_agent_id": "a0230",
+            "target_name": "Saoirse Nakamura",
+            "kind": "grudge",
+            "role": "accused",
+            "shared_fact": "being passed over for a job everyone assumed would go the other way, between Saoirse Nakamura and Lior Jarrah.",
+            "note": "avoids the subject entirely rather than reopen it",
+            "sim_amount": null
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0075",
+      "name": "Hendrik Petrov",
+      "age_years": 28.0,
+      "sex": "male",
+      "household_id": "h0066",
+      "marital_status": "married",
+      "spouse_id": "a0042",
+      "parent_ids": [],
+      "children_ids": [],
+      "sponsor_parent_id": null,
+      "occupation": "artisan",
+      "business_id": null,
+      "personality_traits": [
+        "watchful",
+        "steady"
+      ],
+      "habits": [
+        "keeps a running tally of who owes whom",
+        "never leaves a debt unpaid past a week"
+      ],
+      "bio": "Hendrik Petrov is a 28-year-old resident of Kasukabe who crafts goods to sell around town. Hendrik Petrov came to Kasukabe 24 years ago from the old garrison town north of here with a cart, a little stock, and nothing else, and built the trade from that cart alone. He shares a household with Sebastian Petrov. He is the softest touch in his household, and half the town knows exactly how to take advantage of it. He values mercy for a first offense above almost anything, and fears, more than he lets on, losing the one thing he built alone. He keeps a running tally of who owes whom.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "gentle but easily-used",
+        "tension_description": "He is the softest touch in his household, and half the town knows exactly how to take advantage of it.",
+        "formative_history": "Hendrik Petrov came to Kasukabe 24 years ago from the old garrison town north of here with a cart, a little stock, and nothing else, and built the trade from that cart alone.",
+        "values": [
+          "mercy for a first offense",
+          "a day's work for a day's pay, no more owed either way",
+          "a clean ledger over a comfortable one"
+        ],
+        "will_not_compromise": "will not let a child go to bed hungry in his own house, whoever's child it is",
+        "fears": "losing the one thing he built alone",
+        "ambitions": "to win a seat at town hall on his own name, not a party's",
+        "scarcity_behavior": "asks the government for work before asking a neighbour for coin",
+        "stranger_treatment": "treats every stranger as a rival until proven otherwise",
+        "family_treatment": "is fiercely private about family trouble, however loud the fights get behind closed doors",
+        "competence": "has an eye for quality no one had to teach him",
+        "blind_spot": "is hard on anyone who doesn't share the eye",
+        "speech_register": "over-explains simple things and under-explains complicated ones",
+        "verbal_habits": [
+          "says 'I'm not one to gossip, but' before every piece of gossip he has",
+          "ends arguments with 'that's the last I'll say on it,' and rarely means it"
+        ],
+        "daily_rhythm": "keeps irregular hours, chasing whatever work or trade is actually available on a given day",
+        "attitude_money": "trusts a handshake over a contract, money or not",
+        "attitude_risk": "won't gamble, not even at cards, not even for fun",
+        "attitude_authority": "trusts the government about as far as he can throw the town hall",
+        "attitude_religion": "has strong opinions about who should keep the temple and no plan to run for it",
+        "secret": "hopes, privately, to leave Kasukabe someday, and has never said so out loud",
+        "secret_target_agent_id": null,
+        "opinions": [
+          {
+            "target_agent_id": "a0137",
+            "target_name": "Percival Isherwood",
+            "kind": "grudge",
+            "role": "aggrieved",
+            "shared_fact": "a vote at town hall that broke a promise, between Hendrik Petrov and Percival Isherwood.",
+            "note": "brings it up more than he realizes he does",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0086",
+            "target_name": "Ezra Okafor",
+            "kind": "debt",
+            "role": "ower",
+            "shared_fact": "Hendrik Petrov owes Ezra Okafor 1100 sim when the well needed digging.",
+            "note": "has half-convinced himself it's smaller than it actually is",
+            "sim_amount": 1100
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0090",
+      "name": "Farid Ravensworth",
+      "age_years": 30.0,
+      "sex": "male",
+      "household_id": "h0075",
+      "marital_status": "married",
+      "spouse_id": "a0043",
+      "parent_ids": [],
+      "children_ids": [],
+      "sponsor_parent_id": null,
+      "occupation": "grocery_store_owner",
+      "business_id": "b_grocery",
+      "personality_traits": [
+        "self-deprecating",
+        "resourceful"
+      ],
+      "habits": [
+        "practices sums and figures for fun",
+        "collects gossip like other people collect coins"
+      ],
+      "bio": "Farid Ravensworth is a 30-year-old resident of Kasukabe who owns the grocery store. Farid Ravensworth started clerking here as a way to earn a little coin on the side, and simply never found a reason to leave. He shares a household with Jovana Ravensworth. He notices everything before anyone else does, and assumes the worst of most of it. He values never lying to a child, even to comfort them above almost anything, and fears, more than he lets on, the day his hands are too old for the work. He practices sums and figures for fun.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "watchful but suspicious",
+        "tension_description": "He notices everything before anyone else does, and assumes the worst of most of it.",
+        "formative_history": "Farid Ravensworth started clerking here as a way to earn a little coin on the side, and simply never found a reason to leave.",
+        "values": [
+          "never lying to a child, even to comfort them",
+          "honest weights and honest measures",
+          "mercy for a first offense"
+        ],
+        "will_not_compromise": "will not let a grudge outlive the person who caused it",
+        "fears": "the day his hands are too old for the work",
+        "ambitions": "to marry, or to have married, for real regard, not convenience",
+        "scarcity_behavior": "gets sharper-tongued with everyone, family included",
+        "stranger_treatment": "treats every stranger as a rival until proven otherwise",
+        "family_treatment": "is harsher with family than with strangers, and knows it",
+        "competence": "keeps the books to the coin, every single night",
+        "blind_spot": "is bad at writing off a loss even when it's the right call",
+        "speech_register": "talks with his hands as much as his mouth",
+        "verbal_habits": [
+          "has a nervous laugh that shows up at the worst possible moments",
+          "starts hard conversations with a joke first"
+        ],
+        "daily_rhythm": "keeps shop hours built entirely around the town's habits, not his own, and has stopped minding",
+        "attitude_money": "is embarrassed by wealth and hides it when he has any",
+        "attitude_risk": "trusts the old, safe way over any new idea, most of the time",
+        "attitude_authority": "thinks rules are for people who can't be trusted to know better, himself excluded",
+        "attitude_religion": "goes to the temple out of habit more than belief, and wouldn't admit which",
+        "secret": "is not actually sure he loves his trade, only that he's good at it",
+        "secret_target_agent_id": null,
+        "opinions": [
+          {
+            "target_agent_id": "a0176",
+            "target_name": "Delphine Quintero",
+            "kind": "colleague",
+            "role": "colleague",
+            "shared_fact": "Farid Ravensworth and Delphine Quintero work together at Kasukabe Grocery.",
+            "note": "is grateful for the steady work Delphine Quintero gives him",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0185",
+            "target_name": "Idris Mercer",
+            "kind": "friendship",
+            "role": "friend",
+            "shared_fact": "Idris Mercer and Farid Ravensworth sat the same classroom at the college.",
+            "note": "would drop almost anything if Idris Mercer actually needed him",
+            "sim_amount": null
+          },
+          {
+            "target_agent_id": "a0110",
+            "target_name": "Gideon Novak",
+            "kind": "debt",
+            "role": "ower",
+            "shared_fact": "Farid Ravensworth owes Gideon Novak 4400 sim to buy the tools needed to start out in the trade.",
+            "note": "has been quietly chipping away at it for longer than he'd like to admit",
+            "sim_amount": 4400
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    },
+    {
+      "agent_id": "a0176",
+      "name": "Delphine Quintero",
+      "age_years": 29.0,
+      "sex": "female",
+      "household_id": "h0132",
+      "marital_status": "single",
+      "spouse_id": null,
+      "parent_ids": [],
+      "children_ids": [],
+      "sponsor_parent_id": null,
+      "occupation": "grocery_clerk",
+      "business_id": "b_grocery",
+      "personality_traits": [
+        "wry",
+        "industrious"
+      ],
+      "habits": [
+        "reads at the cafe until closing",
+        "feeds the stray animals near the market"
+      ],
+      "bio": "Delphine Quintero is a 29-year-old resident of Kasukabe who clerks at the grocery store. Delphine Quintero started clerking here as a way to earn a little coin on the side, and simply never found a reason to leave. She keeps a household alone. She works harder than anyone she knows, and the people waiting at home have learned not to expect her for supper. She values never lying to a child, even to comfort them above almost anything, and fears, more than she lets on, being forgotten the day she stops being useful. She reads at the cafe until closing.",
+      "ablation_arm": "full",
+      "usd_wallet_cents": 200,
+      "starting_sim_balance": 5000,
+      "persona": {
+        "internal_tension": "industrious but neglectful",
+        "tension_description": "She works harder than anyone she knows, and the people waiting at home have learned not to expect her for supper.",
+        "formative_history": "Delphine Quintero started clerking here as a way to earn a little coin on the side, and simply never found a reason to leave.",
+        "values": [
+          "never lying to a child, even to comfort them",
+          "a day's work for a day's pay, no more owed either way",
+          "never letting a debtor go hungry over what's owed"
+        ],
+        "will_not_compromise": "will not train someone she doesn't trust in a trade secret",
+        "fears": "being forgotten the day she stops being useful",
+        "ambitions": "to see the town's charter changed for the better",
+        "scarcity_behavior": "gets superstitious about it, blaming a bad omen instead of bad luck",
+        "stranger_treatment": "talks a stranger's ear off within minutes, whether they like it or not",
+        "family_treatment": "never says a kind word at home that she says freely in public",
+        "competence": "keeps the books to the coin, every single night",
+        "blind_spot": "is bad at writing off a loss even when it's the right call",
+        "speech_register": "talks with her hands as much as her mouth",
+        "verbal_habits": [
+          "calls bad luck 'a debt coming due' instead of naming it plainly",
+          "ends arguments with 'that's the last I'll say on it,' and rarely means it"
+        ],
+        "daily_rhythm": "spends the early morning stocking shelves alone before the first customer ever walks in",
+        "attitude_money": "treats every price as a starting offer, always",
+        "attitude_risk": "loves a gamble more than she loves winning one",
+        "attitude_authority": "respects the office even when she can't stand the person holding it",
+        "attitude_religion": "keeps a small private shrine of her own making, told to no one",
+        "secret": "thinks Delphine Osei-Bonsu is the only one in town who'd actually understand, and has never tested it",
+        "secret_target_agent_id": "a0158",
+        "opinions": [
+          {
+            "target_agent_id": "a0090",
+            "target_name": "Farid Ravensworth",
+            "kind": "colleague",
+            "role": "colleague",
+            "shared_fact": "Farid Ravensworth and Delphine Quintero work together at Kasukabe Grocery.",
+            "note": "admires Farid Ravensworth's work ethic and not much else about her",
+            "sim_amount": null
+          }
+        ]
+      },
+      "is_minor": false,
+      "opening_stock": {
+        "bread": 2,
+        "apple": 1
+      }
+    }
+  ],
+  "households": [
+    {
+      "household_id": "h0066",
+      "member_ids": [
+        "a0075",
+        "a0042"
+      ],
+      "formed_at_hours": 0.0
+    },
+    {
+      "household_id": "h0075",
+      "member_ids": [
+        "a0090",
+        "a0043"
+      ],
+      "formed_at_hours": 0.0
+    },
+    {
+      "household_id": "h0100",
+      "member_ids": [
+        "a0047"
+      ],
+      "formed_at_hours": 0.0
+    },
+    {
+      "household_id": "h0119",
+      "member_ids": [
+        "a0064"
+      ],
+      "formed_at_hours": 0.0
+    },
+    {
+      "household_id": "h0132",
+      "member_ids": [
+        "a0176"
+      ],
+      "formed_at_hours": 0.0
+    },
+    {
+      "household_id": "h0146",
+      "member_ids": [
+        "a0040"
+      ],
+      "formed_at_hours": 0.0
+    }
+  ],
+  "construction_company": {
+    "business_id": "b_construction",
+    "name": "Kasukabe Construction Co.",
+    "owner_agent_id": "a0047",
+    "hand_agent_ids": [],
+    "starting_sim_balance": 20000,
+    "opening_stock": {
+      "timber": 60,
+      "planks": 24,
+      "iron_ore": 40,
+      "iron_tool": 4
+    },
+    "opening_prices": {
+      "timber": {
+        "bid": 6,
+        "ask": 8
+      },
+      "planks": {
+        "ask": 10,
+        "bid": 8
+      },
+      "iron_ore": {
+        "bid": 5,
+        "ask": 7
+      },
+      "iron_tool": {
+        "ask": 24,
+        "bid": 18
+      },
+      "stone": {
+        "bid": 4
+      }
+    }
+  },
+  "small_businesses": [
+    {
+      "business_id": "b_grocery",
+      "name": "Kasukabe Grocery",
+      "business_type": "grocery_store",
+      "owner_agent_id": "a0090",
+      "employee_agent_ids": [
+        "a0176"
+      ],
+      "starting_sim_balance": 20000,
+      "opening_stock": {
+        "bread": 8,
+        "apple": 20,
+        "carrot": 20,
+        "potato": 16,
+        "milk": 10
+      },
+      "opening_prices": {
+        "bread": {
+          "ask": 12,
+          "bid": 9
+        },
+        "apple": {
+          "ask": 4,
+          "bid": 2
+        },
+        "carrot": {
+          "ask": 4,
+          "bid": 2
+        },
+        "potato": {
+          "ask": 4,
+          "bid": 2
+        },
+        "milk": {
+          "ask": 5,
+          "bid": 3
+        },
+        "egg": {
+          "ask": 4,
+          "bid": 2
+        },
+        "cabbage": {
+          "ask": 4,
+          "bid": 2
+        },
+        "tomato": {
+          "ask": 4,
+          "bid": 2
+        },
+        "fish": {
+          "ask": 7,
+          "bid": 5
+        },
+        "wheat": {
+          "ask": 6,
+          "bid": 4
+        },
+        "flour": {
+          "ask": 8,
+          "bid": 6
+        }
+      }
+    },
+    {
+      "business_id": "b_pharmacy",
+      "name": "Kasukabe Pharmacy",
+      "business_type": "pharmacy",
+      "owner_agent_id": "a0064",
+      "employee_agent_ids": [],
+      "starting_sim_balance": 20000,
+      "opening_prices": {
+        "milk": {
+          "ask": 5,
+          "bid": 3
+        },
+        "egg": {
+          "ask": 4,
+          "bid": 2
+        },
+        "apple": {
+          "ask": 4,
+          "bid": 2
+        },
+        "bread": {
+          "ask": 12,
+          "bid": 9
+        },
+        "carrot": {
+          "ask": 4,
+          "bid": 2
+        },
+        "potato": {
+          "ask": 4,
+          "bid": 2
+        },
+        "wheat": {
+          "ask": 6,
+          "bid": 4
+        },
+        "flour": {
+          "ask": 8,
+          "bid": 6
+        }
+      },
+      "opening_stock": {
+        "milk": 10,
+        "egg": 12,
+        "apple": 12,
+        "bread": 6
+      }
+    }
+  ],
+  "control_businesses": [
+    {
+      "business_id": "cb01",
+      "name": "Ration Bakery",
+      "business_type": "bakery",
+      "pricing_strategy": "cost_plus_10pct",
+      "starting_sim_balance": 20000
+    },
+    {
+      "business_id": "cb02",
+      "name": "Steady General Store",
+      "business_type": "general_store",
+      "pricing_strategy": "undercut_min_price_5pct",
+      "starting_sim_balance": 20000
+    },
+    {
+      "business_id": "cb03",
+      "name": "Farm Cooperative",
+      "business_type": "farm_coop",
+      "pricing_strategy": "fixed_price_seasonal",
+      "starting_sim_balance": 20000
+    },
+    {
+      "business_id": "cb04",
+      "name": "Old Anvil Smithy",
+      "business_type": "smithy",
+      "pricing_strategy": "cost_plus_20pct",
+      "starting_sim_balance": 20000
+    },
+    {
+      "business_id": "cb05",
+      "name": "Riverside Lumber Mill",
+      "business_type": "lumber_mill",
+      "pricing_strategy": "fixed_price_seasonal",
+      "starting_sim_balance": 20000
+    },
+    {
+      "business_id": "cb06",
+      "name": "Plainstitch Tailor",
+      "business_type": "tailor",
+      "pricing_strategy": "cost_plus_15pct",
+      "starting_sim_balance": 20000
+    },
+    {
+      "business_id": "cb07",
+      "name": "Wayfarer Inn",
+      "business_type": "inn",
+      "pricing_strategy": "dynamic_occupancy_pricing",
+      "starting_sim_balance": 20000
+    },
+    {
+      "business_id": "cb08",
+      "name": "Kasukabe Transport",
+      "business_type": "transport",
+      "pricing_strategy": "distance_based_flat_rate",
+      "starting_sim_balance": 20000
+    },
+    {
+      "business_id": "cb09",
+      "name": "Mutual Bank Stall",
+      "business_type": "bank_stall",
+      "pricing_strategy": "fixed_spread_lending",
+      "starting_sim_balance": 20000
+    },
+    {
+      "business_id": "cb10",
+      "name": "Open Market Stall",
+      "business_type": "market_stall",
+      "pricing_strategy": "undercut_min_price_10pct",
+      "starting_sim_balance": 20000
+    }
+  ],
+  "ablation_summary": {
+    "full": 7,
+    "no_reflection": 0,
+    "no_learning": 1,
+    "deepseek_locked": 0
+  }
+}

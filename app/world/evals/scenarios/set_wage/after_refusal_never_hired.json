@@ -1,0 +1,17 @@
+{
+  "tool": "set_wage",
+  "kind": "after_refusal",
+  "_why": "The refusal names `hire_employee`: a promise without a grant is refused.",
+  "resident": "n05",
+  "location": "Kasukabe Town Square",
+  "inventory": {},
+  "sim": 1250,
+  "people_here": [
+    "n14"
+  ],
+  "recent_speech": [],
+  "open_question_to_me": "You called set_wage and the world refused: 'set_wage: Aldous Vance is not an employee of Thornes Bakery. `hire_employee` grants that first.'",
+  "expect": {
+    "verb": "hire_employee"
+  }
+}

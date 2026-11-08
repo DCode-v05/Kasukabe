@@ -1,0 +1,15 @@
+{
+  "tool": "note_belief",
+  "kind": "positive",
+  "_why": "Run 25: Perrin found 400 sim his mother had set aside, put it back exactly, and wrote it down - \"Mother hid 400 sim from household accounts.\" The one time a resident recorded a fact about another person rather than about a refusal.",
+  "resident": "n04",
+  "location": "Oak Hill College",
+  "inventory": {},
+  "sim": 282,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You have found 400 sim your mother set aside and kept out of the household accounts. You put it back exactly where it was.",
+  "expect": {
+    "verb": "note_belief"
+  }
+}

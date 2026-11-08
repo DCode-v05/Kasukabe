@@ -1,0 +1,17 @@
+{
+  "tool": "revise_tool",
+  "kind": "after_refusal",
+  "_why": "The commonest revision failure is the commonest filing failure: a step naming something the town does not have. The refusal names the nearest real tool, and the question is whether the second attempt lands.",
+  "resident": "n09",
+  "location": "business:b_mill",
+  "inventory": {
+    "wheat": 10
+  },
+  "sim": 800,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You called revise_tool and the world refused: no tool named 'mill_flour' - the nearest tools are: craft, harvest, fell_timber. The rest of your steps were accepted as written.",
+  "expect": {
+    "verb": "revise_tool"
+  }
+}

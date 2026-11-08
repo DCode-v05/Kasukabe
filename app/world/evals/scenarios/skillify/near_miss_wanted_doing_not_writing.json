@@ -1,0 +1,17 @@
+{
+  "tool": "skillify",
+  "kind": "near_miss",
+  "_why": "`skillify` has the only 0% reach this project ever measured against a real model (run 22, docs/runs/run-22-report.md:116) and had one scenario of the four kinds the spec asks for. This is the near miss: the acts are wanted NOW, so writing a procedure is the wrong answer and `do_in_order` is the right one. A verb with a single positive scenario measures eagerness.",
+  "resident": "n03",
+  "location": "business:b_bakery",
+  "inventory": {
+    "flour": 8
+  },
+  "sim": 900,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "The bakery is open, you are holding the flour, and you want bread baked and on the shelf before the street fills up. Nobody has asked you to teach anything.",
+  "expect": {
+    "verb": "do_in_order"
+  }
+}

@@ -1,0 +1,27 @@
+
+==================================================================
+RUN data/run6.db
+==================================================================
+calls 476  ok 476  spend $3.09  last tick 0
+utterances 39
+
+GATE                      VALUE               RESULT
+G1 reply rate             14/31 = 45%         FAIL
+G2 exchanges 4+ turns     3                   PASS
+G3 group (3+ speakers)    2                   PASS
+G4 settlements            0                   FAIL
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        288/385 = 75%       PASS
+
+tool calls: {'world_move': 82, 'world_look_around': 61, 'world_say': 39, 'world_rest': 35, 'world_find_people': 15, 'world_fell_timber': 13, 'world_describe_place': 7, 'world_describe_primitives': 6, 'world_craft': 5, 'world_list_places': 5, 'world_harvest': 5, 'world_mine': 3}
+
+largest gathering: 6 speakers at home:h_quarry, ticks 38-53
+   Ainsley Holloway -> aloud: Morning, all. The larder's bare and the day's begun. Anyone here holding food they'd part with, or shall I go 
+   Perrin Holloway -> Ainsley Holloway: I couldn't find breakfast. Went to the college, the cafe, the market, the farmland. Everyone's somewhere else,
+   Perrin Holloway -> Ainsley Holloway: I can work. Tell me what's needed and where. But I need something first—I can't calculate on an empty stomach.
+   Perrin Holloway -> Nell Holloway: Nell. I'm hungry, I've spent the morning walking, I have no food. Do you have anything I could eat? I'll pay b
+   Nell Holloway -> Ainsley Holloway: I've got three pieces of furniture. Cost me walks and work to make them. Supply store was empty when I went. W
+   Perrin Holloway -> Tobias Holloway: Tobias. You're a day laborer—where's the work today? What can a hungry student do to earn bread? Don't need ha
+
+FAILED: G1 reply rate, G4 settlements
+

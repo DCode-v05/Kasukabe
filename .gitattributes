@@ -1,0 +1,14 @@
+# Shell scripts are checked out LF on every platform.
+#
+# The launchers run on Linux - the team box, and the VM a paid run uses -
+# but this repository is also worked on from Windows, where git's default
+# `core.autocrlf` rewrites them on checkout. bash does not strip the
+# carriage return: it reads the shebang as `/usr/bin/env bash\r` and the
+# run dies with `bad interpreter: no such file or directory`, which names
+# a file that plainly exists and sends the reader looking in the wrong
+# place entirely.
+#
+# Scoped to *.sh on purpose. A blanket `* text=auto` would renormalise the
+# whole tree the next time anybody touches it, and a diff that large buries
+# whatever change it travelled with.
+*.sh text eol=lf

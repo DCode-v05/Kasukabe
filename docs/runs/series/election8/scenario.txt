@@ -1,0 +1,6 @@
+Scenario **election-at-dawn-8** - Eight residents, a government already sitting, and an election held in one game-day: candidacy at dawn, the count at dusk, then the day boundary that charges the first tax and pays the first wages. The whole checklist question - does a town elect a government, and does that government do anything - inside $15-20.
+Cast: `world/genesis_8_funded.json`.
+The world starts at tick 36 and stops at tick 150.
+The election opens at tick 36: candidacy closes 60, voting opens 84, and the vote is counted at tick 108.
+Already in office when it starts: prime minister a0047; ministers a0090, a0042 - they may stand again, against anyone who stands for the first time.
+Spend cap $19.00.

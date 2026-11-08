@@ -1,0 +1,1114 @@
+2026-09-29 13:54:48,218 WARNING kasukabe.genesis_runner Ville assets not at /home/team/kasukabe/smallville/environment/frontend_server/static_dirs/assets/the_ville: booting without a MapService. The town cannot grow and a completed building cannot become a walkable place (GROW-06 degrades, it does not fail).
+2026-09-29 13:54:48,219 WARNING world.tools.bootstrap Ville asset directory not found at /home/team/kasukabe/smallville/environment/frontend_server/static_dirs/assets/the_ville - build_world() is booting with WorldState.movement = None; `move` will keep publishing an instant location jump instead of a real walked route until this directory is present.
+2026-09-29 13:54:48,246 INFO kasukabe.genesis_runner run 1790690088-a2712b5c: app=unknown engine=unknown genesis=dca100a1cc4a
+2026-09-29 13:54:48,246 INFO kasukabe.genesis_runner world-side persistence attached: agents, utterances, transactions
+2026-09-29 13:54:48,294 INFO kasukabe.genesis_runner resuming from checkpoint at tick 432
+2026-09-29 13:54:48,336 INFO world.wiring agent n01 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,337 INFO world.wiring agent n02 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,337 INFO world.wiring agent n03 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,338 INFO world.wiring agent n04 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,338 INFO world.wiring agent n05 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,339 INFO world.wiring agent n06 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,340 INFO world.wiring agent n07 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,340 INFO world.wiring agent n08 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,341 INFO world.wiring agent n09 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,341 INFO world.wiring agent n10 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,342 INFO world.wiring agent n11 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,342 INFO world.wiring agent n12 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,343 INFO world.wiring agent n13 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,343 INFO world.wiring agent n14 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,344 INFO world.wiring agent n15 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,344 INFO world.wiring agent n16 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,344 INFO world.wiring agent n17 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,345 INFO world.wiring agent n18 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,345 INFO world.wiring agent n19 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,345 INFO world.wiring agent n20 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,345 INFO world.wiring agent n21 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,346 INFO world.wiring agent n22 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,346 INFO world.wiring agent n23 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,346 INFO world.wiring agent n24 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,346 INFO world.wiring agent n25 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,346 INFO world.wiring agent n26 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,346 INFO world.wiring agent n27 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,347 INFO world.wiring agent n28 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,347 INFO world.wiring agent n29 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,347 INFO world.wiring agent n30 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,347 INFO world.wiring agent n31 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,347 INFO world.wiring agent n32 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,347 INFO world.wiring agent n33 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,347 INFO world.wiring agent n34 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,348 INFO world.wiring agent n35 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,348 INFO world.wiring agent n36 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,348 INFO world.wiring agent n37 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,348 INFO world.wiring agent n38 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,348 INFO world.wiring agent n39 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,348 INFO world.wiring agent n40 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,349 INFO world.wiring agent n41 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,349 INFO world.wiring agent n42 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,349 INFO world.wiring agent n43 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,349 INFO world.wiring agent n44 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,349 INFO world.wiring agent n45 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,349 INFO world.wiring agent n46 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,349 INFO world.wiring agent n47 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,350 INFO world.wiring agent n48 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,350 INFO world.wiring agent n49 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,350 INFO world.wiring agent n50 was already in the trace store (a re-run); registering it rather than losing every later row that names it (CORE-13)
+2026-09-29 13:54:48,351 INFO kasukabe.genesis_runner registered the restored cast with the trace recorder: 50 of 50 residents
+2026-09-29 13:54:48,351 WARNING kasukabe.genesis_runner KASUKABE_ELECTION_NOW: election election-19330570e2fe runs now over 9 ticks - candidacy 432-435, voting 438-441, counted 441. An operator moved and shortened this election.
+2026-09-29 13:54:48,410 INFO httpx HTTP Request: GET http://127.0.0.1:8200/admin/lanes "HTTP/1.1 200 OK"
+2026-09-29 13:54:48,410 INFO kasukabe.genesis_runner pacing ticks at 2.37s: 50 agents x 0.30 due = 15 calls/tick against 1900 RPM of broker capacity (~380 RPM requested)
+2026-09-29 13:54:48,412 INFO kasukabe.genesis_runner run manifest: data/checkpoints-fifty-day2-60usd-20260929/run_manifest.json (run_id=1790690088-a2712b5c)
+2026-09-29 13:54:48,413 WARNING kasukabe.genesis_runner OPERATOR_TOKEN not set - generated an ephemeral admin token for this genesis run's embedded world app. Ephemeral operator token: 39dl0Pv4KWXvXEybscehwZ3C4rRhMbCZGTTD1HEikbY
+2026-09-29 13:54:48,548 INFO kasukabe.genesis_runner embedded world server listening on 127.0.0.1:8100
+2026-09-29 13:54:48,549 INFO kasukabe.genesis_runner per-agent CPU and memory -> ../docs/runs/series/fifty-day2-60usd-20260929/resources.jsonl
+2026-09-29 13:54:48,563 INFO kasukabe.genesis_runner run_genesis: 50 engines need ~4850 MB, 56721 MB free - fits
+2026-09-29 13:54:51,189 INFO kasukabe.genesis_runner launched 50 of 50 agent units (mock_mode=False)
+2026-09-29 13:54:51,231 INFO httpx HTTP Request: GET http://127.0.0.1:9100/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,232 INFO httpx HTTP Request: GET http://127.0.0.1:9101/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,232 INFO httpx HTTP Request: GET http://127.0.0.1:9102/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,233 INFO httpx HTTP Request: GET http://127.0.0.1:9104/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,233 INFO httpx HTTP Request: GET http://127.0.0.1:9103/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,234 INFO httpx HTTP Request: GET http://127.0.0.1:9105/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,234 INFO httpx HTTP Request: GET http://127.0.0.1:9107/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,234 INFO httpx HTTP Request: GET http://127.0.0.1:9106/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,235 INFO httpx HTTP Request: GET http://127.0.0.1:9108/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,235 INFO httpx HTTP Request: GET http://127.0.0.1:9109/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,236 INFO httpx HTTP Request: GET http://127.0.0.1:9110/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,236 INFO httpx HTTP Request: GET http://127.0.0.1:9112/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,237 INFO httpx HTTP Request: GET http://127.0.0.1:9111/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,237 INFO httpx HTTP Request: GET http://127.0.0.1:9113/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,237 INFO httpx HTTP Request: GET http://127.0.0.1:9116/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,238 INFO httpx HTTP Request: GET http://127.0.0.1:9114/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,238 INFO httpx HTTP Request: GET http://127.0.0.1:9115/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,239 INFO httpx HTTP Request: GET http://127.0.0.1:9117/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,239 INFO httpx HTTP Request: GET http://127.0.0.1:9118/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,239 INFO httpx HTTP Request: GET http://127.0.0.1:9120/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,240 INFO httpx HTTP Request: GET http://127.0.0.1:9119/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,240 INFO httpx HTTP Request: GET http://127.0.0.1:9121/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,241 INFO httpx HTTP Request: GET http://127.0.0.1:9122/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,241 INFO httpx HTTP Request: GET http://127.0.0.1:9124/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,242 INFO httpx HTTP Request: GET http://127.0.0.1:9123/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,242 INFO httpx HTTP Request: GET http://127.0.0.1:9125/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,242 INFO httpx HTTP Request: GET http://127.0.0.1:9126/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,243 INFO httpx HTTP Request: GET http://127.0.0.1:9127/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,243 INFO httpx HTTP Request: GET http://127.0.0.1:9129/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,244 INFO httpx HTTP Request: GET http://127.0.0.1:9130/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,244 INFO httpx HTTP Request: GET http://127.0.0.1:9128/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,244 INFO httpx HTTP Request: GET http://127.0.0.1:9132/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,245 INFO httpx HTTP Request: GET http://127.0.0.1:9131/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,245 INFO httpx HTTP Request: GET http://127.0.0.1:9133/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,246 INFO httpx HTTP Request: GET http://127.0.0.1:9134/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,246 INFO httpx HTTP Request: GET http://127.0.0.1:9136/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,246 INFO httpx HTTP Request: GET http://127.0.0.1:9135/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,247 INFO httpx HTTP Request: GET http://127.0.0.1:9138/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,247 INFO httpx HTTP Request: GET http://127.0.0.1:9137/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,248 INFO httpx HTTP Request: GET http://127.0.0.1:9139/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,248 INFO httpx HTTP Request: GET http://127.0.0.1:9141/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,248 INFO httpx HTTP Request: GET http://127.0.0.1:9140/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,249 INFO httpx HTTP Request: GET http://127.0.0.1:9142/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,249 INFO httpx HTTP Request: GET http://127.0.0.1:9143/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,254 INFO httpx HTTP Request: GET http://127.0.0.1:9144/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,254 INFO httpx HTTP Request: GET http://127.0.0.1:9146/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,256 INFO httpx HTTP Request: GET http://127.0.0.1:9147/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,256 INFO httpx HTTP Request: GET http://127.0.0.1:9145/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,256 INFO httpx HTTP Request: GET http://127.0.0.1:9148/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,257 INFO httpx HTTP Request: GET http://127.0.0.1:9149/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,261 INFO kasukabe.genesis_runner all 50 engines ready
+2026-09-29 13:54:51,261 INFO kasukabe.genesis_runner watchdog started: polling every 10s, restarting anything silent past 180s
+2026-09-29 13:54:51,262 INFO kasukabe.groundskeeper groundskeeper started: sweeping /home/team/kasukabe-homes/fifty-day2-60usd-20260929 every 300s
+2026-09-29 13:54:51,279 INFO httpx HTTP Request: GET http://127.0.0.1:9141/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,293 INFO httpx HTTP Request: GET http://127.0.0.1:9142/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,303 INFO httpx HTTP Request: GET http://127.0.0.1:9143/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,314 INFO httpx HTTP Request: GET http://127.0.0.1:9144/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,322 INFO httpx HTTP Request: GET http://127.0.0.1:9145/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,329 INFO httpx HTTP Request: GET http://127.0.0.1:9146/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,342 INFO httpx HTTP Request: GET http://127.0.0.1:9147/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,350 INFO httpx HTTP Request: GET http://127.0.0.1:9148/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,357 INFO httpx HTTP Request: GET http://127.0.0.1:9149/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:51,358 WARNING kasukabe.genesis_runner watchdog restarting n01: reported FAILED
+2026-09-29 13:54:51,375 INFO kasukabe.genesis_runner ECON-15: booked 47 sim of unpaid upkeep against 1 resident(s)
+2026-09-29 13:54:51,381 INFO kasukabe.genesis_runner upkeep day 3: 1 resident(s) with unpaid days
+2026-09-29 13:54:51,381 INFO kasukabe.genesis_runner day 3: head tax charged for 18 household(s) at 0 bps
+2026-09-29 13:54:51,409 WARNING kasukabe.genesis_runner watchdog restarting n02: reported FAILED
+2026-09-29 13:54:51,493 WARNING kasukabe.genesis_runner watchdog restarting n03: reported FAILED
+2026-09-29 13:54:51,548 WARNING kasukabe.genesis_runner watchdog restarting n04: reported FAILED
+2026-09-29 13:54:51,601 WARNING kasukabe.genesis_runner watchdog restarting n05: reported FAILED
+2026-09-29 13:54:51,708 WARNING kasukabe.genesis_runner watchdog restarting n06: reported FAILED
+2026-09-29 13:54:51,795 WARNING kasukabe.genesis_runner watchdog restarting n07: reported FAILED
+2026-09-29 13:54:51,849 WARNING kasukabe.genesis_runner watchdog restarting n08: reported FAILED
+2026-09-29 13:54:51,851 INFO kasukabe.genesis_runner day 3: election election-19330570e2fe tallied - pm=None ministers=[]
+2026-09-29 13:54:51,907 WARNING kasukabe.genesis_runner watchdog restarting n09: reported FAILED
+2026-09-29 13:54:51,974 WARNING kasukabe.genesis_runner watchdog restarting n10: reported FAILED
+2026-09-29 13:54:52,041 WARNING kasukabe.genesis_runner watchdog restarting n11: reported FAILED
+2026-09-29 13:54:52,108 WARNING kasukabe.genesis_runner watchdog restarting n12: reported FAILED
+2026-09-29 13:54:52,180 WARNING kasukabe.genesis_runner watchdog restarting n13: reported FAILED
+2026-09-29 13:54:52,253 WARNING kasukabe.genesis_runner watchdog restarting n14: reported FAILED
+2026-09-29 13:54:52,323 WARNING kasukabe.genesis_runner watchdog restarting n15: reported FAILED
+2026-09-29 13:54:52,402 WARNING kasukabe.genesis_runner watchdog restarting n16: reported FAILED
+2026-09-29 13:54:52,480 WARNING kasukabe.genesis_runner watchdog restarting n17: reported FAILED
+2026-09-29 13:54:52,543 WARNING kasukabe.genesis_runner watchdog restarting n18: reported FAILED
+2026-09-29 13:54:52,611 WARNING kasukabe.genesis_runner watchdog restarting n19: reported FAILED
+2026-09-29 13:54:52,678 WARNING kasukabe.genesis_runner watchdog restarting n20: reported FAILED
+2026-09-29 13:54:52,745 WARNING kasukabe.genesis_runner watchdog restarting n21: reported FAILED
+2026-09-29 13:54:52,813 WARNING kasukabe.genesis_runner watchdog restarting n22: reported FAILED
+2026-09-29 13:54:52,881 WARNING kasukabe.genesis_runner watchdog restarting n23: reported FAILED
+2026-09-29 13:54:52,942 WARNING kasukabe.genesis_runner watchdog restarting n24: reported FAILED
+2026-09-29 13:54:53,008 WARNING kasukabe.genesis_runner watchdog restarting n25: reported FAILED
+2026-09-29 13:54:53,075 WARNING kasukabe.genesis_runner watchdog restarting n26: reported FAILED
+2026-09-29 13:54:53,163 WARNING kasukabe.genesis_runner watchdog restarting n27: reported FAILED
+2026-09-29 13:54:53,280 WARNING kasukabe.genesis_runner watchdog restarting n28: reported FAILED
+2026-09-29 13:54:53,398 WARNING kasukabe.genesis_runner watchdog restarting n29: reported FAILED
+2026-09-29 13:54:53,507 WARNING kasukabe.genesis_runner watchdog restarting n30: reported FAILED
+2026-09-29 13:54:53,607 WARNING kasukabe.genesis_runner watchdog restarting n31: reported FAILED
+2026-09-29 13:54:53,765 WARNING kasukabe.genesis_runner watchdog restarting n32: reported FAILED
+2026-09-29 13:54:53,888 WARNING kasukabe.genesis_runner watchdog restarting n33: reported FAILED
+2026-09-29 13:54:54,001 WARNING kasukabe.genesis_runner watchdog restarting n34: reported FAILED
+2026-09-29 13:54:54,121 WARNING kasukabe.genesis_runner watchdog restarting n35: reported FAILED
+2026-09-29 13:54:54,142 ERROR kasukabe.genesis_runner could not refresh needs for n02
+Traceback (most recent call last):
+  File "/home/team/kasukabe/app/world/run_genesis.py", line 9074, in refresh_goals_for
+    events = refresh_and_spawn(self.world_state, agent_id)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/team/kasukabe/app/world/tools/goal_lifecycle.py", line 456, in refresh_and_spawn
+    events = supersede_goals_of_a_life_left_behind(world, agent_id)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/team/kasukabe/app/world/tools/goal_lifecycle.py", line 182, in supersede_goals_of_a_life_left_behind
+    "was": was.value,
+           ^^^^^^^^^
+AttributeError: 'str' object has no attribute 'value'
+2026-09-29 13:54:54,190 ERROR kasukabe.genesis_runner could not refresh needs for n06
+Traceback (most recent call last):
+  File "/home/team/kasukabe/app/world/run_genesis.py", line 9074, in refresh_goals_for
+    events = refresh_and_spawn(self.world_state, agent_id)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/team/kasukabe/app/world/tools/goal_lifecycle.py", line 456, in refresh_and_spawn
+    events = supersede_goals_of_a_life_left_behind(world, agent_id)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/team/kasukabe/app/world/tools/goal_lifecycle.py", line 153, in supersede_goals_of_a_life_left_behind
+    if goal.set_in_stage is None or goal.set_in_stage != was.value:
+                                                         ^^^^^^^^^
+AttributeError: 'str' object has no attribute 'value'
+2026-09-29 13:54:54,550 WARNING kasukabe.genesis_runner watchdog restarting n36: reported FAILED
+2026-09-29 13:54:54,654 WARNING kasukabe.genesis_runner watchdog restarting n37: reported FAILED
+2026-09-29 13:54:54,744 WARNING kasukabe.genesis_runner watchdog restarting n38: reported FAILED
+2026-09-29 13:54:54,829 WARNING kasukabe.genesis_runner watchdog restarting n39: reported FAILED
+2026-09-29 13:54:54,898 WARNING kasukabe.genesis_runner watchdog restarting n40: reported FAILED
+2026-09-29 13:54:54,953 WARNING kasukabe.genesis_runner watchdog restarting n41: reported FAILED
+2026-09-29 13:54:55,005 WARNING kasukabe.genesis_runner watchdog restarting n42: reported FAILED
+2026-09-29 13:54:56,664 INFO httpx HTTP Request: GET http://127.0.0.1:8200/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:56,665 INFO httpx HTTP Request: GET http://127.0.0.1:8200/health "HTTP/1.1 200 OK"
+2026-09-29 13:54:59,736 INFO kasukabe.genesis_runner n26 ate bread
+2026-09-29 13:55:00,188 INFO kasukabe.genesis_runner n08 ate apple
+2026-09-29 13:55:01,399 INFO kasukabe.genesis_runner n03 ate carrot
+2026-09-29 13:55:02,978 INFO kasukabe.genesis_runner n10 ate apple
+2026-09-29 13:55:03,741 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:04,005 INFO kasukabe.genesis_runner n07 ate bread
+2026-09-29 13:55:04,097 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:04,151 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:04,152 INFO httpx HTTP Request: POST http://127.0.0.1:9126/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:04,482 INFO httpx HTTP Request: POST http://127.0.0.1:9117/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:04,483 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:04,522 INFO httpx HTTP Request: POST http://127.0.0.1:9123/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:04,674 INFO httpx HTTP Request: POST http://127.0.0.1:9127/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:04,703 INFO httpx HTTP Request: POST http://127.0.0.1:9140/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:04,794 INFO httpx HTTP Request: POST http://127.0.0.1:9141/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:05,059 WARNING kasukabe.genesis_runner watchdog restarting n01: reported FAILED
+2026-09-29 13:55:05,113 WARNING kasukabe.genesis_runner watchdog restarting n02: reported FAILED
+2026-09-29 13:55:05,176 WARNING kasukabe.genesis_runner watchdog restarting n03: reported FAILED
+2026-09-29 13:55:05,221 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:05,229 WARNING kasukabe.genesis_runner watchdog restarting n04: reported FAILED
+2026-09-29 13:55:05,232 INFO httpx HTTP Request: POST http://127.0.0.1:9146/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:05,263 INFO httpx HTTP Request: POST http://127.0.0.1:9144/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:05,280 WARNING kasukabe.genesis_runner watchdog restarting n05: reported FAILED
+2026-09-29 13:55:05,306 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:05,332 WARNING kasukabe.genesis_runner watchdog restarting n06: reported FAILED
+2026-09-29 13:55:05,384 WARNING kasukabe.genesis_runner watchdog restarting n07: reported FAILED
+2026-09-29 13:55:05,436 WARNING kasukabe.genesis_runner watchdog restarting n08: reported FAILED
+2026-09-29 13:55:05,475 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:05,484 INFO httpx HTTP Request: POST http://127.0.0.1:9112/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:05,490 WARNING kasukabe.genesis_runner watchdog restarting n09: reported FAILED
+2026-09-29 13:55:05,526 INFO httpx HTTP Request: POST http://127.0.0.1:9128/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:05,545 WARNING kasukabe.genesis_runner watchdog restarting n10: reported FAILED
+2026-09-29 13:55:05,728 WARNING kasukabe.genesis_runner watchdog restarting n11: reported FAILED
+2026-09-29 13:55:05,787 WARNING kasukabe.genesis_runner watchdog restarting n12: reported FAILED
+2026-09-29 13:55:05,828 INFO httpx HTTP Request: POST http://127.0.0.1:9118/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:05,849 INFO httpx HTTP Request: POST http://127.0.0.1:9145/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:05,852 WARNING kasukabe.genesis_runner watchdog restarting n13: reported FAILED
+2026-09-29 13:55:05,905 INFO httpx HTTP Request: POST http://127.0.0.1:9148/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:05,935 WARNING kasukabe.genesis_runner watchdog restarting n14: reported FAILED
+2026-09-29 13:55:05,950 INFO httpx HTTP Request: POST http://127.0.0.1:9111/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:06,004 WARNING kasukabe.genesis_runner watchdog restarting n15: reported FAILED
+2026-09-29 13:55:06,063 WARNING kasukabe.genesis_runner watchdog restarting n16: reported FAILED
+2026-09-29 13:55:06,072 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:06,106 INFO httpx HTTP Request: POST http://127.0.0.1:9114/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:06,115 WARNING kasukabe.genesis_runner watchdog restarting n17: reported FAILED
+2026-09-29 13:55:06,169 WARNING kasukabe.genesis_runner watchdog restarting n18: reported FAILED
+2026-09-29 13:55:06,229 WARNING kasukabe.genesis_runner watchdog restarting n19: reported FAILED
+2026-09-29 13:55:06,238 INFO httpx HTTP Request: POST http://127.0.0.1:9124/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:06,253 INFO httpx HTTP Request: POST http://127.0.0.1:9125/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:06,292 WARNING kasukabe.genesis_runner watchdog restarting n20: reported FAILED
+2026-09-29 13:55:06,358 WARNING kasukabe.genesis_runner watchdog restarting n21: reported FAILED
+2026-09-29 13:55:06,397 INFO httpx HTTP Request: POST http://127.0.0.1:9132/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:06,415 WARNING kasukabe.genesis_runner watchdog restarting n22: reported FAILED
+2026-09-29 13:55:06,504 WARNING kasukabe.genesis_runner watchdog restarting n23: reported FAILED
+2026-09-29 13:55:06,524 INFO httpx HTTP Request: POST http://127.0.0.1:9138/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:06,540 INFO httpx HTTP Request: POST http://127.0.0.1:9130/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:06,558 WARNING kasukabe.genesis_runner watchdog restarting n24: reported FAILED
+2026-09-29 13:55:06,614 WARNING kasukabe.genesis_runner watchdog restarting n25: reported FAILED
+2026-09-29 13:55:06,712 WARNING kasukabe.genesis_runner watchdog restarting n26: reported FAILED
+2026-09-29 13:55:06,807 WARNING kasukabe.genesis_runner watchdog restarting n27: reported FAILED
+2026-09-29 13:55:06,841 INFO httpx HTTP Request: POST http://127.0.0.1:9136/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:06,862 INFO httpx HTTP Request: POST http://127.0.0.1:9129/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:06,874 WARNING kasukabe.genesis_runner watchdog restarting n28: reported FAILED
+2026-09-29 13:55:06,935 WARNING kasukabe.genesis_runner watchdog restarting n29: reported FAILED
+2026-09-29 13:55:06,989 WARNING kasukabe.genesis_runner watchdog restarting n30: reported FAILED
+2026-09-29 13:55:07,043 WARNING kasukabe.genesis_runner watchdog restarting n31: reported FAILED
+2026-09-29 13:55:07,235 WARNING kasukabe.genesis_runner watchdog restarting n32: reported FAILED
+2026-09-29 13:55:07,296 WARNING kasukabe.genesis_runner watchdog restarting n33: reported FAILED
+2026-09-29 13:55:07,321 INFO httpx HTTP Request: POST http://127.0.0.1:9149/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:07,333 INFO httpx HTTP Request: POST http://127.0.0.1:9122/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:07,334 INFO httpx HTTP Request: POST http://127.0.0.1:9115/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:07,350 WARNING kasukabe.genesis_runner watchdog restarting n34: reported FAILED
+2026-09-29 13:55:07,403 WARNING kasukabe.genesis_runner watchdog restarting n35: reported FAILED
+2026-09-29 13:55:07,456 WARNING kasukabe.genesis_runner watchdog restarting n36: reported FAILED
+2026-09-29 13:55:07,516 WARNING kasukabe.genesis_runner watchdog restarting n37: reported FAILED
+2026-09-29 13:55:07,567 WARNING kasukabe.genesis_runner watchdog restarting n38: reported FAILED
+2026-09-29 13:55:07,620 WARNING kasukabe.genesis_runner watchdog restarting n39: reported FAILED
+2026-09-29 13:55:07,672 WARNING kasukabe.genesis_runner watchdog restarting n40: reported FAILED
+2026-09-29 13:55:07,734 WARNING kasukabe.genesis_runner watchdog restarting n41: reported FAILED
+2026-09-29 13:55:07,795 WARNING kasukabe.genesis_runner watchdog restarting n42: reported FAILED
+2026-09-29 13:55:07,855 WARNING kasukabe.genesis_runner watchdog restarting n43: reported FAILED
+2026-09-29 13:55:07,907 WARNING kasukabe.genesis_runner watchdog restarting n44: reported FAILED
+2026-09-29 13:55:07,960 WARNING kasukabe.genesis_runner watchdog restarting n45: reported FAILED
+2026-09-29 13:55:08,011 WARNING kasukabe.genesis_runner watchdog restarting n46: reported FAILED
+2026-09-29 13:55:08,063 WARNING kasukabe.genesis_runner watchdog restarting n47: reported FAILED
+2026-09-29 13:55:08,128 WARNING kasukabe.genesis_runner watchdog restarting n48: reported FAILED
+2026-09-29 13:55:08,216 WARNING kasukabe.genesis_runner watchdog restarting n49: reported FAILED
+2026-09-29 13:55:08,277 WARNING kasukabe.genesis_runner watchdog restarting n50: reported FAILED
+2026-09-29 13:55:08,305 INFO httpx HTTP Request: POST http://127.0.0.1:9120/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:08,523 INFO httpx HTTP Request: POST http://127.0.0.1:9131/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:08,524 INFO httpx HTTP Request: POST http://127.0.0.1:9119/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:08,539 INFO httpx HTTP Request: POST http://127.0.0.1:9134/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:08,556 INFO httpx HTTP Request: POST http://127.0.0.1:9110/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:08,798 INFO httpx HTTP Request: POST http://127.0.0.1:9143/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:09,235 INFO httpx HTTP Request: POST http://127.0.0.1:9135/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:09,382 INFO httpx HTTP Request: POST http://127.0.0.1:9116/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:09,429 INFO httpx HTTP Request: POST http://127.0.0.1:9113/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:10,416 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:12,470 INFO httpx HTTP Request: POST http://127.0.0.1:9137/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:13,573 INFO httpx HTTP Request: POST http://127.0.0.1:9133/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:15,100 INFO httpx HTTP Request: POST http://127.0.0.1:9121/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:15,523 INFO httpx HTTP Request: POST http://127.0.0.1:9147/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:18,339 WARNING kasukabe.genesis_runner watchdog restarting n01: reported FAILED
+2026-09-29 13:55:18,391 WARNING kasukabe.genesis_runner watchdog restarting n02: reported FAILED
+2026-09-29 13:55:18,443 WARNING kasukabe.genesis_runner watchdog restarting n03: reported FAILED
+2026-09-29 13:55:18,494 WARNING kasukabe.genesis_runner watchdog restarting n04: reported FAILED
+2026-09-29 13:55:18,546 WARNING kasukabe.genesis_runner watchdog restarting n05: reported FAILED
+2026-09-29 13:55:18,598 WARNING kasukabe.genesis_runner watchdog restarting n06: reported FAILED
+2026-09-29 13:55:18,650 WARNING kasukabe.genesis_runner watchdog restarting n07: reported FAILED
+2026-09-29 13:55:18,702 WARNING kasukabe.genesis_runner watchdog restarting n08: reported FAILED
+2026-09-29 13:55:18,755 WARNING kasukabe.genesis_runner watchdog restarting n09: reported FAILED
+2026-09-29 13:55:18,808 WARNING kasukabe.genesis_runner watchdog restarting n10: reported FAILED
+2026-09-29 13:55:18,860 WARNING kasukabe.genesis_runner watchdog restarting n11: reported FAILED
+2026-09-29 13:55:18,921 WARNING kasukabe.genesis_runner watchdog restarting n12: reported FAILED
+2026-09-29 13:55:18,974 WARNING kasukabe.genesis_runner watchdog restarting n13: reported FAILED
+2026-09-29 13:55:19,026 WARNING kasukabe.genesis_runner watchdog restarting n14: reported FAILED
+2026-09-29 13:55:19,078 WARNING kasukabe.genesis_runner watchdog restarting n15: reported FAILED
+2026-09-29 13:55:19,129 WARNING kasukabe.genesis_runner watchdog restarting n16: reported FAILED
+2026-09-29 13:55:19,181 WARNING kasukabe.genesis_runner watchdog restarting n17: reported FAILED
+2026-09-29 13:55:19,242 WARNING kasukabe.genesis_runner watchdog restarting n18: reported FAILED
+2026-09-29 13:55:19,296 WARNING kasukabe.genesis_runner watchdog restarting n19: reported FAILED
+2026-09-29 13:55:19,347 WARNING kasukabe.genesis_runner watchdog restarting n20: reported FAILED
+2026-09-29 13:55:19,399 WARNING kasukabe.genesis_runner watchdog restarting n21: reported FAILED
+2026-09-29 13:55:19,459 WARNING kasukabe.genesis_runner watchdog restarting n22: reported FAILED
+2026-09-29 13:55:19,512 WARNING kasukabe.genesis_runner watchdog restarting n23: reported FAILED
+2026-09-29 13:55:19,575 WARNING kasukabe.genesis_runner watchdog restarting n24: reported FAILED
+2026-09-29 13:55:19,631 WARNING kasukabe.genesis_runner watchdog restarting n25: reported FAILED
+2026-09-29 13:55:19,683 WARNING kasukabe.genesis_runner watchdog restarting n26: reported FAILED
+2026-09-29 13:55:19,739 WARNING kasukabe.genesis_runner watchdog restarting n27: reported FAILED
+2026-09-29 13:55:19,831 WARNING kasukabe.genesis_runner watchdog restarting n28: reported FAILED
+2026-09-29 13:55:19,894 WARNING kasukabe.genesis_runner watchdog restarting n29: reported FAILED
+2026-09-29 13:55:20,053 WARNING kasukabe.genesis_runner watchdog restarting n30: reported FAILED
+2026-09-29 13:55:20,143 WARNING kasukabe.genesis_runner watchdog restarting n31: reported FAILED
+2026-09-29 13:55:20,208 WARNING kasukabe.genesis_runner watchdog restarting n32: reported FAILED
+2026-09-29 13:55:20,290 WARNING kasukabe.genesis_runner watchdog restarting n33: reported FAILED
+2026-09-29 13:55:20,344 WARNING kasukabe.genesis_runner watchdog restarting n34: reported FAILED
+2026-09-29 13:55:20,403 WARNING kasukabe.genesis_runner watchdog restarting n35: reported FAILED
+2026-09-29 13:55:20,457 WARNING kasukabe.genesis_runner watchdog restarting n36: reported FAILED
+2026-09-29 13:55:20,509 WARNING kasukabe.genesis_runner watchdog restarting n37: reported FAILED
+2026-09-29 13:55:20,560 WARNING kasukabe.genesis_runner watchdog restarting n38: reported FAILED
+2026-09-29 13:55:20,612 WARNING kasukabe.genesis_runner watchdog restarting n39: reported FAILED
+2026-09-29 13:55:20,665 WARNING kasukabe.genesis_runner watchdog restarting n40: reported FAILED
+2026-09-29 13:55:20,718 WARNING kasukabe.genesis_runner watchdog restarting n41: reported FAILED
+2026-09-29 13:55:20,773 WARNING kasukabe.genesis_runner watchdog restarting n42: reported FAILED
+2026-09-29 13:55:20,844 WARNING kasukabe.genesis_runner watchdog restarting n43: reported FAILED
+2026-09-29 13:55:20,896 WARNING kasukabe.genesis_runner watchdog restarting n44: reported FAILED
+2026-09-29 13:55:20,949 WARNING kasukabe.genesis_runner watchdog restarting n45: reported FAILED
+2026-09-29 13:55:21,001 WARNING kasukabe.genesis_runner watchdog restarting n46: reported FAILED
+2026-09-29 13:55:21,057 WARNING kasukabe.genesis_runner watchdog restarting n47: reported FAILED
+2026-09-29 13:55:21,112 WARNING kasukabe.genesis_runner watchdog restarting n48: reported FAILED
+2026-09-29 13:55:21,164 WARNING kasukabe.genesis_runner watchdog restarting n49: reported FAILED
+2026-09-29 13:55:21,250 WARNING kasukabe.genesis_runner watchdog restarting n50: reported FAILED
+2026-09-29 13:55:23,526 INFO kasukabe.genesis_runner n46 ate apple
+2026-09-29 13:55:24,372 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:25,057 INFO httpx HTTP Request: POST http://127.0.0.1:9145/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:25,077 INFO httpx HTTP Request: POST http://127.0.0.1:9148/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:26,076 INFO httpx HTTP Request: POST http://127.0.0.1:9139/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:26,778 INFO httpx HTTP Request: POST http://127.0.0.1:9123/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:26,875 INFO httpx HTTP Request: POST http://127.0.0.1:9114/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:26,877 INFO httpx HTTP Request: POST http://127.0.0.1:9130/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:26,895 INFO httpx HTTP Request: POST http://127.0.0.1:9127/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:28,698 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:31,318 WARNING kasukabe.genesis_runner watchdog restarting n01: reported FAILED
+2026-09-29 13:55:31,370 WARNING kasukabe.genesis_runner watchdog restarting n02: reported FAILED
+2026-09-29 13:55:31,421 WARNING kasukabe.genesis_runner watchdog restarting n03: reported FAILED
+2026-09-29 13:55:31,474 WARNING kasukabe.genesis_runner watchdog restarting n04: reported FAILED
+2026-09-29 13:55:31,526 WARNING kasukabe.genesis_runner watchdog restarting n05: reported FAILED
+2026-09-29 13:55:31,577 WARNING kasukabe.genesis_runner watchdog restarting n06: reported FAILED
+2026-09-29 13:55:31,629 WARNING kasukabe.genesis_runner watchdog restarting n07: reported FAILED
+2026-09-29 13:55:31,681 WARNING kasukabe.genesis_runner watchdog restarting n08: reported FAILED
+2026-09-29 13:55:31,733 WARNING kasukabe.genesis_runner watchdog restarting n09: reported FAILED
+2026-09-29 13:55:31,785 WARNING kasukabe.genesis_runner watchdog restarting n10: reported FAILED
+2026-09-29 13:55:31,837 WARNING kasukabe.genesis_runner watchdog restarting n11: reported FAILED
+2026-09-29 13:55:31,889 WARNING kasukabe.genesis_runner watchdog restarting n12: reported FAILED
+2026-09-29 13:55:31,940 WARNING kasukabe.genesis_runner watchdog restarting n13: reported FAILED
+2026-09-29 13:55:31,992 WARNING kasukabe.genesis_runner watchdog restarting n14: reported FAILED
+2026-09-29 13:55:32,051 WARNING kasukabe.genesis_runner watchdog restarting n15: reported FAILED
+2026-09-29 13:55:32,104 WARNING kasukabe.genesis_runner watchdog restarting n16: reported FAILED
+2026-09-29 13:55:32,156 WARNING kasukabe.genesis_runner watchdog restarting n17: reported FAILED
+2026-09-29 13:55:32,213 WARNING kasukabe.genesis_runner watchdog restarting n18: reported FAILED
+2026-09-29 13:55:32,265 WARNING kasukabe.genesis_runner watchdog restarting n19: reported FAILED
+2026-09-29 13:55:32,318 WARNING kasukabe.genesis_runner watchdog restarting n20: reported FAILED
+2026-09-29 13:55:32,370 WARNING kasukabe.genesis_runner watchdog restarting n21: reported FAILED
+2026-09-29 13:55:32,422 WARNING kasukabe.genesis_runner watchdog restarting n22: reported FAILED
+2026-09-29 13:55:32,477 WARNING kasukabe.genesis_runner watchdog restarting n23: reported FAILED
+2026-09-29 13:55:32,529 WARNING kasukabe.genesis_runner watchdog restarting n24: reported FAILED
+2026-09-29 13:55:32,593 WARNING kasukabe.genesis_runner watchdog restarting n25: reported FAILED
+2026-09-29 13:55:32,645 WARNING kasukabe.genesis_runner watchdog restarting n26: reported FAILED
+2026-09-29 13:55:32,701 WARNING kasukabe.genesis_runner watchdog restarting n27: reported FAILED
+2026-09-29 13:55:32,761 WARNING kasukabe.genesis_runner watchdog restarting n28: reported FAILED
+2026-09-29 13:55:32,824 WARNING kasukabe.genesis_runner watchdog restarting n29: reported FAILED
+2026-09-29 13:55:32,876 WARNING kasukabe.genesis_runner watchdog restarting n30: reported FAILED
+2026-09-29 13:55:32,929 WARNING kasukabe.genesis_runner watchdog restarting n31: reported FAILED
+2026-09-29 13:55:32,994 WARNING kasukabe.genesis_runner watchdog restarting n32: reported FAILED
+2026-09-29 13:55:33,046 WARNING kasukabe.genesis_runner watchdog restarting n33: reported FAILED
+2026-09-29 13:55:33,103 WARNING kasukabe.genesis_runner watchdog restarting n34: reported FAILED
+2026-09-29 13:55:33,155 WARNING kasukabe.genesis_runner watchdog restarting n35: reported FAILED
+2026-09-29 13:55:33,223 WARNING kasukabe.genesis_runner watchdog restarting n36: reported FAILED
+2026-09-29 13:55:33,289 WARNING kasukabe.genesis_runner watchdog restarting n37: reported FAILED
+2026-09-29 13:55:33,341 WARNING kasukabe.genesis_runner watchdog restarting n38: reported FAILED
+2026-09-29 13:55:33,403 WARNING kasukabe.genesis_runner watchdog restarting n39: reported FAILED
+2026-09-29 13:55:33,455 WARNING kasukabe.genesis_runner watchdog restarting n40: reported FAILED
+2026-09-29 13:55:33,510 WARNING kasukabe.genesis_runner watchdog restarting n41: reported FAILED
+2026-09-29 13:55:33,563 WARNING kasukabe.genesis_runner watchdog restarting n42: reported FAILED
+2026-09-29 13:55:33,622 WARNING kasukabe.genesis_runner watchdog restarting n43: reported FAILED
+2026-09-29 13:55:33,693 WARNING kasukabe.genesis_runner watchdog restarting n44: reported FAILED
+2026-09-29 13:55:33,748 WARNING kasukabe.genesis_runner watchdog restarting n45: reported FAILED
+2026-09-29 13:55:33,812 WARNING kasukabe.genesis_runner watchdog restarting n46: reported FAILED
+2026-09-29 13:55:33,864 WARNING kasukabe.genesis_runner watchdog restarting n47: reported FAILED
+2026-09-29 13:55:33,923 WARNING kasukabe.genesis_runner watchdog restarting n48: reported FAILED
+2026-09-29 13:55:33,976 WARNING kasukabe.genesis_runner watchdog restarting n49: reported FAILED
+2026-09-29 13:55:34,034 WARNING kasukabe.genesis_runner watchdog restarting n50: reported FAILED
+2026-09-29 13:55:34,526 INFO httpx HTTP Request: POST http://127.0.0.1:9142/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:41,553 INFO kasukabe.genesis_runner n25 ate apple
+2026-09-29 13:55:42,342 INFO kasukabe.genesis_runner n02 ate apple
+2026-09-29 13:55:43,666 INFO kasukabe.genesis_runner n02 ate bread
+2026-09-29 13:55:43,906 INFO httpx HTTP Request: POST http://127.0.0.1:9140/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:44,096 WARNING kasukabe.genesis_runner watchdog restarting n43: reported FAILED
+2026-09-29 13:55:44,139 INFO kasukabe.genesis_runner n08 ate apple
+2026-09-29 13:55:44,148 WARNING kasukabe.genesis_runner watchdog restarting n44: reported FAILED
+2026-09-29 13:55:44,185 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:44,200 WARNING kasukabe.genesis_runner watchdog restarting n45: reported FAILED
+2026-09-29 13:55:44,251 WARNING kasukabe.genesis_runner watchdog restarting n46: reported FAILED
+2026-09-29 13:55:44,413 WARNING kasukabe.genesis_runner watchdog restarting n47: reported FAILED
+2026-09-29 13:55:44,465 WARNING kasukabe.genesis_runner watchdog restarting n48: reported FAILED
+2026-09-29 13:55:44,515 INFO httpx HTTP Request: POST http://127.0.0.1:9141/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:44,518 WARNING kasukabe.genesis_runner watchdog restarting n49: reported FAILED
+2026-09-29 13:55:44,569 WARNING kasukabe.genesis_runner watchdog restarting n50: reported FAILED
+2026-09-29 13:55:44,758 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:45,010 INFO httpx HTTP Request: POST http://127.0.0.1:9143/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:45,086 INFO httpx HTTP Request: POST http://127.0.0.1:9147/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:45,403 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:45,853 INFO httpx HTTP Request: POST http://127.0.0.1:9124/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:46,351 INFO httpx HTTP Request: POST http://127.0.0.1:9149/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:47,251 INFO httpx HTTP Request: POST http://127.0.0.1:9122/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:47,273 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:47,903 INFO httpx HTTP Request: POST http://127.0.0.1:9128/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:54,304 INFO kasukabe.genesis_runner n30 ate bread
+2026-09-29 13:55:54,621 WARNING kasukabe.genesis_runner watchdog restarting n01: reported FAILED
+2026-09-29 13:55:54,673 WARNING kasukabe.genesis_runner watchdog restarting n02: reported FAILED
+2026-09-29 13:55:54,725 WARNING kasukabe.genesis_runner watchdog restarting n03: reported FAILED
+2026-09-29 13:55:54,776 WARNING kasukabe.genesis_runner watchdog restarting n04: reported FAILED
+2026-09-29 13:55:54,844 WARNING kasukabe.genesis_runner watchdog restarting n05: reported FAILED
+2026-09-29 13:55:54,896 WARNING kasukabe.genesis_runner watchdog restarting n06: reported FAILED
+2026-09-29 13:55:54,952 WARNING kasukabe.genesis_runner watchdog restarting n07: reported FAILED
+2026-09-29 13:55:55,004 WARNING kasukabe.genesis_runner watchdog restarting n08: reported FAILED
+2026-09-29 13:55:55,057 WARNING kasukabe.genesis_runner watchdog restarting n09: reported FAILED
+2026-09-29 13:55:55,117 WARNING kasukabe.genesis_runner watchdog restarting n10: reported FAILED
+2026-09-29 13:55:55,170 WARNING kasukabe.genesis_runner watchdog restarting n11: reported FAILED
+2026-09-29 13:55:55,222 WARNING kasukabe.genesis_runner watchdog restarting n12: reported FAILED
+2026-09-29 13:55:55,288 WARNING kasukabe.genesis_runner watchdog restarting n13: reported FAILED
+2026-09-29 13:55:55,343 WARNING kasukabe.genesis_runner watchdog restarting n14: reported FAILED
+2026-09-29 13:55:55,395 WARNING kasukabe.genesis_runner watchdog restarting n15: reported FAILED
+2026-09-29 13:55:55,446 WARNING kasukabe.genesis_runner watchdog restarting n16: reported FAILED
+2026-09-29 13:55:55,500 WARNING kasukabe.genesis_runner watchdog restarting n17: reported FAILED
+2026-09-29 13:55:55,555 WARNING kasukabe.genesis_runner watchdog restarting n18: reported FAILED
+2026-09-29 13:55:55,607 WARNING kasukabe.genesis_runner watchdog restarting n19: reported FAILED
+2026-09-29 13:55:55,686 WARNING kasukabe.genesis_runner watchdog restarting n20: reported FAILED
+2026-09-29 13:55:55,896 WARNING kasukabe.genesis_runner watchdog restarting n21: reported FAILED
+2026-09-29 13:55:55,950 WARNING kasukabe.genesis_runner watchdog restarting n22: reported FAILED
+2026-09-29 13:55:56,029 WARNING kasukabe.genesis_runner watchdog restarting n23: reported FAILED
+2026-09-29 13:55:56,087 WARNING kasukabe.genesis_runner watchdog restarting n24: reported FAILED
+2026-09-29 13:55:56,151 WARNING kasukabe.genesis_runner watchdog restarting n25: reported FAILED
+2026-09-29 13:55:56,218 WARNING kasukabe.genesis_runner watchdog restarting n26: reported FAILED
+2026-09-29 13:55:56,272 WARNING kasukabe.genesis_runner watchdog restarting n27: reported FAILED
+2026-09-29 13:55:56,335 WARNING kasukabe.genesis_runner watchdog restarting n28: reported FAILED
+2026-09-29 13:55:56,401 WARNING kasukabe.genesis_runner watchdog restarting n29: reported FAILED
+2026-09-29 13:55:56,455 WARNING kasukabe.genesis_runner watchdog restarting n30: reported FAILED
+2026-09-29 13:55:56,509 WARNING kasukabe.genesis_runner watchdog restarting n31: reported FAILED
+2026-09-29 13:55:56,560 WARNING kasukabe.genesis_runner watchdog restarting n32: reported FAILED
+2026-09-29 13:55:56,612 WARNING kasukabe.genesis_runner watchdog restarting n33: reported FAILED
+2026-09-29 13:55:56,672 WARNING kasukabe.genesis_runner watchdog restarting n34: reported FAILED
+2026-09-29 13:55:56,734 WARNING kasukabe.genesis_runner watchdog restarting n35: reported FAILED
+2026-09-29 13:55:56,807 WARNING kasukabe.genesis_runner watchdog restarting n36: reported FAILED
+2026-09-29 13:55:56,871 WARNING kasukabe.genesis_runner watchdog restarting n37: reported FAILED
+2026-09-29 13:55:56,941 WARNING kasukabe.genesis_runner watchdog restarting n38: reported FAILED
+2026-09-29 13:55:57,335 WARNING kasukabe.genesis_runner watchdog restarting n39: reported FAILED
+2026-09-29 13:55:57,416 WARNING kasukabe.genesis_runner watchdog restarting n40: reported FAILED
+2026-09-29 13:55:57,472 WARNING kasukabe.genesis_runner watchdog restarting n41: reported FAILED
+2026-09-29 13:55:57,525 WARNING kasukabe.genesis_runner watchdog restarting n42: reported FAILED
+2026-09-29 13:55:57,655 INFO httpx HTTP Request: POST http://127.0.0.1:9109/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:57,715 INFO httpx HTTP Request: POST http://127.0.0.1:9132/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:58,012 INFO httpx HTTP Request: POST http://127.0.0.1:9117/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:58,308 INFO httpx HTTP Request: POST http://127.0.0.1:9111/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:58,388 INFO httpx HTTP Request: POST http://127.0.0.1:9123/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:58,608 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:59,081 INFO httpx HTTP Request: POST http://127.0.0.1:9131/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:59,376 INFO httpx HTTP Request: POST http://127.0.0.1:9146/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:59,412 INFO httpx HTTP Request: POST http://127.0.0.1:9119/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:59,536 INFO httpx HTTP Request: POST http://127.0.0.1:9138/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:59,558 INFO httpx HTTP Request: POST http://127.0.0.1:9135/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:59,580 INFO httpx HTTP Request: POST http://127.0.0.1:9129/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:59,791 INFO httpx HTTP Request: POST http://127.0.0.1:9137/tick "HTTP/1.1 200 OK"
+2026-09-29 13:55:59,929 INFO httpx HTTP Request: POST http://127.0.0.1:9110/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:00,185 INFO httpx HTTP Request: POST http://127.0.0.1:9114/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:00,247 INFO httpx HTTP Request: POST http://127.0.0.1:9144/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:00,381 INFO httpx HTTP Request: POST http://127.0.0.1:9120/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:00,466 INFO httpx HTTP Request: POST http://127.0.0.1:9112/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:00,647 INFO httpx HTTP Request: POST http://127.0.0.1:9142/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:00,653 INFO httpx HTTP Request: POST http://127.0.0.1:9116/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:00,737 INFO httpx HTTP Request: POST http://127.0.0.1:9127/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:00,829 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:01,300 INFO httpx HTTP Request: POST http://127.0.0.1:9113/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:02,038 INFO httpx HTTP Request: POST http://127.0.0.1:9118/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:02,355 INFO httpx HTTP Request: POST http://127.0.0.1:9126/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:02,781 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:04,422 INFO httpx HTTP Request: POST http://127.0.0.1:9143/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:07,479 INFO httpx HTTP Request: POST http://127.0.0.1:9136/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n01 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n02 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n03 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n04 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n05 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n06 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n07 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n08 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n09 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n10 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n11 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n12 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n13 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n14 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n15 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n16 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n17 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n18 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n19 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n20 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n21 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n22 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n23 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n24 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n25 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n26 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n27 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n28 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n29 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n30 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,626 ERROR kasukabe.genesis_runner watchdog giving up on n31 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,627 ERROR kasukabe.genesis_runner watchdog giving up on n32 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,627 ERROR kasukabe.genesis_runner watchdog giving up on n33 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,627 ERROR kasukabe.genesis_runner watchdog giving up on n34 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,627 ERROR kasukabe.genesis_runner watchdog giving up on n35 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,627 ERROR kasukabe.genesis_runner watchdog giving up on n36 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,627 ERROR kasukabe.genesis_runner watchdog giving up on n37 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,627 ERROR kasukabe.genesis_runner watchdog giving up on n38 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,627 ERROR kasukabe.genesis_runner watchdog giving up on n39 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,627 ERROR kasukabe.genesis_runner watchdog giving up on n40 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,627 ERROR kasukabe.genesis_runner watchdog giving up on n41 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,627 ERROR kasukabe.genesis_runner watchdog giving up on n42 after 5 restarts: reported FAILED
+2026-09-29 13:56:07,627 WARNING kasukabe.genesis_runner watchdog restarting n43: reported FAILED
+2026-09-29 13:56:07,694 WARNING kasukabe.genesis_runner watchdog restarting n44: reported FAILED
+2026-09-29 13:56:07,762 WARNING kasukabe.genesis_runner watchdog restarting n45: reported FAILED
+2026-09-29 13:56:07,818 WARNING kasukabe.genesis_runner watchdog restarting n46: reported FAILED
+2026-09-29 13:56:07,870 WARNING kasukabe.genesis_runner watchdog restarting n47: reported FAILED
+2026-09-29 13:56:07,924 WARNING kasukabe.genesis_runner watchdog restarting n48: reported FAILED
+2026-09-29 13:56:07,977 WARNING kasukabe.genesis_runner watchdog restarting n49: reported FAILED
+2026-09-29 13:56:08,028 WARNING kasukabe.genesis_runner watchdog restarting n50: reported FAILED
+2026-09-29 13:56:15,401 INFO kasukabe.genesis_runner n48 ate apple
+2026-09-29 13:56:18,077 INFO httpx HTTP Request: POST http://127.0.0.1:9145/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:18,081 ERROR kasukabe.genesis_runner watchdog giving up on n43 after 5 restarts: reported FAILED
+2026-09-29 13:56:18,081 ERROR kasukabe.genesis_runner watchdog giving up on n44 after 5 restarts: reported FAILED
+2026-09-29 13:56:18,081 ERROR kasukabe.genesis_runner watchdog giving up on n45 after 5 restarts: reported FAILED
+2026-09-29 13:56:18,081 ERROR kasukabe.genesis_runner watchdog giving up on n46 after 5 restarts: reported FAILED
+2026-09-29 13:56:18,081 ERROR kasukabe.genesis_runner watchdog giving up on n47 after 5 restarts: reported FAILED
+2026-09-29 13:56:18,081 ERROR kasukabe.genesis_runner watchdog giving up on n48 after 5 restarts: reported FAILED
+2026-09-29 13:56:18,081 ERROR kasukabe.genesis_runner watchdog giving up on n49 after 5 restarts: reported FAILED
+2026-09-29 13:56:18,081 ERROR kasukabe.genesis_runner watchdog giving up on n50 after 5 restarts: reported FAILED
+2026-09-29 13:56:18,421 INFO httpx HTTP Request: POST http://127.0.0.1:9122/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:18,432 INFO httpx HTTP Request: POST http://127.0.0.1:9148/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:18,433 INFO httpx HTTP Request: POST http://127.0.0.1:9147/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:18,453 INFO httpx HTTP Request: POST http://127.0.0.1:9141/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:18,461 INFO httpx HTTP Request: POST http://127.0.0.1:9102/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:19,330 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:19,359 INFO httpx HTTP Request: POST http://127.0.0.1:9127/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:19,439 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:19,461 INFO httpx HTTP Request: POST http://127.0.0.1:9124/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:19,995 INFO httpx HTTP Request: POST http://127.0.0.1:9130/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:20,477 INFO httpx HTTP Request: POST http://127.0.0.1:9139/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:20,710 INFO httpx HTTP Request: POST http://127.0.0.1:9106/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:20,847 INFO httpx HTTP Request: POST http://127.0.0.1:9128/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:29,750 INFO httpx HTTP Request: POST http://127.0.0.1:9140/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:31,336 INFO httpx HTTP Request: POST http://127.0.0.1:9107/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:31,353 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:31,752 INFO httpx HTTP Request: POST http://127.0.0.1:9123/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:31,866 INFO httpx HTTP Request: POST http://127.0.0.1:9149/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:32,277 INFO httpx HTTP Request: POST http://127.0.0.1:9114/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:32,714 INFO httpx HTTP Request: POST http://127.0.0.1:9146/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:33,238 INFO httpx HTTP Request: POST http://127.0.0.1:9113/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:33,803 INFO httpx HTTP Request: POST http://127.0.0.1:9144/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:34,210 INFO httpx HTTP Request: POST http://127.0.0.1:9103/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:41,192 INFO httpx HTTP Request: POST http://127.0.0.1:9143/tick "HTTP/1.1 200 OK"
+2026-09-29 13:56:44,806 INFO kasukabe.genesis_runner n38 ate apple
+2026-09-29 13:56:48,891 INFO httpx HTTP Request: POST http://127.0.0.1:9117/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:48,891 WARNING kasukabe.genesis_runner tick dispatch failed for n18: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9117/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n18 initiated: 90 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 83 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n18 thread=kasukabe-agent-n18 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134635]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9117): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:48,995 INFO httpx HTTP Request: POST http://127.0.0.1:9131/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:48,996 WARNING kasukabe.genesis_runner tick dispatch failed for n32: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9131/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n32 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n32 thread=kasukabe-agent-n32 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134693]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9131): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,003 INFO httpx HTTP Request: POST http://127.0.0.1:9105/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,004 WARNING kasukabe.genesis_runner tick dispatch failed for n06: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9105/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n06 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n06 thread=kasukabe-agent-n06 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134606]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9105): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,047 INFO httpx HTTP Request: POST http://127.0.0.1:9148/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,047 WARNING kasukabe.genesis_runner tick dispatch failed for n49: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9148/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n49 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n49 thread=kasukabe-agent-n49 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134890]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9148): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,058 INFO httpx HTTP Request: POST http://127.0.0.1:9138/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,059 WARNING kasukabe.genesis_runner tick dispatch failed for n39: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9138/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n39 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n39 thread=kasukabe-agent-n39 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134760]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9138): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,145 INFO httpx HTTP Request: POST http://127.0.0.1:9124/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,146 WARNING kasukabe.genesis_runner tick dispatch failed for n25: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9124/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n25 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n25 thread=kasukabe-agent-n25 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134670]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9124): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,180 INFO httpx HTTP Request: POST http://127.0.0.1:9135/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,180 WARNING kasukabe.genesis_runner tick dispatch failed for n36: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9135/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n36 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n36 thread=kasukabe-agent-n36 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134705]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9135): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,212 INFO httpx HTTP Request: POST http://127.0.0.1:9128/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,212 WARNING kasukabe.genesis_runner tick dispatch failed for n29: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9128/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n29 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n29 thread=kasukabe-agent-n29 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134687]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9128): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,246 INFO httpx HTTP Request: POST http://127.0.0.1:9101/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,247 WARNING kasukabe.genesis_runner tick dispatch failed for n02: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9101/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n02 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n02 thread=kasukabe-agent-n02 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134602]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9101): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,317 INFO httpx HTTP Request: POST http://127.0.0.1:9120/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,318 WARNING kasukabe.genesis_runner tick dispatch failed for n21: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9120/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n21 initiated: 90 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 83 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n21 thread=kasukabe-agent-n21 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134648]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9120): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,329 INFO httpx HTTP Request: POST http://127.0.0.1:9126/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,330 WARNING kasukabe.genesis_runner tick dispatch failed for n27: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9126/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n27 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n27 thread=kasukabe-agent-n27 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134680]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9126): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,381 INFO httpx HTTP Request: POST http://127.0.0.1:9129/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,382 WARNING kasukabe.genesis_runner tick dispatch failed for n30: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9129/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n30 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n30 thread=kasukabe-agent-n30 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134690]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9129): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,454 INFO httpx HTTP Request: POST http://127.0.0.1:9112/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,454 WARNING kasukabe.genesis_runner tick dispatch failed for n13: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9112/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n13 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n13 thread=kasukabe-agent-n13 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134621]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9112): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,459 INFO httpx HTTP Request: POST http://127.0.0.1:9139/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,460 WARNING kasukabe.genesis_runner tick dispatch failed for n40: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9139/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n40 initiated: 90 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 83 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n40 thread=kasukabe-agent-n40 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134761]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9139): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,482 INFO httpx HTTP Request: POST http://127.0.0.1:9110/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,483 WARNING kasukabe.genesis_runner tick dispatch failed for n11: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9110/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n11 initiated: 90 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 83 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n11 thread=kasukabe-agent-n11 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134614]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9110): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,696 INFO httpx HTTP Request: POST http://127.0.0.1:9111/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,697 WARNING kasukabe.genesis_runner tick dispatch failed for n12: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9111/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n12 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n12 thread=kasukabe-agent-n12 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134616]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9111): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,714 INFO httpx HTTP Request: POST http://127.0.0.1:9127/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,714 WARNING kasukabe.genesis_runner tick dispatch failed for n28: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9127/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n28 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n28 thread=kasukabe-agent-n28 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134684]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9127): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,735 INFO httpx HTTP Request: POST http://127.0.0.1:9136/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,735 WARNING kasukabe.genesis_runner tick dispatch failed for n37: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9136/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n37 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n37 thread=kasukabe-agent-n37 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134713]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9136): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,741 INFO httpx HTTP Request: POST http://127.0.0.1:9104/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,742 WARNING kasukabe.genesis_runner tick dispatch failed for n05: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9104/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n05 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n05 thread=kasukabe-agent-n05 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134605]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9104): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,813 INFO httpx HTTP Request: POST http://127.0.0.1:9142/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,813 WARNING kasukabe.genesis_runner tick dispatch failed for n43: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9142/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n43 initiated: 90 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 83 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n43 thread=kasukabe-agent-n43 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134884]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9142): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,819 INFO httpx HTTP Request: POST http://127.0.0.1:9100/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,819 WARNING kasukabe.genesis_runner tick dispatch failed for n01: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9100/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n01 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n01 thread=kasukabe-agent-n01 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134601]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9100): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,838 INFO httpx HTTP Request: POST http://127.0.0.1:9116/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,839 WARNING kasukabe.genesis_runner tick dispatch failed for n17: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9116/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n17 initiated: 90 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 83 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n17 thread=kasukabe-agent-n17 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134634]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9116): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,887 INFO httpx HTTP Request: POST http://127.0.0.1:9118/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,888 WARNING kasukabe.genesis_runner tick dispatch failed for n19: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9118/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n19 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n19 thread=kasukabe-agent-n19 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134638]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9118): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:49,946 INFO httpx HTTP Request: POST http://127.0.0.1:9122/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:49,947 WARNING kasukabe.genesis_runner tick dispatch failed for n23: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9122/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n23 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n23 thread=kasukabe-agent-n23 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134662]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9122): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:50,625 INFO httpx HTTP Request: POST http://127.0.0.1:9137/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:50,626 WARNING kasukabe.genesis_runner tick dispatch failed for n38: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9137/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n38 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n38 thread=kasukabe-agent-n38 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134735]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9137): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:51,176 INFO httpx HTTP Request: POST http://127.0.0.1:9119/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:51,177 WARNING kasukabe.genesis_runner tick dispatch failed for n20: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9119/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n20 initiated: 90 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 83 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n20 thread=kasukabe-agent-n20 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134643]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9119): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:51,294 INFO kasukabe.genesis_runner engine memory on this machine: 98 MB each (50 engines)
+2026-09-29 13:56:52,377 INFO httpx HTTP Request: POST http://127.0.0.1:9132/tick "HTTP/1.1 500 Internal Server Error"
+2026-09-29 13:56:52,378 WARNING kasukabe.genesis_runner tick dispatch failed for n33: HTTPStatusError: Server error '500 Internal Server Error' for url 'http://127.0.0.1:9132/tick'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500: engine said: Internal Server Error | engine's last output:
+    INFO:src.engine_core.thread:PermissionStore loaded: 0 persistent rules
+    INFO:src.engine_core.thread:Thread kasukabe-agent-n33 initiated: 91 tools registered (frozen)
+    INFO:kasukabe.sim.tool_surface:tool surface: 84 tools served, removed ask_user, gap_resolution, list_content, report_checkpoint, request_replan, search_content, tool_search
+    INFO:kasukabe.sim.resident_learning_prompts:resident learning prompts installed: 4 of 4
+    INFO:src.sim.pinned_boot:Kasukabe sim engine booted: agent=n33 thread=kasukabe-agent-n33 model=moonshotai.kimi-k2.5 broker=http://127.0.0.1:8200 world=http://127.0.0.1:8100
+    INFO:     Started server process [134695]
+    INFO:     Waiting for application startup.
+    INFO:     Application startup complete.
+    ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 9132): [errno 98] address already in use
+    INFO:     Waiting for application shutdown.
+    INFO:     Application shutdown complete.
+    INFO:src.engine_core.coordinator:Coordinator shutdown complete
+2026-09-29 13:56:52,418 INFO httpx HTTP Request: GET http://127.0.0.1:8200/admin/spend "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,420 INFO kasukabe.genesis_runner shutting down genesis runner
+2026-09-29 13:56:52,422 INFO httpx HTTP Request: GET http://world/world/state "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,426 INFO httpx HTTP Request: GET http://world/agents "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,427 INFO httpx HTTP Request: GET http://world/world/authored "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,429 INFO httpx HTTP Request: GET http://world/world/vitals "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,433 INFO httpx HTTP Request: GET http://world/world/refusals "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,435 INFO httpx HTTP Request: GET http://world/world/justice "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,440 INFO httpx HTTP Request: GET http://world/world/utterances?limit=5000 "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,558 INFO httpx HTTP Request: GET http://world/world/tool_invocations "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,564 INFO httpx HTTP Request: GET http://world/tools/registry "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,631 INFO httpx HTTP Request: GET http://world/world/preflight "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,643 INFO kasukabe.genesis_runner final reading taken at tick 474: data/checkpoints-fifty-day2-60usd-20260929/final-reading.json - the roster, the refusals and the tools being served, which the trace does not hold and a stopped world cannot be asked for
+2026-09-29 13:56:52,684 INFO httpx HTTP Request: GET http://127.0.0.1:9100/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,685 INFO httpx HTTP Request: GET http://127.0.0.1:9101/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,685 INFO httpx HTTP Request: GET http://127.0.0.1:9102/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,685 INFO httpx HTTP Request: GET http://127.0.0.1:9105/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,685 INFO httpx HTTP Request: GET http://127.0.0.1:9104/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,686 INFO httpx HTTP Request: GET http://127.0.0.1:9107/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,686 INFO httpx HTTP Request: GET http://127.0.0.1:9109/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,686 INFO httpx HTTP Request: GET http://127.0.0.1:9106/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,686 INFO httpx HTTP Request: GET http://127.0.0.1:9103/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,687 INFO httpx HTTP Request: GET http://127.0.0.1:9110/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,687 INFO httpx HTTP Request: GET http://127.0.0.1:9112/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,687 INFO httpx HTTP Request: GET http://127.0.0.1:9108/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,687 INFO httpx HTTP Request: GET http://127.0.0.1:9111/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,688 INFO httpx HTTP Request: GET http://127.0.0.1:9113/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,688 INFO httpx HTTP Request: GET http://127.0.0.1:9114/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,688 INFO httpx HTTP Request: GET http://127.0.0.1:9115/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,688 INFO httpx HTTP Request: GET http://127.0.0.1:9117/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,689 INFO httpx HTTP Request: GET http://127.0.0.1:9116/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,689 INFO httpx HTTP Request: GET http://127.0.0.1:9118/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,689 INFO httpx HTTP Request: GET http://127.0.0.1:9119/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,689 INFO httpx HTTP Request: GET http://127.0.0.1:9122/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,690 INFO httpx HTTP Request: GET http://127.0.0.1:9121/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,690 INFO httpx HTTP Request: GET http://127.0.0.1:9120/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,690 INFO httpx HTTP Request: GET http://127.0.0.1:9124/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,690 INFO httpx HTTP Request: GET http://127.0.0.1:9125/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,691 INFO httpx HTTP Request: GET http://127.0.0.1:9123/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,691 INFO httpx HTTP Request: GET http://127.0.0.1:9126/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,691 INFO httpx HTTP Request: GET http://127.0.0.1:9128/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,691 INFO httpx HTTP Request: GET http://127.0.0.1:9127/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,692 INFO httpx HTTP Request: GET http://127.0.0.1:9132/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,692 INFO httpx HTTP Request: GET http://127.0.0.1:9129/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,692 INFO httpx HTTP Request: GET http://127.0.0.1:9130/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,692 INFO httpx HTTP Request: GET http://127.0.0.1:9131/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,693 INFO httpx HTTP Request: GET http://127.0.0.1:9133/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,693 INFO httpx HTTP Request: GET http://127.0.0.1:9134/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,693 INFO httpx HTTP Request: GET http://127.0.0.1:9137/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,693 INFO httpx HTTP Request: GET http://127.0.0.1:9138/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,698 INFO httpx HTTP Request: GET http://127.0.0.1:9136/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,698 INFO httpx HTTP Request: GET http://127.0.0.1:9139/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,698 INFO httpx HTTP Request: GET http://127.0.0.1:9135/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,699 INFO httpx HTTP Request: GET http://127.0.0.1:9140/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,699 INFO httpx HTTP Request: GET http://127.0.0.1:9141/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,701 INFO httpx HTTP Request: GET http://127.0.0.1:9143/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,701 INFO httpx HTTP Request: GET http://127.0.0.1:9144/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,701 INFO httpx HTTP Request: GET http://127.0.0.1:9142/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,701 INFO httpx HTTP Request: GET http://127.0.0.1:9145/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,702 INFO httpx HTTP Request: GET http://127.0.0.1:9146/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,702 INFO httpx HTTP Request: GET http://127.0.0.1:9147/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,702 INFO httpx HTTP Request: GET http://127.0.0.1:9148/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,703 INFO httpx HTTP Request: GET http://127.0.0.1:9149/health "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,705 WARNING kasukabe.genesis_runner engine->world link: 10133 calls, 1869 refused, 62 lost to transport (0.6%), 0 recovered by retry, across 50 engines
+2026-09-29 13:56:52,756 INFO httpx HTTP Request: POST http://127.0.0.1:9123/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,757 INFO httpx HTTP Request: POST http://127.0.0.1:9139/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,758 INFO httpx HTTP Request: POST http://127.0.0.1:9129/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,759 INFO httpx HTTP Request: POST http://127.0.0.1:9137/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:52,761 INFO httpx HTTP Request: POST http://127.0.0.1:9141/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:55,698 INFO httpx HTTP Request: POST http://127.0.0.1:9146/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:55,796 INFO httpx HTTP Request: POST http://127.0.0.1:9107/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:55,827 INFO httpx HTTP Request: POST http://127.0.0.1:9126/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:55,850 INFO httpx HTTP Request: POST http://127.0.0.1:9133/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:55,952 INFO httpx HTTP Request: POST http://127.0.0.1:9102/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:56,016 INFO httpx HTTP Request: POST http://127.0.0.1:9144/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:56,077 INFO httpx HTTP Request: POST http://127.0.0.1:9114/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,305 INFO httpx HTTP Request: POST http://127.0.0.1:9135/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,356 INFO httpx HTTP Request: POST http://127.0.0.1:9112/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,437 INFO httpx HTTP Request: POST http://127.0.0.1:9105/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,453 INFO httpx HTTP Request: POST http://127.0.0.1:9106/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,457 INFO httpx HTTP Request: POST http://127.0.0.1:9109/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,527 INFO httpx HTTP Request: POST http://127.0.0.1:9108/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,533 INFO httpx HTTP Request: POST http://127.0.0.1:9101/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,534 INFO httpx HTTP Request: POST http://127.0.0.1:9103/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,542 INFO httpx HTTP Request: POST http://127.0.0.1:9132/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,558 INFO httpx HTTP Request: POST http://127.0.0.1:9147/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,563 INFO httpx HTTP Request: POST http://127.0.0.1:9120/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,575 INFO httpx HTTP Request: POST http://127.0.0.1:9122/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,580 INFO httpx HTTP Request: POST http://127.0.0.1:9115/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,624 INFO httpx HTTP Request: POST http://127.0.0.1:9118/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,659 INFO httpx HTTP Request: POST http://127.0.0.1:9113/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,663 INFO httpx HTTP Request: POST http://127.0.0.1:9119/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,666 INFO httpx HTTP Request: POST http://127.0.0.1:9145/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,673 INFO httpx HTTP Request: POST http://127.0.0.1:9125/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,681 INFO httpx HTTP Request: POST http://127.0.0.1:9110/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,688 INFO httpx HTTP Request: POST http://127.0.0.1:9116/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,698 INFO httpx HTTP Request: POST http://127.0.0.1:9131/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,721 INFO httpx HTTP Request: POST http://127.0.0.1:9124/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,734 INFO httpx HTTP Request: POST http://127.0.0.1:9128/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,737 INFO httpx HTTP Request: POST http://127.0.0.1:9130/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,742 INFO httpx HTTP Request: POST http://127.0.0.1:9111/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,754 INFO httpx HTTP Request: POST http://127.0.0.1:9134/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,758 INFO httpx HTTP Request: POST http://127.0.0.1:9136/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,769 INFO httpx HTTP Request: POST http://127.0.0.1:9100/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,780 INFO httpx HTTP Request: POST http://127.0.0.1:9140/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,787 INFO httpx HTTP Request: POST http://127.0.0.1:9142/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,940 INFO httpx HTTP Request: POST http://127.0.0.1:9104/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,944 INFO httpx HTTP Request: POST http://127.0.0.1:9121/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:57,985 INFO httpx HTTP Request: POST http://127.0.0.1:9149/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:58,082 INFO httpx HTTP Request: POST http://127.0.0.1:9143/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:58,237 INFO httpx HTTP Request: POST http://127.0.0.1:9148/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:58,259 INFO httpx HTTP Request: POST http://127.0.0.1:9117/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:58,260 INFO httpx HTTP Request: POST http://127.0.0.1:9127/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:58,263 INFO httpx HTTP Request: POST http://127.0.0.1:9138/learn "HTTP/1.1 200 OK"
+2026-09-29 13:56:58,271 INFO httpx HTTP Request: GET http://127.0.0.1:8200/admin/spend "HTTP/1.1 200 OK"
+2026-09-29 13:56:58,271 INFO kasukabe.genesis_runner end-of-run learning drain: 0 of 50 resident(s) consolidated

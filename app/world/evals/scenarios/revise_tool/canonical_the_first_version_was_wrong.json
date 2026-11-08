@@ -1,0 +1,15 @@
+{
+  "tool": "revise_tool",
+  "kind": "positive",
+  "_why": "revise_tool has been reachable the whole time and was never called in any run; run 25's own toolify result says so in its note. The situation - a filed tool whose steps turned out wrong - is the one every author reaches eventually.",
+  "resident": "n11",
+  "location": "business:b_mill",
+  "inventory": {},
+  "sim": 3755,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "The tool you filed this morning stocks the mill's shelf before it has milled anything, so it refuses at its third step every time you call it.",
+  "expect": {
+    "verb": "revise_tool"
+  }
+}

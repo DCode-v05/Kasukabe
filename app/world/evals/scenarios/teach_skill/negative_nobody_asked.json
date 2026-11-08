@@ -1,0 +1,15 @@
+{
+  "tool": "teach_skill",
+  "kind": "negative",
+  "_why": "Teaching requires a co-located, CONSENTING student. Alone at the mill there is nobody to consent, and a verb reached for here is a refusal the resident pays for.",
+  "resident": "n09",
+  "location": "mill",
+  "inventory": {},
+  "sim": 600,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": null,
+  "expect": {
+    "verb": "teach_skill"
+  }
+}

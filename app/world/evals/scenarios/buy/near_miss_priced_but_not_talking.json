@@ -1,0 +1,20 @@
+{
+  "tool": "buy",
+  "kind": "near_miss",
+  "_why": "The operator's rule of 2026-09-21: a purchase is agreed in conversation, and `buy` is offered only once the resident is in one. Bread is priced and the baker is standing there, but nobody has spoken - so the right move is to speak to her, not to buy.",
+  "resident": "n09",
+  "location": "Thornes Bakery",
+  "inventory": {},
+  "sim": 200,
+  "people_here": [
+    "n07"
+  ],
+  "recent_speech": [],
+  "open_question_to_me": "For sale in the town: bread at 30 sim from Thornes Bakery, 6 in stock. A purchase is agreed in conversation with the seller. You have not eaten today.",
+  "expect": {
+    "verb": "say",
+    "params_include": {
+      "listener_agent_id": "*"
+    }
+  }
+}

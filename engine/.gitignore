@@ -1,0 +1,39 @@
+
+# Environments
+# IDE
+# OS
+# Project-local files (not for GitHub)
+data/
+docker-compose.override.yml
+# Python
+# Testing
+*.egg-info/
+*.egg-info/
+*.py[cod]
+.DS_Store
+.coverage
+.env
+.idea/
+.pytest_cache/
+.venv/
+.vscode/
+MEMORY_SYSTEM.md
+Thumbs.db
+__pycache__/
+__pycache__/
+build/
+build/
+decisions.md
+dist/
+dist/
+docs/evaluation-framework.md
+hosting-architecture.md
+htmlcov/
+implementation-plan.md
+inputs.md
+lessons.md
+new_plan.md
+review_1.md
+ud_catalog_proposal.md
+venv/
+walkthrough.md

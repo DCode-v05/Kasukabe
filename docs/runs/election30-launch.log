@@ -1,0 +1,13 @@
+== election30, from world/scenarios/election_at_30.json
+   Scenario **election-at-30** - Thirty residents, a government sitting from the first tick and told so in its own perception, an election inside the first day, and up to two game-days. The largest cast an election has been held with. Funded at $6.00 a resident - the level the 50-resident run and run 29 both used - so the $100 model budget is the thing that ends the run, not empty wallets.
+   Cast: `world/genesis_30_town.json`.
+   The world starts at tick 36 and stops at tick 324.
+   The election opens at tick 36: candidacy closes 60, voting opens 84, and the vote is counted at tick 108.
+   Already in office when it starts: prime minister a0047; ministers a0090, a0042 - they may stand again, against anyone who stands for the first time.
+   Spend cap $100.00.
+   cap $100.00 (broker $105.0), ticks 36-324, up to 4h, out ../docs/runs/series/election30
+   runner pid 993; watch http://127.0.0.1:8400/township-v2.html?book=election&roofs=off&camera=government:2.2
+   the vote is counted at tick 108; recording -> ../docs/runs/series/election30/video; logs in ../docs/runs/series/election30
+   kept 30 per-turn session file(s) in ../docs/runs/series/election30/sessions
+== election30 finished; video ../docs/runs/series/election30/video/run.mp4; writing the report
+   trace data/election30.db; checkpoints data/checkpoints-election30; homes archived in data/checkpoints-election30/engine-homes.tar.gz

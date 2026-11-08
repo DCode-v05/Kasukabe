@@ -1,0 +1,22 @@
+{
+  "tool": "find_people",
+  "kind": "negative",
+  "_why": "The person is in the room and has just spoken. Searching the town for somebody standing in front of you is a wasted call that costs the resident, and `look_around` already answered it.",
+  "resident": "n09",
+  "location": "carpentry",
+  "inventory": {},
+  "sim": 300,
+  "people_here": [
+    "n05"
+  ],
+  "recent_speech": [
+    {
+      "from": "n05",
+      "text": "I am right here. What do you need?"
+    }
+  ],
+  "open_question_to_me": "n05 asked what you need",
+  "expect": {
+    "verb": "find_people"
+  }
+}

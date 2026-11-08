@@ -1,0 +1,75 @@
+{
+  "name": "a-trial-day-two-20",
+  "description": "Twenty residents, an election held on game-day 2, and a town that opens with food on its shelves, materials in its yard and a price board on every counter. The first live test of the seeded economy: whether residents buy, sell, cook and pay each other when there is something to buy with and something to buy. Extended to tick 440 so the $20 cap, not the tick range, is what ends the run.",
+  "world": {
+    "genesis": "world/genesis_20_funded.json",
+    "start_tick": 324,
+    "stop_tick": 440,
+    "budget_cap_usd": 20.0,
+    "max_game_days": 3
+  },
+  "charter": {
+    "candidacy_window_hours": 3,
+    "campaign_period_hours": 3,
+    "voting_window_hours": 3,
+    "election_interval_hours": 24,
+    "pm_seats": 1,
+    "minister_seats": 2,
+    "suffrage_min_age": 18
+  },
+  "election": {
+    "opens_at": "start"
+  },
+  "government": {
+    "incumbents": [
+      {
+        "agent_id": "n02",
+        "seat": "prime_minister"
+      },
+      {
+        "agent_id": "n06",
+        "seat": "minister"
+      },
+      {
+        "agent_id": "n08",
+        "seat": "minister"
+      }
+    ]
+  },
+  "recording": {
+    "interval_s": 2,
+    "fps": 30,
+    "width": 1920,
+    "height": 1080,
+    "url": "http://127.0.0.1:8400/township-v2.html?book=election&roofs=off&camera=government:2.2",
+    "views": [
+      {
+        "name": "town-with-buildings",
+        "url": "http://127.0.0.1:8400/township-v2.html?book=town&roofs=on"
+      },
+      {
+        "name": "town-without-buildings",
+        "url": "http://127.0.0.1:8400/township-v2.html?book=town&roofs=off"
+      },
+      {
+        "name": "live-chats",
+        "url": "http://127.0.0.1:8400/township-v2.html?book=groupchat&roofs=off"
+      },
+      {
+        "name": "election",
+        "url": "http://127.0.0.1:8400/township-v2.html?book=election&roofs=off&camera=government:2.2"
+      },
+      {
+        "name": "money",
+        "url": "http://127.0.0.1:8400/township-v2.html?book=money&roofs=on"
+      },
+      {
+        "name": "government",
+        "url": "http://127.0.0.1:8400/township-v2.html?book=govern&roofs=off&camera=government:2.2"
+      }
+    ]
+  },
+  "report": {
+    "out": "../docs/runs/series/trial-day2-20"
+  }
+}

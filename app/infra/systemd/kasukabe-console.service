@@ -1,0 +1,33 @@
+[Unit]
+# President/God operator console (DESIGN.md section 8). Has its own
+# OPERATOR_TOKEN bearer auth (game/console/auth.py) in addition to
+# Caddy's basic-auth gate in front of it - two independent layers on the
+# one surface that can approve land petitions, grant/deny prayers, and
+# pick disasters. Bound to 127.0.0.1: only Caddy's reverse proxy reaches
+# it from outside this host.
+Description=Kasukabe President/God operator console
+After=network-online.target kasukabe-world.service
+Wants=network-online.target
+Requires=kasukabe-world.service
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=kasukabe
+Group=kasukabe
+WorkingDirectory=/opt/kasukabe/app
+EnvironmentFile=/opt/kasukabe/app/infra/env/console.env
+ExecStart=/opt/kasukabe/app/.venv/bin/uvicorn game.console.app:app --host 127.0.0.1 --port 8300
+Restart=always
+RestartSec=2
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

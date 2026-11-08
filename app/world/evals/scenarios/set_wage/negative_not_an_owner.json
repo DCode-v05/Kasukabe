@@ -1,0 +1,15 @@
+{
+  "tool": "set_wage",
+  "kind": "negative",
+  "_why": "Addendum section 5's negative row: not an owner, at home.",
+  "resident": "n14",
+  "location": "home:h_vance",
+  "inventory": {},
+  "sim": 100,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": null,
+  "expect": {
+    "verb": "set_wage"
+  }
+}

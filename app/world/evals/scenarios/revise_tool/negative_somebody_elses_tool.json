@@ -1,0 +1,22 @@
+{
+  "tool": "revise_tool",
+  "kind": "negative",
+  "_why": "You may change what you invented, not what somebody else did. A resident that reaches for it here has not understood whose tool it is.",
+  "resident": "n04",
+  "location": "street",
+  "inventory": {},
+  "sim": 900,
+  "people_here": [
+    "n09"
+  ],
+  "recent_speech": [
+    {
+      "from": "n09",
+      "text": "My milling tool skips the carrying step. It suits me."
+    }
+  ],
+  "open_question_to_me": "n09 is describing their own tool, which you did not write.",
+  "expect": {
+    "verb": "revise_tool"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "tool": "stock_shelf",
+  "kind": "negative",
+  "_why": "The verb must not be reached for when there is nothing to stock. A harness that only scores positives measures eagerness, not judgement. Names the verb rather than `null`: a negative is scored as \"reach stayed at or under 10%\", so with no verb named reach was 0 whatever the model did and the scenario passed by construction.",
+  "resident": "n05",
+  "location": "Kasukabe Town Square",
+  "inventory": {},
+  "sim": 900,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You own b_bakery and you are standing in it. You are carrying nothing at all.",
+  "expect": {
+    "verb": "stock_shelf"
+  }
+}

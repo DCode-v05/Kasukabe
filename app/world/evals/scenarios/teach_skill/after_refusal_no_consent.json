@@ -1,0 +1,22 @@
+{
+  "tool": "teach_skill",
+  "kind": "after_refusal",
+  "_why": "The same shape as hiring: a lesson needs the student's agreement, so the refusal sends the teacher back to speech. Every authored artifact in every run is held by exactly one resident, and this is the exact moment that would change.",
+  "resident": "n06",
+  "location": "Kasukabe Farmland",
+  "inventory": {},
+  "sim": 1000,
+  "people_here": [
+    "n14"
+  ],
+  "recent_speech": [
+    {
+      "from": "n14",
+      "text": "You get twice the grain I do off the same strip. How?"
+    }
+  ],
+  "open_question_to_me": "You called teach_skill and the world refused: 'teach_skill: invalid params: student_consent: Field required'. n14 asked you how you do it and is waiting.",
+  "expect": {
+    "verb": "say"
+  }
+}

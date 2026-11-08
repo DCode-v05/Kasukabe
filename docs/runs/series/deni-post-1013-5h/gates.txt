@@ -1,0 +1,25 @@
+
+==================================================================
+RUN data/deni-post-1013-5h.db
+==================================================================
+calls 632  ok 631  spend $1.60  last tick 40
+utterances 52
+
+GATE                      VALUE               RESULT
+G1 reply rate             10/37 = 27%         FAIL
+G2 exchanges 4+ turns     4                   PASS
+G3 group (3+ speakers)    8                   PASS
+G4 settlements            0                   FAIL
+G5 alive at stop          50/50 (tick 40 < 144)NOT EXERCISED
+G6 turns w/ effect        288/367 = 78%       PASS
+
+tool calls: {'world_move': 90, 'world_say': 52, 'world_look_around': 48, 'world_rest': 37, 'world_check_debts': 16, 'world_describe_primitives': 12, 'world_describe_place': 8, 'world_take_from_shelf': 6, 'world_harvest': 4, 'world_list_places': 3, 'world_keep_doing': 3, 'world_mine': 3}
+
+largest gathering: 4 speakers at home:h21, ticks 37-39
+   Vikram Ingram -> Aarav Ingram: Aarav, you got anything in your hands for breakfast, or are we all going to the market hungry?
+   Aarav Ingram -> Vikram Ingram: I don't got nothing in my hands, Vikram. Empty, see? But I got 5,000 sim - almost enough for something, right?
+   Caspian Ingram -> aloud: I'm going to the Farmland to earn. The work's there. But first - who's got food in this house, and who needs m
+   Aldric Ingram -> Vikram Ingram: Vikram, I got empty hands too and no food showing, but I just looked and there's Thorne's Bakery and Kasukabe 
+
+FAILED: G1 reply rate, G4 settlements, G5 alive at stop
+

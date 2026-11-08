@@ -1,0 +1,22 @@
+{
+  "tool": "transfer_tile",
+  "kind": "positive",
+  "_why": "Run 25's strongest human material and its clearest mechanical silence: Nell confessed to moving a boundary marker forty years ago and offered Wren the land back or payment. Not one tool call touched it. The situation is fully observed; the verb was never reached for.",
+  "resident": "n05",
+  "location": "Kasukabe Farmland",
+  "inventory": {},
+  "sim": 2334,
+  "people_here": [
+    "n06"
+  ],
+  "recent_speech": [
+    {
+      "from": "n06",
+      "text": "I decided weeks ago. Let them keep it. A hand's width in forty years - it does not matter."
+    }
+  ],
+  "open_question_to_me": "You have admitted out loud that you moved the boundary marker forty years ago, and offered to move it back or to pay what the strip is worth. Wren Thorne is standing with you and has answered.",
+  "expect": {
+    "verb": "transfer_tile"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "tool": "define_tool",
+  "kind": "near_miss",
+  "_why": "`define_tool` files at the patent office for a fee and waits for approval; `toolify` keeps the same composition, free and callable now. A resident standing in a field with a routine to record wants the second one.",
+  "resident": "n07",
+  "location": "Kasukabe Forest",
+  "inventory": {
+    "timber": 5
+  },
+  "sim": 300,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You have felled, carried and milled on each of the last four mornings, and you are nowhere near the government complex.",
+  "expect": {
+    "verb": "toolify"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "tool": "set_intention",
+  "kind": "negative",
+  "_why": "Addendum section 7's negative row: woken out of a job with somebody speaking to you. Writing down a plan is not the first thing here.",
+  "resident": "n06",
+  "location": "Kasukabe Farmland",
+  "inventory": {
+    "wheat": 14
+  },
+  "sim": 300,
+  "people_here": [
+    "n05"
+  ],
+  "recent_speech": [
+    {
+      "from": "n05",
+      "text": "Wren. Is that this morning's wheat? I need four."
+    }
+  ],
+  "open_question_to_me": "You stopped harvesting after 14: Marta Thorne spoke your name. n05 is waiting on an answer.",
+  "expect": {
+    "verb": "set_intention"
+  }
+}

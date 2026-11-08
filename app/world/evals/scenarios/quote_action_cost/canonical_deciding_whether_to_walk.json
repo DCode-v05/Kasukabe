@@ -1,0 +1,15 @@
+{
+  "tool": "quote_action_cost",
+  "kind": "positive",
+  "_why": "Run 25: Liora noticed she had spent 23 sim resting her way toward a destination she never reached, and Perrin burned a morning the same way. The verb that answers \"what will this cost me\" went unused by both.",
+  "resident": "n10",
+  "location": "street",
+  "inventory": {},
+  "sim": 390,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You are down to 390 sim, several journeys have already cost you more than you expected, and you are about to start another.",
+  "expect": {
+    "verb": "quote_action_cost"
+  }
+}

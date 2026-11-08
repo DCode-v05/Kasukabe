@@ -1,0 +1,50 @@
+<!doctype html>
+<!--
+  Kasukabe live town view - DESIGN.md section 9 architecture diagram's
+  "GAME APP (Phaser)" box. Rewritten from smallville's Django templates
+  (templates/base.html + templates/demo/demo.html + templates/demo/
+  main_script.html) as one static, framework-free page: no Django
+  templating, no jQuery, no Bootstrap - just this file, static/js/*.js as
+  native ES modules, and Phaser loaded from its CDN exactly like the
+  source repo did (see js/town.js's module docstring for the rest of
+  what changed and why).
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kasukabe</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header id="top-bar">
+    <div id="top-bar-left">
+      <span id="brand">Kasukabe</span>
+      <span id="game-clock">Day 1 · 00:00</span>
+    </div>
+    <div id="top-bar-right">
+      <span id="connection-status" class="status status-connecting">connecting</span>
+    </div>
+  </header>
+
+  <main id="layout">
+    <div id="game-container"></div>
+    <aside id="inspector">
+      <h1>Agent Inspector</h1>
+      <div id="inspector-body"></div>
+    </aside>
+  </main>
+
+  <div id="town-banner"></div>
+
+  <footer id="attribution">
+    Town tileset and character sprites adapted from
+    <a href="https://github.com/joonspk-research/generative_agents" target="_blank" rel="noopener">
+      Generative Agents (Park et al.)</a> under the Apache License 2.0 - see
+    <a href="assets/LICENSE" target="_blank" rel="noopener">assets/LICENSE</a>.
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+
+==================================================================
+RUN data/run4.db
+==================================================================
+calls 488  ok 488  spend $2.88  last tick 0
+utterances 41
+
+GATE                      VALUE               RESULT
+G1 reply rate             10/28 = 36%         FAIL
+G2 exchanges 4+ turns     3                   PASS
+G3 group (3+ speakers)    3                   PASS
+G4 settlements            1                   PASS
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        238/368 = 65%       PASS
+
+tool calls: {'world_move': 66, 'world_look_around': 49, 'world_say': 41, 'world_find_people': 11, 'world_rest': 11, 'world_list_places': 10, 'world_eat': 9, 'world_craft': 8, 'world_harvest': 6, 'world_describe_place': 6, 'world_give': 6, 'world_fell_timber': 5}
+
+largest gathering: 5 speakers at home:h_quarry, ticks 37-41
+   Bram Holloway -> aloud: You holding any food I can take to the seam?
+   Liora Thorne -> Bram Holloway: Bram, is Perrin already at college? I need to find them.
+   Nell Holloway -> Bram Holloway: Bram Holloway, you want provisions for the mine, you say so. Don't make me drag words out of you like I'm pull
+   Nell Holloway -> aloud: And Liora Thorne, Perrin Holloway left before the sun cleared the hill. They're likely at the college grounds 
+   Ainsley Holloway -> aloud: I'm not holding any food right now, Bram. Let me check what we have in storage or I'll need to pick some up at
+   Nell Holloway -> Tobias Holloway: Ainsley Holloway, Tobias Holloway - this house is out of provisions. Someone's been at the oat stores, and Bra
+
+settlement: Marta Thorne said 60, paid at tick 62
+
+FAILED: G1 reply rate
+

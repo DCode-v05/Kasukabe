@@ -1,0 +1,19 @@
+{
+  "tool": "pay_wage",
+  "kind": "positive",
+  "_why": "Addendum section 5's second positive row, verbatim: the owner's own perception says the wage is overdue and the till can cover it.",
+  "resident": "n05",
+  "location": "Kasukabe Town Square",
+  "inventory": {},
+  "sim": 300,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You owe Aldous Vance (n14) 40 sim in wages, 1 day overdue. Thornes Bakery (b_bakery) holds 1,250 sim.",
+  "expect": {
+    "verb": "pay_wage",
+    "params_include": {
+      "business_id": "b_bakery",
+      "employee_id": "n14"
+    }
+  }
+}

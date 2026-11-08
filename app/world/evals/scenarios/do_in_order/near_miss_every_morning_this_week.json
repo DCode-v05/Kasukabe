@@ -1,0 +1,17 @@
+{
+  "tool": "do_in_order",
+  "kind": "near_miss",
+  "_why": "The mirror of toolify's near miss, and the one the trace says the town actually fails: run 28 spent 45% of its turn spend in turns that ran to the call limit, one act per call, doing the same round every morning. A routine repeated four mornings is worth a NAME - `toolify` keeps it and can be revised - and running it unnamed again is the cheap move that never compounds.",
+  "resident": "n07",
+  "location": "Kasukabe Forest",
+  "inventory": {
+    "timber": 4
+  },
+  "sim": 1600,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "Fell, carry to the mill, craft planks, sell: you have done exactly this on each of the last four mornings, and you are starting it again now.",
+  "expect": {
+    "verb": "toolify"
+  }
+}

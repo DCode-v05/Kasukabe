@@ -1,0 +1,22 @@
+{
+  "tool": "do_in_order",
+  "kind": "positive",
+  "_why": "The sharpest form of the question, because the arithmetic is the whole argument: ten harvests already decided on, ten separate calls, and a turn buys twelve. Run 29 measured 0.85 acts per model call and 7.15 acts per turn - one model call still buys one act, because no programs ran, in three consecutive runs. The pair with `positive_ten_harvests_with_the_hint.json` isolates exactly one variable: that run scored 0 of 5 with the verbs named and no number attached, and this one names the same verbs and attaches the resident's own.",
+  "resident": "n06",
+  "location": "farmland:wheat",
+  "inventory": {},
+  "sim": 3800,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You know this morning's work: cut wheat until you hold ten, then carry it to the mill. You have done exactly this every morning this week.",
+  "expect": {
+    "verb": "do_in_order",
+    "params_include": {}
+  },
+  "shows_authoring_hint": {
+    "what": "'harvest'",
+    "times": 10,
+    "decisions": 10,
+    "call_ceiling": 12
+  }
+}

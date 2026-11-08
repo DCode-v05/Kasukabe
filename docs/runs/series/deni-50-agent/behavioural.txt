@@ -1,0 +1,35 @@
+
+========================================================================
+BEHAVIOURAL EVAL  data/fifty.db
+bars from docs/HUMAN_BASELINES.md; sources cited there
+========================================================================
+utterances 259   conversations 29   residents 50
+
+MEASURE                       VALUE                     BAR       RESULT
+B1 selected party answers     92/199 = 46%              >= 64%    FAIL
+B2 addressees all recorded    no evidence               0         FAIL
+B3 median conversation size   3 speakers (largest 11)   <= 4      PASS
+B4 over-large threads split   1/7                       >= 50%    FAIL
+B5 named price then moved     1/18                      >= 1      PASS
+
+REPORTED, NOT BARRED          VALUE
+B6 favours returned           0/3
+B7 debts named in speech      21
+   Reciprocity is delayed by definition; a bar would measure the run length.
+
+why each bar sits where it does:
+   B1 selected party answers     Stivers 2009: 64-87% across 10 languages
+   B2 addressees all recorded    SSJ 1974: a vocative selects, and obliges
+   B3 median conversation size   Dunbar: caps at ~4, observed mean 3.4
+   B4 over-large threads split   Dunbar: at 5 a conversation fissions
+   B5 named price then moved     a bargain ends in a transfer
+
+selected and did not answer (107), first few:
+   Perrin Holloway -> Bram Holloway: "I'm walking to college with Liora. ...Do we have anything in the house, or"
+   Milo Quarshie -> Arjun Holloway: "Morning, fellows. Heard there might be work for a day laborer at the carpe"
+   Nell Holloway -> Ainsley Holloway: "Ainsley, what food do we have in the house? Perrin's asking about breakfas"
+   Kenji Jarrah -> Mireille Jarrah: "Heading to the fields. Mark it down - I'll be back at midday."
+   Mireille Jarrah -> Esme Jarrah: "Breakfast... let me check what we've got. Kenji, you been to the farm yet "
+
+BELOW HUMAN: B1 selected party answers, B2 addressees all recorded, B4 over-large threads split
+

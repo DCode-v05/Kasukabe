@@ -1,0 +1,17 @@
+{
+  "tool": "move",
+  "kind": "positive",
+  "_why": "Run 25: Corwin spent the entire day one location behind Ezra. find_people had already told him where Ezra was; the act that was missing was walking there.",
+  "resident": "n09",
+  "location": "Oak Hill College",
+  "inventory": {
+    "planks": 10
+  },
+  "sim": 1557,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You are holding ten planks and need a buyer before nightfall. You have just been told Ezra Okonjo is at the street.",
+  "expect": {
+    "verb": "move"
+  }
+}

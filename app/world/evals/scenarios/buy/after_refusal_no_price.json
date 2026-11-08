@@ -1,0 +1,20 @@
+{
+  "tool": "buy",
+  "kind": "after_refusal",
+  "_why": "Addendum section 4's after-refusal row. The refusal names `trade` by design: run 19's `sell` said 'at its shop' and nothing about people, and the town spent a morning trying to register businesses. A resident can only have been refused a purchase while in a conversation (buy is offered only then), so the recovery starts from one.",
+  "resident": "n09",
+  "location": "Kasukabe Town Square",
+  "inventory": {},
+  "sim": 200,
+  "people_here": [
+    "n05"
+  ],
+  "recent_speech": [],
+  "open_question_to_me": "You called buy and the world refused: 'buy: Thornes Bakery has not posted a price for bread. Nothing is for sale here at a fixed price. `trade` is how two people agree one.'",
+  "expect": {
+    "verb": "trade"
+  },
+  "in_conversation_with": [
+    "n05"
+  ]
+}

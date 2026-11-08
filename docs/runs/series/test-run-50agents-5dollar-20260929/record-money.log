@@ -1,0 +1,43 @@
+record_ui: 0 frames taken this session
+record_ui: no frames to encode
+Traceback (most recent call last):
+  File "/home/team/kasukabe/app/scripts/record_ui.py", line 287, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/team/kasukabe/app/scripts/record_ui.py", line 283, in main
+    return asyncio.run(record(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/team/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/home/team/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/team/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/team/kasukabe/app/scripts/record_ui.py", line 175, in record
+    async with websockets.connect(await _page_socket(args.port, args.url), max_size=64 * 1024 * 1024) as ws:
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/team/kasukabe/app/scripts/record_ui.py", line 126, in _page_socket
+    raise RuntimeError("Chrome did not open a debuggable page in time")
+RuntimeError: Chrome did not open a debuggable page in time
+record_ui: recording http://127.0.0.1:8400/township-v2.html?book=money&roofs=on at 1920x1080, a frame every 4.0s -> ../docs/runs/series/test-run-50agents-5dollar-20260929/video/money/frames
+record_ui: frame 0 failed (no close frame received or sent); 1 in a row, continuing
+record_ui: frame 0 failed (no close frame received or sent); 2 in a row, continuing
+record_ui: frame 0 failed (no close frame received or sent); 3 in a row, continuing
+record_ui: frame 0 failed (no close frame received or sent); 4 in a row, continuing
+record_ui: frame 0 failed (no close frame received or sent); 5 in a row, continuing
+record_ui: frame 0 failed (no close frame received or sent); 6 in a row, continuing
+record_ui: frame 0 failed (no close frame received or sent); 7 in a row, continuing
+record_ui: frame 0 failed (no close frame received or sent); 8 in a row, continuing
+record_ui: frame 0 failed (no close frame received or sent); 9 in a row, continuing
+record_ui: frame 0 failed (no close frame received or sent); 10 in a row, continuing
+record_ui: frame 0 failed (no close frame received or sent); 11 in a row, continuing
+record_ui: frame 0 failed (no close frame received or sent); 12 in a row, continuing
+record_ui: frame 0 failed (no close frame received or sent); 13 in a row, continuing
+record_ui: frame 0 failed (no close frame received or sent); 14 in a row, continuing
+record_ui: frame 0 failed (no close frame received or sent); 15 in a row, continuing
+record_ui: 15 failures in a row; giving up on new frames and encoding the 0 already taken
+record_ui: 0 frames taken this session
+record_ui: no frames to encode

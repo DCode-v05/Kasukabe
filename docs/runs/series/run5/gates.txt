@@ -1,0 +1,27 @@
+
+==================================================================
+RUN data/run5.db
+==================================================================
+calls 533  ok 533  spend $3.24  last tick 0
+utterances 31
+
+GATE                      VALUE               RESULT
+G1 reply rate             11/25 = 44%         FAIL
+G2 exchanges 4+ turns     1                   FAIL
+G3 group (3+ speakers)    1                   PASS
+G4 settlements            0                   FAIL
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        317/431 = 74%       PASS
+
+tool calls: {'world_look_around': 86, 'world_move': 82, 'world_say': 33, 'world_find_people': 18, 'world_describe_place': 16, 'world_rest': 15, 'world_craft': 15, 'world_list_places': 12, 'world_describe_person': 10, 'world_fell_timber': 8, 'world_describe_primitives': 7, 'world_quote_action_cost': 5}
+
+largest gathering: 8 speakers at home:h_field, ticks 37-51
+   Liora Thorne -> aloud: What's in the kitchen? I'm heading to college soon and I've got nothing to eat.
+   Marta Thorne -> Wren Thorne: Wren, I'm off to the bakery. The flour from yesterday's batch - is it milled and ready? I'm starting the oven 
+   Marta Thorne -> Wren Thorne: Wren, I need flour for the day's baking. Do you have wheat ready, or is it already milled? The bakery needs to
+   Marta Thorne -> Wren Thorne: Sit down - we need to sort this out. The bakery's got no flour, I've no food in my hold, and the season's gett
+   Liora Thorne -> Marta Thorne: I'm hungry. I need food before college. Is there anything I can eat?
+   Idris Thorne -> Corwin Thorne: I'm to the forest. Corwin, with me or stay?
+
+FAILED: G1 reply rate, G2 exchanges 4+ turns, G4 settlements
+

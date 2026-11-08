@@ -1,0 +1,348 @@
+<!doctype html>
+<!--
+  Kasukabe Township - the live isometric village for all 250 residents
+  (DESIGN.md section 8's Viewers, AGENT_LIFE_FRAMEWORK.md "The 250").
+  Self-contained and read-only: open this file straight off disk, or serve
+  game/static/ over http. Sibling pages: agents.html (agent views),
+  views.html (world/governance/social), console/static/index.html (the
+  separate, write-capable President/God console).
+
+  Every panel here reads the RUNNING world. The client-side model that used
+  to drive Health, Food, Treasury and the build order has been removed along
+  with those panels, and the invented "Live conversation" is replaced by Talk,
+  which shows real `say` utterances threaded into exchanges.
+
+  What remains from build time is the cast itself - names, families,
+  occupations, personas - read from world/genesis.json. live-cast.js prunes it
+  to the agents a bound run actually reports, so the map and every book
+  describe the run rather than the file.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kasukabe — Township v2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Fraunces for display: a variable serif with optical sizing and real
+       character - the wordmark and panel titles need a voice, and this is a
+       research instrument, not a toy. Archivo for UI: an engineered
+       grotesque that stays legible at 11px in a dense control strip.
+       JetBrains Mono for every number, because money and tick counts belong
+       in tabular figures that do not jitter as they change. -->
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&amp;family=Archivo:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/township.css" />
+  <!-- The revamp layer. township.css owns the tokens and 402 var()
+       references depend on them; this extends that vocabulary and
+       replaces the component surface, and must load second to win on
+       equal specificity. It touches nothing the map draws. -->
+  <link rel="stylesheet" href="css/instrument.css" />
+  <!-- The revamp, split by surface so each part stays readable and so the
+       four were written independently without fighting over one file.
+       Order matters only in that these load after instrument.css and win
+       on equal specificity; they do not overlap each other. -->
+  <link rel="stylesheet" href="css/parts/controls.css" />
+  <link rel="stylesheet" href="css/parts/books.css" />
+  <link rel="stylesheet" href="css/parts/resident.css" />
+  <link rel="stylesheet" href="css/parts/overlays.css" />
+  <link rel="stylesheet" href="css/parts/election.css" />
+  <!-- The non-map surfaces, rebuilt on one spacing scale and one accent.
+       Loads last so it wins on equal specificity; it touches nothing the
+       canvas draws. See the file header for what was wrong and why. -->
+  <link rel="stylesheet" href="css/parts/revamp.css?v=20260826193627" />
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="titles">
+      <h1>Kasukabe Township <span style="font-size:13px;color:var(--ink-faint)">v2</span></h1>
+      <span class="kicker">314 residents · live village</span>
+    </div>
+  </header>
+
+
+
+  <div class="console">
+    <div class="clock">
+      <span class="day" id="dayLabel">Day 1</span>
+      <span class="time"><span id="clockLabel">06:00:00</span><span class="meridiem" id="clockMeridiem">AM</span></span>
+    </div>
+    <div class="phase-pill" id="phasePill">town waking</div>
+    <!-- The Mock run / Real sim toggle is gone: there is only one mode.
+         game/ serves a real world server and the broker only talks to
+         real Bedrock, so a "mock" button would have nothing to switch
+         to - and a button that silently does nothing is worse than no
+         button. Live polling is on from load. -->
+    <div class="live-badge off" id="liveBadge" title="No live world server bound.">SIMULATED SCHEDULE</div>
+    <div class="cost-readout idle" id="costReadout"
+         title="Real spend, read from the broker's spend governor.">
+      <span class="cost-label" id="costLabel">Not spending</span>
+      <span class="cost-figure" id="costFigure" hidden>
+        <span class="cost-micros" id="costMicros">0</span><span class="cost-unit">&#181;$</span>
+        <span class="cost-usd" id="costUsd"></span>
+        <span class="cost-model" id="costModel"></span>
+      </span>
+    </div>
+    <div class="controls">
+      <button class="ctl primary" id="playBtn" type="button" aria-pressed="true">Pause</button>
+      <button class="ctl speed" data-speed="1" type="button" aria-pressed="true">1×</button>
+      <button class="ctl speed" data-speed="5" type="button" aria-pressed="false">5×</button>
+      <button class="ctl speed" data-speed="10" type="button" aria-pressed="false">10×</button>
+      <span class="zoom-group">
+        <button class="ctl zoom" id="zoomOutBtn" type="button" aria-label="Zoom out">−</button>
+        <span class="zoom-level" id="zoomLevel">100%</span>
+        <button class="ctl zoom" id="zoomInBtn" type="button" aria-label="Zoom in">+</button>
+      </span>
+      <button class="ctl" id="recentreBtn" type="button">Fit whole town</button>
+      <button class="ctl" id="labelBtn" type="button" aria-pressed="true">Labels</button>
+      <button class="ctl" id="insideBtn" type="button" aria-pressed="false" title="Take the roofs off and watch people work indoors">Roofs off</button>
+      <button class="ctl" id="exportBtn" type="button">Export PNG</button>
+      <button class="ctl" id="themeBtn" type="button" title="Switch theme">Night</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="hud-stats">
+      <!-- The "Model spend" figure is gone. It was a client-side estimate
+           of what a run WOULD cost, sitting inches from figures that are
+           real, distinguished only by a small MODELLED tag. Real spend is
+           metered by the broker's spend governor and shown in the cost
+           readout above; there is no second, invented number now. -->
+      <span class="hud-stat">Town wealth <b id="hudWealth">0</b> sim</span>
+      <span class="hud-stat">Treasury <b id="hudTreasury">0</b> sim</span>
+      <span class="hud-stat alive">Alive <b id="hudAlive">250</b></span>
+      <span class="hud-stat dead">Deceased <b id="hudDead">0</b></span>
+    </div>
+  </div>
+
+  <!-- The Talk book. Present in the markup because shell.js shelves panels
+       that already exist when it runs; talk.js only fills the body. -->
+  <!-- Who reached for skillify and toolify. The Workshop says what the town
+       has; this says which residents are authoring, which is the split that
+       matters when most agents never invent anything. -->
+  <!-- The start-of-run checklist. The runner refuses to start when a
+       critical line here fails; this panel is the same fifteen checks,
+       re-answered live, so a run that stops names the reason on screen
+       instead of only in a terminal nobody has open. preflight.js fills it. -->
+  <div class="panel" id="preflightPanel">
+    <div class="panel-head"><span>Preflight</span>
+      <span class="hint">every line must pass before a run starts</span>
+      <button class="pf-recheck" id="pfRecheck" type="button">Re-check</button></div>
+    <div id="preflightBody"><div class="book-empty">Checking…</div></div>
+  </div>
+
+  <div class="panel" id="authoredPanel">
+    <div class="panel-head"><span>Authored</span>
+      <span class="hint">who used skillify or toolify, and what came of it</span></div>
+    <div id="authoredBody"><div class="book-empty">Loading…</div></div>
+  </div>
+
+  <div class="panel" id="groupChatPanel">
+    <div class="panel-head"><span>Group chats</span>
+      <span class="hint">who is round the table, and what they are saying</span></div>
+    <div id="groupChatBody"><div class="book-empty">Listening…</div></div>
+  </div>
+
+  <div class="panel" id="talkPanel">
+    <div class="panel-head"><span>Talk</span>
+      <span class="hint">what residents are saying to each other, live</span></div>
+    <div id="talkBody"><div class="book-empty">Listening…</div></div>
+  </div>
+
+  <div class="hero" id="hero">
+    <div class="panel" id="mapPanel">
+      <div class="panel-head">
+        <span>Village map</span>
+        <span class="hint">click a resident to open their file · scroll to zoom · drag to pan · frame 2013×1089</span>
+      </div>
+      <div class="viewport v2">
+        <canvas id="village"></canvas>
+        <div class="map-search">
+                    <input id="mapSearch" type="search" autocomplete="off" spellcheck="false"
+                 placeholder="Search a person or a place…" aria-label="Search the town" />
+          <button class="ms-clear" id="mapSearchClear" type="button" aria-label="Clear">×</button>
+          <div class="ms-results" id="mapSearchResults" hidden></div>
+        </div>
+        <!-- Shown when the map has nobody to draw. Only engine-bound
+             residents are drawn now, so "no residents" is a normal
+             state - and an empty town with no explanation reads as a
+             broken page rather than an idle one. -->
+        <div class="empty-town" id="emptyTown" hidden>
+          <b>No residents to show</b>
+          <span>Nobody is drawn unless a world server reports them, so this town
+          is empty until a run is bound. Point the viewer at a world you have
+          running:
+          <code>WORLD_BASE_URL=http://127.0.0.1:8100</code></span>
+        </div>
+        <!-- The election, on the map: phase, who is standing or how many
+             ballots are in, the next deadline. election.js fills it; it
+             stays hidden until the world has an election to show. -->
+        <div class="election-strip" id="electionStrip" hidden></div>
+        <div class="map-card" id="mapCard" hidden></div>
+        <div class="place-card" id="placeCard" hidden></div>
+      </div>
+      <div class="legend">
+        <span>🏘️ housing</span><span>🏛️ government</span><span>🎓 college</span>
+        <span>☕ cafe</span><span>🛒 grocery</span><span>💊 pharmacy</span>
+        <span>🏗️ construction</span><span>🏪 market</span><span>⛲ square</span>
+        <span>🌾 farmland</span><span>⛏️ ore</span><span>🌲 forest</span>
+        <span>🏥 hospital</span><span>🚓 police</span><span>🚒 fire</span><span>🥖 bakery</span>
+        <span>🍽️ restaurant</span><span>🏫 school</span><span>📚 library</span><span>🏦 bank</span><span>🛏️ inn</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="scroll-cue" id="scrollCue">↓ scroll for the town’s books, people and records</div>
+
+  <div class="panel" id="profilePanel" hidden>
+    <div class="panel-head">
+      <span>🧍 Resident file</span>
+      <button class="ctl tiny" id="profileClose" type="button">✕ Close</button>
+    </div>
+    <div class="inspector-body" id="modalBody"></div>
+  </div>
+
+  <div class="stage" style="margin-top:18px;">
+    <div class="rail">
+      <!-- "Live conversation" removed. It was the deterministic client-side
+           model talking to itself - invented dialogue with no agent behind it,
+           sitting inches from figures that are real. The Talk book is the same
+           idea backed by `say`. Two chat panels where one is fiction is worse
+           than one. -->
+      <div class="panel">
+        <div class="panel-head">🔨 What the town is doing <span class="hint">right now</span></div>
+        <div class="occupancy" id="workBody"></div>
+      </div>
+    </div>
+    <div class="rail">
+      <div class="panel">
+        <div class="panel-head">🏛️ Government <span class="hint">real charter</span></div>
+        <div class="gov-body" id="govBody"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">Where everyone is <span class="hint">live</span></div>
+        <div class="occupancy" id="occupancy"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-up" style="margin-top:18px;">
+      <div class="panel">
+        <!-- Bodies renamed vit* so the legacy client-side renders in
+     township-v2.js cannot find them: each guards with
+     `if (!el) return`, so a renamed target switches the model off
+     without editing that file. vitals.js fills these with world data.
+     This also stops healthSim writing the top bar's Alive count,
+     which raced live-cast and put 314 back over the real 30. -->
+        <div class="panel-head">🩺 Health &amp; mortality <span class="hint">live from the world</span></div>
+        <div class="score-body single" id="vitHealth"><div class="book-empty">Loading…</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">🏗️ What the town has built <span class="hint">live from the world</span></div>
+        <div class="score-body single" id="vitBuilt"><div class="book-empty">Loading…</div></div>
+      </div>
+  </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <div class="panel-head">🌾 Food <span class="hint">what the town is actually holding</span></div>
+      <div class="score-body single" id="vitFood"><div class="book-empty">Loading…</div></div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <div class="panel-head">🏛️ Treasury <span class="hint">the ledger's own balance</span></div>
+      <div class="score-body single" id="vitTreasury"><div class="book-empty">Loading…</div></div>
+    </div>
+
+  <div class="panel" style="margin-top:18px;">
+    <div class="panel-head">📊 Money scoreboard <span class="hint">every resident, live</span></div>
+    <div class="score-body" id="scoreBody"></div>
+  </div>
+
+  <div class="panel" id="workshopPanel" style="margin-top:18px;">
+    <div class="panel-head">🛠 Workshop
+      <span class="hint">what the town invented, and whether anyone took it up</span></div>
+    <div class="book-body" id="workshopBody"></div>
+  </div>
+
+  <div class="panel" id="electionPanel" style="margin-top:18px;">
+    <div class="panel-head">🗳 Election
+      <span class="hint">candidates, the vote as it is cast, and who won — read from the world</span></div>
+    <div class="book-body" id="electionBody"><div class="book-empty">Waiting for the world…</div></div>
+  </div>
+
+  <div class="panel" id="councilPanel" style="margin-top:18px;">
+    <div class="panel-head">⚖ Council
+      <span class="hint">governmental workflows only — mostly empty, by design</span></div>
+    <div class="book-body" id="councilBody"></div>
+  </div>
+
+  <div class="panel" id="characters" style="margin-top:18px;">
+    <div class="panel-head">
+      <span>👥 Characters<span id="rosterScope"></span></span>
+      <span class="hint" id="rosterCount">—</span>
+    </div>
+    <div class="roster-controls">
+      <input type="search" id="rosterSearch" class="roster-search"
+             placeholder="Search by name, relative, occupation, household, or genesis name…"
+             aria-label="Search residents" />
+      <div class="filter-group" role="group" aria-label="Filter by age bracket">
+        <button class="filter-chip" data-filter="br" data-value="all" aria-pressed="true">Everyone</button>
+        <button class="filter-chip" data-filter="br" data-value="working" aria-pressed="false">Working-age</button>
+        <button class="filter-chip" data-filter="br" data-value="minor" aria-pressed="false">Minors</button>
+        <button class="filter-chip" data-filter="br" data-value="elderly" aria-pressed="false">Elderly</button>
+      </div>
+      <select id="rosterOcc" class="roster-select" aria-label="Filter by occupation">
+        <option value="all">All occupations</option>
+      </select>
+      <select id="rosterSort" class="roster-select" aria-label="Sort residents">
+        <option value="name">Sort: name</option>
+        <option value="age">Sort: age</option>
+        <option value="occ">Sort: occupation</option>
+        <option value="hh">Sort: household</option>
+        <option value="wealth">Sort: wealth</option>
+        <option value="family">Sort: family size</option>
+      </select>
+    </div>
+    <div class="roster-grid" id="rosterGrid"></div>
+    <p class="roster-empty" id="rosterEmpty" hidden>No resident matches that search.</p>
+  </div>
+
+  <div class="panel" style="margin-top:18px;">
+    <div class="panel-head">Census — the real population behind the map</div>
+    <div class="census-strip">
+      <div class="census-block"><h3>Occupation</h3><div id="occChart"></div></div>
+      <div class="census-block"><h3>Age bracket</h3><div id="ageChart"></div></div>
+      <div class="census-block"><h3>Household size</h3><div id="hhChart"></div></div>
+      <div class="census-block"><h3>Kinship ties</h3><div id="relChart"></div></div>
+    </div>
+  </div>
+
+  <footer class="sig">
+    September · internal research · Track A live-environment prototype · data from world/genesis.json (seeded 2026-08-01) ·
+    memory format after Park et al., <i>Generative Agents</i>, UIST ’23 · expert reflection after Park et al. 2024, <i>Generative Agent Simulations of 1,000 People</i>
+  </footer>
+</div>
+
+
+
+<script src="js/township/rules.js"></script>
+<script src="js/township/agents.js"></script>
+<script src="js/township/village2.js"></script>
+<!-- Part E before township-v2.js: it subscribes to the `kasukabe:live` event
+     that township-v2.js dispatches, and a listener registered after the first
+     poll would miss it. -->
+<script src="js/township/part-e.js"></script>
+<script src="js/township/township-v2.js?v=20260826193627"></script>
+<script src="js/township/shell.js?v=20260826193627"></script>
+<!-- Talk feed + the authored strip on the resident file. After shell.js so
+     the docks exist; it waits for DOMContentLoaded regardless. -->
+<!-- Prune the 314-resident static cast to the agents a bound run actually
+     reports, so the map and every book describe the run instead of the file. -->
+<script src="js/township/live-cast.js?v=20260826193627"></script>
+<script src="js/township/vitals.js?v=20260826193627"></script>
+<script src="js/township/talk.js?v=20260826193627"></script>
+<script src="js/township/groupchat.js?v=20260901"></script>
+<script src="js/township/election.js?v=20260922"></script>
+<script src="js/township/preflight.js?v=20260826193627"></script>
+</body>
+</html>

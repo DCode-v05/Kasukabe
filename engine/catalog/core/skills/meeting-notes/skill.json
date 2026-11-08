@@ -1,0 +1,37 @@
+{
+  "name": "meeting-notes",
+  "version": "1.0.0",
+  "description": "Extract action items, decisions, and summaries from meeting transcripts or rough notes. This skill should be used when processing meeting recordings, cleaning up raw notes, or creating structured meeting minutes. Triggers: 'summarize this meeting', 'extract action items', 'meeting notes from', 'what were the decisions', 'process this transcript'.",
+  "category": "productivity",
+  "capabilities": ["meeting_summarization", "action_item_extraction", "decision_tracking", "transcript_processing"],
+  "input_signature": {
+    "type": "object",
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "Meeting transcript or rough notes"
+      }
+    }
+  },
+  "output_signature": {
+    "type": "object",
+    "properties": {
+      "summary": {
+        "type": "string"
+      },
+      "decisions": {
+        "type": "array"
+      },
+      "action_items": {
+        "type": "array"
+      },
+      "open_questions": {
+        "type": "array"
+      }
+    }
+  },
+  "has_prompt": true,
+  "has_scripts": false,
+  "has_references": false,
+  "has_gotchas": false
+}

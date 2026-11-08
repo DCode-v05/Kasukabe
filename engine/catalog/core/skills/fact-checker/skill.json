@@ -1,0 +1,31 @@
+{
+  "name": "fact-checker",
+  "version": "1.0.0",
+  "description": "Verify claims against available knowledge and flag uncertainties. This skill should be used when checking if a statement is true, validating data points in a report, or verifying facts before publishing. Triggers: 'is this true', 'fact check', 'verify this claim', 'check these numbers', 'is it accurate that'.",
+  "category": "verification",
+  "capabilities": ["fact_checking", "claim_verification", "source_evaluation", "truth_assessment"],
+  "input_signature": {
+    "type": "object",
+    "properties": {
+      "input": {
+        "type": "string",
+        "description": "Claim or claims to verify"
+      }
+    }
+  },
+  "output_signature": {
+    "type": "object",
+    "properties": {
+      "claims": {
+        "type": "array"
+      },
+      "overall_assessment": {
+        "type": "string"
+      }
+    }
+  },
+  "has_prompt": true,
+  "has_scripts": false,
+  "has_references": false,
+  "has_gotchas": false
+}

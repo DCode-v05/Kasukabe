@@ -1,0 +1,6 @@
+Scenario **election-at-30** - Thirty residents, a government sitting from the first tick and told so in its own perception, an election inside the first day, and up to two game-days. The largest cast an election has been held with. Funded at $6.00 a resident - the level the 50-resident run and run 29 both used - so the $100 model budget is the thing that ends the run, not empty wallets.
+Cast: `world/genesis_30_town.json`.
+The world starts at tick 36 and stops at tick 324.
+The election opens at tick 36: candidacy closes 60, voting opens 84, and the vote is counted at tick 108.
+Already in office when it starts: prime minister a0047; ministers a0090, a0042 - they may stand again, against anyone who stands for the first time.
+Spend cap $100.00.

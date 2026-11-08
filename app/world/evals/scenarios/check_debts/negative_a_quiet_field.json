@@ -1,0 +1,17 @@
+{
+  "tool": "check_debts",
+  "kind": "negative",
+  "_why": "Nothing owed either way and nobody asking. A free tool is still a turn.",
+  "resident": "n06",
+  "location": "Kasukabe Farmland",
+  "inventory": {
+    "wheat": 2
+  },
+  "sim": 300,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": null,
+  "expect": {
+    "verb": "check_debts"
+  }
+}

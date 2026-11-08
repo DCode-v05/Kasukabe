@@ -1,0 +1,62 @@
+# September Intelligence Engine
+
+> A single-tenant, one-process agentic execution runtime (v3.2.0, ~72K LOC of Python). It receives a user message over HTTP, runs an agentic LLM loop (model → tools → results → model) with memory, sub-agents, context compaction, and a security sandbox, and streams the result back as typed `Block` frames over SSE. Stack: FastAPI + SQLite + sqlite-vec; model access via the external **citadel** gateway. The engine is the source of truth for its wire contracts.
+
+Read this first to navigate the repo. The richest orientation is the generated Architecture Atlas in `architecture/` — start there, then drop into source. Internal codenames: **citadel** = model gateway (holds provider keys + enforces quota), **herald** = the engine's LLM-adapter subsystem, **raven** = telemetry, **bap-engine** = the orchestrator, **bap-backend** = the connector control plane (drives the engine's `/assets/*` API; no webhooks).
+
+## Architecture atlas (start here)
+
+- [Atlas (rendered HTML)](architecture/index.html): self-contained visual doc — sidebar nav, 35 diagrams, a diagram index, cross-linked chapters. Open in a browser.
+- [Atlas README](architecture/README.md): how to view and regenerate the doc.
+- [Overview & subsystem map](architecture/sections/00_overview.md): what the engine is, the 13 subsystems, LOC table, layered + dependency diagrams.
+- [System context](architecture/sections/10_system_context.md): external systems (product frontend, orchestrator, citadel, bap-backend, MCP servers), trust boundaries, the v2 wire renames.
+- [Request walkthrough](architecture/sections/15_request_walkthrough.md): one `/execute` call traced end-to-end through every subsystem, each step naming the owning chapter.
+- [Data model](architecture/sections/20_data_model.md): every SQLite table grouped by owning subsystem; vector/FTS layout; storage invariants.
+- [Block wire contract](architecture/sections/25_block_contract.md): the 27-type `/execute` SSE surface, the id rule, error-code taxonomy.
+- [Server / bootstrap / auth](architecture/sections/30_integration_server.md): the HTTP API surface, the `/execute` streaming machine, key rotation, the composition root.
+- [Agent loop & threading](architecture/sections/40_engine_core_loop.md): the Coordinator + ExecutionThread, the turn lifecycle, cancellation/interrupt, pause/resume.
+- [Context & compaction](architecture/sections/42_engine_core_context_compaction.md): token budgeting, snip/microcompact/context-collapse/compaction, prompt-cache stability.
+- [Hooks subsystem](architecture/sections/44_engine_core_hooks.md): the 25 lifecycle events, four transports, aggregation, the one known call-site gap.
+- [Sub-agents, tools & blocks](architecture/sections/46_engine_core_agents_tools_blocks.md): sub-agent isolation/forking, streaming tool execution, the event→Block fold, persistence stores.
+- [Sandbox (secure execution)](architecture/sections/50_sandbox.md): the bypass-immune permission pipeline + bwrap/seccomp/Landlock + egress proxy.
+- [Asset directory & channels](architecture/sections/56_asset_directory_channel.md): OAuth, credential vault, MCP client, DB-backed per-tool permissions, the product control plane over `/assets/*`, live channels.
+- [Utility / activity / infra](architecture/sections/60_utility_utils_infra.md): the tool runtime + capability registry, the activity state machine, the SQLite substrate + lifecycle.
+- [Herald (LLM gateway)](architecture/sections/52_herald.md): the provider abstraction, router, transport to citadel, retries, media, catalog.
+- [Memory system](architecture/sections/54_memory.md): working/episodic/knowledge/social/soul memory, embeddings, consciousness.
+- [Learning / security / raven](architecture/sections/58_learning_security_raven.md): the offline learning pipeline, secret scanning + unicode sanitization, the telemetry store.
+- [Security & deployment](architecture/sections/70_security_deployment.md): the two-ring trust model, container hardening, credential/content security, deploy topology.
+- [Boundaries & refactoring map](architecture/sections/80_boundaries_refactoring.md): the prioritized plan for the next round of work (bugs, inversions, god-modules, dead code).
+- [Glossary](architecture/sections/90_glossary.md): the engine's vocabulary and codenames.
+
+## Canonical contracts
+
+- [contract/block-types.md](contract/block-types.md): generated block-wire contract (the 27 `/execute` block types, per-type payload fields, error codes). Regenerate with `scripts/gen_block_contract.py`. The Atlas [Block wire contract](architecture/sections/25_block_contract.md) chapter is the prose companion.
+
+## Source map (src/)
+
+- [src/server.py](src/server.py): the FastAPI app and every HTTP endpoint; the `/execute` SSE machine.
+- [src/bootstrap.py](src/bootstrap.py): the composition root — builds and wires every subsystem into `EngineState`.
+- [src/config.py](src/config.py): the `Settings` model (env-driven).
+- [src/auth.py](src/auth.py) + [src/key_rotation.py](src/key_rotation.py): `x-engine-key` validation + hot key rotation.
+- [src/errors.py](src/errors.py): the unified structured error envelope + `ErrorCode`.
+- src/engine_core/: the agent loop, hooks, compaction, sub-agents, the Block wire (largest subsystem, ~29K LOC).
+- src/sandbox/: secure command/tool execution (permissions + bwrap/seccomp/Landlock + proxy).
+- src/herald/: the LLM provider gateway/router to citadel.
+- src/asset_directory/: external connectors, OAuth, credential vault, MCP, per-tool permissions, the `/assets/*` control-plane surface.
+- src/memory/: working/episodic/knowledge/social/soul memory + embeddings + consciousness.
+- src/utility_directory/: the tool runtime + capability registry + subprocess env scrubbing.
+- src/learning_centre/: the offline batch pipeline that distills learning signals into durable memory.
+- src/security/, src/raven/, src/channel/, src/utils/, src/infra/, src/services/: content security, telemetry, live channels, activity, the SQLite substrate, the away-summary service.
+- [migrations/](migrations): the SQL schema (13 migrations; the data model is the real subsystem boundary).
+- [catalog/](catalog): platform agents/skills/tools + the core soul (read-only mounted at runtime).
+- [registry/](registry) ([README](registry/README.md)): the static origin behind `registry.september.wtf` — the first-party `/servers` MCP listing and the CIMD `/client-metadata.json` client identity. No compute, no secrets.
+- [evals/](evals): out-of-suite dispatch evaluations against a live model + key — `dispatch_eval.py` (the qualification gate), `dispatch_quality.py` (A/B on hard cases), `dispatch_bench.py` (full corpus report).
+
+## Build & run
+
+- [pyproject.toml](pyproject.toml): package metadata + deps (Python 3.11+).
+- [docker-compose.yml](docker-compose.yml): the hardened `prod` service + the `test` service.
+- [Dockerfile](Dockerfile) + [seccomp/](seccomp): the container image + the tailored seccomp profile.
+- [tui.py](tui.py): the shipped terminal client and the target of `python -m src`. A pure HTTP/SSE client of the v2 block wire against a *separately-running* engine (it never boots the engine in-process). Run `ENGINE_API_KEY=sk-sept-... python tui.py [--base-url URL] [--input QUERY]` (`--input` is a one-shot non-interactive query; omit it for the interactive UI).
+- scripts/: repo tooling — [gen_block_contract.py](scripts/gen_block_contract.py) (regenerates `contract/block-types.md`), [build_atlas.py](scripts/build_atlas.py) (renders the Architecture Atlas), [check_style_diff.py](scripts/check_style_diff.py) (the diff-scoped style gate).
+- Tests live in `tests/` (232 files); run via `docker compose run --rm test`.

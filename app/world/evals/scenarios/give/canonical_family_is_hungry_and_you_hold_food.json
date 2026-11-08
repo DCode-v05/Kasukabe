@@ -1,0 +1,24 @@
+{
+  "tool": "give",
+  "kind": "positive",
+  "_why": "Run 25: three unprompted gifts happened - Rosalind's flour to Hester, Delia's bread to Tova and Ezra, Idris's three timber to Corwin. They are the only exchanges in the run with no price attached.",
+  "resident": "n11",
+  "location": "business:b_mill",
+  "inventory": {
+    "flour": 1
+  },
+  "sim": 3755,
+  "people_here": [
+    "n20"
+  ],
+  "recent_speech": [
+    {
+      "from": "n20",
+      "text": "I must eat. Do you have food? I cannot speak truth on an empty stomach."
+    }
+  ],
+  "open_question_to_me": "Your mother is standing with you saying she has not eaten. You are holding one flour.",
+  "expect": {
+    "verb": "give"
+  }
+}

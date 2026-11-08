@@ -1,0 +1,18 @@
+{
+  "tool": "toolify",
+  "kind": "positive",
+  "_why": "TOOL-31's projection, which is what makes a tool worth building on: a tool that answers with the food rather than with the whole account of looking. This resident asks the same question every morning - who has bread priced - and answers it by reading a list by hand each time. `params_include: {returns: \"*\"}` asks whether the call actually used the projection, not merely whether the verb was reached: reaching for toolify and filing a tool that answers with a log is the failure this scenario exists to catch.",
+  "resident": "n04",
+  "location": "street",
+  "inventory": {},
+  "sim": 2200,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "Every morning this week you have looked around the street and the two shops to find which of them has bread priced, and read the whole price board each time to find the one line you wanted.",
+  "expect": {
+    "verb": "toolify",
+    "params_include": {
+      "returns": "*"
+    }
+  }
+}

@@ -1,0 +1,172 @@
+INFO:     Started server process [6781]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+INFO:     Uvicorn running on http://127.0.0.1:8400 (Press CTRL+C to quit)
+INFO:     127.0.0.1:44518 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46082 - "GET /township-v2.html?book=groupchat&roofs=off HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46082 - "GET /css/township.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46092 - "GET /css/instrument.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46104 - "GET /css/parts/controls.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46116 - "GET /css/parts/books.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46134 - "GET /css/parts/overlays.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46122 - "GET /css/parts/resident.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46104 - "GET /css/parts/election.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46138 - "GET /township-v2.html?book=govern&roofs=off&camera=government:2.2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46082 - "GET /css/parts/revamp.css?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46134 - "GET /js/township/rules.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46116 - "GET /js/township/part-e.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46092 - "GET /js/township/village2.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46138 - "GET /css/township.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46170 - "GET /css/instrument.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46146 - "GET /township-v2.html?book=election&roofs=off&camera=government:2.2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46196 - "GET /css/parts/books.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46202 - "GET /css/parts/resident.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46180 - "GET /css/parts/controls.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46210 - "GET /css/parts/election.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46082 - "GET /js/township/shell.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46116 - "GET /js/township/vitals.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46134 - "GET /js/township/live-cast.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46226 - "GET /township-v2.html?book=town&roofs=on HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46218 - "GET /township-v2.html?book=town&roofs=off HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46104 - "GET /js/township/township-v2.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46092 - "GET /js/township/talk.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46170 - "GET /css/parts/revamp.css?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46138 - "GET /css/parts/overlays.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46234 - "GET /css/township.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46246 - "GET /css/instrument.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46250 - "GET /css/parts/controls.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46082 - "GET /js/township/groupchat.js?v=20260901 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46260 - "GET /css/parts/resident.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46256 - "GET /css/parts/books.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46276 - "GET /css/parts/overlays.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46202 - "GET /js/township/rules.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46116 - "GET /js/township/election.js?v=20260922 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46226 - "GET /css/township.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46218 - "GET /css/township.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46180 - "GET /js/township/part-e.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46134 - "GET /js/township/preflight.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46294 - "GET /css/instrument.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46296 - "GET /css/parts/controls.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46304 - "GET /css/parts/books.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46314 - "GET /css/parts/resident.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46316 - "GET /css/parts/overlays.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46288 - "GET /township-v2.html?book=money&roofs=on HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46196 - "GET /js/township/shell.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46210 - "GET /js/township/live-cast.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46326 - "GET /css/instrument.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46354 - "GET /css/parts/resident.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46338 - "GET /css/parts/books.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46336 - "GET /css/parts/controls.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46362 - "GET /css/parts/overlays.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46250 - "GET /css/parts/election.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46246 - "GET /css/parts/revamp.css?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46138 - "GET /js/township/village2.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46180 - "GET /js/township/groupchat.js?v=20260901 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46314 - "GET /css/parts/election.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46288 - "GET /css/township.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46304 - "GET /css/parts/revamp.css?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46374 - "GET /css/instrument.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46382 - "GET /css/parts/books.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46392 - "GET /css/parts/controls.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46234 - "GET /js/township/part-e.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46260 - "GET /js/township/rules.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46404 - "GET /css/parts/resident.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46326 - "GET /css/parts/election.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46210 - "GET /js/township/preflight.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46196 - "GET /js/township/election.js?v=20260922 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46418 - "GET /css/parts/overlays.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46338 - "GET /css/parts/revamp.css?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46276 - "GET /js/township/village2.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46296 - "GET /js/township/rules.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46218 - "GET /js/township/part-e.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46226 - "GET /js/township/part-e.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46354 - "GET /js/township/rules.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46316 - "GET /js/township/village2.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46202 - "GET /js/township/township-v2.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46336 - "GET /js/township/village2.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46246 - "GET /js/township/shell.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46392 - "GET /css/parts/revamp.css?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46374 - "GET /css/parts/election.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46234 - "GET /js/township/live-cast.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46260 - "GET /js/township/vitals.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46382 - "GET /js/township/rules.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46304 - "GET /js/township/shell.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46296 - "GET /js/township/live-cast.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46418 - "GET /js/township/part-e.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46218 - "GET /js/township/live-cast.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46226 - "GET /js/township/vitals.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46338 - "GET /js/township/shell.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46250 - "GET /js/township/township-v2.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46354 - "GET /js/township/vitals.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46288 - "GET /js/township/village2.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46336 - "GET /js/township/talk.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46314 - "GET /js/township/township-v2.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46326 - "GET /js/township/township-v2.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46392 - "GET /js/township/shell.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46382 - "GET /js/township/live-cast.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46418 - "GET /js/township/vitals.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46288 - "GET /js/township/talk.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46374 - "GET /js/township/township-v2.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46122 - "GET /js/township/agents.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46170 - "GET /js/township/agents.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46362 - "GET /js/township/agents.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46404 - "GET /js/township/agents.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46256 - "GET /js/township/agents.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46294 - "GET /js/township/agents.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46692 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45130 - "GET /township-v2.html?book=money&roofs=on HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45130 - "GET /css/township.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45160 - "GET /css/parts/books.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45132 - "GET /css/instrument.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45164 - "GET /css/parts/overlays.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45176 - "GET /css/parts/resident.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45148 - "GET /css/parts/controls.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45148 - "GET /css/parts/election.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45176 - "GET /css/parts/revamp.css?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45160 - "GET /js/township/rules.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45164 - "GET /js/township/village2.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45130 - "GET /js/township/part-e.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45132 - "GET /js/township/agents.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45160 - "GET /js/township/live-cast.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45176 - "GET /js/township/shell.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45132 - "GET /js/township/groupchat.js?v=20260901 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45130 - "GET /js/township/vitals.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45148 - "GET /js/township/township-v2.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45164 - "GET /js/township/talk.js?v=20260826193627 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45176 - "GET /js/township/election.js?v=20260922 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45130 - "GET /js/township/preflight.js?v=20260826193627 HTTP/1.1" 200 OK
+game.world_client: world/ WS connection lost (received 1012 (service restart); then sent 1012 (service restart)), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+game.world_client: world/ WS connection lost ([Errno 111] Connection refused), retrying in 2.0s
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [6781]

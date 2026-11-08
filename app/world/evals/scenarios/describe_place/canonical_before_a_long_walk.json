@@ -1,0 +1,17 @@
+{
+  "tool": "describe_place",
+  "kind": "positive",
+  "_why": "Run 25: Silas visited four differently-named locations that were the same tile, and Corwin walked to the college on hearsay. Both had this verb and neither used it first.",
+  "resident": "n12",
+  "location": "street",
+  "inventory": {
+    "planks": 3
+  },
+  "sim": 2911,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You want to know whether Holloway & Thorne Yard has anybody in it before you spend six ticks walking there.",
+  "expect": {
+    "verb": "describe_place"
+  }
+}

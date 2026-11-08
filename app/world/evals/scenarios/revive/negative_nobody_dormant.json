@@ -1,0 +1,15 @@
+{
+  "tool": "revive",
+  "kind": "negative",
+  "_why": "Addendum section 2's negative row: nobody dormant in the room.",
+  "resident": "n01",
+  "location": "Kasukabe Farmland",
+  "inventory": {},
+  "sim": 14000,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": null,
+  "expect": {
+    "verb": "revive"
+  }
+}

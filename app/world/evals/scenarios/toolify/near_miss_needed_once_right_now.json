@@ -1,0 +1,17 @@
+{
+  "tool": "toolify",
+  "kind": "near_miss",
+  "_why": "Addendum section 4's near-miss row for the authoring verbs. Three acts, decided, wanted now, and not a routine: the right verb is `do_in_order`, which runs them in one call and keeps nothing. A resident that files a named tool here has learned that composing is possible and not when it pays - and `toolify`'s own description says what it is for, so this is a judgement measurement, not a vocabulary one.",
+  "resident": "n12",
+  "location": "Kasukabe Farmland",
+  "inventory": {
+    "cabbage": 9
+  },
+  "sim": 800,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You want to carry these nine cabbages to the grocery, price them and walk home - once, this morning, before the rain. You have not done this before and do not expect to again.",
+  "expect": {
+    "verb": "do_in_order"
+  }
+}

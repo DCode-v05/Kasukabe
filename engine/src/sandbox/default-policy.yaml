@@ -1,0 +1,74 @@
+# Sandbox Security Policy — Default
+# Custom policies can restrict but never expand these rules.
+
+version: 1
+seccomp_enabled: true
+landlock_enabled: true
+
+binaries:
+  jq:
+    max_positional: 1
+    allowed_flags: ["--arg", "--argjson", "--argstr"]
+    denied_flags: ["-f", "--fromfile", "--slurpfile"]
+  grep:
+    stdin_only: true
+    max_positional: 0
+    allowed_flags: ["-e", "-m", "-A", "-B", "-C", "--regexp", "--max-count"]
+  cut:
+    stdin_only: true
+    max_positional: 0
+    allowed_flags: ["-d", "-f", "-c"]
+  sort:
+    stdin_only: true
+    max_positional: 0
+    allowed_flags: ["-k", "-t"]
+  uniq:
+    stdin_only: true
+    max_positional: 0
+  head:
+    stdin_only: true
+    max_positional: 0
+    allowed_flags: ["-n"]
+  tail:
+    stdin_only: true
+    max_positional: 0
+    allowed_flags: ["-n", "-f"]
+  wc:
+    stdin_only: true
+    max_positional: 0
+  tr:
+    stdin_only: true
+    max_positional: 2
+  cat:
+    max_positional: 5
+  echo:
+    max_positional: 20
+  ls:
+    max_positional: 5
+  find:
+    max_positional: 5
+    denied_flags: ["-exec", "-execdir", "-delete"]
+  # sed is gated by src/sandbox/sed_validation.py at permission time,
+  # not here. Do not add a sed entry without removing the validator.
+  awk:
+    stdin_only: true
+    max_positional: 1
+    denied_flags: ["-f"]
+
+filesystem:
+  - host_path: "/usr"
+    sandbox_path: "/usr"
+    writable: false
+  - host_path: "/lib"
+    sandbox_path: "/lib"
+    writable: false
+  - host_path: "/bin"
+    sandbox_path: "/bin"
+    writable: false
+
+proxy:
+  enabled: false
+  listen_port: 3128
+  default_action: deny
+  audit_log: true
+  rules: []

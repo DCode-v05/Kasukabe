@@ -1,0 +1,20 @@
+{
+  "tool": "revive",
+  "kind": "positive",
+  "_why": "Addendum section 2's positive row: spouse dormant beside the caller, 14,000 sim in hand, the household line showing it. life/death.py's revive has been complete and asserted-at-import the whole time with no tool able to call it, so dormancy was a one-way door.",
+  "resident": "n01",
+  "location": "Kasukabe Town Square",
+  "inventory": {},
+  "sim": 14000,
+  "people_here": [
+    "n03"
+  ],
+  "recent_speech": [],
+  "open_question_to_me": "Tobias Holloway (n03) has fallen dormant at Kasukabe Town Square: their energy reached zero. Without a revival they die in 24 game-hours.",
+  "expect": {
+    "verb": "revive",
+    "params_include": {
+      "agent_id": "n03"
+    }
+  }
+}

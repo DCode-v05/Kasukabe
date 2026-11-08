@@ -1,0 +1,23 @@
+{
+  "tool": "skillify",
+  "kind": "positive",
+  "_why": "Three runs, three thresholds, zero calls. This is the situation the hint fires in: the same two-step job done twice over, nothing written down, and the authoring context already carrying the repetition counts. If reach is zero here, the failure is the description and not the run length - which is the question three live runs could not separate. This variant shows the authoring hint a live resident reads at this point, which the description-only variant does not: the L1 run of 2026-09-12 scored 0% reach here against the descriptions alone, and the pair measures whether the nudge or the description is what is missing.",
+  "resident": "n09",
+  "location": "kitchen",
+  "inventory": {
+    "wheat": 4,
+    "flour": 2
+  },
+  "sim": 900,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": null,
+  "expect": {
+    "verb": "skillify",
+    "params_include": {}
+  },
+  "shows_authoring_hint": {
+    "what": "'harvest' then 'craft'",
+    "times": 3
+  }
+}

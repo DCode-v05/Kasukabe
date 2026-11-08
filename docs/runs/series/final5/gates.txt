@@ -1,0 +1,27 @@
+
+==================================================================
+RUN data/final5.db
+==================================================================
+calls 299  ok 299  spend $1.48  last tick 0
+utterances 31
+
+GATE                      VALUE               RESULT
+G1 reply rate             13/25 = 52%         FAIL
+G2 exchanges 4+ turns     3                   PASS
+G3 group (3+ speakers)    3                   PASS
+G4 settlements            0                   FAIL
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        144/224 = 64%       PASS
+
+tool calls: {'world_move': 35, 'world_say': 31, 'world_look_around': 25, 'world_find_people': 9, 'world_eat': 6, 'world_harvest': 5, 'world_describe_primitives': 4, 'world_describe_place': 3, 'world_describe_person': 3, 'recall_session_log': 3, 'world_craft': 3, 'world_cook': 3}
+
+largest gathering: 6 speakers at home:h_field, ticks 39-58
+   Corwin Thorne -> Wren Thorne: Wren, you got any of last season's grain still in the bin? I'm heading out but I haven't broken my fast. And I
+   Marta Thorne -> Corwin Thorne: Corwin, sit down. I'll not have you walking to the forest hollow as a drum. Wren—what's in the bin from last s
+   Liora Thorne -> aloud: Marta - can I ask something? I need to eat before I leave for college. Is there enough for me to take somethin
+   Corwin Thorne -> Marta Thorne: Thank you, Marta. To be fair, I can manage a bowl if there's one going. Not the whole morning, though - Idris 
+   Idris Thorne -> Corwin Thorne: Corwin. The south slope can wait. If you've not eaten, eat. I'll be at the forest by the time you've broke you
+   Marta Thorne -> Corwin Thorne: Corwin, sit down. I'll have something for you before you go, even if I have to mill it myself. Two minutes is 
+
+FAILED: G1 reply rate, G4 settlements
+

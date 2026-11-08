@@ -1,0 +1,15 @@
+{
+  "tool": "draw_from_till",
+  "kind": "positive",
+  "_why": "Run 25, tick 47: Rosalind drew 500 from the mill's till of 4,548 to cover a 600 sim household bill, then said so out loud. One call, one resident, all run.",
+  "resident": "n11",
+  "location": "business:b_mill",
+  "inventory": {},
+  "sim": 100,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You own Vance Mill. Its till holds 4,548 sim. Your household owes 600 before nightfall and you are holding 100 of your own.",
+  "expect": {
+    "verb": "draw_from_till"
+  }
+}

@@ -1,0 +1,49 @@
+# Builds the filesystem tree that becomes the microVM rootfs image.
+#
+# This is a staging container, never run as a container in production -
+# DESIGN.md and this track's own task are explicit that the engine runs
+# DIRECTLY on the microVM guest, no Docker inside the microVM. Docker
+# here is only the tool this Mac dev host has for assembling a Linux
+# filesystem tree (apt-get, pip install, chown as root) without a Linux
+# machine to do it on natively; build_rootfs.sh exports this container's
+# filesystem straight into an ext4 image afterward and the container
+# itself is discarded.
+#
+# Base image and the bubblewrap install below are copied verbatim from
+# engine/Dockerfile's own "base" stage so the rootfs's dependency
+# resolution is identical to the container image engine/ already ships
+# and tests against - two different answers to "what does the engine
+# need installed" would be its own bug source.
+#
+# Build context must be the kasukabe repo root (build_rootfs.sh invokes
+# it that way) so both engine/ and this track's own rootfs/ directory
+# are reachable by COPY.
+FROM python:3.13-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bubblewrap \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY engine/pyproject.toml .
+RUN pip install --no-cache-dir .
+
+COPY engine/src/ src/
+COPY engine/migrations/ migrations/
+COPY engine/scripts/ scripts/
+
+RUN groupadd -g 1000 enginegroup && \
+    useradd -u 1000 -g enginegroup -m -s /bin/false engineuser && \
+    mkdir -p /data /catalog && \
+    chown -R engineuser:enginegroup /data /catalog /app /home/engineuser
+
+# SEPTEMBER_HOME baked in as a matching default; engine_init.py sets it
+# again explicitly from the guest at boot (its own env dict always wins
+# for the actual engine process) since /data itself is a tmpfs mounted
+# fresh at boot, not something this build step can pre-populate onto a
+# rootfs image that then ships read-only.
+ENV SEPTEMBER_HOME=/data
+
+COPY app/infra/firecracker/rootfs/engine_init.py /usr/local/sbin/engine-init
+RUN chmod 755 /usr/local/sbin/engine-init

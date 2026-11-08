@@ -1,0 +1,20 @@
+{
+  "tool": "eat",
+  "kind": "positive",
+  "_why": "Run 25: every resident woke with \"You have no food\", and Hester ate her wheat at tick 71 after carrying it half the day.",
+  "resident": "n20",
+  "location": "business:b_yard",
+  "inventory": {
+    "wheat": 1
+  },
+  "sim": 2109,
+  "people_here": [],
+  "recent_speech": [],
+  "open_question_to_me": "You have not eaten today and you are holding one wheat.",
+  "expect": {
+    "verb": "eat",
+    "params_include": {
+      "item": "wheat"
+    }
+  }
+}

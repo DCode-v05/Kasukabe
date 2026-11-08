@@ -1,0 +1,24 @@
+{
+  "tool": "say",
+  "kind": "positive",
+  "_why": "Run 25: 468 utterances, and the commonest single state a resident woke into was an unanswered question from somebody standing beside it. Bram at the outcrop with Ezra's price question open is the canonical one.",
+  "resident": "n01",
+  "location": "Kasukabe Ore Outcrop",
+  "inventory": {
+    "copper_ore": 8
+  },
+  "sim": 3055,
+  "people_here": [
+    "n15"
+  ],
+  "recent_speech": [
+    {
+      "from": "n15",
+      "text": "You have brought the last three loads lighter than the ones before. I need copper for three commissions. Name your price."
+    }
+  ],
+  "open_question_to_me": "Ezra Okonjo is standing with you and has asked what you want for the ore in your hands.",
+  "expect": {
+    "verb": "say"
+  }
+}

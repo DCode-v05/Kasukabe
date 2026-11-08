@@ -1,0 +1,1192 @@
+<title>Kasukabe Round 2 — Readings, Local Status, Open Decisions</title>
+
+<style>
+  :root {
+    --paper:      #F0F2F0;
+    --surface:    #FAFBFA;
+    --ink:        #141A18;
+    --ink-soft:   #4A5854;
+    --ink-faint:  #7C8A85;
+    --rule:       #D3DAD6;
+    --rule-soft:  #E3E8E5;
+    --accent:     #0E6B5C;
+    --accent-dim: #0E6B5C1A;
+    --crit:       #A32B1C;
+    --crit-dim:   #A32B1C14;
+    --warn:       #8A6207;
+    --warn-dim:   #8A620714;
+    --ok:         #256B4A;
+    --ok-dim:     #256B4A14;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:      #0E1412;
+      --surface:    #151D1A;
+      --ink:        #E2E9E5;
+      --ink-soft:   #A2B0AB;
+      --ink-faint:  #74827D;
+      --rule:       #27332F;
+      --rule-soft:  #1D2825;
+      --accent:     #46BCA3;
+      --accent-dim: #46BCA31F;
+      --crit:       #E0705E;
+      --crit-dim:   #E0705E1A;
+      --warn:       #D3A43C;
+      --warn-dim:   #D3A43C1A;
+      --ok:         #5FBD8D;
+      --ok-dim:     #5FBD8D1A;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #0E1412;
+    --surface:    #151D1A;
+    --ink:        #E2E9E5;
+    --ink-soft:   #A2B0AB;
+    --ink-faint:  #74827D;
+    --rule:       #27332F;
+    --rule-soft:  #1D2825;
+    --accent:     #46BCA3;
+    --accent-dim: #46BCA31F;
+    --crit:       #E0705E;
+    --crit-dim:   #E0705E1A;
+    --warn:       #D3A43C;
+    --warn-dim:   #D3A43C1A;
+    --ok:         #5FBD8D;
+    --ok-dim:     #5FBD8D1A;
+  }
+
+  :root[data-theme="light"] {
+    --paper:      #F0F2F0;
+    --surface:    #FAFBFA;
+    --ink:        #141A18;
+    --ink-soft:   #4A5854;
+    --ink-faint:  #7C8A85;
+    --rule:       #D3DAD6;
+    --rule-soft:  #E3E8E5;
+    --accent:     #0E6B5C;
+    --accent-dim: #0E6B5C1A;
+    --crit:       #A32B1C;
+    --crit-dim:   #A32B1C14;
+    --warn:       #8A6207;
+    --warn-dim:   #8A620714;
+    --ok:         #256B4A;
+    --ok-dim:     #256B4A14;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: 4rem 1.75rem 7rem;
+  }
+
+  .prose { max-width: 40rem; }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.688rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 1rem;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(2rem, 5vw, 2.9rem);
+    line-height: 1.1;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    margin: 0 0 0.9rem;
+    text-wrap: balance;
+  }
+
+  .standfirst {
+    font-size: 1.06rem;
+    color: var(--ink-soft);
+    max-width: 42rem;
+    margin: 0 0 1.5rem;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 2.25rem;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+  }
+  .meta b { color: var(--ink-soft); font-weight: 500; }
+
+  /* ---------- sections ---------- */
+
+  section { margin-bottom: 4rem; scroll-margin-top: 2rem; }
+
+  h2 {
+    font-family: var(--serif);
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin: 0 0 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--rule);
+    display: flex;
+    gap: 1rem;
+    align-items: baseline;
+    text-wrap: balance;
+  }
+  h2 .num {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    flex: none;
+    padding-top: 0.2rem;
+  }
+
+  h3 {
+    font-family: var(--sans);
+    font-size: 0.95rem;
+    font-weight: 650;
+    letter-spacing: 0.005em;
+    margin: 2.25rem 0 0.6rem;
+  }
+
+  h4 {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    margin: 1.75rem 0 0.6rem;
+  }
+
+  p { margin: 0 0 1rem; max-width: 40rem; }
+  ul, ol { margin: 0 0 1rem; padding-left: 1.15rem; max-width: 40rem; }
+  li { margin-bottom: 0.4rem; }
+  li::marker { color: var(--ink-faint); }
+
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.855em;
+    background: var(--accent-dim);
+    padding: 0.08em 0.34em;
+    border-radius: 2px;
+  }
+
+  strong { font-weight: 650; }
+
+  /* ---------- callouts ---------- */
+
+  .note {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+    max-width: 44rem;
+  }
+  .note.decide { border-left-color: var(--warn); }
+  .note.decide .note-label { color: var(--warn); }
+  .note-label {
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 0.4rem;
+  }
+  .note p:last-child, .note ul:last-child { margin-bottom: 0; }
+
+  /* ---------- status blocks ---------- */
+
+  .finding {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr;
+    gap: 0 1.25rem;
+    border-top: 1px solid var(--rule-soft);
+    padding: 1.15rem 0;
+    max-width: 46rem;
+  }
+  .finding:last-of-type { border-bottom: 1px solid var(--rule-soft); }
+  .tag {
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    padding: 0.22rem 0.45rem;
+    border-radius: 2px;
+    text-align: center;
+    align-self: start;
+    line-height: 1.35;
+  }
+  .tag.block { background: var(--crit-dim); color: var(--crit); border: 1px solid var(--crit); }
+  .tag.fixed { background: var(--ok-dim); color: var(--ok); border: 1px solid var(--ok); }
+  .tag.open  { background: var(--warn-dim); color: var(--warn); border: 1px solid var(--warn); }
+  .finding-body p { margin-bottom: 0.5rem; }
+  .finding-body p:last-child { margin-bottom: 0; }
+  .finding-title { font-weight: 650; }
+  .where {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+  }
+
+  /* ---------- tables ---------- */
+
+  .table-scroll { overflow-x: auto; margin: 1.25rem 0 1.5rem; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 34rem;
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+  }
+  th {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    border-bottom: 1px solid var(--ink-soft);
+    padding: 0 0.85rem 0.5rem 0;
+    vertical-align: bottom;
+  }
+  td {
+    border-bottom: 1px solid var(--rule-soft);
+    padding: 0.6rem 0.85rem 0.6rem 0;
+    vertical-align: top;
+  }
+  td:last-child, th:last-child { padding-right: 0; }
+  .pick { color: var(--accent); font-weight: 650; }
+  .no { color: var(--ink-faint); }
+
+  /* ---------- code block ---------- */
+
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    line-height: 1.65;
+    margin: 1.25rem 0;
+    max-width: 46rem;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  .c { color: var(--ink-faint); }
+  .g { color: var(--ok); }
+
+  /* ---------- figures ---------- */
+
+  figure {
+    margin: 2rem 0;
+    padding: 1.5rem 1.25rem 1.1rem;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow-x: auto;
+  }
+  figure svg { display: block; width: 100%; height: auto; min-width: 30rem; }
+  figcaption {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    color: var(--ink-faint);
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--rule-soft);
+    line-height: 1.6;
+  }
+
+  .svg-box { fill: var(--surface); stroke: var(--ink-soft); stroke-width: 1.2; }
+  .svg-box-accent { fill: var(--accent-dim); stroke: var(--accent); stroke-width: 1.4; }
+  .svg-box-warn { fill: var(--warn-dim); stroke: var(--warn); stroke-width: 1.4; }
+  .svg-box-crit { fill: var(--crit-dim); stroke: var(--crit); stroke-width: 1.4; }
+  .svg-t { fill: var(--ink); font-family: var(--sans); font-size: 12px; }
+  .svg-t-sm { fill: var(--ink-soft); font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.06em; }
+  .svg-t-lab { fill: var(--ink-faint); font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; }
+  .svg-line { stroke: var(--ink-soft); stroke-width: 1.2; fill: none; }
+  .svg-line-accent { stroke: var(--accent); stroke-width: 1.6; fill: none; }
+  .svg-line-dash { stroke: var(--ink-faint); stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; }
+
+  /* ---------- question list ---------- */
+
+  .qlist { counter-reset: q 28; list-style: none; padding: 0; max-width: 44rem; }
+  .qlist li {
+    counter-increment: q;
+    display: grid;
+    grid-template-columns: 2.5rem 1fr;
+    gap: 0 0.75rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--rule-soft);
+    margin: 0;
+  }
+  .qlist li::before {
+    content: "Q" counter(q);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--accent);
+    padding-top: 0.22rem;
+  }
+  .qsrc {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.05em;
+  }
+
+  /* ---------- decision list ---------- */
+
+  .decisions { list-style: none; padding: 0; max-width: 46rem; counter-reset: d; }
+  .decisions > li {
+    counter-increment: d;
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--warn);
+    background: var(--surface);
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.85rem;
+    border-radius: 2px;
+  }
+  .decisions > li > .dhead {
+    font-weight: 650;
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+  .decisions > li > .dhead::before {
+    content: "D" counter(d) " ";
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--warn);
+    letter-spacing: 0.06em;
+  }
+  .decisions p { margin: 0 0 0.5rem; font-size: 0.925rem; }
+  .decisions p:last-child { margin-bottom: 0; }
+  .rec { color: var(--accent); font-weight: 600; }
+
+  /* ---------- schedule ---------- */
+
+  .track { border-top: 1px solid var(--rule); padding-top: 1rem; margin-top: 1.5rem; }
+  .track-name {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  footer {
+    border-top: 1px solid var(--rule);
+    padding-top: 1.5rem;
+    margin-top: 4rem;
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+  }
+  footer ul { padding-left: 1.1rem; max-width: 46rem; }
+  footer li { margin-bottom: 0.3rem; }
+
+  @media (max-width: 620px) {
+    .wrap { padding: 2.5rem 1.1rem 4rem; }
+    .finding { grid-template-columns: 1fr; gap: 0.5rem; }
+    .tag { justify-self: start; padding-left: 0.6rem; padding-right: 0.6rem; }
+    h2 { flex-direction: column; gap: 0.25rem; }
+  }
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">September &middot; Kasukabe &middot; Internal</p>
+  <h1>Round 2: readings, local status, and the decisions I need from you</h1>
+  <p class="standfirst">
+    Everything in the drop, gone through. The town runs on a local machine, the roadmap's
+    bottom rung now exists, and the four decisions in section 4 are confirmed and written
+    into ROADMAP.md. What is still blocking sits at the end of section 6.
+  </p>
+  <div class="meta">
+    <span><b>Date</b> 2026-08-18</span>
+    <span><b>For</b> Lead, Sharan</span>
+    <span><b>Repo</b> septemberai/kasukabe @ e75fb97</span>
+    <span><b>Status</b> decisions confirmed, rung 1 green</span>
+  </div>
+</header>
+
+<section id="summary">
+  <h2><span class="num">00</span> The short version</h2>
+  <div class="prose">
+    <p>
+      Four things worth knowing before the rest.
+    </p>
+    <p>
+      <strong>The simulation runs locally.</strong> Fourteen agents, 288 ticks, two game-days,
+      mock inference, ledger invariant intact, both checkpoints written. That took one fix.
+      It is the first time the town has run outside the AWS host.
+    </p>
+    <p>
+      <strong>Rung 1 now exists.</strong> Three defects stood between the local run and the
+      roadmap's regression harness: the genesis generator could not produce a ten-agent
+      population, the trace store rejected any population that was not exactly 250, and the
+      tilemap the town walks on was not in the repository. All three are fixed. A ten-agent
+      town now runs two game-days and writes its trace, the full suite is green at 1690
+      passed and 0 failed, and the 250-agent genesis is provably byte-identical to the one
+      round 1 ran on.
+    </p>
+    <p>
+      <strong>GPT-Live vindicates the cascade, and the delegation shape is directly portable.</strong>
+      OpenAI kept a full-duplex model for the <em>interaction</em> and moved the <em>intelligence</em>
+      behind an application server that delegates to a text model. That is the same principle as
+      the BAP voice rebuild plan: the engine stays the brain. The voice lane can be built as a
+      strict addition without touching the engine or Law 1.
+    </p>
+    <p>
+      <strong>Simile is a real company solving a genuinely different problem.</strong>
+      Two hundred million dollars, two billion valuation, Joon Sung Park with Bernstein and Liang.
+      They predict what a specific real human will do. We measure what a society does under
+      metered scarcity. Their validation method is worth stealing; their product is not our product.
+    </p>
+  </div>
+</section>
+
+<section id="local">
+  <h2><span class="num">01</span> Local bring-up: what actually ran</h2>
+
+  <div class="prose">
+    <p>
+      Docker Desktop was not running, so I took the native path instead: Python 3.13 in a
+      virtualenv, the app's own dependency set, the real <code>GenesisRunner</code> class a live
+      run uses. Not a toy harness.
+    </p>
+  </div>
+
+<pre><code><span class="c"># rung 1: ten agents, two game-days, mock inference, real trace store</span>
+python -m world.life.genesis --population 10 --seed 2026 --output world/genesis_10.json
+KASUKABE_SQLITE_PATH=rung1/trace.sqlite3 python -c "GenesisRunner(...).run_burst(288)"
+
+<span class="g">DECLARED LEDGER TOTAL: 52000 cents</span>
+<span class="g">TICKS RUN: 288 | LEDGER HALTED: False</span>
+
+<span class="c"># and the trace it wrote, which no non-250 run could write before</span>
+run_config:      [(1, 52000)]
+world_snapshots: 3
+  <span class="g">tick=144  agents=10  wallets=1926  treasury=50000  burned=74   sum=52000</span>
+  <span class="g">tick=288  agents=10  wallets=1852  treasury=50000  burned=148  sum=52000</span>
+
+<span class="c"># full suite, in Docker, with the Ville assets mounted</span>
+docker compose run --rm test
+<span class="g">1690 passed, 7 skipped, 1 warning in 162.79s</span></code></pre>
+
+  <div class="prose">
+    <p>
+      That reproduces STATUS.md's scenario A at a twenty-fifth of the population, and the
+      seven skips match its baseline exactly. The core the convergence pass proved — ledger,
+      ticks, checkpointing, spend governor — is genuinely portable, and the ladder's bottom
+      rung is now a thing that can be run on every change.
+    </p>
+  </div>
+
+  <h4>Findings, and what was done about them</h4>
+
+  <div class="finding">
+    <span class="tag fixed">Fixed</span>
+    <div class="finding-body">
+      <p class="finding-title">Checkpoint writer could not run on Windows at all</p>
+      <p>
+        The atomic-write recipe ends with an fsync of the containing directory, which is
+        POSIX-only — Windows has no directory file descriptor, so <code>os.open()</code> raised
+        <code>PermissionError</code> on the first day-boundary checkpoint and killed the run at
+        tick 144. Guarded on <code>os.name != "nt"</code>. Linux durability semantics are
+        untouched, which matters because the production host is Linux; the file's own fsync,
+        which carries the checkpoint bytes, still runs everywhere.
+      </p>
+      <p class="where">app/world/run_genesis.py:1148</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <span class="tag fixed">Fixed</span>
+    <div class="finding-body">
+      <p class="finding-title">The genesis generator could not produce fewer than fourteen agents</p>
+      <p>
+        Business staffing was carved out of the working-age pool at fixed headcount — one
+        construction owner plus four hands, two for the grocery, two for the cafe, one
+        pharmacist. Ten roles. At the roadmap's rung-1 population of ten agents roughly seven
+        are working-age, and the generator died unpacking the grocery pair. Bisected: ten and
+        twelve failed, fourteen was the floor. This is why the roadmap's own nightly
+        regression harness did not exist.
+      </p>
+      <p>
+        Staffing now degrades in priority order — the four owners are required, then the two
+        shop employees, then construction hands. Shop staff outrank hands deliberately: a
+        ten-person town where four adults swing hammers and nobody sells food is a worse town
+        than one where the shops are open. Populations of six and up now generate.
+      </p>
+      <p>
+        The 250-agent output is <strong>provably unchanged</strong> — I diffed a freshly generated
+        genesis against the committed one field by field. Round 1's dataset stays comparable.
+      </p>
+      <p class="where">app/world/life/genesis.py:1084</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <span class="tag fixed">Fixed</span>
+    <div class="finding-body">
+      <p class="finding-title">The trace store hardcoded the $1000 ledger invariant, and failed quietly</p>
+      <p>
+        Two CHECK constraints asserted that wallets plus treasury plus burned equals exactly
+        100,000 cents — the 250-agent configuration, written into DDL. Every checkpoint mirror
+        in a fourteen-agent run was rejected and the run continued anyway, printing
+        <code>shared checkpoint mirror failed</code> once a game-day. A small run produced no
+        snapshot rows at all and said so only in a log line nobody reads at 3am.
+      </p>
+      <p>
+        The total is now a property of the run, held in a <code>run_config</code> row that the
+        runner declares once at genesis from its own seeded ledger, with the invariant enforced
+        by triggers on both tables. The guarantee still lives in the database rather than the
+        application, and it is declared at genesis rather than at write time on purpose — a
+        total derived from the same snapshot it is about to check would make the invariant
+        tautological, which is worse than no invariant because it would still look enforced.
+      </p>
+      <p>
+        And per the roadmap's closing rule, a failed trace write now raises
+        <code>TraceWriteFailed</code> and halts the run instead of logging a warning.
+      </p>
+      <p class="where">app/supabase/sqlite_schema.sql, app/world/run_genesis.py</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <span class="tag fixed">Fixed</span>
+    <div class="finding-body">
+      <p class="finding-title">The tilemap was not in the repository, so there was no geography</p>
+      <p>
+        <code>smallville/</code> is a vendored checkout and gitignored, so a fresh clone booted with
+        <code>WorldState.movement = None</code> and the world server refused to start with
+        <code>require_map=True</code>. That is round 1's RC-3 reproduced exactly, from a clean
+        clone, for a different reason — and it blocked the open-world map view outright, since
+        there was nothing to render.
+      </p>
+      <p>
+        Sparse-checked-out from the Apache-2.0 Generative Agents repository. A full clone fails
+        on Windows, so it needs <code>--depth 1</code> plus a sparse checkout of
+        <code>environment/frontend_server/static_dirs/assets</code> and
+        <code>core.longpaths</code>. Test skips fell from 57 to 7 — the map-gated suites, including
+        every <code>move</code> test, now actually run. <strong>Sharan will need this same checkout
+        before he can touch T3 or the UI.</strong>
+      </p>
+      <p class="where">kasukabe/.gitignore:3</p>
+    </div>
+  </div>
+
+  <div class="finding">
+    <span class="tag open">Note</span>
+    <div class="finding-body">
+      <p class="finding-title">Engine transport stripping is not yet exercised</p>
+      <p>
+        Everything above ran in <code>mock_mode=True</code>, which never constructs an engine
+        session. The stripped transport layers you warned about will surface the moment we run
+        with real inference. That is the first thing to hit tomorrow, and it wants the Bedrock
+        credentials question in section 5 answered first.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section id="readings">
+  <h2><span class="num">02</span> The readings</h2>
+
+  <h3>Simile — the closest thing to a competitor, aimed elsewhere</h3>
+  <div class="prose">
+    <p>
+      Joon Sung Park, lead author of the Smallville paper this project takes as reference,
+      co-founded Simile with Michael Bernstein and Percy Liang in late 2025, launched publicly
+      in February 2026, and closed $200M at a $2B valuation. Customers include CVS Health,
+      Gallup, Deloitte, Wealthfront. The stated mission is to simulate all eight billion people
+      on earth.
+    </p>
+    <p>
+      What they build is an <em>agentic twin</em>: a model of a specific real person, grounded in a
+      two-hour life-story interview, discrete-choice survey data, and a repository of randomised
+      controlled trials, which an enterprise then queries to predict how a population responds
+      to a price change or a policy. Park's own framing of why this needed new architecture is
+      useful to us: frontier models are optimised as "the CPU of intelligence" — rational problem
+      solving — while humans carry subjective values, preferences and taste, and scaling the
+      existing models plateaued.
+    </p>
+    <p>
+      Two numbers are worth taking. Their 2024 validation showed simulations predicting a
+      person's behaviour <strong>85% as accurately as that person replicates their own answers</strong>
+      two weeks later. Their production target is <strong>total variation distance below 0.15</strong>
+      at population level.
+    </p>
+    <p>
+      The distinction that matters for us: Simile's north star is <em>fidelity to a real
+      individual</em>. Kasukabe's is <em>emergence under metered scarcity</em> — nobody in this town
+      corresponds to a real person, and the research question is what a society does when
+      thinking costs money and nothing is scripted. Simile cannot answer that, because their
+      agents have no wallet, no tools that mutate a shared world, and no reason to invent
+      anything. We should say this in the paper rather than let a reviewer say it for us.
+    </p>
+  </div>
+
+  <div class="note">
+    <span class="note-label">Worth stealing</span>
+    <p>
+      Their validation method, not their product. A replication benchmark — put an agent through
+      the same decision battery twice, two game-days apart, and compare — gives Kasukabe a
+      denominator for character drift that we currently do not have. Right now compounding
+      quantity 4 says an evolved soul must diverge "in a way traceable to a specific event",
+      which is a judgement call. TVD against a fixed battery makes it a number.
+    </p>
+  </div>
+
+  <h3>GPT-Live and the voice lane</h3>
+  <div class="prose">
+    <p>
+      OpenAI shipped GPT-Live on 8 July 2026: a full-duplex voice model that listens and speaks
+      simultaneously, with the turn detector removed from the live audio path entirely. It makes
+      interaction decisions many times a second — speak, keep listening, pause, interrupt, invoke
+      a tool — and hits sub-300ms. The WARP work in your first screenshot is the transport half:
+      vanilla WebRTC needs six round trips before a data channel carries "hello", and the WARP
+      handshake folds ICE and DTLS together to get media and data ready in one.
+    </p>
+    <p>
+      The architectural point is the second screenshot, and it is the one that matters for us.
+      GPT-Live-1 does not do the work. Hard reasoning, search and retrieval are delegated across
+      an application server to a GPT-5.5 instance, which is what actually calls tools; results
+      and guidance flow back into the voice model while it keeps the conversation alive. The
+      voice model is an interaction layer over an intelligence it does not contain.
+    </p>
+    <p>
+      That is the same call the BAP voice rebuild plan already made — STT to engine to TTS, the
+      engine stays the brain, tools stay reachable — arrived at from the opposite direction.
+      OpenAI kept a speech-native front end and pushed the intelligence back out; we kept the
+      engine and are pushing the interaction layer forward. Both end at: <em>the thing that talks
+      is not the thing that thinks</em>. Your reading is right, and it is stronger than "they
+      converged to our stack" — they converged to our <em>principle</em> while keeping a better
+      front end than a cascade can give.
+    </p>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 860 300" role="img" aria-label="Diagram mapping the GPT-Live delegation architecture onto Kasukabe: a voice lane handles interaction while the September engine does the work through the tool registry.">
+      <text class="svg-t-lab" x="0" y="14">GPT-LIVE (OPENAI)</text>
+      <line class="svg-line" x1="0" y1="22" x2="380" y2="22"/>
+
+      <rect class="svg-box" x="0" y="38" width="96" height="42" rx="3"/>
+      <text class="svg-t" x="48" y="63" text-anchor="middle">User audio</text>
+
+      <rect class="svg-box" x="126" y="38" width="110" height="42" rx="3"/>
+      <text class="svg-t" x="181" y="63" text-anchor="middle">Media frontend</text>
+
+      <rect class="svg-box-accent" x="266" y="38" width="114" height="42" rx="3"/>
+      <text class="svg-t" x="323" y="58" text-anchor="middle">GPT-Live-1</text>
+      <text class="svg-t-sm" x="323" y="72" text-anchor="middle">VOICE</text>
+
+      <path class="svg-line" d="M96 59 H120"/><path class="svg-line" d="M236 59 H260"/>
+      <path class="svg-line-accent" d="M181 80 V116 H60 V140"/>
+      <text class="svg-t-sm" x="120" y="112">DELEGATE</text>
+
+      <rect class="svg-box" x="0" y="140" width="120" height="44" rx="3"/>
+      <text class="svg-t" x="60" y="158" text-anchor="middle">Application</text>
+      <text class="svg-t" x="60" y="173" text-anchor="middle">server</text>
+
+      <rect class="svg-box-accent" x="150" y="140" width="110" height="44" rx="3"/>
+      <text class="svg-t" x="205" y="160" text-anchor="middle">GPT-5.5</text>
+      <text class="svg-t-sm" x="205" y="174" text-anchor="middle">TEXT / BRAIN</text>
+
+      <rect class="svg-box" x="290" y="140" width="90" height="44" rx="3"/>
+      <text class="svg-t" x="335" y="167" text-anchor="middle">Tools</text>
+
+      <path class="svg-line" d="M120 162 H146"/><path class="svg-line" d="M260 162 H286"/>
+      <path class="svg-line-dash" d="M205 184 V206 H323 V84"/>
+      <text class="svg-t-sm" x="228" y="202">RESULTS / GUIDANCE</text>
+
+      <line class="svg-line" x1="420" y1="0" x2="420" y2="290" stroke-dasharray="3 4"/>
+
+      <text class="svg-t-lab" x="460" y="14">KASUKABE (PROPOSED T9)</text>
+      <line class="svg-line" x1="460" y1="22" x2="860" y2="22"/>
+
+      <rect class="svg-box" x="460" y="38" width="104" height="42" rx="3"/>
+      <text class="svg-t" x="512" y="57" text-anchor="middle">Operator or</text>
+      <text class="svg-t" x="512" y="71" text-anchor="middle">agent audio</text>
+
+      <rect class="svg-box" x="594" y="38" width="106" height="42" rx="3"/>
+      <text class="svg-t" x="647" y="63" text-anchor="middle">Voice session</text>
+
+      <rect class="svg-box-accent" x="730" y="38" width="120" height="42" rx="3"/>
+      <text class="svg-t" x="790" y="58" text-anchor="middle">Voice lane</text>
+      <text class="svg-t-sm" x="790" y="72" text-anchor="middle">7TH LANE</text>
+
+      <path class="svg-line" d="M564 59 H588"/><path class="svg-line" d="M700 59 H724"/>
+      <path class="svg-line-accent" d="M647 80 V116 H520 V140"/>
+      <text class="svg-t-sm" x="580" y="112">DELEGATE</text>
+
+      <rect class="svg-box" x="460" y="140" width="120" height="44" rx="3"/>
+      <text class="svg-t" x="520" y="158" text-anchor="middle">World server</text>
+      <text class="svg-t-sm" x="520" y="174" text-anchor="middle">SIM SEAM</text>
+
+      <rect class="svg-box-accent" x="610" y="140" width="118" height="44" rx="3"/>
+      <text class="svg-t" x="669" y="160" text-anchor="middle">September</text>
+      <text class="svg-t-sm" x="669" y="174" text-anchor="middle">ENGINE / BRAIN</text>
+
+      <rect class="svg-box" x="758" y="140" width="92" height="44" rx="3"/>
+      <text class="svg-t" x="804" y="160" text-anchor="middle">Tool</text>
+      <text class="svg-t" x="804" y="175" text-anchor="middle">registry</text>
+
+      <path class="svg-line" d="M580 162 H606"/><path class="svg-line" d="M728 162 H754"/>
+      <path class="svg-line-dash" d="M669 184 V206 H790 V84"/>
+      <text class="svg-t-sm" x="690" y="202">ANSWER / STATE</text>
+
+      <rect class="svg-box-warn" x="460" y="232" width="390" height="42" rx="3"/>
+      <text class="svg-t" x="655" y="250" text-anchor="middle">Law 2 holds: the voice lane speaks, it never mutates the world.</text>
+      <text class="svg-t-sm" x="655" y="266" text-anchor="middle">EVERY STATE CHANGE STILL GOES THROUGH A TOOL CALL ON THE REGISTRY</text>
+    </svg>
+    <figcaption>
+      The delegation shape transfers one-for-one. Replace the media frontend with the voice
+      session service the BAP rebuild plan already specifies, and GPT-5.5 with the September
+      engine, and the voice model becomes a seventh broker lane that never touches world state.
+    </figcaption>
+  </figure>
+
+  <h3>AgentEnv — the sandbox, and what it changes</h3>
+  <div class="prose">
+    <p>
+      AgentEnv is Moonshot's environment platform, built to run the agentic RL environments for
+      Kimi K3. Firecracker microVMs over KVM, same isolation primitive
+      <code>app/infra/firecracker/</code> already targets, but with the parts we do not have:
+      boot and resume under 50ms, pause under 100ms, snapshot under 100ms even under heavy disk
+      write, 9.6x memory overcommit in production, and overlaybd for on-demand OCI image loading
+      so a cluster carries roughly 1.5 million images without pre-warming hosts. The HTTP API is
+      E2B-compatible.
+    </p>
+    <p>
+      What that buys Kasukabe specifically is the economics of an <em>idle agent</em>. Today an agent
+      between ticks is a live process holding memory. Round 1 called about 30% of agents per
+      tick, so roughly seven in ten engines are paying rent to do nothing. Sub-100ms
+      snapshot-and-resume means an agent can be suspended between turns and restored when the
+      scheduler picks it, which is what makes "tonnes of engines very cheap" real rather than
+      aspirational.
+    </p>
+    <p>
+      It also raises a genuine research question rather than only an infrastructure one, which is
+      Q34 below: a resumed engine must be bit-identical to a suspended one, or the trace stops
+      being a causal record. The existing checkpoint work proves this at world level. It has
+      never been proven at engine level.
+    </p>
+  </div>
+
+  <h3>BLOOM — useful, but for a narrower slice than it first looks</h3>
+  <div class="prose">
+    <p>
+      Anthropic's Bloom takes a written behaviour description and automatically produces an
+      evaluation suite: an understanding stage that summarises the behaviour, an ideation stage
+      that invents scenarios, a rollout stage that runs them with a simulated user and simulated
+      tools, and a judge that scores each transcript 1&ndash;10 for behaviour presence. The headline
+      metric is elicitation rate at a threshold of 7. It distinguished system-prompted model
+      organisms from baselines on 9 of 10 quirks. Claude Opus 4.1 as judge correlated with human
+      labels at Spearman 0.86. Code is open at <code>github.com/safety-research/bloom</code>.
+    </p>
+    <p>
+      Its own stated limits are what decide the fit. It is explicitly unsuitable for objective
+      correctness checking — whether a task was genuinely completed, whether code works — and it
+      cannot capture behaviour that depends on real consequences, because its environments are
+      simulated. Kasukabe's environment is <em>not</em> simulated in that sense: a tool call really
+      moves money, and bankruptcy really ends an agent. That is our whole methodological
+      advantage, and it is exactly the thing Bloom is designed to work without.
+    </p>
+    <p>
+      So Bloom is not a replacement for the trace. Where it does earn its place is the subjective
+      questions the trace cannot settle on its own, and where we currently have no scoring method
+      at all: deception rate (Q12), altruism under scarcity (Q13), survival ethics at zero (Q14),
+      soul drift (Q9). For those, the judge-and-meta-judge pattern is directly reusable on real
+      transcripts we already have, rather than on scenarios it invents. One further finding
+      transfers as a warning rather than a tool: newer models show high evaluation awareness. If
+      agents can tell a dream probe is a probe, the probe data is contaminated, which is Q31.
+    </p>
+  </div>
+
+  <h3>Models — which mind runs the town</h3>
+  <div class="prose">
+    <p>
+      Taking the four from the access table against what the town actually asks a model to do:
+      hold a persona over hundreds of turns, decide between tools, negotiate in language, and
+      stay cheap.
+    </p>
+  </div>
+
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr><th>Model</th><th>Evidence on agentic work</th><th>Fit for Kasukabe</th><th>Call</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Kimi K2.5</strong></td>
+          <td>50.2% HLE with tools, 76.8% SWE-bench Verified, 96.1% AIME 2025; 262K context; roughly 2.3x cheaper per blended token than Mistral Large 3</td>
+          <td>Long-horizon tool use and a large window are exactly the pinned-thread shape. Already the cognition lane in DESIGN.md and already proven across six lanes in round 1.</td>
+          <td class="pick">Cognition — keep</td>
+        </tr>
+        <tr>
+          <td><strong>DeepSeek V3.2</strong></td>
+          <td>Comparable tier, cheapest output of the four</td>
+          <td>Right for the learning centre, dream probes, summarisation and importance scoring — the traffic T4 needs tagged and routed off the Kimi lanes.</td>
+          <td class="pick">Background — keep</td>
+        </tr>
+        <tr>
+          <td><strong>Mistral Large 3</strong></td>
+          <td>No published tau-bench or BFCL figure for Large 3; the previous Large scored 26.6 Pass@1 on tau-bench, well behind the field</td>
+          <td>Proven inside <em>our</em> stack — Atlas runs its whole routing, scoping and share-decision pipeline on Mistral via Bedrock Converse. That is real evidence for structured decisions, weak evidence for persona depth.</td>
+          <td class="no">Third throughput lane only, if RPM binds</td>
+        </tr>
+        <tr>
+          <td><strong>Qwen3 Coder 480B</strong></td>
+          <td>Strong coding specialist</td>
+          <td>Kasukabe agents do not write code. A coding-tuned model is the wrong prior for a farmer negotiating a grain price, and it would muddy any cross-lane comparison.</td>
+          <td class="no">Not for agent cognition</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note decide">
+    <span class="note-label">Needs your call — see D3</span>
+    <p>
+      <code>broker/config.py</code> hardcodes the allowlist to Kimi and DeepSeek and says in its own
+      comment that this is "a law, not a deployment knob". Adding Mistral or the Qwen profile is
+      therefore a deliberate amendment, not a config change, and it costs research validity:
+      every extra lane is another mind that could have answered any given call. My
+      recommendation is to leave the law alone for Round 2 and revisit at rung 3 if RPM binds.
+    </p>
+  </div>
+</section>
+
+<section id="a2a">
+  <h2><span class="num">03</span> Where the A2A work fits</h2>
+  <div class="prose">
+    <p>
+      Atlas is a hundred agents in one process, communicating through a central Router that
+      reproduces A2A method semantics, with discovery, need-to-know enforcement, metrics and
+      event emission all forced through that single chokepoint because agents cannot bypass it.
+      It has an SSE contract with about eighteen typed event types, a force-directed live
+      communication graph, a human-in-the-loop approval queue, and 68 tests.
+    </p>
+    <p>
+      Read against the roadmap, that is not a neighbouring project. It is a working prototype of
+      three things Round 2 has to build:
+    </p>
+    <ul>
+      <li>
+        <strong>T2, speech.</strong> Atlas already models addressed messages carrying a declared
+        intent, one-to-one versus group, and who was included. The roadmap's <code>say</code> and
+        <code>tell</code> plus overhearing is the same object with a location gate and an energy
+        price attached.
+      </li>
+      <li>
+        <strong>T3 and T6, institutions and rulesets.</strong> Atlas's tighten-only policy engine —
+        eleven deterministic rules folded most-restrictive-wins over a lattice, evaluated on every
+        request, never able to loosen what the model decided — is structurally the ruleset
+        enforcement T6 describes, and it already sits at dispatch time where T6 wants it. The
+        namespace ACLs in <code>world/tools/</code> are a weaker version of the same idea.
+      </li>
+      <li>
+        <strong>The game UI.</strong> The control tower is a live multi-agent observation surface
+        that already exists and works: comms graph, roster, per-agent trace spans, metrics strip,
+        SSE as the single contract. DESIGN.md section 8's viewer list is close to a superset of it.
+      </li>
+    </ul>
+    <p>
+      The caution is Law 2. Atlas's Router is a side channel by Kasukabe's standards — messages
+      move through in-process dispatch, not through the tool registry. Porting the mechanism is
+      right; porting the architecture would make speech invisible to the trace, which is the
+      exact defect RC-2 describes. What we take is the shape of the message, the policy lattice,
+      and the event schema. What stays Kasukabe's is that every one of them arrives as a tool call.
+    </p>
+  </div>
+</section>
+
+<section id="decisions">
+  <h2><span class="num">04</span> Decisions I need from you</h2>
+  <div class="prose">
+    <p>
+      Nothing below has been written into ROADMAP.md. Each is a proposal with a recommendation.
+    </p>
+  </div>
+
+  <ol class="decisions">
+    <li>
+      <span class="dhead">Voice: what is it for in Round 2?</span>
+      <p>
+        Three quite different products share the phrase. <strong>(a) Operator voice</strong> — the
+        President and God console gains a spoken channel, you talk to the town and to individual
+        agents, and the voice lane narrates what the engine found. <strong>(b) Agent voice</strong> —
+        <code>say</code> and <code>tell</code> render as audio, so a place has a soundscape and the
+        research gains prosody, hesitation and interruption as measurable social signals.
+        <strong>(c) Product validation</strong> — Kasukabe is the load test for the BAP voice stack,
+        and the deliverable is evidence for BAP rather than for the paper.
+      </p>
+      <p>
+        <span class="rec">Recommendation:</span> (a) for Round 2, designed so (b) drops in later.
+        Operator voice is additive, costs no research validity, and demonstrates the lane. Agent
+        voice at fifty agents is a cost and storm risk on top of T2, which is already the round's
+        largest unknown. If (b) is the actual ask, it should be its own track with its own gate.
+      </p>
+    </li>
+    <li>
+      <span class="dhead">Wednesday — tomorrow, or the 26th?</span>
+      <p>
+        Today is Tuesday the 18th. More than 50% of Round 2 by tomorrow is not reachable; T1
+        through T8 is roughly three engineer-weeks and rung 1 does not exist yet. By Wednesday
+        the 26th, with Sharan from tomorrow, more than half is genuinely achievable — my plan in
+        section 6 hits T1, T2, T4 and T7 with T3 substantially done.
+      </p>
+      <p>
+        <span class="rec">Recommendation:</span> if tomorrow is fixed for the funder, let me
+        reframe the deliverable as a live demo — ten agents, real inference, personas on the wire,
+        speech working, on a map — which is genuinely impressive and genuinely reachable, and keep
+        50% of Round 2 for the 26th.
+      </p>
+    </li>
+    <li>
+      <span class="dhead">Do we amend the broker's model law?</span>
+      <p>
+        Kimi K2.5 for cognition and DeepSeek V3.2 for background is already both the design and
+        the code. Mistral Large 3 has the inference profile you sent and is proven in Atlas, but
+        adding it widens the allowlist that <code>broker/config.py</code> deliberately freezes.
+      </p>
+      <p>
+        <span class="rec">Recommendation:</span> no change for Round 2. Hold the Mistral profile
+        for the voice lane's non-cognition work — endpointing, summarisation for TTS — where it
+        never serves an agent turn and so cannot contaminate the research.
+      </p>
+    </li>
+    <li>
+      <span class="dhead">AgentEnv now or after Round 2?</span>
+      <p>
+        <code>GenesisRunnerConfig</code> already carries <code>supervisor_backend</code> as
+        <code>process</code> or <code>firecracker</code>, so the seam exists. Swapping in AgentEnv
+        is a backend implementation, not an architecture change.
+      </p>
+      <p>
+        <span class="rec">Recommendation:</span> after. Round 2's gates are all about mechanism,
+        every one of them provable at ten to fifty agents on the process backend, and the local
+        loop has to stay fast while we build. AgentEnv is what makes rung 3 affordable — do it as
+        the first task of the AWS move, with Q34's determinism check as its gate.
+      </p>
+    </li>
+    <li>
+      <span class="dhead">Bloom as an instrument, scoped narrowly</span>
+      <p>
+        Not for generating scenarios — our environment is real and that is the point. For scoring
+        transcripts we already have, on the subjective questions where we currently have no
+        method: deception, altruism, survival ethics, soul drift.
+      </p>
+      <p>
+        <span class="rec">Recommendation:</span> adopt the judge and meta-judge pattern in Round 3
+        alongside the other instruments, not in Round 2. Note it in the roadmap now so the trace
+        schema keeps what a judge needs.
+      </p>
+    </li>
+    <li>
+      <span class="dhead">Six new standing questions</span>
+      <p>
+        Drafted in section 5, continuing the roadmap's numbering at 29. Say which you want and
+        I will add exactly those.
+      </p>
+    </li>
+  </ol>
+</section>
+
+<section id="questions">
+  <h2><span class="num">05</span> Proposed standing questions</h2>
+  <div class="prose">
+    <p>
+      Each earns its place by being answerable from the trace and unanswerable without the new
+      inputs. Numbering continues from the roadmap's 28.
+    </p>
+  </div>
+
+  <ol class="qlist">
+    <li>
+      <div>
+        Does an agent that must <em>speak</em> a decision make a different decision than one that
+        writes it? Spoken register is shorter, more committal and harder to hedge. If voice
+        changes what agents agree to, the modality is a variable and not a skin.
+        <div class="qsrc">R2 for the baseline &middot; from GPT-Live</div>
+      </div>
+    </li>
+    <li>
+      <div>
+        How far does an agent's behaviour drift from its own genesis persona, measured as total
+        variation distance over a fixed decision battery run at day 1 and day 5, rather than by
+        narrative judgement? Gives compounding quantity 4 a denominator.
+        <div class="qsrc">R2 for the method, R4 for the measurement &middot; from Simile</div>
+      </div>
+    </li>
+    <li>
+      <div>
+        Does persona richness survive scarcity, or does poverty flatten every character into the
+        same survivor? The strongest possible negative result for the persona thesis, and cheap
+        to test — compare drift in solvent versus near-bankrupt agents.
+        <div class="qsrc">R3 &middot; from Simile</div>
+      </div>
+    </li>
+    <li>
+      <div>
+        Can agents tell when they are being probed? If dream-probe transcripts show evaluation
+        awareness, every instrument reading in Round 3 and 4 is contaminated and we need to know
+        before we publish, not after.
+        <div class="qsrc">R3 &middot; from Bloom</div>
+      </div>
+    </li>
+    <li>
+      <div>
+        Is a suspended engine the same engine? If an agent is snapshotted between ticks and
+        resumed, does it behave identically to one held hot — and if not, the trace is no longer
+        a causal record. This is the gate on cheap scale-out.
+        <div class="qsrc">R2 to prove, R4 to rely on &middot; from AgentEnv</div>
+      </div>
+    </li>
+    <li>
+      <div>
+        When information crosses the town, does it travel along the social graph or the org
+        chart? Atlas measures hops, redundant contacts and who was asked; the same instrument on
+        a town with families, employers and factions asks which structure actually routes gossip.
+        <div class="qsrc">R3 &middot; from A2A</div>
+      </div>
+    </li>
+  </ol>
+</section>
+
+<section id="plan">
+  <h2><span class="num">06</span> Plan to the milestone</h2>
+  <div class="prose">
+    <p>
+      Written against Wednesday the 26th, per D2. The ordering holds either way — the tracks are
+      chosen so that the first two days produce something demonstrable regardless of which date
+      is real.
+    </p>
+  </div>
+
+  <div class="track">
+    <div class="track-name">Day 0 &middot; today &middot; done</div>
+    <p>
+      Readings complete and decisions confirmed. Rung 1 built: all four defects fixed
+      (Windows checkpoint, genesis floor, hardcoded invariant, missing tilemap), full suite
+      green at 1690 passed and 0 failed, ten-agent town running two game-days and writing its
+      trace. ROADMAP.md updated with T9, the six new standing questions, and the model-law
+      amendment.
+    </p>
+  </div>
+
+  <div class="track">
+    <div class="track-name">Day 1 &middot; Wednesday 19th &middot; first real inference</div>
+    <p>
+      Ten agents against real Bedrock, which is where the stripped engine transports will
+      show themselves. Blocked on credentials and a dev spend cap — see the meeting list.
+      This is the demo-able artifact.
+    </p>
+  </div>
+
+  <div class="track">
+    <div class="track-name">Days 2&ndash;3 &middot; T1 and T2, the two that unblock everything</div>
+    <p>
+      <strong>Me:</strong> T1 character layering — build the <code>ConsciousnessManager</code> in
+      <code>pinned_boot</code>, layer stable, dynamic and volatile sections, wire
+      <code>build_soul_seed</code> and <code>cost_disclosure</code> to their first production call
+      sites. This is the fix for RC-1 and nothing about the society is real until it lands.
+      <br>
+      <strong>Sharan:</strong> T2 speech — <code>say</code> and <code>tell</code> as registry
+      primitives on the existing <code>heard_events</code> substrate, energy-priced, with
+      <code>utterances</code> written by the trace store. Independent of T1 and testable alone.
+    </p>
+  </div>
+
+  <div class="track">
+    <div class="track-name">Days 4&ndash;5 &middot; T3 and T4</div>
+    <p>
+      <strong>Me:</strong> T4 learning — the world as corrector. Emit rejections, failed
+      settlements and bankruptcies as learning signals through <code>SignalStore.write()</code>,
+      unify the two skill systems, tag <code>X-Kasukabe-Purpose</code> on every call so background
+      work routes to DeepSeek. This is the spine and it is the one I do not want split.
+      <br>
+      <strong>Sharan:</strong> T3 — collapse the contract surfaces onto <code>world/main.py</code>,
+      mount the real <code>TraceStore</code> and <code>MapService</code>, add the engine's two routes
+      and the console's <code>/admin/*</code> surface, which also closes STATUS.md risk 2.
+    </p>
+  </div>
+
+  <div class="track">
+    <div class="track-name">Days 6&ndash;7 &middot; T7, the map UI, and the rung-1 gate</div>
+    <p>
+      T7's observation primitives, the open-world view over the real tilemap with agents walking
+      routes, and rung 1 green twice on fresh seeds. T5, T6 and T8 carry into the following week —
+      they are the back half of Round 2 and they depend on all of the above landing first.
+    </p>
+  </div>
+
+  <div class="note">
+    <span class="note-label">Still blocking — for the meeting</span>
+    <ul>
+      <li><strong>Bedrock credentials for local real-inference runs.</strong> Which account, and what
+        per-day cap should the spend governor carry on a dev machine. This blocks Day 1 outright:
+        everything proven so far ran in <code>mock_mode</code>, which never constructs an engine
+        session, so the stripped transports are still entirely unexercised.</li>
+      <li>Whether Sharan takes T2 and T3 as written, or we split by layer instead of by track.</li>
+      <li>What the funder actually sees on the milestone date — a number, a demo, or a document.</li>
+      <li>Should the Ville assets be vendored properly (a submodule or a bucket) rather than left
+        to each developer to sparse-checkout by hand?</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <p><strong>Sources</strong></p>
+  <ul>
+    <li>Simile — <a href="https://sequoiacap.com/podcast/simulating-humans-at-scale-similes-joon-sung-park">Sequoia, Simulating Humans at Scale</a>; <a href="https://www.unite.ai/simile-raises-more-than-200-million-at-a-2-billion-valuation-to-scale-human-behavior-simulations/">Unite.AI on the $200M round</a>; <a href="https://www.indexventures.com/companies/simile/">Index Ventures</a>; <a href="https://arxiv.org/abs/2304.03442">Generative Agents (arXiv 2304.03442)</a></li>
+    <li>GPT-Live — <a href="https://openai.com/index/continuous-voice-interaction-with-gpt-live/">OpenAI, How we built a realtime system for responsive voice AI in six months</a>; <a href="https://openai.com/index/introducing-gpt-live/">Introducing GPT-Live</a>; <a href="https://opendatascience.com/openai-gpt-live-architecture-brings-full-duplex-voice-ai-to-chatgpt/">ODSC architecture summary</a></li>
+    <li>AgentEnv — <a href="https://github.com/kvcache-ai/AgentEnv">kvcache-ai/AgentEnv</a></li>
+    <li>Bloom — <a href="https://alignment.anthropic.com/2025/bloom-auto-evals/">Anthropic Alignment, Bloom automated behavioural evaluations</a>; <a href="https://github.com/safety-research/bloom">safety-research/bloom</a></li>
+    <li>Models — <a href="https://llm-stats.com/models/compare/kimi-k2.5-vs-mistral-large-3-2509">Kimi K2.5 vs Mistral Large 3</a>; <a href="https://artificialanalysis.ai/models/comparisons/mistral-large-3-vs-kimi-k2">Artificial Analysis</a>; <a href="https://arxiv.org/pdf/2406.12045">tau-bench</a></li>
+    <li>Internal — <code>kasukabe/ROADMAP.md</code>, <code>kasukabe/DESIGN.md</code>, <code>kasukabe/app/STATUS.md</code>, <code>Prototype/A2A/README.md</code>, <code>Prototype/voice-mode-rebuild-plan.html</code></li>
+  </ul>
+</footer>
+
+</div>

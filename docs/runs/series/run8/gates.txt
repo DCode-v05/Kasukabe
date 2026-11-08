@@ -1,0 +1,27 @@
+
+==================================================================
+RUN data/run8.db
+==================================================================
+calls 370  ok 370  spend $2.12  last tick 0
+utterances 50
+
+GATE                      VALUE               RESULT
+G1 reply rate             15/34 = 44%         FAIL
+G2 exchanges 4+ turns     3                   PASS
+G3 group (3+ speakers)    2                   PASS
+G4 settlements            0                   FAIL
+G5 alive at stop          10/10               PASS
+G6 turns w/ effect        222/298 = 74%       PASS
+
+tool calls: {'world_move': 56, 'world_say': 50, 'world_look_around': 36, 'world_rest': 16, 'world_describe_place': 15, 'world_list_places': 11, 'world_find_people': 11, 'world_craft': 8, 'world_harvest': 7, 'world_describe_primitives': 4, 'world_eat': 4, 'world_mine': 3}
+
+largest gathering: 6 speakers at home:h_quarry, ticks 37-47
+   Perrin Holloway -> aloud: Does anyone have any food they could spare before I head to college? I didn't pack any this morning.
+   Bram Holloway -> Ainsley Holloway: Ainsley. A word.
+   Nell Holloway -> Perrin Holloway: Perrin. I have nothing to give you today. Get food at the market or go hungry. And Bram—whatever you're about 
+   Ainsley Holloway -> Bram Holloway: I'm listening.
+   Nell Holloway -> Bram Holloway: Bram. I made furniture today. Sold or unsold, the work is done. But I did not walk all morning to watch you wa
+   Tobias Holloway -> Bram Holloway: Bram. You're standing there like you've got something to say, and Nell's right—say it or don't, but I'm late f
+
+FAILED: G1 reply rate, G4 settlements
+

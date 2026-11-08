@@ -1,0 +1,33 @@
+[Unit]
+# Live town view (Phaser frontend + WebSocket relay of world events -
+# DESIGN.md section 9, app/CONVENTIONS.md "game/ is presentation only").
+# This app has NO auth of its own (game/config.py's own docstring calls
+# it "the unauthenticated live town view") - Caddy is what gates it
+# before it ever reaches the public subdomain (RUNBOOK.md step 6). Bound
+# to 127.0.0.1 so the only way in is through Caddy's reverse proxy.
+Description=Kasukabe live town view (Phaser + WS relay)
+After=network-online.target kasukabe-world.service
+Wants=network-online.target
+Requires=kasukabe-world.service
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=kasukabe
+Group=kasukabe
+WorkingDirectory=/opt/kasukabe/app
+EnvironmentFile=/opt/kasukabe/app/infra/env/game.env
+ExecStart=/opt/kasukabe/app/.venv/bin/uvicorn game.server:app --host 127.0.0.1 --port 8400
+Restart=always
+RestartSec=2
+StandardOutput=journal
+StandardError=journal
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
