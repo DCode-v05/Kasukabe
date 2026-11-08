@@ -84,16 +84,16 @@ def test_hook_blocks_only_at_full():
 def test_documented_sets_per_level_end_to_end():
     """Drive a representative event from each gate bucket through fold + gate and
     assert the delivered set matches the documented off/trace/full contract."""
-    always = fold(TextDelta(thread_id="t", text="hi"))  # text — always
-    trace = fold(ThreadLifecycle(thread_id="t", status="started"))  # thread — trace
-    trace2 = fold(ExecutionSummary(thread_id="t", status="completed"))  # summary — trace
+    always = fold(TextDelta(thread_id="t", text="hi"))
+    trace = fold(ThreadLifecycle(thread_id="t", status="started"))
+    trace2 = fold(ExecutionSummary(thread_id="t", status="completed"))
     full = fold(
-        MemoryWriteEvent(  # memory — full
+        MemoryWriteEvent(
             thread_id="t", memory_type="fact", key="k", value_preview="v"
         )
     )
     full2 = fold(
-        CompactionEvent(  # compaction — full
+        CompactionEvent(
             thread_id="t",
             messages_before=10,
             messages_after=5,
@@ -105,15 +105,12 @@ def test_documented_sets_per_level_end_to_end():
 
     off, trc, fll = Gates(telemetry="off"), Gates(telemetry="trace"), Gates(telemetry="full")
 
-    # always survives every level
     for g in (off, trc, fll):
         assert passes_gates(always, g) is True
-    # trace bucket: hidden at off, shown at trace + full
     for b in (trace, trace2):
         assert passes_gates(b, off) is False
         assert passes_gates(b, trc) is True
         assert passes_gates(b, fll) is True
-    # full bucket: hidden at off + trace, shown only at full
     for b in (full, full2):
         assert passes_gates(b, off) is False
         assert passes_gates(b, trc) is False

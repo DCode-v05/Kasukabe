@@ -102,10 +102,6 @@ def _params_models() -> dict[str, type]:
 
     models: dict[str, type] = {}
     for path in _handler_modules():
-        # `world/tools/primitives/civic.py` -> `world.tools.primitives.civic`.
-        # The first draft dropped the "tools" segment and imported
-        # `world.civic`, which does not exist - so the sweep raised instead
-        # of sweeping, and would have reported a clean tree by crashing.
         rel = path.relative_to(TOOLS_ROOT.parents[1]).with_suffix("")
         module = importlib.import_module(".".join(rel.parts))
         for name in dir(module):

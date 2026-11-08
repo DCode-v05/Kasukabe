@@ -82,9 +82,6 @@ async def main(args) -> int:
         start_at_dawn=True, tick_interval_s=args.tick_s, max_game_days=4, max_ticks=args.max_ticks,
     )
     if args.scenario:
-        # The same fold the paid run does, so the rehearsal is of THIS
-        # scenario: its cast, its start and stop ticks, its charter, its
-        # sitting government. Only the pace stays the rehearsal's own.
         config = apply_scenario(config, args.scenario)
         config = dataclasses.replace(config, tick_interval_s=args.tick_s, mock_mode=True)
     runner = GenesisRunner(config)
@@ -102,8 +99,6 @@ async def main(args) -> int:
     staging = (asyncio.create_task(stage_election(runner, args.seed, stop))
                if args.stage_election else None)
     try:
-        # run_continuous, not run_burst: it paces ticks at --tick-s and stops
-        # at --max-ticks, exactly as the paid run's loop does.
         await runner.run_continuous()
     finally:
         stop.set()

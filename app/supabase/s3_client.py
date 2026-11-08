@@ -37,28 +37,10 @@ from urllib.parse import quote
 import httpx
 from pydantic import BaseModel
 
-# IMDSv2 endpoint. Link-local, only reachable from inside an EC2 instance
-# (or a Firecracker microVM configured to proxy it) - unreachable
-# anywhere else, including every CI runner and every developer laptop,
-# which is exactly why credential resolution tries static env vars first
-# and only falls through to this with a short timeout.
 IMDS_BASE = "http://169.254.169.254/latest"
 IMDS_TIMEOUT_S = 2.0
-# Refresh instance-role credentials this long before they actually
-# expire, so an in-flight upload never races the credential expiring
-# mid-request.
 IMDS_REFRESH_SKEW_S = 60
 
-# Fixed S3 key prefixes under the one genesis bucket - not a free per-call
-# choice. infra/scripts/01-setup-s3-and-iam.sh provisions the bucket with
-# exactly this layout and prints it as "the interface app-layer code
-# should target" for this track's S3 client and litestream.yml; encoding
-# it here (rather than letting each caller invent its own prefix) means a
-# future rename only touches one file, and this project's S3 layout is
-# never split between a shell script's comment and Python behavior
-# actually agreeing on it by coincidence. archiver.py's two logical bucket
-# names ("llm-payloads", "world-snapshots") map onto the first two;
-# research/'s Parquet export job uses PARQUET_EXPORT_PREFIX directly.
 ARCHIVE_BUCKET_PREFIXES: dict[str, str] = {
     "llm-payloads": "archives/payloads",
     "world-snapshots": "archives/checkpoints",
@@ -95,8 +77,6 @@ class Credentials:
     access_key_id: str
     secret_access_key: str
     session_token: str | None
-    # None for static (env-var) credentials, which never expire from this
-    # client's point of view; set for IMDS-sourced role credentials.
     expires_at_epoch_s: float | None = None
 
     def expired(self) -> bool:
@@ -256,11 +236,6 @@ class S3Client:
     def __init__(self, config: S3Config, *, http_client: httpx.AsyncClient | None = None) -> None:
         self.config = config
         self.host = f"{config.bucket}.s3.{config.region}.amazonaws.com"
-        # http_client is an injection seam for tests: pass an
-        # httpx.AsyncClient built with httpx.MockTransport instead of a
-        # real network transport (app/CONVENTIONS.md: "Never call a real
-        # ... API in a test" extends to S3, same as it did to the deleted
-        # PostgrestClient's Supabase project).
         self.http = http_client or httpx.AsyncClient(timeout=config.request_timeout_s)
         self.owns_http = http_client is None
         self.cached_credentials: Credentials | None = None

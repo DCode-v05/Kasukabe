@@ -7,8 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<style>
-:root{
+<style>:root{
   --page:#f6f7f5; --panel:#ffffff; --panel2:#f4f6f8; --sidebar:#fbfcfb;
   --border:#e3e6e3; --border2:#eceeec;
   --txt:#2b3138; --txt2:#6b7280; --head:#11161b; --soft:#8a929b;
@@ -27,7 +26,6 @@ body{margin:0;background:var(--page);color:var(--txt);
 a{color:var(--accent);text-decoration:none}
 a:hover{text-decoration:underline;text-underline-offset:2px}
 
-/* layout */
 #shell{display:flex;min-height:100vh}
 #sidebar{width:300px;flex:0 0 300px;position:sticky;top:0;height:100vh;overflow-y:auto;
   background:var(--sidebar);border-right:1px solid var(--border)}
@@ -39,7 +37,6 @@ a:hover{text-decoration:underline;text-underline-offset:2px}
   #menuBtn{display:flex!important}
 }
 
-/* sidebar */
 .brand{padding:24px 22px 18px;border-bottom:1px solid var(--border);position:sticky;top:0;
   background:linear-gradient(180deg,var(--sidebar),#fbfcfbf2);backdrop-filter:blur(6px);z-index:2}
 .brand h1{margin:0;font-size:16px;font-weight:700;color:var(--head);letter-spacing:-.1px}
@@ -59,7 +56,6 @@ nav a{display:block;padding:7px 12px;border-radius:8px;color:var(--txt2);font-si
 nav a:hover{background:var(--panel2);color:var(--txt);text-decoration:none}
 nav a.active{background:var(--accent-bg);color:var(--accent);border-left-color:var(--accent);font-weight:500}
 
-/* hero */
 .hero{border:1px solid var(--border);border-radius:18px;padding:34px 38px;margin-bottom:34px;
   background:linear-gradient(135deg,#ffffff,#f7f9fb);box-shadow:var(--shadow);position:relative;overflow:hidden}
 .hero::after{content:"";position:absolute;inset:0;background:
@@ -70,7 +66,6 @@ nav a.active{background:var(--accent-bg);color:var(--accent);border-left-color:v
 .kpi b{display:block;font-size:26px;color:var(--accent);font-weight:700;line-height:1.1;letter-spacing:-.5px}
 .kpi span{font-size:12px;color:var(--txt2)}
 
-/* content cards + typography */
 section{margin:0 0 30px;scroll-margin-top:18px}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;
   padding:14px 40px 34px;box-shadow:var(--shadow)}
@@ -96,14 +91,12 @@ blockquote{margin:18px 0;padding:12px 20px;border-left:3px solid var(--accent2);
   background:var(--accent2-bg);border-radius:0 10px 10px 0;color:var(--txt)}
 blockquote p{margin:5px 0;max-width:none}
 
-/* code — DM Mono only here */
 code{font-family:var(--mono);font-size:12.5px;background:var(--codebg);color:var(--codetx);
   padding:1.5px 6px;border-radius:6px;border:1px solid var(--codeborder);overflow-wrap:anywhere}
 pre{background:var(--codebg);border:1px solid var(--codeborder);border-radius:12px;padding:16px 18px;
   overflow-x:auto;margin:16px 0;box-shadow:inset 0 1px 2px #1116200a}
 pre code{background:none;border:none;color:#1f2933;padding:0;font-size:13px;line-height:1.6;white-space:pre}
 
-/* tables */
 .tbl-wrap{overflow-x:auto;margin:16px 0;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow)}
 table{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--panel)}
 th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--border2);vertical-align:top;line-height:1.55}
@@ -113,12 +106,10 @@ tbody tr:nth-child(even){background:#fafbfc}
 tbody tr:hover{background:var(--accent-bg)}
 td code{font-size:12px;white-space:normal}
 
-/* mermaid */
 .mermaid{background:linear-gradient(180deg,#ffffff,#fbfcfd);border:1px solid var(--border);
   border-radius:14px;padding:22px;margin:20px 0;text-align:center;overflow-x:auto;box-shadow:var(--shadow)}
 .mermaid svg{max-width:100%;height:auto}
 
-/* topbar / misc */
 #menuBtn{display:none;position:fixed;top:16px;left:16px;z-index:60;width:44px;height:44px;
   align-items:center;justify-content:center;background:var(--panel);border:1px solid var(--border);
   border-radius:11px;color:var(--head);font-size:19px;cursor:pointer;box-shadow:var(--shadow)}
@@ -180,7 +171,6 @@ const content = document.getElementById('content');
 const nav = document.getElementById('nav');
 marked.setOptions({gfm:true, breaks:false, headerIds:false, mangle:false});
 
-// group nav
 const groups = [];
 SECTIONS.forEach(s=>{ let g=groups.find(x=>x.name===s.group); if(!g){g={name:s.group,items:[]};groups.push(g);} g.items.push(s); });
 groups.forEach(g=>{
@@ -189,7 +179,6 @@ groups.forEach(g=>{
     a.dataset.id=s.id; nav.appendChild(a); });
 });
 
-// render sections
 SECTIONS.forEach(s=>{
   const sec=document.createElement('section'); sec.id=s.id;
   const card=document.createElement('div'); card.className='card';
@@ -197,19 +186,16 @@ SECTIONS.forEach(s=>{
   sec.appendChild(card); content.appendChild(sec);
 });
 
-// wrap tables for horizontal scroll
 document.querySelectorAll('#content table').forEach(t=>{
   const w=document.createElement('div'); w.className='tbl-wrap';
   t.parentNode.insertBefore(w,t); w.appendChild(t);
 });
 
-// convert ```mermaid code blocks -> <div class="mermaid">
 document.querySelectorAll('#content pre > code.language-mermaid').forEach(code=>{
   const div=document.createElement('div'); div.className='mermaid'; div.textContent=code.textContent;
   const pre=code.parentNode; pre.parentNode.replaceChild(div,pre);
 });
 
-// mermaid — light/neutral theme, DM Sans labels
 mermaid.initialize({startOnLoad:false, securityLevel:'loose', theme:'base',
   themeVariables:{
     background:'#ffffff', fontSize:'14px',
@@ -226,7 +212,6 @@ mermaid.initialize({startOnLoad:false, securityLevel:'loose', theme:'base',
   sequence:{useMaxWidth:true}, er:{useMaxWidth:true}});
 mermaid.run({querySelector:'.mermaid'}).catch(e=>console.warn('mermaid',e));
 
-// active-section highlight
 const links=[...nav.querySelectorAll('a')];
 const byId=id=>links.find(a=>a.dataset.id===id);
 const obs=new IntersectionObserver(es=>{
@@ -235,7 +220,6 @@ const obs=new IntersectionObserver(es=>{
 },{rootMargin:'-10% 0px -80% 0px',threshold:0});
 document.querySelectorAll('#content section').forEach(s=>obs.observe(s));
 
-// filter
 const filter=document.getElementById('filter');
 filter.addEventListener('input',()=>{ const q=filter.value.toLowerCase();
   links.forEach(a=>{ a.style.display=a.textContent.toLowerCase().includes(q)?'block':'none'; });
@@ -244,7 +228,6 @@ filter.addEventListener('input',()=>{ const q=filter.value.toLowerCase();
     g.style.display=any?'block':'none'; });
 });
 
-// mobile menu + to-top
 const sb=document.getElementById('sidebar');
 document.getElementById('menuBtn').onclick=()=>sb.classList.toggle('open');
 nav.addEventListener('click',()=>sb.classList.remove('open'));

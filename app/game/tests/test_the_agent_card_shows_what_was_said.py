@@ -99,9 +99,6 @@ def test_one_malformed_row_does_not_cost_the_others() -> None:
     assert [u.content for u in _utterances_for("a-anya", rows)] == ["kept"]
 
 
-# ── the fetch, against a fake world ────────────────────────────────────
-
-
 def _client(handler) -> HttpWorldClient:
     settings = GameSettings(world_base_url="http://world.test", mock_mode=False)
     client = HttpWorldClient(settings)

@@ -33,8 +33,6 @@ from world.tools.state import WorldState
 from .conftest import spawn_agent
 
 HALL = LOCATION_TOWN_HALL
-# The rate lives at the government complex, not the town hall - see the
-# gate's own comment in institutions.py.
 COMPLEX = LOCATION_GOVERNMENT_COMPLEX
 FIELD = "Kasukabe Farmland"
 
@@ -58,9 +56,6 @@ def _case(world: WorldState, against: str, case_id: str = "c1") -> CrimeCase:
     )
     world.crime_cases.append(case)
     return case
-
-
-# ── the tax rate, which is now worth arguing about ────────────────────
 
 
 @pytest.mark.asyncio
@@ -91,16 +86,11 @@ async def test_a_resident_with_no_seat_cannot_even_see_the_tax_rate_tool(
         await registry.execute(world, "n09", "set_tax_rate", {"tax_rate_bps": 0})
 
 
-# ── an election with somebody on the ballot ───────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_an_election_can_have_a_candidate(world: WorldState, registry) -> None:
     """`vote` has been callable since genesis with nobody to vote for: the
     elections engine had a `declare_candidacy` and no tool reached it, so
     every ballot was empty by construction."""
-    # A household is this world's proxy for residency, and the charter's
-    # suffrage rule requires one - see `eligibility_facts_for`.
     await spawn_agent(world, "n09", HALL, age_years=40.0, household_id="h_vance")
     election = await world.charter.elections.schedule_election(world.tick())
 
@@ -124,9 +114,6 @@ async def test_you_stand_at_the_town_hall(world: WorldState, registry) -> None:
         })
 
 
-# ── convening, which invites and does not compel ──────────────────────
-
-
 @pytest.mark.asyncio
 async def test_convening_opens_a_real_conversation_and_gives_no_orders(
     world: WorldState, registry
@@ -145,8 +132,6 @@ async def test_convening_opens_a_real_conversation_and_gives_no_orders(
     assert record["topic"] == "the head tax"
     assert record["participants"][0] == "pm"
     assert record["place"] == HALL
-    # An invitation, not an instruction: nobody has spoken and nothing has
-    # made them.
     assert record["turns"] == 0
 
 
@@ -172,9 +157,6 @@ async def test_only_a_seat_convenes(world: WorldState, registry) -> None:
 
     with pytest.raises(Exception):
         await registry.execute(world, "n09", "convene", {"subject": "anything"})
-
-
-# ── police, arrest, verdict, release ──────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -218,7 +200,6 @@ async def test_an_arrest_needs_a_case_against_that_person(
             "agent_id": "n14", "case_id": "no-such-case",
         })
 
-    # A real case, but against somebody else.
     _case(world, against="pm")
     with pytest.raises(ToolValidationError) as exc:
         await registry.execute(world, "n09", "arrest", {
@@ -243,10 +224,6 @@ async def test_an_arrest_actually_moves_them_to_the_cells(
 
     await registry.execute(world, "n09", "arrest", {"agent_id": "n14", "case_id": "c1"})
 
-    # GOV-21: the name the MAP draws, not the gate constant. This asserted
-    # `HALL` ("town_hall"), a string the movement system has no tile for,
-    # so the test was satisfied by a prisoner `look_around` reported at
-    # `tile: null` - held nowhere anybody could see.
     assert world.location_of("n14") == display_place(HALL)
 
 
@@ -264,7 +241,6 @@ async def test_a_confined_resident_cannot_walk_out_but_can_still_speak(
         await registry.execute(world, "n14", "move", {"destination_location_id": FIELD})
     assert "held" in str(exc.value)
 
-    # And they can still talk.
     await registry.execute(world, "n14", "say", {"content": "I did not take it."})
 
 
@@ -283,10 +259,6 @@ async def test_a_fine_moves_money_and_closes_the_case(
 
     assert outcome.result["verdict"] == "fine"
     assert world.ledger.sim_balance("n14") == before - 400
-    # `verdict`, not `outcome`. They were one field, and `steal` writes
-    # `outcome` with the THEFT's result ("succeeded"/"failed"), which
-    # `rule` then read as "already ruled on" - so no theft case could ever
-    # be judged. See CrimeCase's docstring.
     assert case.verdict == "fine"
     assert case.outcome is None
 
@@ -366,7 +338,6 @@ async def test_release_frees_them_and_says_how_long_they_were_held(
     assert "n14" not in world.confined
     freed = [e for e in outcome.events if e.type == "crime.release.recorded"][0]
     assert freed.payload["ticks_held"] == 30
-    # And they can walk again.
     await registry.execute(world, "n14", "move", {"destination_location_id": FIELD})
 
 
@@ -379,9 +350,6 @@ async def test_releasing_somebody_who_is_not_held(world: WorldState, registry) -
         await registry.execute(world, "pm", "release", {"agent_id": "n14"})
 
     assert "not being held" in str(exc.value)
-
-
-# ── the record ────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio

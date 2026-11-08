@@ -32,9 +32,6 @@ async def test_invariant_holds_after_a_usd_move() -> None:
 async def test_directly_corrupting_a_balance_trips_the_tripwire() -> None:
     ledger = await build_genesis_ledger(["a1", "a2"], agent_usd_cents=200)
 
-    # Simulate a hypothetical bug elsewhere in the codebase that mutated
-    # a balance without going through move()/apply_movement. This is
-    # exactly the class of error the invariant exists to catch.
     ledger.accounts["a1"].usd_cents += 1
 
     with pytest.raises(LedgerInvariantViolation) as excinfo:
@@ -61,9 +58,6 @@ async def test_halted_ledger_rejects_every_further_operation() -> None:
             tick=2,
         )
 
-    # The rejected operation must not have moved anything: a2's balance
-    # is untouched even though the call raised after some of its own
-    # validation would otherwise have passed.
     assert ledger.usd_balance("a2") == 200
 
 
@@ -80,10 +74,6 @@ async def test_invariant_holds_across_an_exchange_at_the_new_rate() -> None:
     sim_leg, usd_leg = await ledger.exchange_sim_for_usd("a1", 30_000, tick=1)
 
     assert sim_leg.amount == 30_000
-    # Derived: the rate can move again, the invariant cannot. That is the
-    # point of this test - the $1,000 total is denominated in cents and
-    # survives any exchange rate, which is exactly why the rate is
-    # changeable at all.
     assert usd_leg.amount == 30_000 // SIM_PER_USD_CENT
     assert ledger.usd_total() == TOTAL_USD_CENTS
     assert ledger.halted is False
@@ -93,8 +83,6 @@ async def test_invariant_holds_across_an_exchange_at_the_new_rate() -> None:
 async def test_sim_only_moves_never_trip_the_usd_invariant() -> None:
     ledger = await build_genesis_ledger(["a1", "a2"], agent_usd_cents=200, sim_per_agent=1_000)
 
-    # Sim currency is deliberately not conserved (blessings mint it), so
-    # a sim move must never touch USD invariant bookkeeping.
     await ledger.move(
         from_account_id="a1",
         to_account_id="a2",

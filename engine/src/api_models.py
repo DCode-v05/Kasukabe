@@ -26,11 +26,6 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 
-# ---------------------------------------------------------------------------
-# Shared
-# ---------------------------------------------------------------------------
-
-
 class OkResponse(BaseModel):
     """A bare ``{"ok": true}`` acknowledgement. Shared by every handler whose
     only success payload is the ok flag."""
@@ -48,11 +43,6 @@ class OpaqueResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-# ---------------------------------------------------------------------------
-# Channels
-# ---------------------------------------------------------------------------
-
-
 class ChannelSubscribeResponse(BaseModel):
     """POST /channel/subscribe - the new session id plus the ``as → channel_id``
     alias map for the subscribed read-query channels."""
@@ -64,11 +54,6 @@ class ChannelSubscribeResponse(BaseModel):
 class ChannelActionResponse(OpaqueResponse):
     """POST /channel/action - opaque result of the write op + forced refresh
     (TYPED-OPEN: the channel manager's action payload varies by op)."""
-
-
-# ---------------------------------------------------------------------------
-# Inputs
-# ---------------------------------------------------------------------------
 
 
 class PendingInput(BaseModel):
@@ -84,11 +69,6 @@ class PendingInputsResponse(BaseModel):
 
     pending: list[PendingInput] = Field(default_factory=list)
     count: int
-
-
-# ---------------------------------------------------------------------------
-# Health
-# ---------------------------------------------------------------------------
 
 
 class HealthResponse(BaseModel):
@@ -110,11 +90,6 @@ class HealthDeepResponse(BaseModel):
     citadel_url: str
     citadel_status: int
     latency_ms: int
-
-
-# ---------------------------------------------------------------------------
-# Assets
-# ---------------------------------------------------------------------------
 
 
 class ServerEntry(BaseModel):
@@ -143,9 +118,9 @@ class ConnectionEntry(BaseModel):
     connection_id: str
     server_name: str
     status: str | None = None
-    enabled: bool = True  # per-asset pause: false = ACTIVE but excluded from use
-    label: str | None = None  # product-set human name for this connection
-    account_label: str | None = None  # human identifier for the account
+    enabled: bool = True
+    label: str | None = None
+    account_label: str | None = None
     created_at: Any | None = None
 
 
@@ -176,11 +151,6 @@ class DisconnectResponse(OpaqueResponse):
     Carries the mutation ack (TYPED-OPEN)."""
 
 
-# ---------------------------------------------------------------------------
-# Assets - control plane (request bodies)
-# ---------------------------------------------------------------------------
-
-
 class PermissionRuleModel(BaseModel):
     """One per-tool permission rule in a bulk/managed permission write.
 
@@ -191,8 +161,6 @@ class PermissionRuleModel(BaseModel):
     action_name: str = Field(..., max_length=256)
     behavior: str = Field(..., max_length=16)
     locked: bool = False
-    # Per-tool on/off. None leaves the flag untouched; false hides the tool from
-    # the agent entirely (distinct from behavior 'deny').
     enabled: bool | None = None
 
 
@@ -210,14 +178,8 @@ class ProvisionRequest(BaseModel):
     scopes: list[str] = Field(default_factory=list)
     credentials: dict[str, Any] = Field(default_factory=dict)
     oauth_refresh: dict[str, Any] | None = None
-    # Cross-App Access (SEP-990): when set, the engine self-mints the token
-    # via RFC 8693 + RFC 7523 instead of taking product-brokered credentials.
-    # Keys: idp_token_endpoint, id_token, idp_client_id, idp_client_secret?,
-    # client_id, client_secret (client registered at the MCP server's AS).
     xaa: dict[str, Any] | None = None
     permissions: list[PermissionRuleModel] = Field(default_factory=list)
-    # Human-facing naming for the product set (label = the display name for
-    # this connection; account_label = the account identifier, e.g. an email).
     label: str | None = Field(default=None, max_length=256)
     account_label: str | None = Field(default=None, max_length=256)
 
@@ -232,8 +194,6 @@ class VetServerRequest(BaseModel):
 
     vetted: bool = True
     actor: str = ""
-    # Why. A rejection is a durable decision, so the reason is worth keeping
-    # next to it; a later reviewer should not have to guess.
     reason: str = Field(default="", max_length=512)
 
 
@@ -246,9 +206,6 @@ class RegisterRequest(BaseModel):
     auth_method: str = Field(default="oauth", max_length=50)
     auto_auth: bool = False
     oauth_config: dict[str, Any] | None = None
-    # Credential-delivery config (auth_method=api_key): how to present the key.
-    # {"api_key": {"in": "header"|"query", "name": "X-API-Key", "scheme": "Bearer"?}}.
-    # Absent = the default Authorization: Bearer.
     auth_config: dict[str, Any] | None = None
 
 
@@ -258,7 +215,6 @@ class SetActionPermissionRequest(BaseModel):
     behavior: str = Field(..., max_length=16)
     locked: bool = False
     set_by: str = Field(default="user", max_length=32)
-    # Per-tool on/off. None leaves the flag untouched.
     enabled: bool | None = None
 
 
@@ -307,7 +263,6 @@ class DesiredEntryModel(BaseModel):
     oauth_refresh: dict[str, Any] | None = None
     permissions: list[PermissionRuleModel] = Field(default_factory=list)
     disqualified: bool = False
-    # Human-facing naming carried through reconcile onto the connection.
     label: str | None = Field(default=None, max_length=256)
     account_label: str | None = Field(default=None, max_length=256)
 
@@ -324,11 +279,6 @@ class DisconnectRequest(BaseModel):
     reason: str | None = Field(default=None, max_length=256)
 
 
-# ---------------------------------------------------------------------------
-# Assets - control plane (responses)
-# ---------------------------------------------------------------------------
-
-
 class AckResponse(BaseModel):
     """The mutation ack returned by every asset mutation (TYPED-OPEN)."""
 
@@ -338,9 +288,9 @@ class AckResponse(BaseModel):
     status: str | None = None
     provenance: str | None = None
     account_ref: str | None = None
-    enabled: bool | None = None  # per-asset pause state (present on connection acks)
-    label: str | None = None  # product-set human name for this connection
-    account_label: str | None = None  # human identifier for the account
+    enabled: bool | None = None
+    label: str | None = None
+    account_label: str | None = None
     applied_at: str | None = None
     etag: str | None = None
 
@@ -348,8 +298,8 @@ class AckResponse(BaseModel):
 class ConnectionDetailResponse(OpaqueResponse):
     """GET /assets/connections/{id} - one connection record (TYPED-OPEN)."""
 
-    label: str | None = None  # product-set human name for this connection
-    account_label: str | None = None  # human identifier for the account
+    label: str | None = None
+    account_label: str | None = None
 
 
 class ConnectionStatusResponse(BaseModel):
@@ -360,9 +310,9 @@ class ConnectionStatusResponse(BaseModel):
     server_name: str | None = None
     provenance: str | None = None
     status: str | None = None
-    enabled: bool = True  # per-asset pause: false = ACTIVE but excluded from use
-    label: str | None = None  # product-set human name for this connection
-    account_label: str | None = None  # human identifier for the account
+    enabled: bool = True
+    label: str | None = None
+    account_label: str | None = None
     needs_auth: bool = False
     oauth_url: str | None = None
     expires_at: str | None = None
@@ -379,14 +329,9 @@ class ServerRegisterResponse(BaseModel):
     provenance: str = "engine"
     needs_auth: bool = False
     oauth_url: str | None = None
-    # The INITIATED connection behind oauth_url (also on the connection_events log).
     connection_id: str | None = None
-    # How the oauth_config was obtained: "configured" | "discovered" | None.
     auth_source: str | None = None
-    # True when auto_auth stopped because the server has not been vetted yet.
-    # An expected state for a new server, not an error: vet it, then retry.
     pending_review: bool = False
-    # Human-readable reason when auto_auth could not produce an oauth_url.
     detail: str | None = None
 
 
@@ -429,7 +374,7 @@ class ActionPermissionResponse(BaseModel):
     effective: str | None = None
     source: str | None = None
     explicit: str | None = None
-    enabled: bool = True  # per-tool on/off (distinct from behavior 'deny')
+    enabled: bool = True
     locked: bool = False
     set_by: str | None = None
     read_only_hint: bool = False
@@ -485,11 +430,6 @@ class ConnectionEventsResponse(BaseModel):
     next_cursor: str | None = None
 
 
-# ---------------------------------------------------------------------------
-# Memory
-# ---------------------------------------------------------------------------
-
-
 class MemorySearchResponse(BaseModel):
     """POST /memory/{knowledge,episodes,social}/search - the matched records."""
 
@@ -509,11 +449,6 @@ class MemoryImportResponse(BaseModel):
     imported: dict[str, Any] = Field(default_factory=dict)
 
 
-# ---------------------------------------------------------------------------
-# Soul
-# ---------------------------------------------------------------------------
-
-
 class SoulResponse(BaseModel):
     """GET /memory/soul - the core soul document and the evolved (expressed) traits."""
 
@@ -526,18 +461,6 @@ class SoulFullResponse(BaseModel):
 
     core_soul: dict[str, Any] | None = None
     all_traits: list[Any] = Field(default_factory=list)
-
-
-# ---------------------------------------------------------------------------
-# Feedback
-# ---------------------------------------------------------------------------
-
-# POST /feedback returns the shared OkResponse ({"ok": true}).
-
-
-# ---------------------------------------------------------------------------
-# Skills
-# ---------------------------------------------------------------------------
 
 
 class SkillSummary(BaseModel):
@@ -573,11 +496,6 @@ class SkillUpdateResponse(OpaqueResponse):
 
 class SkillDeleteResponse(OpaqueResponse):
     """DELETE /skills/{skill_name} - opaque delete_user_skill result (TYPED-OPEN)."""
-
-
-# ---------------------------------------------------------------------------
-# Admin
-# ---------------------------------------------------------------------------
 
 
 class ReloadCoreSoulResponse(BaseModel):
@@ -625,11 +543,6 @@ class InstallPendingKeyResponse(BaseModel):
     overlap_expires_at: float
 
 
-# ---------------------------------------------------------------------------
-# Coordinator
-# ---------------------------------------------------------------------------
-
-
 class ThreadEntry(BaseModel):
     """One persistent conversation thread the coordinator knows about."""
 
@@ -657,11 +570,6 @@ class PinThreadResponse(BaseModel):
     ok: bool
     thread_id: str
     pinned: bool
-
-
-# ---------------------------------------------------------------------------
-# Raven (telemetry)
-# ---------------------------------------------------------------------------
 
 
 class RavenTrackRequest(BaseModel):

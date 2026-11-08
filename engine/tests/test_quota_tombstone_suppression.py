@@ -138,7 +138,6 @@ async def test_terminal_error_writes_no_tombstone(db, tombstone_spy, exc):
     with pytest.raises(type(exc)):
         await th.agent_loop("hi", options=RequestOptions(query_source="foreground"))
 
-    # The raw exception string must never have been turned into a tombstone.
     runtime_tombstones = [r for r in tombstone_spy if r.startswith("[Runtime error:")]
     assert runtime_tombstones == [], (
         f"terminal {type(exc).__name__} produced runtime tombstone(s): {runtime_tombstones}"

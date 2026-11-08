@@ -43,9 +43,6 @@ def mock_world_client(handler, agent_id: str = "agent-1") -> WorldClient:
     return WorldClient("http://world.test", agent_id=agent_id, client=client)
 
 
-# ── WorldClient: registry fetch ──────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_fetch_tool_registry_parses_world_rows():
     def handler(request: httpx.Request) -> httpx.Response:
@@ -63,11 +60,7 @@ async def test_fetch_tool_registry_parses_world_rows():
 
     assert [s.name for s in specs] == ["move", "harvest"]
     assert specs[0].description == "Walk somewhere."
-    # A missing input_schema defaults to an empty object schema, not KeyError.
     assert specs[1].input_schema == {"type": "object", "properties": {}}
-
-
-# ── WorldClient: tool_calls ───────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -122,9 +115,6 @@ async def test_call_tool_transport_failure_becomes_error_text_not_an_exception()
     assert "nothing was refused" in result.lower()
 
 
-# ── ToolDef construction ──────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_build_tool_def_prefixes_the_engine_name_and_calls_world():
     seen = []
@@ -165,10 +155,7 @@ async def test_build_world_tool_registry_registers_every_spec():
     assert registry.tool_count == 2
     assert registry.get_tool("world:move") is not None
     assert registry.get_tool("world:harvest") is not None
-    assert registry.get_tool("move") is None  # unprefixed name is not registered engine-side
-
-
-# ── Permissions ─────────────────────────────────────────────────────
+    assert registry.get_tool("move") is None
 
 
 class StubThread:
@@ -189,9 +176,6 @@ def test_install_permissions_is_idempotent():
     install_permissions(thread)
     install_permissions(thread)
     assert thread.session_rules == [WORLD_TOOL_ALLOW_RULE]
-
-
-# ── End-to-end: a model's tool_use reaches the (mocked) world server ──
 
 
 class ScriptedAdapter:
@@ -266,15 +250,8 @@ async def test_a_world_tool_call_from_the_model_reaches_the_world_server(db):
 
     result = await thread.execute("look around", thread_id="t-world-e2e")
 
-    # The translation happened: the world server received exactly the tool
-    # call the model made, unprefixed, with the model's own input.
     assert world_calls == [{"tool": "move", "input": {"direction": "north"}}]
-    # And the model's final turn (informed by the tool result) is what the
-    # caller gets back.
     assert result == "You moved north into the field."
-
-
-# ── Part B: a tool invented mid-run becomes callable ──────────────────
 
 
 @pytest.mark.asyncio

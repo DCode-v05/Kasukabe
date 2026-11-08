@@ -64,18 +64,17 @@ async def test_due_agents_appear_in_tick_result_with_perceptions() -> None:
 
 @pytest.mark.asyncio
 async def test_mark_agent_decided_reschedules_agent() -> None:
-    # cadence 2: a1 decides every other tick once marked decided each time.
     engine = TickEngine(scheduler_config=SchedulerConfig(target_fraction=0.5))
     engine.register_agent("a1")
 
-    result1 = await engine.tick()  # tick 1: next_decision_tick was 1, due
+    result1 = await engine.tick()
     assert "a1" in result1.due_agents
-    engine.mark_agent_decided("a1")  # reschedules to 1 + cadence(2) = 3
+    engine.mark_agent_decided("a1")
 
-    result2 = await engine.tick()  # tick 2: not due yet
+    result2 = await engine.tick()
     assert "a1" not in result2.due_agents
 
-    result3 = await engine.tick()  # tick 3: due again, on schedule
+    result3 = await engine.tick()
     assert "a1" in result3.due_agents
 
 
@@ -132,7 +131,6 @@ async def test_perception_interrupt_flows_through_the_full_stack() -> None:
     own schedule says they're not due yet."""
     engine = TickEngine(scheduler_config=SchedulerConfig(target_fraction=1 / 20))
     engine.register_agent("victim", location_id="market")
-    # cadence 20: victim's baseline next_decision_tick is far away.
     assert "victim" not in engine.scheduler.due_agents(engine.clock.tick_index)
 
     await engine.event_bus.emit(
@@ -166,7 +164,6 @@ async def test_restore_from_checkpoint_resets_state_on_a_fresh_engine() -> None:
     assert fresh.locations.location_of("a1") == "cafe"
     assert fresh.locations.location_of("a2") == "park"
     assert fresh.scheduler.agent_count == source.scheduler.agent_count == 2
-    # Scheduling behavior from here matches exactly, tick for tick.
     for tick in range(TICKS_PER_DAY + 1, TICKS_PER_DAY + 5):
         assert fresh.scheduler.due_agents(tick) == source.scheduler.due_agents(tick)
 

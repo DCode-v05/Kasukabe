@@ -11,11 +11,6 @@ def tokens(*args: str) -> list[str]:
     return ["sed", *args]
 
 
-# ---------------------------------------------------------------------------
-# Basic extraction
-# ---------------------------------------------------------------------------
-
-
 class TestParseSedEditBasic:
     def test_simple_in_place_substitution(self):
         info = parse_sed_edit(tokens("-i", "s/foo/bar/", "file.txt"))
@@ -69,16 +64,8 @@ class TestParseSedEditBasic:
         assert info is None
 
 
-# ---------------------------------------------------------------------------
-# BRE → ERE conversion
-# ---------------------------------------------------------------------------
-
-
 class TestBreToEreConversion:
     def test_bre_parens_become_ere_groups(self):
-        # BRE: `\(abc\)+` means literal parens around "abc" with literal "+".
-        # Wait — `+` is also a metacharacter in ERE that must be escaped in
-        # BRE. BRE `\+` means ERE `+`. BRE `+` means ERE `\+`.
         info = parse_sed_edit(tokens("-i", "s/\\(abc\\)/X/", "f.txt"))
         assert info is not None
         assert info.pattern == "(abc)"
@@ -134,33 +121,21 @@ class TestEreFlagLeavesPatternAlone:
         assert info.pattern == "(abc)+"
 
 
-# ---------------------------------------------------------------------------
-# Replacement ampersand handling
-# ---------------------------------------------------------------------------
-
-
 class TestAmpersandSalt:
     def test_bare_ampersand_becomes_backref(self):
         info = parse_sed_edit(tokens("-i", "s/foo/[&]/", "f.txt"))
         assert info is not None
-        # Bare `&` normalises to `\0` (the whole-match backreference).
         assert info.replacement == "[\\0]"
 
     def test_literal_backslash_ampersand_preserved(self):
         info = parse_sed_edit(tokens("-i", "s/foo/[\\&]/", "f.txt"))
         assert info is not None
-        # Literal `\&` stays as `&` in the output.
         assert info.replacement == "[&]"
 
     def test_both_forms_in_same_replacement(self):
         info = parse_sed_edit(tokens("-i", "s/foo/\\&=&/", "f.txt"))
         assert info is not None
         assert info.replacement == "&=\\0"
-
-
-# ---------------------------------------------------------------------------
-# Flag normalisation
-# ---------------------------------------------------------------------------
 
 
 class TestFlagNormalisation:

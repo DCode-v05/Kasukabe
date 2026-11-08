@@ -59,9 +59,6 @@ class TokenBucket:
         self.sleep = sleep
         self.updated_at = clock()
         self.lock = asyncio.Lock()
-        # Observability only (broker/trace.py's broker.rpm.throttled event):
-        # counts calls that had to wait at all, distinct from the total
-        # call count the caller already tracks.
         self.throttled_count = 0
 
     def refill(self) -> None:
@@ -108,14 +105,3 @@ class TokenBucket:
                 await self.sleep(wait_s)
                 waited += wait_s
 
-
-# INFRA-24. `RateLimiterRegistry` was deleted here on 2026-09-05.
-#
-# Its own docstring above argued for keeping it as a generic "N
-# independent buckets keyed by string id" utility. That argument is
-# recorded and overruled: `lanes.py` builds exactly six TokenBuckets
-# directly, it had no other caller, and a utility with no user is a
-# test suite that passes forever about code nobody runs - which is the
-# finding. `TokenBucket`, which lanes.py DOES use, stays.
-#
-# `git show` it if a dynamic per-model-id set ever comes back.

@@ -45,13 +45,9 @@ from world.life.constants import (
 from world.life.soul_seed import build_soul_seed, law_of_the_town_rules
 from world.retrieval_depth import format_volatile_line
 
-# The vocabulary of money, applied to the thinking balance.
 MONEY_WORDS = re.compile(r"\$|\bdollars?\b|\busd\b|\bwallet\b|\bcents?\b", re.IGNORECASE)
 
 PRIMITIVES = Path(__file__).resolve().parents[1] / "primitives"
-
-
-# ── what a resident is told ───────────────────────────────────────────
 
 
 def test_the_law_never_describes_energy_as_money():
@@ -105,9 +101,6 @@ def test_revive_quotes_the_fee_it_actually_charges(registry):
         assert "10,000" not in description, "the stale ECON-05 price is back"
 
 
-# ── every figure a resident meets is a whole number ───────────────────
-
-
 def test_one_unit_of_energy_costs_a_whole_number_of_sim():
     assert SIM_PER_ENERGY_UNIT * ENERGY_UNITS_PER_USD_CENT == SIM_PER_USD_CENT
     assert SIM_PER_USD % SIM_PER_ENERGY_UNIT == 0
@@ -116,9 +109,6 @@ def test_one_unit_of_energy_costs_a_whole_number_of_sim():
 def test_the_thresholds_residents_are_told_are_whole():
     assert energy_units(DORMANCY_THRESHOLD_USD_CENTS) == DORMANCY_THRESHOLD_USD_CENTS * 10
     assert energy_units(REVIVAL_USD_CREDIT_CENTS) == REVIVAL_USD_CREDIT_CENTS * 10
-
-
-# ── and the mechanics stay the way they already were ──────────────────
 
 
 def test_no_tool_lets_a_resident_choose_a_currency(registry):

@@ -19,9 +19,6 @@ import json
 import sqlite3
 from collections import Counter
 
-# Two different events, and looking only for the first reads a working shop
-# economy as a dead one: `economy.trade.settled` is person-to-person `trade`,
-# `business.sale.completed` is `buy`/`sell` across a counter.
 SETTLEMENTS = ("economy.trade.settled", "business.sale.completed")
 
 

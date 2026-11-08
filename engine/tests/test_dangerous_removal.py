@@ -24,17 +24,10 @@ from src.sandbox.dangerous_removal import (
 )
 
 
-# ---------------------------------------------------------------------------
-# is_dangerous_removal_path — the seven shapes
-# ---------------------------------------------------------------------------
-
-
 class TestIsDangerousRemovalPath:
-    # --- Shape 1: wildcard alone -------------------------------------------
     def test_wildcard_alone_blocked(self):
         assert is_dangerous_removal_path("*") is True
 
-    # --- Shape 2: path ending in /* ----------------------------------------
     def test_wildcard_suffix_blocked(self):
         assert is_dangerous_removal_path("/home/*") is True
 
@@ -42,22 +35,17 @@ class TestIsDangerousRemovalPath:
         assert is_dangerous_removal_path("/tmp/*") is True
 
     def test_wildcard_suffix_backslash_blocked(self):
-        # Backslash form collapses to forward slash before the check.
         assert is_dangerous_removal_path(r"C:\Users\*") is True
 
-    # --- Shape 3: POSIX root -----------------------------------------------
     def test_root_blocked(self):
         assert is_dangerous_removal_path("/") is True
 
     def test_root_double_slash_blocked(self):
-        # // collapses to / via normalize_slashes.
         assert is_dangerous_removal_path("//") is True
 
     def test_root_trailing_slash_is_still_root(self):
-        # "/" survives rstrip because the == "/" branch runs first.
         assert is_dangerous_removal_path("/") is True
 
-    # --- Shape 4: Windows drive root ---------------------------------------
     def test_windows_drive_root_bare_blocked(self):
         assert is_dangerous_removal_path("C:") is True
 
@@ -70,7 +58,6 @@ class TestIsDangerousRemovalPath:
     def test_windows_drive_root_lowercase_blocked(self):
         assert is_dangerous_removal_path("d:/") is True
 
-    # --- Shape 5: home directory -------------------------------------------
     def test_expanded_home_blocked(self):
         home = os.path.expanduser("~")
         assert is_dangerous_removal_path(home) is True
@@ -79,7 +66,6 @@ class TestIsDangerousRemovalPath:
         home = os.path.expanduser("~")
         assert is_dangerous_removal_path(home + "/") is True
 
-    # --- Shape 6: direct child of root -------------------------------------
     @pytest.mark.parametrize(
         "path",
         [
@@ -107,10 +93,8 @@ class TestIsDangerousRemovalPath:
         assert is_dangerous_removal_path(path) is True
 
     def test_direct_root_child_trailing_slash_blocked(self):
-        # rstrip brings /etc/ back to /etc before the dirname check fires.
         assert is_dangerous_removal_path("/etc/") is True
 
-    # --- Shape 7: Windows drive child --------------------------------------
     def test_windows_drive_child_windows_blocked(self):
         assert is_dangerous_removal_path("C:/Windows") is True
 
@@ -118,15 +102,11 @@ class TestIsDangerousRemovalPath:
         assert is_dangerous_removal_path("C:\\Users") is True
 
     def test_windows_drive_child_program_files_blocked(self):
-        # `D:/Program Files` is a single component under `D:/` — the
-        # regex `^[A-Za-z]:/[^/]+$` matches any non-slash sequence so
-        # spaces are fine.
         assert is_dangerous_removal_path("D:/Program Files") is True
 
     def test_windows_drive_child_single_component_blocked(self):
         assert is_dangerous_removal_path("C:/ProgramFiles") is True
 
-    # --- Negative cases: safe subpaths -------------------------------------
     def test_subdir_of_etc_allowed(self):
         assert is_dangerous_removal_path("/etc/nginx/sites-available/mine") is False
 
@@ -146,28 +126,17 @@ class TestIsDangerousRemovalPath:
     def test_windows_drive_child_subdir_allowed(self):
         assert is_dangerous_removal_path("C:/Windows/System32") is False
 
-    # --- Edge cases --------------------------------------------------------
     def test_empty_string_allowed(self):
         assert is_dangerous_removal_path("") is False
 
     def test_relative_path_not_dangerous(self):
-        # Relative paths fall through the root/drive checks. The only
-        # dangerous relative shape is bare `*`, which is tested above.
         assert is_dangerous_removal_path("foo/bar") is False
 
     def test_dot_allowed(self):
         assert is_dangerous_removal_path(".") is False
 
     def test_dotdot_allowed(self):
-        # `..` is not one of the 7 shapes. The caller is responsible for
-        # deciding whether to allow traversal — this function only detects
-        # the catastrophic shapes.
         assert is_dangerous_removal_path("..") is False
-
-
-# ---------------------------------------------------------------------------
-# is_dangerous_removal_raw_path — pre-realpath user-typed form
-# ---------------------------------------------------------------------------
 
 
 class TestIsDangerousRemovalRawPath:
@@ -175,7 +144,6 @@ class TestIsDangerousRemovalRawPath:
         assert is_dangerous_removal_raw_path("~") is True
 
     def test_raw_tilde_slash_blocked(self):
-        # `~/` expands to the home directory.
         assert is_dangerous_removal_raw_path("~/") is True
 
     def test_raw_double_quoted_root_blocked(self):
@@ -203,7 +171,6 @@ class TestIsDangerousRemovalRawPath:
         assert is_dangerous_removal_raw_path("") is False
 
     def test_raw_only_quotes_allowed(self):
-        # Empty after quote strip — falls through to empty check.
         assert is_dangerous_removal_raw_path('""') is False
 
     def test_raw_tilde_with_home_unset(self, monkeypatch):
@@ -219,11 +186,6 @@ class TestIsDangerousRemovalRawPath:
         assert is_dangerous_removal_raw_path("~") is True
 
 
-# ---------------------------------------------------------------------------
-# check_dangerous_removal — the integration helper
-# ---------------------------------------------------------------------------
-
-
 class TestCheckDangerousRemoval:
     def test_rm_root_blocked(self, tmp_path):
         reason = check_dangerous_removal("rm", ["-rf", "/"], str(tmp_path))
@@ -237,10 +199,6 @@ class TestCheckDangerousRemoval:
 
     def test_rm_etc_passwd_blocked(self, tmp_path):
         reason = check_dangerous_removal("rm", ["/etc/passwd"], str(tmp_path))
-        # /etc/passwd is not one of the 7 shapes — its parent is /etc, not
-        # /, so dirname check does NOT fire. The per-file protection
-        # lives at step 1.6 (check_path_safety + SENSITIVE_PATHS), not
-        # here. This function is for catastrophic *directory* removal.
         assert reason is None
 
     def test_rmdir_root_blocked(self, tmp_path):
@@ -275,11 +233,9 @@ class TestCheckDangerousRemoval:
         assert check_dangerous_removal("", [], str(tmp_path)) is None
 
     def test_rm_empty_args_allowed(self, tmp_path):
-        # No paths extracted → no check → None.
         assert check_dangerous_removal("rm", [], str(tmp_path)) is None
 
     def test_rm_only_flags_allowed(self, tmp_path):
-        # All args are flags, nothing positional to check.
         assert check_dangerous_removal("rm", ["-rf"], str(tmp_path)) is None
 
     def test_rm_safe_subdir_allowed(self, tmp_path):
@@ -294,8 +250,6 @@ class TestCheckDangerousRemoval:
         assert reason is None
 
     def test_rm_posix_double_dash_attack_blocked(self, tmp_path):
-        # rm -- /etc : `--` stops option parsing, `/etc` is a positional
-        # path. The extractor must preserve it.
         reason = check_dangerous_removal("rm", ["--", "/etc"], str(tmp_path))
         assert reason is not None
 
@@ -324,16 +278,10 @@ class TestCheckDangerousRemoval:
         reason="macOS-specific /tmp → /private/tmp canonicalisation",
     )
     def test_rm_macos_tmp_caught_by_raw_check(self, tmp_path):
-        # On macOS, /tmp realpaths to /private/tmp. The raw check sees
-        # /tmp and catches it via the direct-root-child rule before
-        # realpath has a chance to canonicalise.
         reason = check_dangerous_removal("rm", ["-rf", "/tmp"], str(tmp_path))
         assert reason is not None
 
     def test_rm_quoted_path_blocked(self, tmp_path):
-        # The extractor upstream (shlex) normally strips quotes, but the
-        # belt-and-suspenders strip inside check_dangerous_removal must
-        # handle any that leak through.
         reason = check_dangerous_removal("rm", ['"/etc"'], str(tmp_path))
         assert reason is not None
 
@@ -344,7 +292,6 @@ class TestCheckDangerousRemoval:
             raise OSError("simulated realpath failure")
 
         monkeypatch.setattr(os.path, "realpath", raise_)
-        # Raw check still runs and catches /etc.
         reason = check_dangerous_removal("rm", ["/etc"], str(tmp_path))
         assert reason is not None
 
@@ -360,6 +307,5 @@ class TestCheckDangerousRemoval:
         assert reason is None
 
     def test_absolute_path_does_not_use_cwd(self, tmp_path):
-        # An absolute dangerous path ignores the cwd entirely.
         reason = check_dangerous_removal("rm", ["/etc"], "/some/other/cwd")
         assert reason is not None

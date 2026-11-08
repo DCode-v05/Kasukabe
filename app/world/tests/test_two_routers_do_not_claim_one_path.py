@@ -68,9 +68,6 @@ async def test_the_embedded_app_has_no_duplicate_routes(tmp_path):
         budget_cap_cents=40_000,
     ))
     await runner.boot()
-    # Built the way the runner builds it, genesis included - the viewer
-    # routers only mount when `genesis is not None`, and they are half the
-    # routes a collision could hide in.
     app = build_embedded_world_app(
         runner.world_state,
         runner.registry,

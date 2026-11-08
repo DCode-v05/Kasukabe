@@ -250,7 +250,6 @@ class OutcomeDesk:
         )
         return outcome
 
-    # -- confinement query surface (jail/payroll/dispatcher integration) --
 
     async def confinement_status(self, agent_id: str) -> ConfinementRecord | None:
         """Pure read: the active confinement for this agent, if any,

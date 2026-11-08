@@ -216,9 +216,6 @@ async def test_collapse_to_one_person_rule_is_reachable_through_amendments() -> 
     charter_after_first = await store.get_charter()
     assert charter_after_first.minister_seats == 0
     assert charter_after_first.total_seats == 1
-    # With minister_seats now 0, total_seats is 1 and the genesis 3/5
-    # threshold over 1 seat rounds up to 1 - the PM alone already has
-    # full amendment power, with no further threshold change needed.
     assert charter_after_first.amendment_votes_required == 1
 
     solo_amendment = await engine.propose_amendment(
@@ -250,10 +247,6 @@ async def test_list_pending_only_returns_passed_awaiting_president() -> None:
     assert proposed.proposal_id not in pending_ids
 
 
-# ── snapshot()/restore() (STATUS.md risk #4: `proposals` lives on this
-# engine instance, not CharterStore, so it needs its own round-trip) ────
-
-
 @pytest.mark.asyncio
 async def test_snapshot_restore_round_trips_proposals_at_every_status() -> None:
     engine, _ = await make_engine()
@@ -275,7 +268,7 @@ async def test_snapshot_restore_round_trips_proposals_at_every_status() -> None:
         await engine.cast_amendment_vote(to_veto.proposal_id, seat, True, now_tick=1)
     vetoed = await engine.veto_amendment(to_veto.proposal_id, "not now", now_tick=2)
 
-    snapshot = json.loads(json.dumps(engine.snapshot()))  # real JSON round-trip
+    snapshot = json.loads(json.dumps(engine.snapshot()))
 
     restored_engine = AmendmentEngine(engine.store)
     restored_engine.restore(snapshot)
@@ -298,13 +291,6 @@ async def test_snapshot_of_engine_with_no_proposals_round_trips_empty() -> None:
     restored_engine = AmendmentEngine(engine.store)
     restored_engine.restore(engine.snapshot())
     assert restored_engine.proposals == {}
-
-
-# ── field-registry self-check (schema-drift guard, mirrors
-# world/charter/store.py's CharterStore self-check and its own
-# TestCharterStoreFieldRegistryMatchesInit tests: a future field added to
-# AmendmentEngine.__init__ without matching checkpoint coverage must fail
-# loudly at construction, not vanish silently on the next resume) ────────
 
 
 class TestAmendmentEngineFieldRegistryMatchesInit:

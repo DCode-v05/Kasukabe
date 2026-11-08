@@ -93,7 +93,7 @@ async def test_set_pension_config_updates_only_supplied_fields() -> None:
 
     policy = await store.get_policy()
     assert policy.pension_private_pct == 30
-    assert policy.pension_government_pct == 50  # untouched, genesis default
+    assert policy.pension_government_pct == 50
 
 
 @pytest.mark.asyncio

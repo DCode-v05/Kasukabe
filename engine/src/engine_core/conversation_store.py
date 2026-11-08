@@ -19,19 +19,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# 72 hours - after this, conversations are deleted (episodic memory is
-# long-term). Raised from 24h so a weekend-spanning session survives the
-# sweep. Not a liveness TTL (no heartbeat feeds it), so the ratio principle
-# in src/config.py does not apply; this is a retention policy.
-#
-# CANONICAL retention window for the whole conversation working set:
-# conversations, working memory (sqlite + in-memory), ingestion chunks, and
-# tool-result content all import THIS constant. They cross-reference each
-# other (WM entries and chunks belong to conversations; recall reads across
-# all of them), so a drift between their windows serves rows whose parent
-# thread was already reaped - that bug class has occurred before
-# (resume_state.py: "search_content reported matches from TTL-expired
-# entries"). Change the value here and every store moves together.
 CONVERSATION_TTL_SECONDS = 259200
 
 
@@ -50,7 +37,6 @@ class ConversationStore:
     def __init__(self, db: "SqlitePool") -> None:
         self.db = db
 
-    # ── Write operations ──────────────────────────────────────────
 
     async def ensure_conversation(
         self,
@@ -219,7 +205,6 @@ class ConversationStore:
             logger.warning("is_pinned failed for %s: %s", thread_id, e)
             return False
 
-    # ── Read operations ───────────────────────────────────────────
 
     async def load_messages(self, thread_id: str) -> list[dict]:
         """Load all messages for a thread in sequence order.
@@ -319,8 +304,6 @@ class ConversationStore:
             except (json.JSONDecodeError, TypeError):
                 pass
 
-        # Routing fields live in dedicated columns (migration 015).
-        # recent_turns is a JSON-encoded list; corrupt JSON degrades to [].
         try:
             recent_turns = json.loads(meta["recent_turns"]) if meta["recent_turns"] else []
             if not isinstance(recent_turns, list):
@@ -385,7 +368,6 @@ class ConversationStore:
             )
         return result
 
-    # ── Cleanup operations ────────────────────────────────────────
 
     async def delete_thread(self, thread_id: str) -> None:
         """Delete a conversation and all its messages (CASCADE)."""

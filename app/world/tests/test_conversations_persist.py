@@ -90,15 +90,12 @@ def test_it_does_not_mirror_every_event_payload() -> None:
     """
     from world.run_genesis import is_worth_recording
 
-    # The unbounded ones - this is the 21 GB, and it must stay excluded.
     assert not is_worth_recording("agent.moved")
     assert not is_worth_recording("agent.perceived")
 
-    # ...but abstaining from everything is the other failure, equally silent.
     assert is_worth_recording("economy.trade.settled")
     assert is_worth_recording("politics.election.tallied")
 
-    # The two that must still be there, read the same strict way.
     code = _code_only(GenesisRunner.attach_persistence)
     assert "record_utterance_if_new" in code
     assert "record_transaction_if_new" in code
@@ -130,7 +127,6 @@ def test_the_recorder_writes_to_disk_not_to_memory() -> None:
         "this runner names, or it silently records into memory"
     )
     assert "sqlite_path" in code
-    # get_client() must not be called bare - that is the in-memory default.
     assert "get_client()" not in code
 
 

@@ -14,7 +14,6 @@ from __future__ import annotations
 import sqlite3
 from dataclasses import dataclass
 
-# Ordered by who you would wake up, not alphabetically.
 KNOWN_HOPS = ("bedrock", "ledger", "world", "engine", "broker-internal")
 
 

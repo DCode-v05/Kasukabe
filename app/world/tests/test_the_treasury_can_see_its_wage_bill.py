@@ -81,8 +81,6 @@ async def test_the_paid_through_tick_survives_a_checkpoint(tmp_path) -> None:
 
     checkpoint = await runner.tick_engine.checkpoints.write(tick_index=day, game_day=1)
 
-    # Wipe the settlement the way a resume used to wipe the whole charter
-    # (STATUS.md risk #4), then restore through the registered adapter.
     forgetful = await store.get_job(job.job_id)
     forgetful.last_paid_tick = None
     forgetful.total_paid_sim = 0

@@ -49,16 +49,8 @@ from pathlib import Path
 
 APP_ROOT = Path(__file__).resolve().parent.parent
 
-# DESIGN.md section 1: tick = 10 game-minutes, so 144 ticks make a game-day.
-# Imported rather than redefined would be better, but this script runs
-# before PYTHONPATH is necessarily set up, and world/core/clock.py's
-# TICKS_PER_DAY is the single source of truth this must match.
 TICKS_PER_DAY = 144
 
-# The sixteen trace tables from DESIGN.md section 9, in the order a reader
-# cares about them: the ones that carry the society first, the ones that
-# carry the bookkeeping last. run_config is deliberately absent; it is
-# configuration, not a research record.
 TRACE_TABLES = (
     "agents",
     "events",
@@ -78,11 +70,6 @@ TRACE_TABLES = (
     "eval_metrics",
 )
 
-# Tables that are expected to be empty under the embedded harness, with the
-# reason. ROADMAP.md RC-3: `build_embedded_world_app()` does not mount a
-# TraceStore, so the only writer for most of these is a world server that is
-# not on the wire. Printing the reason next to the zero is the difference
-# between a known gap and an undiagnosed one.
 EMBEDDED_HARNESS_GAPS = {
     "events": "TraceStore not mounted by the embedded harness (RC-3, fixed by T3)",
     "utterances": "no speech tool exists yet (RC-2, fixed by T2)",
@@ -258,9 +245,6 @@ def main() -> int:
 
     out_dir: Path = args.out_dir.resolve()
     if out_dir.exists() and not args.keep:
-        # A fresh directory per run by default: a trace file carried over
-        # from a previous run makes row counts meaningless, and row counts
-        # are the only thing this script is for.
         import shutil
 
         shutil.rmtree(out_dir)
@@ -269,9 +253,6 @@ def main() -> int:
     db_path = out_dir / "trace.sqlite3"
     genesis_path = APP_ROOT / "world" / f"genesis_{args.population}.json"
 
-    # Set before any child process starts, because SupabaseConfig.from_env()
-    # reads this at client construction and defaults to :memory: without it,
-    # which is how a run can look completely healthy and persist nothing.
     env = dict(os.environ)
     env["KASUKABE_SQLITE_PATH"] = str(db_path)
     env["PYTHONPATH"] = str(APP_ROOT)

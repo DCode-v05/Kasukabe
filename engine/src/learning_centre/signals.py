@@ -80,7 +80,6 @@ class SignalStore:
         return cursor.lastrowid or 0
 
     async def write_batch(self, signals: list[LearningSignal]) -> int:
-        # Pre-scan all before any INSERT — no partial writes on a dirty batch.
         for sig in signals:
             guard_content(
                 (sig.subject or "") + "\n" + (sig.content or ""),
@@ -243,9 +242,6 @@ class SignalStore:
                 except (ValueError, TypeError, AttributeError):
                     pass
 
-            # Tool results are the highest-risk source of real credentials
-            # (env dumps, HTTP debug bodies, cat .env). Guard this path with
-            # the same scanner that protects write() and write_batch().
             guard_content(
                 subject + "\n" + content,
                 where="signal-ingest-flush-wm",

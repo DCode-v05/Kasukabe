@@ -46,8 +46,6 @@ async def _bakery(world, registry, *, at: str = HERE) -> None:
     )
     await world.ledger.register_business(SHOP, "n07", fee_sim=1, tick=world.tick())
     world.inventory.credit(SHOP, "bread", 5)
-    # Priced from inside the shop, as a shopkeeper would - then the shop is
-    # placed where the test needs it.
     await registry.execute(world, "n07", "post_price", {
         "item": "bread", "ask_sim": 15, "business_id": SHOP,
     })
@@ -94,7 +92,7 @@ async def test_buying_from_the_shopkeeper_in_her_shop_buys_from_the_shop(world, 
     await _neighbours(world)
     await _bakery(world, registry)
 
-    in_conversation(world, "n13", "n07")   # a sale is agreed in conversation
+    in_conversation(world, "n13", "n07")
     bought = await registry.execute(world, "n13", "buy", {"seller_id": seller, "item": "bread", "quantity": 1})
 
     assert world.inventory.quantity("n13", "bread") == 1

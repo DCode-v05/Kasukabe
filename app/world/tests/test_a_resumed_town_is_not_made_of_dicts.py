@@ -107,6 +107,4 @@ async def test_the_perception_path_that_crashed_now_works(world, fresh_world):
     on_disk = _as_disk(world.snapshot())
 
     fresh_world.restore(on_disk)
-    # Nothing is co-located, so nothing is visible - the point is that the
-    # call COMPLETES instead of raising AttributeError.
     assert describe_prices(fresh_world, "anywhere") == {}

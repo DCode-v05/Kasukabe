@@ -59,7 +59,7 @@ from world.map.tiled_json import (
     stamp_rect,
 )
 
-Rect = tuple[int, int, int, int]  # x0, y0, x1, y1, half-open on both axes
+Rect = tuple[int, int, int, int]
 
 GOVERNMENT_SECTOR_NAME = "Kasukabe Government Complex"
 TEMPLE_SECTOR_NAME = "Kasukabe Temple"
@@ -67,19 +67,8 @@ FARMLAND_SECTOR_NAME = "Kasukabe Farmland"
 ORE_OUTCROP_SECTOR_NAME = "Kasukabe Ore Outcrop"
 FOREST_SECTOR_NAME = "Kasukabe Forest"
 
-# Rows appended south for the genesis strip. Not pinned by DESIGN.md;
-# chosen so the five zones split the width evenly (140 / 5 = 28) and the
-# strip's own depth divides evenly into both farmland's 10 crop bands
-# (30 / 10 = 3 rows each) and ore's 5 metal bands (30 / 5 = 6 rows each),
-# so no zone carve ever needs uneven remainder handling for the shipped
-# base map.
 DEFAULT_GENESIS_STRIP_DEPTH = 30
 
-# Arena ids and sector ids are minted from disjoint ranges (100_000 apart)
-# purely so a stray id collision between the two id spaces is easy to
-# spot as a bug during debugging - nothing downstream actually relies on
-# the ranges staying separate, sectors and arenas are looked up in
-# different dicts.
 ARENA_ID_RANGE_OFFSET = 100_000
 
 
@@ -118,35 +107,8 @@ class LandExpansion(BaseModel):
     new_height: int
     new_sector_ids: list[int] = []
     new_sector_names: list[str] = []
-    # GROW-13. What the strip is FOR, and whether anyone can walk onto it.
-    #
-    # `approve_land_petition` carved a sector and stopped. It never joined
-    # the strip to the walkable graph - `open_walkable_corridors` had only
-    # ever run at genesis - so every strip the town grew was an island.
-    # That function exists because the shipped map was 89% walkable across
-    # seventeen disconnected regions; expansion put the town straight back
-    # into it. Land nobody can walk onto is not land the town has gained.
-    #
-    # `purpose` is None when the operator did not say, and that stays
-    # honest: bare ground is what the old behaviour produced, and defaulting
-    # it to "residential" would put a label on the record nobody chose.
     purpose: str | None = None
     corridors_opened: int = 0
-    # GROW-26. WHERE the new land is, not just that there is some.
-    #
-    # This payload was a receipt: edge, depth, old and new dimensions. A
-    # subscriber - the viewer, the trace, a resident's perception - could
-    # learn that the town had grown and had no way to learn where without
-    # re-fetching the whole Tiled JSON, which is why `town.js` re-downloads
-    # the entire map on every `world.land.expanded` and gets the same bytes
-    # back (UI-01).
-    #
-    # The rect is the tiles the strip added, in the NEW map's coordinates.
-    # Derived rather than passed so it cannot disagree with the dimensions
-    # beside it.
-    # `Rect` convention of this module: (x0, y0, x1, y1), half-open on
-    # both axes. `expand_land` already computes exactly this rect to lay
-    # the new sectors into; it simply never carried it out.
     strip_x0: int = 0
     strip_y0: int = 0
     strip_x1: int = 0
@@ -450,11 +412,6 @@ async def approve_land_petition(
         new_sector_ids.append(sector_id)
         new_sector_names.append(new_sector_name)
 
-    # "Regenerate collision": re-derive walkability from the JSON we just
-    # mutated. Not needed to construct the WorldMap below (build_world_map_from_tiled
-    # does the same derivation internally) but called explicitly so the
-    # step named in DESIGN.md section 1 has a real, independently
-    # callable call site rather than being buried inside the rebuild.
     regenerate_collision_layer(working_tiled)
     world = build_world_map_from_tiled(working_tiled, working_blocks)
 
@@ -467,19 +424,12 @@ async def approve_land_petition(
         new_height=working_tiled["height"],
         new_sector_ids=new_sector_ids,
         new_sector_names=new_sector_names,
-        # GROW-26: the rect this function already computed to lay the new
-        # sectors into, carried out instead of discarded. Passed through
-        # rather than re-derived, so the payload cannot describe a
-        # different strip from the one that was actually appended.
         strip_x0=strip_rect[0],
         strip_y0=strip_rect[1],
         strip_x1=strip_rect[2],
         strip_y1=strip_rect[3],
     )
     return working_tiled, working_blocks, world, expansion
-
-
-# ── connecting the town to itself ────────────────────────────────────
 
 
 def walkable_components(collision: list[list[bool]]) -> list[list[tuple[int, int]]]:
@@ -550,7 +500,7 @@ def open_walkable_corridors(tiled: dict[str, Any], *, min_region: int = 24) -> i
     ]
 
     joined = 0
-    while joined <= 64:  # a map this broken is a different problem
+    while joined <= 64:
         components = walkable_components(collision)
         if len(components) < 2:
             break
@@ -558,15 +508,6 @@ def open_walkable_corridors(tiled: dict[str, Any], *, min_region: int = 24) -> i
         if not stranded:
             break
 
-        # Breadth-first outward from the main region, THROUGH walls, until
-        # the stranded region is reached. The first stranded tile found is
-        # the nearest one, and the parent chain back is the shortest
-        # corridor to carve.
-        #
-        # Deliberately not a nearest-pair scan: that is
-        # |stranded| x |main| comparisons - about 48 million for this map -
-        # once per join, and it runs on every world build. This is one
-        # sweep of the grid.
         target = set(stranded[0])
         frontier = list(components[0])
         parent: dict[tuple[int, int], tuple[int, int] | None] = {
@@ -594,7 +535,6 @@ def open_walkable_corridors(tiled: dict[str, Any], *, min_region: int = 24) -> i
         if reached is None:
             break
 
-        # Walk the chain back, opening every cell it crosses.
         cell: tuple[int, int] | None = reached
         while cell is not None:
             x, y = cell

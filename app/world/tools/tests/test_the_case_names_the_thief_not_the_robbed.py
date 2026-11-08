@@ -49,7 +49,7 @@ async def _a_seated_magistrate(world: WorldState, agent_id: str = "n09"):
 
 async def _a_theft(world: WorldState, *, thief="n02", victim="n01", witness=None):
     """n02 robs n01's unattended box. Returns the case."""
-    await spawn_agent(world, victim, ELSEWHERE)   # the owner is away
+    await spawn_agent(world, victim, ELSEWHERE)
     await spawn_agent(world, thief, YARD)
     if witness:
         await spawn_agent(world, witness, YARD)
@@ -58,7 +58,6 @@ async def _a_theft(world: WorldState, *, thief="n02", victim="n01", witness=None
         storage_id="box", owner_id=victim, location_id=YARD
     )
     world.inventory.credit("box", "bread", 10)
-    # Both rolls succeed, deterministically.
     world.rng.random = lambda: 0.0  # type: ignore[method-assign]
 
     from world.tools.primitives.crime import steal_handler, StealParams
@@ -69,18 +68,13 @@ async def _a_theft(world: WorldState, *, thief="n02", victim="n01", witness=None
     return next(c for c in world.crime_cases if c.case_id == outcome.result["case_id"])
 
 
-# ── the case ──────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_theft_accuses_nobody_and_names_the_victim(world):
     case = await _a_theft(world)
 
     assert case.kind is CrimeCaseKind.THEFT
     assert case.victim_agent_id == "n01"
-    # The town knows it was robbed. It does not know by whom.
     assert case.against_agent_id == ""
-    # But the world does, underneath.
     assert case.ground_truth_perpetrator_id == "n02"
 
 
@@ -95,7 +89,6 @@ async def test_the_thiefs_name_does_not_reach_everybody_who_perceives_it(world):
     await spawn_agent(world, "n02", YARD)
     world.storages["box"] = Storage(storage_id="box", owner_id="n01", location_id=YARD)
     world.inventory.credit("box", "bread", 10)
-    # Theft succeeds, nobody witnesses it.
     rolls = iter([0.0, 0.99])
     world.rng.random = lambda: next(rolls)  # type: ignore[method-assign]
 
@@ -130,9 +123,6 @@ async def test_a_witness_does_learn_who(world):
     assert "n03" in attempted.payload["witness_agent_ids"]
 
 
-# ── the tools cannot touch the victim ─────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_the_victim_cannot_be_arrested_on_their_own_robbery(world, registry):
     """The exact act the old code made the only possible one."""
@@ -160,13 +150,9 @@ async def test_a_verdict_needs_a_defendant(world, registry):
     assert "accuses nobody" in str(raised.value)
 
 
-# ── naming a suspect, rightly and wrongly ─────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_the_victim_can_name_a_suspect_on_the_open_case(world, registry):
     case = await _a_theft(world)
-    # The victim goes to the desk and accuses somebody.
     await move_agent(world, "n01", COMPLEX)
     await registry.execute(
         world,
@@ -180,7 +166,6 @@ async def test_the_victim_can_name_a_suspect_on_the_open_case(world, registry):
     )
 
     assert case.against_agent_id == "n02"
-    # And the case still remembers who really did it.
     assert case.ground_truth_perpetrator_id == "n02"
 
 
@@ -201,16 +186,13 @@ async def test_a_case_that_already_accuses_somebody_is_not_overwritten(world, re
         )
 
 
-# ── the metric ────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_convicting_the_wrong_person_is_counted_as_wrong(world):
     """A steals from B; B accuses C; the seat fines C. That is one false
     conviction, and until now the town could not say so."""
-    case = await _a_theft(world)          # ground truth: n02
+    case = await _a_theft(world)
     await spawn_agent(world, "n03", ELSEWHERE)
-    case.against_agent_id = "n03"          # the town accuses the wrong man
+    case.against_agent_id = "n03"
     case.verdict = "fine"
 
     stats = false_conviction_stats(world)
@@ -246,9 +228,6 @@ async def test_a_complaint_the_world_did_not_witness_is_unknowable(world, regist
     stats = false_conviction_stats(world)
     assert stats["unknowable"] == 1
     assert stats["true"] == 0 and stats["false"] == 0
-
-
-# ── GOV-15 ────────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio

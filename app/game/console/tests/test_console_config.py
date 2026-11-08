@@ -30,7 +30,7 @@ def test_build_from_env_reads_every_field() -> None:
 def test_missing_operator_token_auto_generates_a_random_one() -> None:
     settings, errors = ConsoleSettings.build_from_env({})
     assert errors == []
-    assert settings.operator_token  # non-empty
+    assert settings.operator_token
     assert settings.operator_token_was_generated is True
 
 
@@ -91,8 +91,6 @@ def test_load_validated_aggregates_every_error_at_once() -> None:
     settings, parse_errors = ConsoleSettings.build_from_env(env)
     assert parse_errors == []
     all_errors = parse_errors + settings.validate()
-    # operator token blank, timeout non-positive, port out of range: three
-    # independent problems should all surface, not just the first one.
     assert len(all_errors) == 3
 
 
@@ -106,8 +104,6 @@ def test_load_validated_raises_config_error_with_generated_message(tmp_path) -> 
 
 
 def test_load_validated_succeeds_with_no_env_file(tmp_path) -> None:
-    # No .env at all: falls all the way through to the auto-generated
-    # token and the built-in defaults, which validate() accepts.
     settings = ConsoleSettings.load_validated(tmp_path / "does-not-exist.env")
     assert settings.operator_token
     assert settings.operator_token_was_generated is True

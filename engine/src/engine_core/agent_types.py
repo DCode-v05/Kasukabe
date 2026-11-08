@@ -27,9 +27,6 @@ if TYPE_CHECKING:
     from src.utility_directory.tool_runtime import ToolDef, ToolRegistry
 
 
-# ── AgentType enum ─────────────────────────────────────────────────────
-
-
 class AgentType(str, Enum):
     """Sub-agent capability tier.
 
@@ -46,11 +43,6 @@ class AgentType(str, Enum):
     GENERAL = "general"
 
 
-# ── Tools disallowed for ALL sub-agents (prevents recursion + parent mutation) ──
-
-# Mirrors ALL_AGENT_DISALLOWED_TOOLS in agentToolUtils.ts.
-# - spawn_sub_agent / spawn_thread: 1-level depth rule
-# - ask_user: closes over parent thread state (WAITING_INPUT on parent)
 ALL_AGENT_DISALLOWED_TOOLS: frozenset[str] = frozenset(
     {
         "spawn_sub_agent",
@@ -60,9 +52,6 @@ ALL_AGENT_DISALLOWED_TOOLS: frozenset[str] = frozenset(
 )
 
 
-# ── Tool classification ───────────────────────────────────────────────
-
-# Actions EXPLORE + VERIFY can reach. VERIFY also gets EXECUTE (below).
 READ_ACTIONS: frozenset[ToolAction] = frozenset(
     {
         ToolAction.SEARCH,
@@ -119,7 +108,6 @@ def filter_tools_for_agent(
         if tool is None:
             continue
 
-        # MCP tools always pass — specialized agent scoping happens elsewhere.
         if name.startswith("ad:") or tool.source == ToolSource.MCP:
             filtered.register(tool)
             continue
@@ -136,20 +124,15 @@ def filter_tools_for_agent(
             continue
 
         if agent_type == AgentType.PLAN:
-            # Pure reasoning — no platform tools.
             continue
 
         if agent_type == AgentType.VERIFY:
             if action in MUTATING_ACTIONS:
                 continue
-            # READ, SEARCH, EXECUTE all pass.
             filtered.register(tool)
             continue
 
     return filtered
-
-
-# ── Per-type defaults ──────────────────────────────────────────────────
 
 
 @dataclass(frozen=True)

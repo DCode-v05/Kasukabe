@@ -34,11 +34,6 @@ from src.herald.types import ToolDef as HeraldToolDef
 from src.utility_directory.tool_runtime import ToolDef as RegistryToolDef, ToolRegistry
 
 
-# --------------------------------------------------------------------------
-# RegistryToolDef field
-# --------------------------------------------------------------------------
-
-
 async def noop_handler(_: dict) -> str:
     return ""
 
@@ -62,11 +57,6 @@ class TestRegistryToolDefFlag:
             defer_loading=True,
         )
         assert tool.defer_loading is True
-
-
-# --------------------------------------------------------------------------
-# Registry → herald adapter propagation
-# --------------------------------------------------------------------------
 
 
 class TestRegistryPropagation:
@@ -97,15 +87,8 @@ class TestRegistryPropagation:
         assert by_name["deferred_one"].defer_loading is True
 
 
-# --------------------------------------------------------------------------
-# Herald adapter → Anthropic schema
-# --------------------------------------------------------------------------
-
-
 class TestAnthropicSchemaEmission:
     def test_no_deferred_tools_emits_no_defer_key(self):
-        # Critical regression contract: existing deployments must produce
-        # byte-for-byte identical tool schemas after this change.
         defs = [
             HeraldToolDef(name="a", description="d_a", input_schema={"type": "object"}),
             HeraldToolDef(name="b", description="d_b", input_schema={"type": "object"}),

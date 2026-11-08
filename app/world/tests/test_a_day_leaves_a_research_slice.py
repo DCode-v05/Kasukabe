@@ -98,7 +98,7 @@ async def test_a_failed_export_does_not_end_the_run(runner, monkeypatch, tmp_pat
     monkeypatch.setattr(pe, "export_game_day", boom)
     (tmp_path / "trace.db").write_bytes(b"")
 
-    assert await runner.export_the_day(1) is None       # must not raise
+    assert await runner.export_the_day(1) is None
 
 
 @pytest.mark.asyncio

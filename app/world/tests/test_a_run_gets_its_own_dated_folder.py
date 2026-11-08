@@ -63,8 +63,6 @@ def test_the_run_still_knows_what_it_is_for() -> None:
     assert body["world"]["budget_cap_usd"] == 60.0
     assert body["world"]["start_tick"] == 324, "game-day 2 at dawn"
     assert body["charter"]["compulsory_voting"] is True
-    # eight since the workshop and talk books were added, so the skills and
-    # tools the town invents are filmed alongside the map and the chats
     assert len(body["recording"]["views"]) == 8
     assert {v["name"] for v in body["recording"]["views"]} >= {
         "town-with-buildings", "town-without-buildings", "workshop-skills-tools",

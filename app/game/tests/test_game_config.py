@@ -17,10 +17,6 @@ def test_mock_mode_defaults_false() -> None:
 
 
 def test_default_port_does_not_collide_with_console() -> None:
-    # game/console/config.py's ConsoleSettings.port defaults to 8300;
-    # this service is a second, unauthenticated process on the same box
-    # (see config.py's port field comment) and must not silently bind the
-    # same port.
     assert GameSettings().port == 8400
 
 

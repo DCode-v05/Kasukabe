@@ -31,9 +31,6 @@ def make_tracker(**kwargs) -> OverloadTracker:
     return OverloadTracker(**defaults)
 
 
-# --- Consecutive 529 counter ---
-
-
 def test_consecutive_529_count_increments_only_on_529():
     tracker = make_tracker(fallback_model=None)
     tracker.record_error(FakeAPIError(529, retry_after=30.0))
@@ -51,9 +48,6 @@ def test_counter_resets_on_success():
     assert tracker.consecutive_529s == 2
     tracker.record_success()
     assert tracker.consecutive_529s == 0
-
-
-# --- Fallback triggering ---
 
 
 def test_fallback_triggered_after_3_consecutive_529s():
@@ -104,9 +98,6 @@ def test_fallback_error_carries_metadata():
     assert "sonnet-4" in str(err)
 
 
-# --- Query source gating ---
-
-
 def test_query_source_foreground_retries_529():
     tracker = make_tracker(query_source="foreground", fallback_model=None)
     tracker.record_error(FakeAPIError(529, retry_after=30.0))
@@ -129,9 +120,6 @@ def test_query_source_signal_is_background():
     tracker = make_tracker(query_source="signal")
     with pytest.raises(FakeAPIError):
         tracker.record_error(FakeAPIError(529))
-
-
-# --- Persistent retry mode ---
 
 
 def test_persistent_mode_returns_retry_advice():

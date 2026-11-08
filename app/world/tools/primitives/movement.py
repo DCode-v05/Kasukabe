@@ -87,11 +87,6 @@ def resolve_move_distance(world: WorldState, actor_id: str, params: Any) -> int:
     if not destination:
         return 0
 
-    # Already walking there: charge for what is LEFT, not for the whole
-    # route again. `move` re-issued at the same destination is a no-op
-    # that returns `already_walking_there` (see the handler below), and
-    # billing the full trip for it would make asking "am I nearly there"
-    # cost more than the journey.
     journey = movement.journey_for(actor_id)
     if journey is not None and journey.destination_location_id == destination:
         return estimate_travel_ticks(movement.world_map, journey.path[journey.step_index:])
@@ -106,9 +101,6 @@ def resolve_move_distance(world: WorldState, actor_id: str, params: Any) -> int:
     start = resolve_current_tile(world, movement, actor_id)
     if start is None:
         return 0
-    # The same route the walk itself will take: `start_journey` computes
-    # it with prefer_streets=True, and an estimate off a different route
-    # than the one walked is a bill for a journey nobody made.
     path = find_path(movement.world_map, start, target, prefer_streets=True)
     if not path:
         return 0
@@ -190,11 +182,6 @@ def opaque_jump_outcome(world: WorldState, agent: AgentLifeRecord, destination_l
             "location_id": destination_location_id,
             "arrived": True,
             "walked": False,
-            # TOOL-05(a). `default_interrupt_policy` wakes a resident on
-            # an event naming it in `target_agent_id`; `agent.moved`
-            # carried `agent_id` only, so nothing about arriving anywhere
-            # ever interrupted the scheduler. An arrival is the one
-            # moment a resident most needs its next turn.
             "target_agent_id": agent.agent_id,
         },
     )
@@ -226,8 +213,6 @@ def _nearest_places(world: WorldState, wanted: str) -> list[str]:
             scored.append((-overlap, place_id))
     scored.sort()
     near = [p for _, p in scored[:5]]
-    # Nothing resembled it: offer what is nearby instead of a silent list,
-    # so the reply is useful even when the guess was nonsense.
     if not near:
         near = [p["place_id"] for p in known_places(world)][:5]
     return near
@@ -263,9 +248,6 @@ def canonical_destination(world: WorldState, wanted: str) -> str:
     from world.tools.primitives.places import known_places
 
     def words(text: str) -> list[str]:
-        # Prefixes agents attach that carry no meaning of their own -
-        # "loc_college", "L_selenes", "place:t_temple". The bare name is
-        # what has to match.
         text = re.sub(r"^(loc|l|place|sector|the)[_:\s]+", " ", text.lower())
         return [w for w in re.split(r"[^a-z0-9]+", text) if w]
 
@@ -277,25 +259,13 @@ def canonical_destination(world: WorldState, wanted: str) -> str:
     from world.tools.place_aliases import known_tool_locations
 
     ids = [p["place_id"] for p in known_places(world)]
-    # Locations the TOOLS mint and gate on, which known_places does not list
-    # because they have no map sector: "temple", "mill", "farmland:wheat".
-    # Without them "temple" folded into "Kasukabe Temple" and every gate
-    # that wanted "temple" stopped opening - the precise breakage
-    # place_aliases.satisfies_gate exists to prevent, reintroduced one layer
-    # up.
     ids += sorted(known_tool_locations())
-    # Records the world mints per row, which known_places does not list.
     ids += [f"home:{h}" for h in getattr(world, "households", {})]
     ids += [
         getattr(b, "location_id", None) or f"business:{bid}"
         for bid, b in getattr(world, "businesses", {}).items()
     ]
 
-    # A name the town already has is never folded into a longer one.
-    #
-    # "Oak Hill College" is a real sector and its words are a subset of
-    # "Dorm for Oak Hill College" - so the subset rule below swallowed it
-    # and sent every student to the dorm. An exact match wins outright.
     for place_id in ids:
         if place_id == wanted:
             return wanted
@@ -313,47 +283,17 @@ def canonical_destination(world: WorldState, wanted: str) -> str:
         if other == target_set:
             exact.append(place_id)
         elif target_set < other or other < target_set:
-            # One name is the other with a word or two more: "willows market
-            # pharmacy" against "willows market and pharmacy", "h quarry"
-            # against "home h quarry".
             subset.append(place_id)
 
     if len(exact) == 1:
         return exact[0]
-    # Only when there is exactly one candidate. Two possible shops is not a
-    # spelling to fix, it is a guess to decline.
     if not exact and len(subset) == 1:
         return subset[0]
-    # Several candidates, exactly one of them a sector.
-    #
-    # "l_outcrop" is a subset of "Kasukabe Ore Outcrop" AND of every
-    # "ore_outcrop:<metal>" - four candidates, so the one-candidate rule
-    # above declined and the agent stood in a place of its own invention
-    # while `mine` refused it. The sector is the answer that commits to
-    # least: it is where the map would have drawn them anyway, and (per
-    # place_aliases.SECTOR_CONTAINS_FAMILY) it satisfies the gates of every
-    # variety inside it, so nothing is lost by not guessing which one.
     if not exact and len(subset) > 1:
         sectors = [place_id for place_id in subset if ":" not in place_id]
         if len(sectors) == 1:
             return sectors[0]
 
-    # A "family:variant" name whose variant the town does not have.
-    #
-    # "farmland:general" is shaped exactly like the real "farmland:wheat",
-    # but 'general' is not one of the ten crop varieties, so no rule above
-    # matched a single word of it and the agent stood in a farmland of its
-    # own invention - close enough to the real one to read correctly in a
-    # log, far enough that nobody could hear a word it said. Observed live:
-    # Tobias spent his morning at "farmland:general" while Wren stood in
-    # "Kasukabe Farmland", and all three times he spoke to her the world
-    # refused it as speech across town.
-    #
-    # Folded to the SECTOR, never to a sibling variant: sending someone who
-    # asked for farmland generally into "farmland:wheat" would put them in
-    # one specific crop strip they never named. And only when the family
-    # picks out exactly one sector - the same "one candidate or nothing"
-    # discipline the rules above hold to.
     if ":" in wanted:
         family = set(words(wanted.split(":", 1)[0]))
         if family:
@@ -365,19 +305,6 @@ def canonical_destination(world: WorldState, wanted: str) -> str:
             if len(sectors) == 1:
                 return sectors[0]
 
-    # A resource site named after its resource.
-    #
-    # The town names these places after the thing you get there -
-    # "farmland:wheat", "ore_outcrop:copper" - so a model that names the
-    # resource has named the place, whatever it wrapped around it.
-    # Observed live: Bram spent his morning walking to "loc_quarry_mine"
-    # and then "loc_mine_copper", and `mine` refused him both times with
-    # "requires location 'ore_outcrop:copper'" - the tool naming the exact
-    # place he was trying to reach while he stood in an invented one.
-    #
-    # Word-level matching, so "corner" is not "corn". Exactly one resource
-    # or nothing: "wheat and barley" names two fields and is a guess to
-    # decline, the same discipline as the rules above.
     from world.map.model import CROP_VARIETIES, ORE_METALS
     from world.tools import locations as loc
 
@@ -388,21 +315,6 @@ def canonical_destination(world: WorldState, wanted: str) -> str:
     if len(named_metals) == 1 and not named_crops:
         return loc.ore_outcrop_location(named_metals[0])
 
-    # A place named by its ONE distinctive word, when the rest of what the
-    # agent typed is a synonym the town does not use.
-    #
-    # Every rule above matches on whole word-sets, so it needs the agent's
-    # words to be a subset or superset of the real name's. `loc_shop_willows`
-    # is neither: "willows" is right and "shop" appears in no place name the
-    # town has. Delia Okonjo walked there in run 19 and spent the run alone
-    # in it, while Silas stood in "The Willows Market and Pharmacy" asking
-    # how to buy something and the pharmacist he needed heard nothing.
-    #
-    # A word is DISTINCTIVE when exactly one place in the whole town uses
-    # it, which is what makes this safe: "willows" can only mean one room,
-    # so folding commits to nothing the agent did not already say. Words
-    # shared by several places decide nothing and are ignored - the same
-    # "one candidate or nothing" discipline as every rule above.
     distinctive: dict[str, list[str]] = {}
     for place_id in ids:
         if not place_id:
@@ -419,15 +331,6 @@ def canonical_destination(world: WorldState, wanted: str) -> str:
     if len(candidates) == 1:
         return candidates[0]
 
-    # Several places share every word the agent used: prefer the place
-    # itself over a place named after it.
-    #
-    # "college" belongs to both "Oak Hill College" and "Dorm for Oak Hill
-    # College", so no rule above could choose and Liora Thorne spent run 19
-    # at `l_college`, alone. The shorter name is the institution; the longer
-    # one is a building that refers to it. Only when one name's words are
-    # wholly contained in the other's, so this never picks between two
-    # unrelated places that happen to share a word.
     shared = [
         place_id
         for place_id in ids
@@ -443,56 +346,14 @@ def canonical_destination(world: WorldState, wanted: str) -> str:
 
 
 async def move_handler(world: WorldState, agent: AgentLifeRecord, params: MoveParams) -> ToolOutcome:
-    # Fold a differently-spelled name onto the town's own, before anything
-    # moves. Six people in a shop could not see the seventh because they
-    # had walked to 'Harvey Oak Supply Store' and it to
-    # 'harvey_oak_supply_store'.
     resolved = canonical_destination(world, params.destination_location_id)
 
-    # Refuse a destination the town does not have.
-    #
-    # `move` allowed an opaque jump to ANY string, which is right for the
-    # town's own non-sector locations ("temple", "mill", "farmland:wheat")
-    # and wrong for everything else: agents invented ids and walked into
-    # them. Observed live, alongside four residents correctly at "Harvey Oak
-    # Supply Store" - 'store_harvey_oak', 'loc_farmland', 'place:t_temple',
-    # 'marketplace', one resident each, every one of them standing alone in
-    # a place of its own making where nobody could see or speak to them.
-    # Deliberately NOT refused when the destination is unrecognised.
-    #
-    # Three attempts to enumerate "a real place" each broke working
-    # behaviour: first `temple`/`mill`/`farmland:wheat` (tool locations with
-    # gates and no map sector), then `grocery-shop` (a business naming its
-    # own premises), then `square` and `park`. The town's location
-    # vocabulary is larger than anything this module can list, and every
-    # tightening refused somewhere a resident could legitimately stand.
-    #
-    # `move` therefore stays permissive, as it was designed to be. What is
-    # fixed instead is the REPORTING: see run_genesis's _phrase_activity,
-    # which used to read the requested destination and so announced "walking
-    # to loc_college" for an agent standing at Oak Hill College.
 
     if resolved != params.destination_location_id:
         params = params.model_copy(update={"destination_location_id": resolved})
 
     movement = world.movement
 
-    # Already walking there? Say so, and leave the walk alone.
-    #
-    # `move` restarted the journey from the agent's current tile every time
-    # it was called, so an agent that re-issued the same destination walked
-    # the first leg again and again and arrived nowhere. Measured by the
-    # §4.1 eval on a live run: 9 of 13 journeys never finished, and six of
-    # those were Marta Thorne calling `move` to the Government Complex five
-    # times and the Temple once inside a single turn.
-    #
-    # It is also the mechanism the residents described in run 15 - "kept
-    # ending up back at Hobbs", "the moves aren't sticking" - and no
-    # instrument had ever counted it.
-    #
-    # Telling the agent how far is left matters as much as not restarting:
-    # a result that just repeated "walking: true" gave it no reason to stop
-    # asking.
     if movement is not None:
         current = movement.journey_for(agent.agent_id)
         if current is not None and current.destination_location_id == params.destination_location_id:
@@ -524,12 +385,6 @@ async def move_handler(world: WorldState, agent: AgentLifeRecord, params: MovePa
                     agent.agent_id, start_tile, params.destination_location_id
                 )
                 if journey is None:
-                    # A real, named destination with no walkable route to
-                    # it from here - an ordinary outcome (MovementSystem.
-                    # start_journey's own docstring), reported honestly
-                    # rather than teleported to. "No location gate" means
-                    # `move` is never refused for being in the wrong
-                    # place, not that it fabricates a route.
                     return ToolOutcome(
                         result={
                             "location_id": world.location_of(agent.agent_id),
@@ -540,12 +395,6 @@ async def move_handler(world: WorldState, agent: AgentLifeRecord, params: MovePa
                         events=[],
                     )
                 if journey.arrived:
-                    # Already standing there (start == destination tile) -
-                    # zero ticks needed, matching MovementSystem.
-                    # start_journey's own "already there" contract. Still
-                    # a real, tile-carrying agent.moved, not the opaque
-                    # shape - a caller polling perception sees exactly
-                    # where this agent is either way.
                     tile = journey.destination_tile
                     event = WorldEvent(
                         type="agent.moved",
@@ -557,8 +406,6 @@ async def move_handler(world: WorldState, agent: AgentLifeRecord, params: MovePa
                             "tile_y": tile.y,
                             "arrived": True,
                             "walked": True,
-                            # TOOL-05(a): arriving wakes you. See
-                            # `opaque_jump_outcome` for why.
                             "target_agent_id": agent.agent_id,
                         },
                     )
@@ -570,14 +417,6 @@ async def move_handler(world: WorldState, agent: AgentLifeRecord, params: MovePa
                     },
                         events=[event],
                     )
-                # A genuine multi-tile route has been started. No event
-                # publishes here - the agent has not taken a single step
-                # yet (MovementSystem.start_journey never advances a
-                # journey it creates) - a tick loop's own advance() calls
-                # (world.core.engine.TickEngine, once wired - see this
-                # module's docstring) publish one agent.moved per tile
-                # crossed from here on, which is what makes this a real
-                # walk instead of an instant jump.
                 return ToolOutcome(
                     result={
                         "location_id": world.location_of(agent.agent_id),
@@ -587,8 +426,6 @@ async def move_handler(world: WorldState, agent: AgentLifeRecord, params: MovePa
                     },
                     events=[],
                 )
-    # Fallback: destination_location_id (or this agent's own position)
-    # is not yet a real map location - see this module's own docstring.
     return opaque_jump_outcome(world, agent, params.destination_location_id)
 
 
@@ -601,9 +438,6 @@ def build_specs() -> list[ToolSpec]:
             handler=move_handler,
             namespace=ToolNamespace.PUBLIC,
             location_gate=None,
-            # Part D: the one tool a confined resident cannot use. An
-            # arrest that leaves the accused free to walk out of the cells
-            # is a word rather than an arrest.
             actor_requirements=ActorRequirements(require_not_confined=True),
         )
     ]

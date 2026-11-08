@@ -28,13 +28,10 @@ def build_ppid_map() -> dict[int, int]:
             continue
         try:
             stat_text = (entry / "stat").read_text()
-            # Format: pid (comm) state ppid ...
-            # comm can contain spaces and parens, so find the LAST ')' first.
             close_paren = stat_text.rfind(")")
             if close_paren == -1:
                 continue
             fields_after_comm = stat_text[close_paren + 2 :].split()
-            # fields_after_comm[0] = state, [1] = ppid
             ppid = int(fields_after_comm[1])
             pid = int(entry.name)
             ppid_map[pid] = ppid
@@ -72,12 +69,10 @@ def get_descendant_pids(pid: int) -> list[int]:
     """
     ppid_map = build_ppid_map()
 
-    # Build parent → children adjacency list
     children: dict[int, list[int]] = {}
     for p, pp in ppid_map.items():
         children.setdefault(pp, []).append(p)
 
-    # BFS from pid
     result: list[int] = []
     queue = children.get(pid, [])
     visited: set[int] = set()
@@ -89,7 +84,6 @@ def get_descendant_pids(pid: int) -> list[int]:
         result.append(current)
         queue.extend(children.get(current, []))
 
-    # Reverse so deepest children come first (bottom-up kill order)
     result.reverse()
     return result
 
@@ -104,18 +98,9 @@ def is_process_alive(pid: int) -> bool:
     except ProcessLookupError:
         return False
     except PermissionError:
-        return True  # exists but we can't signal it
+        return True
 
 
-# POSIX-only, and evaluated at import time as a default argument - so on
-# Windows this module raised AttributeError before a single line of it ran,
-# and every engine process died at import rather than at a kill.
-#
-# LAW 1 FINDING (docs/TEST_RUN.md): this file is under engine/src/ and
-# outside sim/, so the portability gap is recorded here rather than treated
-# as a routine patch. SIGTERM is the honest fallback: Windows has no
-# uncatchable kill, and TerminateProcess - which is what Python maps SIGTERM
-# to there - is already the closest equivalent.
 SIGKILL = getattr(signal, "SIGKILL", signal.SIGTERM)
 
 
@@ -128,7 +113,6 @@ def tree_kill(pid: int, sig: int = SIGKILL) -> list[int]:
     descendants = get_descendant_pids(pid)
     signaled: list[int] = []
 
-    # Kill descendants first (bottom-up), then the root
     for target in descendants:
         try:
             os.kill(target, sig)
@@ -138,7 +122,6 @@ def tree_kill(pid: int, sig: int = SIGKILL) -> list[int]:
         except PermissionError:
             logger.warning("tree_kill: permission denied for pid %d", target)
 
-    # Kill the root process itself
     try:
         os.kill(pid, sig)
         signaled.append(pid)

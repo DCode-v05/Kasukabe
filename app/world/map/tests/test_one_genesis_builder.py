@@ -85,7 +85,5 @@ def test_the_town_is_joined_to_itself() -> None:
             if world_map.is_walkable(TileCoord(x, y))
         )
 
-    # Compared, not counted absolutely: the property under test is that the
-    # two builders agree, not that the map has a particular size.
     assert walkable_tiles(service.world) == walkable_tiles(direct)
     assert walkable_tiles(direct) > 0, "neither builder produced a walkable town"

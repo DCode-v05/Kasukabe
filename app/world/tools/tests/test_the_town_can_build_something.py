@@ -144,8 +144,6 @@ async def test_a_building_not_yet_due_is_left_alone(tmp_path):
     assert runner.buildings_completed == 0
 
 
-# ── GROW-01 and GROW-03: the other two locks ────────────────────────────
-
 @pytest.mark.asyncio
 async def test_a_seat_holder_can_grant_ground(world_and_registry):
     """GROW-01. Nothing in this world could create a Plot.

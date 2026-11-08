@@ -54,9 +54,6 @@ async def _cast(world: WorldState, *ids: str) -> None:
         world.agent_names[agent_id] = names.get(agent_id, f"Resident {agent_id}")
 
 
-# ── issue 7: everyone a remark names is addressed by it ───────────────
-
-
 @pytest.mark.asyncio
 async def test_a_remark_naming_two_people_is_recorded_against_both(
     world: WorldState, registry
@@ -68,10 +65,6 @@ async def test_a_remark_naming_two_people_is_recorded_against_both(
     outcome = await registry.execute(world, "n15", "say", {
         "listener_agent_id": "n19",
         "content": (
-            # Vocative forms the town actually uses - "Silas—you heard me",
-            # "Rosalind. The chip". A space-hyphen is NOT one, and the
-            # detector is right to refuse it: a false addressee puts words
-            # in the wrong resident's ear.
             "Father Anselm. You want temple bread, walk to temple. "
             "Tova, two sim for walking, you said? That's the flat of it."
         ),
@@ -117,9 +110,6 @@ async def test_a_remark_naming_nobody_addresses_nobody_in_particular(
     await _cast(world, "n15", "n18")
     outcome = await registry.execute(world, "n15", "say", {"content": "Morning, all."})
     assert not (outcome.result.get("addressed") or [])
-
-
-# ── issue 6: the asker is told they were not answered ─────────────────
 
 
 @pytest.mark.asyncio

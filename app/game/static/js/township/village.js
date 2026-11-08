@@ -1,30 +1,13 @@
-/* Kasukabe village: an isometric renderer with open, furnished interiors.
- *
- * This is the isometric view back again - the 2:1 city-builder projection -
- * but keeping everything the top-down pass added: every building is still a
- * real floor plan with typed rooms and furniture, so you look INTO the rooms
- * at an angle rather than at a closed roof.
- *
- * How the interiors stay visible: each building draws its floor as isometric
- * diamonds, then only its two BACK walls (the north-west and north-east
- * edges). The front walls are omitted entirely, which is the standard
- * isometric cutaway - the camera looks over the front sill and down into the
- * room. Furniture is drawn as small isometric boxes, depth-sorted within the
- * room so a chair in front of a desk overlaps it correctly.
- */
-
-// ---- isometric projection ------------------------------------------------
 const TILE_W = 56;
 const TILE_H = 28;
 const GRID_W = 208;
 const GRID_H = 166;
-const TILE = TILE_W;                    // kept for the plan data below
+const TILE = TILE_W;
 
 function isoX(tx, ty) { return (tx - ty) * (TILE_W / 2); }
 function isoY(tx, ty) { return (tx + ty) * (TILE_H / 2); }
 function depth(tx, ty) { return tx + ty; }
 
-// ---- palette -------------------------------------------------------------
 const PAL = {
   grassA: '#7DC95F', grassB: '#74C156', grassC: '#88D268', grassD: '#6BBA50',
   water: '#5BB4D8', waterDeep: '#3E96BE', waterFoam: '#A5DCF0',
@@ -35,7 +18,6 @@ const PAL = {
   wallLine: '#8C8577',
 };
 
-// Per-building look: [floor, floorAlt, shell, accent]
 const ROOM_STYLE = {
   house:       ['#D9A96A', '#CE9C5C', '#F6EFDF', '#B5603F'],
   hospital:    ['#E3EFF2', '#D6E6EA', '#FFFFFF', '#D64545'],
@@ -50,9 +32,6 @@ const ROOM_STYLE = {
   grocery:     ['#F2E6C8', '#E6D8B6', '#FBF4E4', '#D9552F'],
   pharmacy:    ['#DCEFE9', '#CDE4DC', '#EEF9F5', '#3FA98C'],
   government:  ['#F0E9D2', '#E4DCC1', '#FBF6E6', '#C9A227'],
-  // The temple: pale stone and a deep vermilion accent, so it reads as a
-  // different KIND of building from the civic belt beside it rather than
-  // falling through to ROOM_STYLE.house and being drawn as a cottage.
   temple:      ['#EDE4DA', '#E0D5C8', '#F8F2EA', '#9E3B32'],
   college:     ['#E6E0EE', '#DAD2E4', '#F4F0FA', '#6A5A9E'],
   office:      ['#DFE6EA', '#D2DBE0', '#F0F4F6', '#597B92'],
@@ -61,20 +40,12 @@ const ROOM_STYLE = {
   construct:   ['#E4DCC4', '#D8CFB4', '#F4EEDE', '#D9992F'],
 };
 
-// ---- village plan --------------------------------------------------------
-// Zone ids MUST match WORK_ZONE in build_characters.py.
-// Districts are laid out in five bands with clear streets between them. The
-// rects MUST NOT overlap: two zones on the same tiles fight over the ground
-// paint and drop buildings into each other - which is what put farmhouses in
-// the middle of the cottages. There is a test for this below the table.
 const ZONES = {
-  // --- band A: north, residential either side of the park ---
   housing:      { label: 'Housing District',   icon: '🏘️', x: 6,   y: 6,   w: 62, h: 42, style: 'house',      rooms: 'terrace' },
   park:         { label: 'Town Park',          icon: '🌳', x: 74,  y: 8,   w: 44, h: 36, style: null,         rooms: 'open' },
   housingEast:  { label: 'East Terraces',      icon: '🏡', x: 124, y: 6,   w: 58, h: 42, style: 'house',      rooms: 'terrace' },
   orchard:      { label: 'Orchard',            icon: '🍏', x: 188, y: 8,   w: 16, h: 36, style: null,         rooms: 'grove' },
 
-  // --- band B: the civic belt ---
   school:       { label: 'Town School',        icon: '🏫', x: 8,   y: 52,  w: 22, h: 18, style: 'school',     rooms: 'hall' },
   hospital:     { label: 'Hospital',           icon: '🏥', x: 36,  y: 52,  w: 26, h: 20, style: 'hospital',   rooms: 'ward' },
   library:      { label: 'Library',            icon: '📚', x: 68,  y: 52,  w: 20, h: 16, style: 'library',    rooms: 'library' },
@@ -83,7 +54,6 @@ const ZONES = {
   cafe:         { label: 'Kasukabe Cafe',      icon: '☕', x: 156, y: 52,  w: 20, h: 16, style: 'cafe',       rooms: 'kitchenset' },
   docks:        { label: 'River Docks',        icon: '⚓', x: 188, y: 52,  w: 16, h: 66, style: null,         rooms: 'quay' },
 
-  // --- band C: college, market and the high street ---
   college:      { label: 'Oak Hill College',   icon: '🎓', x: 8,   y: 78,  w: 34, h: 24, style: 'college',    rooms: 'hall' },
   marketrow:    { label: 'Market Row',         icon: '🏪', x: 48,  y: 78,  w: 22, h: 22, style: 'market',     rooms: 'shop' },
   townsquare:   { label: 'Town Square',        icon: '⛲', x: 76,  y: 78,  w: 30, h: 24, style: null,         rooms: 'plaza' },
@@ -91,18 +61,7 @@ const ZONES = {
   pharmacy:     { label: 'Kasukabe Pharmacy',  icon: '💊', x: 138, y: 80,  w: 20, h: 16, style: 'pharmacy',   rooms: 'shop' },
   restaurant:   { label: 'Restaurant',         icon: '🍽️', x: 164, y: 80,  w: 20, h: 16, style: 'restaurant', rooms: 'kitchenset' },
 
-  // --- band D: south cottages, services and trade ---
   housingSouth: { label: 'South Cottages',     icon: '🏚️', x: 6,   y: 108, w: 52, h: 34, style: 'house',      rooms: 'terrace' },
-  // The temple. DESIGN section 1 lists it as a genesis building, section 4
-  // puts marriage in it and section 7 gives it weddings, prayers and
-  // donations - and the world's own map has carried it as sector 900001,
-  // "Kasukabe Temple", the whole time. The VIEWER did not: this file had
-  // thirty zones and no temple, so a resident who walked to the temple in
-  // the world was drawn standing nowhere, while its persona talked about
-  // the place. Reported from a run; no reviewer found it.
-  //
-  // Placed south of the town square, on the only free ground near the
-  // civic belt (58,126 was verified empty against every other zone).
   temple:       { label: 'Kasukabe Temple',    icon: '⛩️', x: 58,  y: 126, w: 22, h: 18, style: 'temple',     rooms: 'hall' },
   police:       { label: 'Police Station',     icon: '🚓', x: 64,  y: 108, w: 22, h: 18, style: 'police',     rooms: 'station' },
   fire:         { label: 'Fire Station',       icon: '🚒', x: 92,  y: 108, w: 22, h: 18, style: 'fire',       rooms: 'firehouse' },
@@ -110,7 +69,6 @@ const ZONES = {
   bank:         { label: 'Town Bank',          icon: '🏦', x: 156, y: 108, w: 20, h: 16, style: 'bank',       rooms: 'bankrooms' },
   inn:          { label: 'The Inn',            icon: '🛏️', x: 182, y: 126, w: 22, h: 18, style: 'inn',        rooms: 'ward' },
 
-  // --- band E: the working edges ---
   farmland:     { label: 'Farmland',           icon: '🌾', x: 6,   y: 146, w: 38, h: 18, style: null,         rooms: 'field' },
   pasture:      { label: 'Pasture',            icon: '🐄', x: 50,  y: 146, w: 30, h: 18, style: null,         rooms: 'graze' },
   oreoutcrop:   { label: 'Ore Outcrop',        icon: '⛏️', x: 86,  y: 146, w: 16, h: 18, style: null,         rooms: 'quarry' },
@@ -118,8 +76,6 @@ const ZONES = {
   forest:       { label: 'Forest',             icon: '🌲', x: 142, y: 148, w: 38, h: 16, style: null,         rooms: 'wood' },
 };
 
-// Guard rail: overlapping districts silently corrupt the map, so say so loudly
-// rather than letting a farm appear inside a housing estate again.
 (function assertNoZoneOverlap() {
   const ids = Object.keys(ZONES);
   for (let i = 0; i < ids.length; i++)
@@ -133,20 +89,6 @@ const ZONES = {
 })();
 const ZONE_ORDER = Object.keys(ZONES);
 
-// Road hierarchy: wide avenues, then the streets that hang off them, then
-// footpaths through the green. A town this size needs all three or it reads
-// as buildings dropped on a lawn.
-// ---- the road and water network ------------------------------------------
-// Roads and rivers are POLYLINES with bends, rasterised to tiles with a width,
-// not rows and columns at fixed indices. Fixed indices are what made the town
-// read as a grid: every road dead straight, every crossing a right angle, and
-// the "stream" a two-tile staircase stepping down the map.
-//
-// Each path is a list of tile-space points; buildPaths() walks them and marks
-// every tile within half the path's width, which gives organically ragged
-// edges and diagonal runs that no axis-aligned scheme can produce.
-
-// [width, [[x,y], ...]]
 const AVENUE_PATHS = [
   [4.2, [[2, 40], [34, 44], [72, 41], [110, 47], [150, 43], [206, 49]]],
   [4.2, [[2, 96], [40, 101], [84, 95], [128, 100], [168, 94], [206, 99]]],
@@ -171,8 +113,6 @@ const FOOT_PATHS = [
   [1.5, [[146, 8], [141, 46], [148, 90], [142, 132], [148, 160]]],
   [1.5, [[110, 12], [115, 50], [109, 92], [114, 134]]],
 ];
-// The river: a wide, meandering channel down the east side, and a stream that
-// wanders across the middle and joins it.
 const RIVER_PATHS = [
   [7.5, [[196, 2], [201, 26], [194, 52], [200, 78], [193, 104], [199, 130], [192, 158], [198, 165]]],
   [3.4, [[60, 150], [78, 132], [92, 118], [108, 112], [126, 104], [146, 92], [168, 80], [186, 68], [196, 58]]],
@@ -185,7 +125,6 @@ const waterTiles = new Set();
 const bankTiles = new Set();
 const key = (x, y) => x + ',' + y;
 
-/** Walk a polyline and mark every tile within `w/2` of it. */
 function stamp(set, w, pts) {
   const r = w / 2;
   for (let i = 0; i < pts.length - 1; i++) {
@@ -199,7 +138,6 @@ function stamp(set, w, pts) {
         for (let dx = -Math.ceil(r); dx <= Math.ceil(r); dx++) {
           const tx = Math.round(cx) + dx, ty = Math.round(cy) + dy;
           if (tx < 0 || ty < 0 || tx >= GRID_W || ty >= GRID_H) continue;
-          // a touch of noise on the edge so the band is not a clean sausage
           const edge = Math.hypot(tx + 0.5 - cx, ty + 0.5 - cy);
           if (edge <= r - 0.35 + nz(tx, ty, 'edge') * 0.7) set.add(key(tx, ty));
         }
@@ -213,8 +151,6 @@ function buildPaths() {
   for (const [w, pts] of STREET_PATHS) stamp(streetTiles, w, pts);
   for (const [w, pts] of FOOT_PATHS) stamp(footTiles, w, pts);
   for (const [w, pts] of RIVER_PATHS) stamp(waterTiles, w, pts);
-  // A bank of damp sand one tile out from the water, so the river has an edge
-  // rather than grass meeting it square-on.
   for (const k of waterTiles) {
     const [x, y] = k.split(',').map(Number);
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
@@ -222,7 +158,6 @@ function buildPaths() {
       if (!waterTiles.has(k2)) bankTiles.add(k2);
     }
   }
-  // Where a road crosses water it becomes a bridge, not a ford.
   for (const k of roadTiles) if (waterTiles.has(k)) bridgeTiles.add(k);
   for (const k of streetTiles) if (waterTiles.has(k)) bridgeTiles.add(k);
 }
@@ -236,7 +171,6 @@ function isBank(tx, ty) { const k = key(tx, ty); return bankTiles.has(k) && !wat
 
 function inZone(z, tx, ty) { return tx >= z.x && tx < z.x + z.w && ty >= z.y && ty < z.y + z.h; }
 
-// ---- deterministic noise -------------------------------------------------
 function nz(x, y, salt) {
   let h = 2166136261;
   const s = x + ',' + y + ',' + salt;
@@ -246,8 +180,6 @@ function nz(x, y, salt) {
   return ((h >>> 0) % 100000) / 100000;
 }
 
-// ---- isometric primitives -------------------------------------------------
-/** A flat diamond covering one tile. */
 function isoTile(ctx, tx, ty, fill, edge) {
   const x = isoX(tx, ty), y = isoY(tx, ty);
   ctx.beginPath();
@@ -260,7 +192,6 @@ function isoTile(ctx, tx, ty, fill, edge) {
   if (edge) { ctx.strokeStyle = edge; ctx.lineWidth = 1; ctx.stroke(); }
 }
 
-/** A diamond covering a w x d tile rectangle starting at (tx, ty). */
 function isoRect(ctx, tx, ty, w, d, fill) {
   const a = [isoX(tx, ty), isoY(tx, ty)];
   const b = [isoX(tx + w, ty), isoY(tx + w, ty)];
@@ -272,9 +203,6 @@ function isoRect(ctx, tx, ty, w, d, fill) {
   ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
 }
 
-/** A 3D box standing on the tile rectangle (tx, ty, w, d), `h` pixels tall.
- * Draws the two visible sides and the top - this is what gives the furniture
- * and the walls their solidity in the isometric view. */
 function isoBox(ctx, tx, ty, w, d, h, top, left, right) {
   const P = (a, b, lift) => [isoX(a, b), isoY(a, b) - (lift || 0)];
   const A = P(tx, ty), B = P(tx + w, ty), C = P(tx + w, ty + d), D = P(tx, ty + d);
@@ -284,19 +212,12 @@ function isoBox(ctx, tx, ty, w, d, h, top, left, right) {
     for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
     ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
   };
-  poly([D, C, Ct, Dt], left);           // south-west face
-  poly([C, B, Bt, Ct], right);          // south-east face
-  poly([At, Bt, Ct, Dt], top);          // top
+  poly([D, C, Ct, Dt], left);
+  poly([C, B, Bt, Ct], right);
+  poly([At, Bt, Ct, Dt], top);
 }
 
-/** Shade a colour by a factor, so one base colour yields a lit top face and
- * two darker side faces without hand-picking three hexes per object. */
 function shade(col, f) {
-  // Accepts '#rrggbb' OR an 'rgb(r,g,b)' string. That second case matters:
-  // drawPlan pre-shades a wall colour and hands the result to box3, which
-  // shades it again. When this only parsed hex, the second pass produced
-  // rgb(NaN,NaN,NaN) - an invalid colour that canvas painted black, which is
-  // exactly what put the black bars along every building's back walls.
   let r, g, b;
   if (col[0] === '#') {
     const n = parseInt(col.slice(1), 16);
@@ -312,10 +233,6 @@ function box3(ctx, tx, ty, w, d, h, col) {
   isoBox(ctx, tx, ty, w, d, h, shade(col, 1.0), shade(col, 0.72), shade(col, 0.86));
 }
 
-// ---- floor plans ---------------------------------------------------------
-// Each building is generated once into rooms, and each room is furnished for
-// what the building is FOR. This is what makes the map read like the Ville
-// map: you look down into rooms rather than at a roof.
 const plans = [];
 
 function splitRooms(x, y, w, h, minW, minH, depthLeft, out, seed) {
@@ -337,10 +254,6 @@ function splitRooms(x, y, w, h, minW, minH, depthLeft, out, seed) {
   }
 }
 
-// Every room gets a PURPOSE, and each purpose is furnished densely with its
-// own kit. This is what separates a floor plan from a labelled box: a bedroom
-// has beds, wardrobes and a rug; a kitchen has counters, a stove and a fridge;
-// a ward has beds with monitors and curtains between them.
 const ROOM_PLAN = {
   terrace:    ['bedroom', 'living', 'kitchen', 'bath'],
   ward:       ['ward', 'ward', 'nurses', 'store'],
@@ -355,7 +268,6 @@ const ROOM_PLAN = {
   kitchenset: ['kitchen', 'dining', 'dining', 'store'],
 };
 
-// Colour pools, so no two beds, sofas or rugs in the town look the same.
 const BEDDING = ['#E4694E', '#4E82C4', '#59A86B', '#D6A128', '#8E6BC4', '#DA7BA8', '#3FA9A0'];
 const SOFA    = ['#C4614E', '#4F7FB5', '#5C9E63', '#9B6BB5', '#C08552', '#3FA9A0'];
 const RUGCOL  = ['#D9A6A6', '#A6C3D9', '#BFD9A6', '#D9CFA6', '#C9A6D9'];
@@ -523,8 +435,6 @@ function furnishRoom(room, kind, seed) {
   return f;
 }
 
-/** Lay `purposes` out as a grid of rooms inside (bx,by,iw,ih). Used for homes,
- * where the number of rooms is what the BHK standard says it is. */
 function gridRooms(bx, by, iw, ih, purposes) {
   const n = purposes.length;
   const cols = Math.max(1, Math.round(Math.sqrt(n * (iw / Math.max(1, ih)))));
@@ -546,9 +456,6 @@ function makeHome(zid, k, ox, oy) {
   const bx = ox + 1, by = oy + 1, iw = k.w - 2, ih = k.h - 2;
   let rooms;
   if (k.flats) {
-    // An apartment block: `flats` one-bed flats side by side on the floor you
-    // can see. capacity counts every storey, so a 3-flat floor plan x 3
-    // storeys houses 9 households - the drawn layout is one floor of it.
     rooms = [];
     for (let f = 0; f < k.flats; f++) {
       const fx = bx + Math.round((iw * f) / k.flats);
@@ -573,9 +480,6 @@ function buildPlans() {
     if (!z.style) continue;
 
     if (z.rooms === 'terrace') {
-      // Four housing standards, matched in township.js to what a household
-      // earns. Room lists are real BHK layouts - a 1BHK is one bedroom plus a
-      // hall and a kitchen, not "a small box".
       const KINDS = [
         { tier: 1, label: '1 BHK', w: 19, h: 9,  storeys: 6, capacity: 24, flats: 4,
           rooms: ['bedroom', 'living', 'kitchen'] },
@@ -586,16 +490,6 @@ function buildPlans() {
         { tier: 4, label: 'Modern house', w: 14, h: 11, storeys: 2, capacity: 1,
           rooms: ['bedroom', 'bedroom', 'bedroom', 'living', 'kitchen', 'bath', 'study', 'living'] },
       ];
-      // Rows cycle through the standards so the quarter mixes rather than
-      // segregating into one block of identical buildings.
-      // modern houses early in the cycle, or the rows run out before
-      // reaching them and the top tier never gets built at all
-      // apartment-heavy: the town is mostly one-person households
-      // one row of each standard fits a 42-tall quarter: 9+8+10+11 plus
-      // the 1-tile street between them
-      // Order matters: rows are laid top-down and a standard that does not
-      // fit the remaining height is skipped, so putting the tall Modern row
-      // last meant it never got built at all.
       const ORDER = [3, 0, 2, 1, 0];
       let gy = 0, row = 0;
       while (gy + 9 <= z.h) {
@@ -612,9 +506,6 @@ function buildPlans() {
       continue;
     }
 
-    // The main building takes about two thirds of its district, leaving a
-    // forecourt; the rest of the plot gets an outbuilding or two. Filling the
-    // whole zone produced single slabs the size of a city block.
     const iw = Math.max(7, Math.round(z.w * 0.62));
     const ih = Math.max(6, Math.round(z.h * 0.62));
     const bx = z.x + Math.floor((z.w - iw) / 2), by = z.y + 1;
@@ -635,7 +526,6 @@ function buildPlans() {
         furniture: furnishRoom(c, purposes[i % purposes.length], c.x + c.y + i),
       })),
     });
-    // outbuildings on the remaining plot
     const ow = Math.max(4, Math.round(iw * 0.4)), oh = Math.max(4, Math.round(ih * 0.35));
     const spots = [
       { x: z.x + 1, y: by + ih + 2 },
@@ -653,9 +543,6 @@ function buildPlans() {
   }
 }
 
-// ---- furniture, as isometric solids --------------------------------------
-// Each piece is a box (or a few stacked boxes) standing on its tile footprint.
-// FURN_H is how tall each type stands; a bookshelf towers over a rug.
 const FURN_H = {
   bed: 9, nightstand: 11, wardrobe: 34, sofa: 13, armchair: 14, coffee: 8,
   tv: 14, bookshelf: 32, rug: 0.6, plant: 16, counter: 14, stove: 13,
@@ -684,8 +571,8 @@ function drawFurniture(ctx, f, accent) {
       isoRect(ctx, f.x, f.y, f.w, f.h, f.col || '#D9A6A6');
       return;
     case 'bed': {
-      box3(ctx, f.x, f.y, f.w, f.h, 7, '#F0EADC');                 // frame
-      box3(ctx, f.x, f.y + f.h * 0.35, f.w, f.h * 0.65, 10, col);  // quilt
+      box3(ctx, f.x, f.y, f.w, f.h, 7, '#F0EADC');
+      box3(ctx, f.x, f.y + f.h * 0.35, f.w, f.h * 0.65, 10, col);
       box3(ctx, f.x + f.w * 0.12, f.y + 0.05, f.w * 0.72, f.h * 0.28, 11, '#FFFFFF');
       return;
     }
@@ -746,7 +633,6 @@ function drawFurniture(ctx, f, accent) {
       isoRect(ctx, f.x + f.w * 0.25, f.y + f.h * 0.25, f.w * 0.5, f.h * 0.5, '#E8DFB8');
       return;
     case 'cell': {
-      // bars: a row of thin posts along the front of the cell
       const n = Math.max(3, Math.round(f.w * 1.4));
       for (let i = 0; i <= n; i++)
         box3(ctx, f.x + (i / n) * f.w, f.y + f.h - 0.12, 0.09, 0.09, h, '#7A8794');
@@ -765,11 +651,7 @@ function drawFurniture(ctx, f, accent) {
   }
 }
 
-/** Roofs on/off. The reference town is a diorama of solid buildings; the
- * cutaway view that shows the furnished rooms is the same buildings with the
- * roof lifted off. Both are useful, so it is a toggle rather than a choice
- * made once in the code. */
-let ROOFS_ON = false;   // open by default - the interiors are the point
+let ROOFS_ON = false;
 function setRoofs(on) { ROOFS_ON = !!on; }
 
 const ROOF_COL = {
@@ -782,12 +664,10 @@ const ROOF_COL = {
   inn: ['#8C6239'], construct: ['#D9992F'],
 };
 
-/** A solid building: storeys of wall with window bands, then a roof. This is
- * what makes the town read as a place rather than a grid of open plans. */
 function drawSolid(ctx, plan, lightsOn) {
   const [floor, floorAlt, shell, accent] = ROOM_STYLE[plan.style] || ROOM_STYLE.house;
   const storeys = plan.storeys || (plan.style === 'house' ? 1 : 2);
-  const SH = 26;                                  // storey height
+  const SH = 26;
   const H = storeys * SH;
   const roofs = ROOF_COL[plan.style] || ROOF_COL.house;
   const roofCol = roofs[Math.floor(nz(plan.x, plan.y, 'roof') * roofs.length)];
@@ -795,12 +675,11 @@ function drawSolid(ctx, plan, lightsOn) {
   isoRect(ctx, plan.x - 0.2, plan.y - 0.2, plan.w + 0.4, plan.h + 0.4, 'rgba(30,50,30,.18)');
   box3(ctx, plan.x, plan.y, plan.w, plan.h, H, shell);
 
-  // Window bands on the two faces the camera can see.
   const winCol = lightsOn ? '#FFDF8A' : '#BCD6E6';
   for (let sIdx = 0; sIdx < storeys; sIdx++) {
     const lift = sIdx * SH + SH * 0.42;
     const wh = SH * 0.34;
-    for (let i = 0.6; i < plan.w - 0.5; i += 1.6) {        // south-west face
+    for (let i = 0.6; i < plan.w - 0.5; i += 1.6) {
       const a = [isoX(plan.x + i, plan.y + plan.h), isoY(plan.x + i, plan.y + plan.h) - lift];
       const b = [isoX(plan.x + i + 0.9, plan.y + plan.h), isoY(plan.x + i + 0.9, plan.y + plan.h) - lift];
       ctx.beginPath();
@@ -808,7 +687,7 @@ function drawSolid(ctx, plan, lightsOn) {
       ctx.lineTo(b[0], b[1] - wh); ctx.lineTo(a[0], a[1] - wh);
       ctx.closePath(); ctx.fillStyle = winCol; ctx.fill();
     }
-    for (let j = 0.6; j < plan.h - 0.5; j += 1.6) {        // south-east face
+    for (let j = 0.6; j < plan.h - 0.5; j += 1.6) {
       const a = [isoX(plan.x + plan.w, plan.y + j), isoY(plan.x + plan.w, plan.y + j) - lift];
       const b = [isoX(plan.x + plan.w, plan.y + j + 0.9), isoY(plan.x + plan.w, plan.y + j + 0.9) - lift];
       ctx.beginPath();
@@ -818,7 +697,6 @@ function drawSolid(ctx, plan, lightsOn) {
     }
   }
 
-  // Door on the front corner, with an awning for anything that sells things.
   const dx = plan.x + plan.w * 0.5, dy = plan.y + plan.h;
   const d0 = [isoX(dx, dy), isoY(dx, dy)], d1 = [isoX(dx + 0.9, dy), isoY(dx + 0.9, dy)];
   ctx.beginPath();
@@ -829,8 +707,6 @@ function drawSolid(ctx, plan, lightsOn) {
     box3(ctx, plan.x + 0.4, plan.y + plan.h - 0.1, plan.w - 0.8, 0.7, 20, accent);
   }
 
-  // Roof: pitched for homes and small buildings, flat with a parapet for the
-  // civic and commercial blocks.
   const pitched = plan.style === 'house' || plan.w <= 12;
   if (pitched) {
     const rise = 13 + Math.min(plan.w, plan.h) * 1.1;
@@ -844,10 +720,10 @@ function drawSolid(ctx, plan, lightsOn) {
       for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
       ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
     };
-    poly([A, B, r1], shade(roofCol, 0.8));            // north gable
-    poly([D, C, r2], shade(roofCol, 0.8));            // south gable
-    poly([D, r2, r1, A], shade(roofCol, 0.88));       // west slope
-    poly([C, r2, r1, B], roofCol);                    // east slope
+    poly([A, B, r1], shade(roofCol, 0.8));
+    poly([D, C, r2], shade(roofCol, 0.8));
+    poly([D, r2, r1, A], shade(roofCol, 0.88));
+    poly([C, r2, r1, B], roofCol);
     if (nz(plan.x, plan.y, 'chim') > 0.5)
       box3(ctx, plan.x + plan.w * 0.7, plan.y + plan.h * 0.3, 0.7, 0.7, H + rise + 8, '#8C6B58');
   } else {
@@ -858,15 +734,11 @@ function drawSolid(ctx, plan, lightsOn) {
   }
 }
 
-/** One building: floor diamonds per room, the two back walls only (an
- * isometric cutaway so the interior stays visible), then the furniture
- * depth-sorted so nearer pieces overlap farther ones. */
 function drawPlan(ctx, plan, lightsOn) {
   if (ROOFS_ON) { drawSolid(ctx, plan, lightsOn); return; }
   const [floor, floorAlt, shell, accent] = ROOM_STYLE[plan.style] || ROOM_STYLE.house;
   const WALL_H = 30;
 
-  // ground pad the building sits on
   isoRect(ctx, plan.x - 0.15, plan.y - 0.15, plan.w + 0.3, plan.h + 0.3, shade(shell, 0.9));
 
   for (const room of plan.rooms) {
@@ -878,25 +750,19 @@ function drawPlan(ctx, plan, lightsOn) {
         isoTile(ctx, tx, ty, (tx + ty) % 2 ? a : b, null);
   }
 
-  // Back walls only - north-west (x edge) and north-east (y edge). The two
-  // front walls are deliberately not drawn; that cutaway is what lets you see
-  // into the room from this camera angle.
   box3(ctx, plan.x, plan.y, plan.w, 0.16, WALL_H, shell);
   box3(ctx, plan.x, plan.y, 0.16, plan.h, WALL_H, shade(shell, 0.94));
 
-  // interior partitions, low so they never hide the room behind them
   for (const room of plan.rooms) {
     if (room.x > plan.x) box3(ctx, room.x, room.y, 0.1, room.h, 14, shade(shell, 0.88));
     if (room.y > plan.y) box3(ctx, room.x, room.y, room.w, 0.1, 14, shade(shell, 0.88));
   }
 
-  // furniture, far pieces first
   const all = [];
   for (const room of plan.rooms) for (const f of room.furniture) all.push(f);
   all.sort((p, q) => (p.x + p.y) - (q.x + q.y));
   for (const f of all) drawFurniture(ctx, f, accent);
 
-  // a low sill along the open front edges, so the cutaway reads as a wall
   box3(ctx, plan.x, plan.y + plan.h - 0.16, plan.w, 0.16, 7, shade(shell, 0.8));
   box3(ctx, plan.x + plan.w - 0.16, plan.y, 0.16, plan.h, 7, shade(shell, 0.8));
 
@@ -908,7 +774,6 @@ function drawPlan(ctx, plan, lightsOn) {
   }
 }
 
-// ---- outdoor props -------------------------------------------------------
 const props = [];
 
 function tree(ctx, tx, ty, s, kind) {
@@ -1010,7 +875,6 @@ function car(ctx, tx, ty, seed) {
   box3(ctx, tx + 0.1, ty + 0.25, 0.8, 0.5, 9, c);
   box3(ctx, tx + 0.25, ty + 0.3, 0.5, 0.4, 15, shade(c, 1.12));
 }
-// ---- livestock, wildlife and traffic --------------------------------------
 function cow(ctx, tx, ty, seed) {
   const dark = nz(tx, ty, 'cow' + seed) > 0.5;
   box3(ctx, tx, ty, 0.85, 0.5, 11, dark ? '#F2EFE8' : '#C9A882');
@@ -1177,7 +1041,6 @@ function buildVillage() {
   buildPlans();
   props.length = 0;
 
-  // --- the park: amenities first, then planting around them ---
   const pk = ZONES.park;
   const pcx = pk.x + pk.w * 0.5, pcy = pk.y + pk.h * 0.55;
   props.push({ tx: pcx, ty: pcy, kind: 'pond' });
@@ -1205,7 +1068,6 @@ function buildVillage() {
       else if (r > 0.80) props.push({ tx, ty, kind: 'flowers', seed: r });
     }
 
-  // --- town square ---
   const sq = ZONES.townsquare;
   props.push({ tx: sq.x + sq.w / 2 - 1, ty: sq.y + sq.h / 2 - 1, kind: 'fountain' });
   props.push({ tx: sq.x + 3, ty: sq.y + 3, kind: 'statue' });
@@ -1220,7 +1082,6 @@ function buildVillage() {
   [[4, 10], [sq.w - 4, 12]].forEach(([ox, oy], i) =>
     props.push({ tx: sq.x + ox, ty: sq.y + oy, kind: 'bicycle', seed: i }));
 
-  // --- farmland, with a haystack and hens ---
   const fz = ZONES.farmland;
   for (let ty = fz.y; ty < fz.y + fz.h; ty++)
     for (let tx = fz.x; tx < fz.x + fz.w; tx++) props.push({ tx, ty, kind: 'crop' });
@@ -1229,7 +1090,6 @@ function buildVillage() {
   for (let i = 0; i < 8; i++)
     props.push({ tx: fz.x + 3 + i * 4, ty: fz.y - 1 + (i % 2) * 1.4, kind: 'chicken' });
 
-  // --- pasture: cows and sheep grazing ---
   const pa = ZONES.pasture;
   for (let ty = pa.y; ty < pa.y + pa.h; ty += 3)
     for (let tx = pa.x; tx < pa.x + pa.w; tx += 4) {
@@ -1243,13 +1103,11 @@ function buildVillage() {
   }
   props.push({ tx: pa.x + 4, ty: pa.y + 3, kind: 'dog' });
 
-  // --- orchard: rows of fruit trees ---
   const orc = ZONES.orchard;
   for (let ty = orc.y; ty < orc.y + orc.h; ty += 3)
     for (let tx = orc.x; tx < orc.x + orc.w; tx += 3)
       props.push({ tx, ty, kind: 'tree', s: 0.95, treeKind: 'blossom' });
 
-  // --- river docks: jetties, moored boats ---
   const dk = ZONES.docks;
   props.push({ tx: dk.x + 1, ty: dk.y + 4, kind: 'jetty', len: 9 });
   props.push({ tx: dk.x + 1, ty: dk.y + 16, kind: 'jetty', len: 9 });
@@ -1268,7 +1126,6 @@ function buildVillage() {
       if (nz(tx, ty, 'for') > 0.42)
         props.push({ tx, ty, kind: 'tree', s: 1.0 + nz(tx, ty, 'ts') * 0.3, treeKind: 'pine' });
 
-  // --- street furniture: follows the roads wherever they bend ---
   const along = (pts, every, fn) => {
     let acc = 0;
     for (let i = 0; i < pts.length - 1; i++) {
@@ -1295,10 +1152,6 @@ function buildVillage() {
       const tx = Math.round(x), ty = Math.round(y - w / 2 - 1);
       if (free(tx, ty)) props.push({ tx, ty, kind: 'streetTree' });
     });
-    // No traffic. Kasukabe is a walking town on both maps - every commute,
-    // errand and patrol in it is a person on a pavement. The `car` sprite and
-    // its draw case are left in place, so putting traffic back is restoring
-    // this loop rather than rebuilding it.
 
   }
   for (const [w, pts] of STREET_PATHS) {
@@ -1322,7 +1175,6 @@ function buildVillage() {
     });
   }
 
-  // --- everything left over gets planted ---
   for (let ty = 0; ty < GRID_H; ty++)
     for (let tx = 0; tx < GRID_W; tx++) {
       if (isRoad(tx, ty) || isPath(tx, ty) || isRiver(tx, ty) || isBridge(tx, ty) || isBank(tx, ty)) continue;
@@ -1336,12 +1188,8 @@ function buildVillage() {
   props.sort((a, b) => depth(a.tx, a.ty) - depth(b.tx, b.ty));
 }
 
-// ---- ground --------------------------------------------------------------
-/** The slab the whole town sits on: grass on top, soil and rock in the cut
- * sides. This is what makes it read as a diorama with edges rather than a
- * grid that trails off into nothing. */
 function drawPlinth(ctx) {
-  const D = 46;                                   // how deep the earth shows
+  const D = 46;
   const N = [isoX(0, 0), isoY(0, 0)];
   const E = [isoX(GRID_W, 0), isoY(GRID_W, 0)];
   const S = [isoX(GRID_W, GRID_H), isoY(GRID_W, GRID_H)];
@@ -1351,12 +1199,9 @@ function drawPlinth(ctx) {
     for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
     ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
   };
-  // grass rim, a touch wider than the tiles so the edge is not ragged
   poly([N, E, S, W], '#6BBA50');
-  // the two cut faces below
   poly([W, S, [S[0], S[1] + D], [W[0], W[1] + D]], '#8A6440');
   poly([S, E, [E[0], E[1] + D], [S[0], S[1] + D]], '#A0764C');
-  // a band of darker soil and a few stones in the cut
   poly([W, S, [S[0], S[1] + 9], [W[0], W[1] + 9]], '#5F8F45');
   poly([S, E, [E[0], E[1] + 9], [S[0], S[1] + 9]], '#6FA050');
   ctx.fillStyle = 'rgba(80,58,38,.5)';
@@ -1378,7 +1223,6 @@ function drawGround(ctx, t, view) {
   for (let ty = y0; ty < y1; ty++) {
     for (let tx = x0; tx < x1; tx++) {
       if (isRiver(tx, ty)) {
-        // Deeper mid-channel, shallower at the edges, with a moving glint.
         const edge = bankTiles.has(key(tx, ty)) ? 1 : 0;
         const sh = Math.sin(t * 1.3 + tx * 0.6 + ty * 0.45) * 0.5 + 0.5;
         isoTile(ctx, tx, ty, edge ? '#7FC8E4' : (sh > 0.62 ? PAL.water : PAL.waterDeep), null);
@@ -1408,9 +1252,6 @@ function drawGround(ctx, t, view) {
   }
 }
 
-// ---- props + buildings ---------------------------------------------------
-// Props and buildings share one depth-sorted pass, so a tree in front of a
-// house draws over it and one behind draws under it.
 function drawProps(ctx, t, lightsOn, view) {
   const items = [];
   for (const p of props) {
@@ -1463,7 +1304,6 @@ function drawProps(ctx, t, lightsOn, view) {
   }
 }
 
-// ---- residents -----------------------------------------------------------
 const TOOL_COLOUR = {
   hoe: '#9AA1A8', axe: '#B9C4CC', pick: '#8FA0AE', hammer: '#9AA1A8',
   broom: '#D8B36A', hose: '#5BB4D8', tray: '#E8DBC2', box: '#C79A5F',
@@ -1471,9 +1311,6 @@ const TOOL_COLOUR = {
   coin: '#E8C15A', cross: '#D64545', badge: '#C9A227', plan: '#F4EFE2',
 };
 
-/** A resident standing in the isometric world: shadow, legs, body, head. */
-/** Headwear and role marks. Drawn over the head so a firefighter reads as a
- * firefighter at a glance, not as a person in a red shirt. */
 function drawHat(ctx, sx, y, hat) {
   const cap = (col, brim) => {
     ctx.fillStyle = col;
@@ -1519,7 +1356,7 @@ function drawPerson(ctx, sx, sy, colour, hair, selected, talking, walking, t, to
   ctx.fillStyle = hair;
   ctx.beginPath(); ctx.arc(sx, y - 22.6, 4.8, Math.PI, Math.PI * 2); ctx.fill();
   if (outfit) {
-    if (outfit.coat) {                       // a white coat / apron over the shirt
+    if (outfit.coat) {
       ctx.fillStyle = outfit.coat;
       ctx.beginPath();
       ctx.moveTo(sx - 4.6, y - 7); ctx.lineTo(sx - 1.6, y - 7);
@@ -1551,9 +1388,6 @@ function drawPerson(ctx, sx, sy, colour, hair, selected, talking, walking, t, to
   }
 }
 
-/** Birds circling over the town. Drawn in the DYNAMIC layer, never the cached
- * one - anything that moves would otherwise be frozen into the cache and
- * repeat as a smear when it repaints. */
 const BIRDS = [];
 for (let i = 0; i < 26; i++) {
   BIRDS.push({
@@ -1579,7 +1413,6 @@ function drawBirds(ctx, t) {
   }
 }
 
-// ---- night tint ----------------------------------------------------------
 function nightTint(ctx, w, h, hourOfDay) {
   let a = 0;
   if (hourOfDay >= 20 || hourOfDay < 5) a = 0.40;

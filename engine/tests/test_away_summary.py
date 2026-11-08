@@ -43,11 +43,6 @@ def summary(
     )
 
 
-# ---------------------------------------------------------------------------
-# Deterministic recap
-# ---------------------------------------------------------------------------
-
-
 def test_format_recap_minutes():
     recap = summary(idle_s=1800.0, tool_calls=4, errors=1, engine_s=12.3).format_recap()
     assert "30m" in recap
@@ -79,11 +74,6 @@ def test_format_recap_singular_plural():
     two = summary(tool_calls=2, errors=2).format_recap()
     assert "2 tool calls" in two
     assert "2 errors" in two
-
-
-# ---------------------------------------------------------------------------
-# LLM recap — fake LLM stub
-# ---------------------------------------------------------------------------
 
 
 class StubLLM:

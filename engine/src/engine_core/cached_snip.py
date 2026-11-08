@@ -52,12 +52,9 @@ from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
-# ── Feature flag ────────────────────────────────────────────────────
 
 FEATURE_CACHED_SNIP_PREPASS = "FEATURE_CACHED_SNIP_PREPASS"
 
-# Beta header that enables cache_reference and cache_edits in message bodies.
-# Must be present in extra_headers on every request that uses either field.
 CACHE_EDITING_BETA_HEADER = "cache-editing-2025-03-19"
 
 
@@ -66,13 +63,6 @@ def cached_snip_prepass_enabled() -> bool:
     return os.environ.get(FEATURE_CACHED_SNIP_PREPASS, "false").strip().lower() == "true"
 
 
-# ── Model support gate ──────────────────────────────────────────────
-
-# Anthropic models that accept cache_reference + cache_edits + the
-# CACHE_EDITING_BETA_HEADER. Older/non-Anthropic models will reject these
-# fields, so the adapter must skip the cache-aware path when the active
-# model isn't in this set. Mirrors `isModelSupportedForCacheEditing` from
-# the reference Claude Code implementation.
 CACHE_EDITING_SUPPORTED_MODELS: frozenset[str] = frozenset(
     {
         "claude-opus-4-6",
@@ -94,9 +84,6 @@ def is_model_supported_for_cache_editing(model_id: str | None) -> bool:
     if not model_id:
         return False
     return model_id in CACHE_EDITING_SUPPORTED_MODELS
-
-
-# ── Per-instance state ──────────────────────────────────────────────
 
 
 @dataclass
@@ -194,7 +181,6 @@ def reset_state(state: CachedSnipState) -> None:
     state.pending_deletes.clear()
     state.pinned_edits.clear()
     state.deleted_refs.clear()
-    # header_latched intentionally preserved
     logger.debug("cached_snip: state reset (pending + pinned cleared, header_latched preserved)")
 
 
@@ -225,9 +211,6 @@ def detect_unexpected_cache_break(
     if prev_cache_read_tokens <= 0:
         return False
     return cache_read_tokens == 0
-
-
-# ── Snip decision logic ──────────────────────────────────────────────
 
 
 def snip_prepass_get_deletes(messages: list) -> list[str]:
@@ -273,9 +256,6 @@ def snip_prepass_get_deletes(messages: list) -> list[str]:
     return tool_ids
 
 
-# ── API message transformation ────────────────────────────────────────
-
-
 def apply_cache_edits_to_messages(
     anthropic_messages: list[dict],
     state: CachedSnipState,
@@ -306,11 +286,6 @@ def apply_cache_edits_to_messages(
     if not anthropic_messages:
         return anthropic_messages, False
 
-    # tool_use_ids present in the current request. Built lazily — Step 1
-    # (cache_reference annotation) always runs to tag new tool_results,
-    # but Steps 3–4 need this set to filter edits against the actual
-    # request contents (defends against shared adapter / sub-agent
-    # contexts where pinned state references ids absent from this turn).
     needs_filter = bool(state.pinned_edits) or bool(new_deletes)
     present_tool_ids: set[str] = set()
     if needs_filter:
@@ -326,7 +301,6 @@ def apply_cache_edits_to_messages(
                     if tid:
                         present_tool_ids.add(tid)
 
-    # ── Step 1: find the last message containing cache_control ──────
     last_cc_msg_idx = -1
     for i, msg in enumerate(anthropic_messages):
         content = msg.get("content")
@@ -335,9 +309,8 @@ def apply_cache_edits_to_messages(
                 if isinstance(block, dict) and "cache_control" in block:
                     last_cc_msg_idx = i
 
-    # ── Step 2: add cache_reference to tool_result blocks before it ─
     if last_cc_msg_idx >= 0:
-        for i in range(last_cc_msg_idx):  # strictly before
+        for i in range(last_cc_msg_idx):
             msg = anthropic_messages[i]
             if msg.get("role") != "user":
                 continue
@@ -354,13 +327,11 @@ def apply_cache_edits_to_messages(
                     tool_use_id = block.get("tool_use_id", "")
                     if tool_use_id:
                         if not patched:
-                            # Shallow-copy the content list before mutating
                             msg["content"] = list(content)
                             content = msg["content"]
                             patched = True
                         content[j] = {**block, "cache_reference": tool_use_id}
 
-    # Deduplicate cache_references across pinned + new blocks.
     seen_delete_refs: set[str] = set()
 
     def make_edits_block(tool_ids: list[str]) -> dict | None:
@@ -373,7 +344,6 @@ def apply_cache_edits_to_messages(
 
     any_edits = False
 
-    # ── Step 3: re-insert pinned cache_edits at original positions ──
     for pinned in state.pinned_edits:
         idx = pinned.user_message_index
         if idx >= len(anthropic_messages):
@@ -386,8 +356,6 @@ def apply_cache_edits_to_messages(
         msg = anthropic_messages[idx]
         if msg.get("role") != "user":
             continue
-        # Drop tool_ids no longer present — keeps shared-adapter / sub-agent
-        # contexts from emitting references the API will reject.
         filtered_ids = [tid for tid in pinned.tool_ids if tid in present_tool_ids]
         if not filtered_ids:
             continue
@@ -400,7 +368,6 @@ def apply_cache_edits_to_messages(
             msg["content"] = insert_after_tool_results(content, block)
             any_edits = True
 
-    # ── Step 4: insert new cache_edits into the last user message ───
     if new_deletes:
         new_deletes = [tid for tid in new_deletes if tid in present_tool_ids]
     if new_deletes:
@@ -414,7 +381,6 @@ def apply_cache_edits_to_messages(
             block = make_edits_block(new_deletes)
             if block:
                 msg["content"] = insert_after_tool_results(content, block)
-                # Pin so this block is re-sent in future turns
                 actual_ids = [e["cache_reference"] for e in block["edits"]]
                 pin_edits(state, i, actual_ids)
                 logger.debug(
@@ -424,7 +390,7 @@ def apply_cache_edits_to_messages(
                     ", ".join(actual_ids[:5]),
                 )
                 any_edits = True
-            break  # always process last user message, even if block was None
+            break
 
     return anthropic_messages, any_edits
 

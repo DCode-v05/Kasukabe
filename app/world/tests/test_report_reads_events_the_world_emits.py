@@ -19,10 +19,7 @@ import pytest
 
 WORLD = Path(__file__).resolve().parents[1]
 
-# Read off the emitters: every `type="domain.thing.happened"` in world/,
-# plus the LifeEvent/WorldEvent constructions that use the same keyword.
 EMIT = re.compile(r'type=[\'"]([a-z_]+\.[a-z_]+\.[a-z_]+)[\'"]')
-# Read off the report: the argument of every _events("...") call.
 READ = re.compile(r'_events\(\s*[\'"]([a-z_]+\.[a-z_]+\.[a-z_]+)[\'"]\s*\)')
 
 

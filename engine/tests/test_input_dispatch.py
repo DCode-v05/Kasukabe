@@ -14,7 +14,6 @@ def test_input_kind_builds():
     req = ExecuteRequest(input=InputUnion(kind="input", text="hi"))
     assert req.input.kind == "input"
     assert req.input.text == "hi"
-    # gate defaults
     assert req.tool is True and req.telemetry == "off" and req.craft is False
 
 
@@ -33,8 +32,6 @@ def test_block_input_with_block_id_builds():
 
 
 def test_dropped_v1_fields_are_ignored():
-    # Pydantic ignores unknown fields by default — the point is these are no
-    # longer part of the contract and never reach the engine.
     req = ExecuteRequest(
         input=InputUnion(kind="input", text="hi"),
         message="old",

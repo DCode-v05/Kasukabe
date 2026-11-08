@@ -39,8 +39,6 @@ from src.sim.session_log import SessionLogWriter
 
 TID = "kasukabe-agent-n01"
 
-# The monologue a run-23 resident produced instead of acting. Nothing in
-# this shape may end up as the assistant row of the conversation store.
 A_MONOLOGUE = (
     "I consider the morning light on the square and reflect that a baker's "
     "life is made of small repetitions, each one a quiet argument with time."
@@ -124,9 +122,6 @@ async def a_turn_that(writer, events, perception: str = "It is 07:10 on day 0.")
         await emitter.emit(event)
 
 
-# ── what a turn is remembered as ─────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_turn_that_acted_is_stored_as_its_actions(writer, store):
     """The finding itself. The resident said something to a neighbour and
@@ -171,8 +166,6 @@ async def test_a_silent_turn_is_stored_as_the_fact_that_it_was_silent(writer, st
     assert A_MONOLOGUE not in stored, (
         "a turn that did nothing is stored as the essay it wrote instead"
     )
-    # PROMPT-03 reworded the silent record to "no tool was called"; this
-    # assertion still looked for the old words and had failed since.
     assert "no tool was called" in stored.lower(), (
         f"a silent turn must say so in as many words; it says {stored!r}"
     )
@@ -274,17 +267,12 @@ async def test_the_narration_still_reaches_the_session_log(writer, store):
     )
 
 
-# ── the wiring: a real engine, a real turn, a real SQLite row ────────────
-
-
 def world_that_answers_the_registry(agent_id: str):
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/tools/registry":
             return httpx.Response(200, json=[])
         if request.url.path == "/tools/registry/version":
             return httpx.Response(200, json={"version": 0})
-        # The memory stream POSTs the turn's records here; unrelated to this
-        # finding, but a tick makes the call and a refusal is noise.
         if request.url.path == f"/agents/{agent_id}/memories":
             return httpx.Response(200, json={"ok": True})
         raise AssertionError(f"unexpected world call: {request.url.path}")
@@ -359,10 +347,6 @@ async def test_a_real_tick_stores_what_it_did_not_what_it_said(tmp_path, monkeyp
         )
         assert engine.coordinator.conversation_store.assistant_turns_recorded_as_actions == 1
 
-        # And now the thing the finding is actually about: the NEXT turn.
-        # A stored record only matters if the resident reads it back, so
-        # drive a second tick and look at what the assistant messages in
-        # that request body say the resident was.
         broker.queue(MODEL_ID, "sse", text_turn_sse("Still thinking about it."))
         await engine.send_tick("It is 07:20 on day 0. You are at home.")
 
@@ -371,8 +355,6 @@ async def test_a_real_tick_stores_what_it_did_not_what_it_said(tmp_path, monkeyp
             (m.get("role"), json.dumps(m.get("content")))
             for m in second_request["messages"]
         ]
-        # One message is right here: the first tick's only assistant row was
-        # its record, which now travels inside the world's message.
         assert any("07:10" in text for _, text in on_the_wire), (
             "the second tick was sent with no history of the first"
         )
@@ -384,9 +366,6 @@ async def test_a_real_tick_stores_what_it_did_not_what_it_said(tmp_path, monkeyp
             "ENG-09: the paragraph is on the wire as the resident's last turn "
             "- which is the genre this finding says it goes on to copy"
         )
-        # Run 28b: a record in the resident's own slot is copied too - 43% of
-        # first calls after one wrote record-shaped text. So it reaches the
-        # model as the world's words (resident_voice.py), not the resident's.
         assert not any(
             role == "assistant" and "RECORD OF THE TURN" in text for role, text in on_the_wire
         ), f"the record is on the wire in the resident's own voice: {on_the_wire!r}"

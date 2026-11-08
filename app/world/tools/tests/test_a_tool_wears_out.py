@@ -34,8 +34,6 @@ from .conftest import move_agent  # noqa: F401
 from .test_construction import spawn_agent  # noqa: F401
 
 
-# ── the counter ──────────────────────────────────────────────────────────
-
 class _Ground:
     """Only what `wear_one_use` touches. Narrow on purpose: a new
     dependency should raise here, not be silently satisfied."""
@@ -106,8 +104,6 @@ def test_a_verb_that_is_not_work_does_not_advance_the_counter() -> None:
     assert world.inventory.quantity("a1", wear.TOOL_ITEM) == 1
 
 
-# ── the price ────────────────────────────────────────────────────────────
-
 @pytest.mark.parametrize("verb", ["harvest", "mine", "fell_timber", "craft"])
 def test_holding_a_tool_makes_the_work_cheaper(verb) -> None:
     """The demand side. Without it, owning a tool is pure cost and
@@ -150,8 +146,6 @@ def test_the_price_has_one_definition() -> None:
     assert wear.FEE_WITH_A_TOOL_BPS is TOOL_HELD_FEE_BPS
 
 
-# ── it is actually wired ─────────────────────────────────────────────────
-
 @pytest.mark.asyncio
 async def test_real_work_through_the_registry_wears_the_tool(world, registry) -> None:
     """The mechanism existing is not the mechanism running. This goes
@@ -174,7 +168,7 @@ async def test_a_failed_action_does_not_break_your_chisel(world, registry) -> No
     the proficiency award follows, for the same reason."""
     from world.tools.errors import ToolError
 
-    await spawn_agent(world, "smith", "Hobbs Cafe")   # nowhere near a forest
+    await spawn_agent(world, "smith", "Hobbs Cafe")
     world.inventory.credit("smith", wear.TOOL_ITEM, 1)
 
     for _ in range(wear.USES_PER_TOOL):

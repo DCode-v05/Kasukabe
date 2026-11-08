@@ -10,23 +10,14 @@ from src.sandbox.sed_validation import SedParseResult, parse_sed_args
 @dataclass(frozen=True, slots=True)
 class SedEditInfo:
     file_path: str
-    pattern: str  # ERE form (converted from BRE if necessary)
-    replacement: str  # literal `&` normalised to `\0` via salt round-trip
-    flags: str  # canonical substitution flag string (sorted)
-    extended_regex: bool  # True when `-E` / `-r` / `--regexp-extended` was set
+    pattern: str
+    replacement: str
+    flags: str
+    extended_regex: bool
 
 
-# Expression shape: s<delim>pattern<delim>replacement<delim>flags
-# We only accept the forward-slash delimiter here — the validator runs first
-# and rejects alternate delimiters. Escaped forward slashes inside the pattern
-# or replacement are allowed via `\\.`.
 SED_SUB_RE = re.compile(r"^s/((?:\\.|[^/\\])*)/((?:\\.|[^/\\])*)/([gpimIM0-9]*)$")
 
-# BRE→ERE conversion needs to swap the escaping of `(`, `)`, `{`, `}`, `+`,
-# `?`, `|`. In BRE these are literal unless preceded by `\\`; in ERE they are
-# metacharacters unless preceded by `\\`. So for each character `c`:
-#   BRE `\c` → ERE `c`
-#   BRE  `c` → ERE `\c`
 BRE_ERE_SWAP_CHARS = "()+?{}|"
 
 ERE_FLAGS: frozenset[str] = frozenset(
@@ -89,20 +80,16 @@ def bre_to_ere(pattern: str, salt: str) -> str:
         if ch == "\\" and i + 1 < len(pattern):
             nxt = pattern[i + 1]
             if nxt in BRE_ERE_SWAP_CHARS:
-                # `\c` in BRE is the ERE `c` (metacharacter form). Stash it in
-                # a salted placeholder so the next pass doesn't re-escape it.
                 key = f"{salt}SWAP{len(placeholders)}{salt}"
                 placeholders[key] = nxt
                 out.append(key)
                 i += 2
                 continue
-            # Other escaped characters pass through untouched.
             out.append(ch)
             out.append(nxt)
             i += 2
             continue
         if ch in BRE_ERE_SWAP_CHARS:
-            # Bare metacharacter in BRE is a literal — escape it for ERE.
             out.append("\\")
             out.append(ch)
             i += 1
@@ -147,8 +134,6 @@ def parse_sed_edit(command_tokens: list[str]) -> SedEditInfo | None:
         return None
     if not parse.files:
         return None
-    # Only single-expression, single-file invocations are attributable. Multi
-    # -e or multi-file commands fall back to None.
     if len(parse.expressions) != 1:
         return None
     if len(parse.files) != 1:

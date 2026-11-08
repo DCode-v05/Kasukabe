@@ -90,8 +90,6 @@ def test_undetected_crime_counted_when_no_case_ever_linked_to_it() -> None:
 
     stats = compute_false_conviction_stats([successful_theft, failed_theft, assault], [], {})
 
-    # The failed theft caused no loss and is not counted as a real crime;
-    # the successful theft and the assault both are.
     assert stats.undetected_crimes == 2
 
 

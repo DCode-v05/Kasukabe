@@ -117,12 +117,6 @@ def test_an_uninteresting_skip_is_not_noise() -> None:
     """A platform branch that genuinely does not apply says nothing about
     coverage. The ignore list is short on purpose - a long one is how this
     summary stops being read."""
-    # By PATH, not by name. `from conftest import ...` resolves to
-    # whichever module is already registered as "conftest" in sys.modules,
-    # and this repo has several - running `broker/ game/ supabase/ tests/`
-    # together picked up `game/console/tests/conftest.py` and this failed
-    # with ImportError while passing on its own. A test that only passes
-    # when run alone is a test that will be believed and should not be.
     import importlib.util
 
     root = Path(__file__).resolve().parents[1] / "conftest.py"

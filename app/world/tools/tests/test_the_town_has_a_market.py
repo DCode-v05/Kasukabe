@@ -46,7 +46,6 @@ def _a_town_with_sellers(world):
     }
     world.inventory.credit("b_grocery", "potato", 6)
     world.inventory.credit("b_grocery", "wheat", 3)
-    # A farmer standing in the fields, selling wheat cheaper, and buying timber.
     world.price_board["n03"] = {
         "wheat": PricePost(item="wheat", ask_sim=9, bid_sim=None),
         "timber": PricePost(item="timber", ask_sim=None, bid_sim=45),
@@ -89,9 +88,6 @@ async def test_what_is_in_stock_is_listed_before_what_is_not(world):
     """A resident reading a short list should meet the offers it can
     actually take up."""
     _a_town_with_sellers(world)
-    # The grocer is at the till, so the shop can sell: an unattended shop is
-    # not takeable either (`commerce._require_dealing`), and this test is
-    # about stock, not staffing.
     await spawn_agent(world, "n02", "business:b_grocery")
     world.price_board["b_grocery"]["apple"] = PricePost(item="apple", ask_sim=1, bid_sim=None)
 

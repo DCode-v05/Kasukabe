@@ -46,10 +46,6 @@ class FakeWorldAdmin:
             "blessing_throttle": 1.0,
         }
         self.alerts: list[dict[str, Any]] = []
-        # DESIGN.md section 3's genesis split ($500 treasury + $500 across
-        # 250 agent wallets, world/ledger/money.py's GENESIS_TREASURY_USD_CENTS
-        # / GENESIS_AGENT_USD_CENTS * GENESIS_AGENT_COUNT), nothing burned
-        # yet - the same starting point a fresh Ledger() boots with.
         self.spend: dict[str, Any] = {
             "burned_usd_cents": 0,
             "treasury_usd_cents": 50_000,
@@ -72,7 +68,6 @@ class FakeWorldAdmin:
         self.next_id += 1
         return value
 
-    # -- seeding helpers used by tests -------------------------------------
 
     def seed_petition(
         self,
@@ -165,7 +160,6 @@ class FakeWorldAdmin:
         self.alerts.append(alert)
         return alert
 
-    # -- the transport handler ---------------------------------------------
 
     def handle(self, request: httpx.Request) -> httpx.Response:
         auth = request.headers.get("authorization", "")
@@ -182,12 +176,8 @@ class FakeWorldAdmin:
         params = dict(request.url.params)
 
         parts = [p for p in path.split("/") if p]
-        # B7: the console also proxies world's READ-ONLY routers, which are
-        # mounted at the root of the same app as /admin (world/main.py), not
-        # under it - so this fake answers both shapes.
         if parts and parts[0] in ("family", "businesses", "skills", "governance"):
             return self.handle_town(method, parts, params)
-        # every other path here is /admin/<tab>/<...>
         assert parts[0] == "admin", path
         tab = parts[1]
 
@@ -203,10 +193,6 @@ class FakeWorldAdmin:
             return self.handle_control(method, parts[2:], body)
         return json_response(404, {"detail": f"no such admin route: {path}"})
 
-    # -- B7: the read-only town views ----------------------------------
-    # Deliberately tiny and static: console's own plumbing is what these
-    # tests prove, and the real numbers are already proven against a real
-    # WorldServer in world/tests/test_family_api.py and friends.
 
     town_households_body = [
         {"household_id": "hh-duval", "member_ids": ["a", "b", "c"], "shape": "single-earner with dependents",

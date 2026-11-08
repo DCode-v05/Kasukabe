@@ -25,9 +25,6 @@ def run(coro):
     return asyncio.run(coro)
 
 
-# ── Tool-handler input validation (no callback wired — tests the schema) ──
-
-
 class StubThread:
     """Smallest thing the ask_user handler closure pulls off `self`."""
 
@@ -95,12 +92,10 @@ def build_handler(callback):
 class TestAskUserHandlerValidation:
     def test_choice_with_three_options_succeeds(self):
         async def cb(params):
-            return params  # echo for inspection
+            return params
 
         h, _ = build_handler(cb)
         out = run(h({"question": "pick", "format": "choice", "options": ["a", "b", "c"]}))
-        # flatten_ask_reply on a dict returns the "response" key (or "answer", or "")
-        # Our cb echoes the params dict; flatten returns "" since neither key exists.
         assert isinstance(out, str)
 
     def test_choice_with_one_option_returns_error_string(self):
@@ -183,12 +178,10 @@ class TestAskUserHandlerValidation:
     def test_normalize_options_accepts_strings_and_dicts(self):
         from src.engine_core.thread import ExecutionThread
 
-        # plain strings
         assert ExecutionThread.normalize_options(["a", "b"]) == [
             {"label": "a", "value": "a"},
             {"label": "b", "value": "b"},
         ]
-        # dicts with explicit label and value
         assert ExecutionThread.normalize_options(
             [
                 {"label": "Approve", "value": "approve"},
@@ -198,7 +191,6 @@ class TestAskUserHandlerValidation:
             {"label": "Approve", "value": "approve"},
             {"label": "Deny", "value": "deny"},
         ]
-        # truncation at 80 chars
         long = "x" * 200
         out = ExecutionThread.normalize_options([long, long])
         assert all(len(o["label"]) == 80 for o in out)
@@ -210,9 +202,6 @@ class TestAskUserHandlerValidation:
         h, stub = build_handler(cb)
         run(h({"question": "q", "format": "confirm"}))
         assert stub.state_log == ["WAITING_INPUT", "EXECUTING"]
-
-
-# ── coordinator.await_block_input — v2 pause callback ──
 
 
 def bare_coordinator(emitter):
@@ -260,7 +249,6 @@ class TestAwaitBlockInput:
             block_id, (fut, fmt, tid) = next(iter(coord.pending_inputs.items()))
             assert fmt == "choice"
             assert tid == "thr_1"
-            # Resolve out-of-band via resume_block, exactly like a block_input.
             await coord.resume_block("thr_1", block_id, value="apple", text="")
             return await task
 
@@ -271,7 +259,7 @@ class TestAwaitBlockInput:
         ev = captured[0]
         assert isinstance(ev, CraftRequest)
         assert ev.format == "choice"
-        assert ev.thread_id == "thr_1"  # the real thread, not a random id
+        assert ev.thread_id == "thr_1"
         assert ev.block_id.startswith("craft:thr_1:")
         assert ev.options == [
             {"label": "Apple", "value": "apple"},
@@ -304,7 +292,6 @@ class TestAwaitBlockInput:
                     break
             block_id, (fut, fmt, tid) = next(iter(coord.pending_inputs.items()))
             assert fmt == "multichoice"
-            # resume_block builds the deterministic string via resolve_payload.
             await coord.resume_block("thr_m", block_id, value=["A", "C"], text="also D")
             return await task
 
@@ -353,9 +340,6 @@ class TestAwaitBlockInput:
             {"label": "allow", "value": "allow"},
             {"label": "deny", "value": "deny"},
         ]
-
-
-# ── coordinator.resolve_payload — block_input → reply shaping ──
 
 
 class TestResolvePayload:

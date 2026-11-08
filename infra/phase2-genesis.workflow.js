@@ -35,8 +35,6 @@ compose file, NEVER in application source.
 
 Be adversarial and precise. Report VERDICT (SOLID | BROKEN) with exact repro for anything broken.`
 
-// MEASURED 2026-07-31, not estimated: 100 RPM/region enforced (50 ok per 30s window
-// after a ~100-request burst bucket); real agent turn = 3443 in / 291 out = $0.001764.
 const FACTS = `MEASURED FACTS (do not re-derive):
 - Kimi K2.5 quota is exactly 100 RPM PER REGION, enforced. Burst bucket ~100 requests then hard 100/min.
 - Kimi K2.5 verified invokable in ap-south-1, us-east-1, us-west-2. Quotas are per-region = independent lanes.

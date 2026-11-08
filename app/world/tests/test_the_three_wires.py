@@ -72,9 +72,6 @@ def _somebody(runner) -> str:
     return sorted(runner.world_state.agents)[0]
 
 
-# ── A. tool -> world ─────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_call_moves_real_state_and_is_paid_for(town):
     runner, _db = town
@@ -104,9 +101,6 @@ async def test_a_walk_starts_a_journey_or_arrives(town):
     moved = world.location_of(who) != was
     walking = world.movement is not None and world.movement.has_active_journey(who)
     assert moved or walking, "move neither arrived nor started a journey"
-
-
-# ── B. tool -> sim ───────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -165,9 +159,6 @@ async def test_an_index_row_you_can_act_on_names_its_parameters(town):
         f"{len(unnamed)} index rows are callable right here and do not say what "
         f"they need: {unnamed[:8]}"
     )
-
-
-# ── C. tool -> output ────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio

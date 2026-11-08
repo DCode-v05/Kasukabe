@@ -22,11 +22,6 @@ from typing import Literal, NamedTuple
 from src.security.secret_rules import RULES, SecretRule
 
 
-# Field-name-bounded JSON value redaction. Catches opaque tokens (internal
-# session IDs, custom auth headers) that don't match any format-based rule
-# in RULES but appear inside a JSON object with a sensitive field name.
-# Complements the format scan — field regex catches unknown-shape secrets,
-# format regex catches known-shape secrets anywhere in free text.
 JSON_FIELD_NAMES = (
     "access_token",
     "api_key",
@@ -45,9 +40,6 @@ JSON_FIELD_RE = re.compile(
     re.IGNORECASE,
 )
 
-# Minimum captured-value length for tail-preserving redaction. Shorter
-# values are fully masked because the tail preview would leak a large
-# fraction of the secret.
 TAIL_MIN_LENGTH = 16
 TAIL_PREFIX = 8
 TAIL_SUFFIX = 4
@@ -126,9 +118,6 @@ class SecretScanner:
         compiled = self.compile()
 
         def replace(match: re.Match[str]) -> str:
-            # Patterns with a capture group: preserve boundary chars outside
-            # the group via span arithmetic (avoids an edge-case bug where
-            # the captured value coincidentally reoccurs in the boundary).
             if match.lastindex:
                 full_start, full_end = match.span(0)
                 cap_start, cap_end = match.span(1)
@@ -169,8 +158,6 @@ class SecretScanner:
         return JSON_FIELD_RE.sub(sub, content)
 
 
-# Module-level singleton. Import-time cost is zero; the first scan() call
-# compiles the full rule catalog into the per-instance cache.
 scanner = SecretScanner()
 
 

@@ -57,20 +57,6 @@ from world.tools.registry import ActorRequirements, ToolNamespace, ToolOutcome, 
 from world.tools.models import CrimeCaseKind, Plot
 from world.tools.state import WorldState
 
-# Where a confined resident is held. The map has no jail sector, so the
-# town hall's cells are the town hall: `arrest` moves them here and
-# `release` is the only thing that moves them out. Named rather than
-# invented as a new place, because a location nothing else knows about is
-# a location no resident can be found at.
-# GOV-21. Where a prisoner is HELD, and where a prisoner is DRAWN.
-#
-# These are two different questions and one constant was answering both.
-# The gate constant is right for "is this the jail" - the charter and
-# every civic tool speak that vocabulary. It is wrong for `agent.moved`,
-# because the map draws "Kasukabe Government Complex" and has no tile for
-# the string "town_hall": `look_around` reported `tile: null` and the
-# arrested resident was nowhere anybody could see. Run 23 shows the same
-# null-tile pattern for "temple".
 LOCATION_JAIL = LOCATION_TOWN_HALL
 
 
@@ -109,10 +95,6 @@ class SetTaxRateParams(BaseModel):
 
 class DeclareCandidacyParams(BaseModel):
     election_id: str
-    #: Required for the same reason `vote.because` is: an optional field goes
-    #: unfilled. The last run recorded "0 of 1523 remarks said why" against
-    #: one. A candidate list with no platforms tells a reader who stood and
-    #: nothing about what the election was between.
     platform: str = Field(
         min_length=8, max_length=400,
         description="What you stand for, in your own words - what you would do with the seat.",
@@ -153,8 +135,6 @@ VERDICTS = ("fine", "jail", "dismiss")
 class GrantPlotParams(BaseModel):
     holder_agent_id: str
     location_id: str
-    # A rectangle, because a resident describing land says "twelve by eight
-    # behind the mill", not a set of tile pairs.
     width: int = Field(default=4, ge=1, le=32)
     height: int = Field(default=4, ge=1, le=32)
 
@@ -186,9 +166,6 @@ async def grant_plot_handler(
     if params.holder_agent_id not in world.agents:
         raise NotFoundError("agent", params.holder_agent_id)
 
-    # Anchor the footprint on a hash of the place and holder, so two grants
-    # in the same place do not silently overlap and a replay of the same
-    # run lays out the same ground.
     seed = abs(hash((params.location_id, params.holder_agent_id))) % 512
     x0, y0 = seed % 128, (seed // 128) % 128
     footprint = frozenset(
@@ -239,16 +216,6 @@ async def grant_plot_handler(
 
 class IssueBuilderLicenseParams(BaseModel):
     holder_agent_id: str
-    # GOV-23: no `fee_paid_sim` any more.
-    #
-    # It was a caller-declared amount, defaulting to ZERO, that nothing
-    # ever debited - `issue_license` records the number and moves no
-    # money, and the finding predicted "a future tool must remember to".
-    # This is that tool, and it did not.
-    #
-    # So the fee was fiction twice over: unpaid, and self-assessed. The
-    # charter's `builder_license_fee_sim` is the price, and the handler
-    # reads it rather than believing the licensee.
 
 
 async def issue_builder_license_handler(
@@ -269,34 +236,11 @@ async def issue_builder_license_handler(
     """
     if params.holder_agent_id not in world.agents:
         raise NotFoundError("agent", params.holder_agent_id)
-    # TOOL-08. Not `world.location_of(...)`: the charter compares the string
-    # it is handed with `!=` against its own constant, and the map spells
-    # the same ground "Kasukabe Government Complex". See place_aliases.
     here = place_for_charter(world, agent.agent_id, LOCATION_GOVERNMENT_COMPLEX)
 
-    # GOV-23: the fee is the charter's, and it actually moves.
-    #
-    # Debited BEFORE the licence is issued, so an applicant who cannot
-    # afford it is refused with nothing granted - the same
-    # "fallible-external-before-owned-state" ordering `registry.py` keeps.
-    # The reverse order would hand out a licence and then discover the
-    # money was not there.
-    #
-    # charter/ deliberately holds no ledger reference (see its models.py
-    # module docstring on the import boundary), which is why this lives in
-    # the handler and not in `issue_license`.
     from world.ledger.core import TREASURY_ACCOUNT_ID
     from world.ledger.models import Currency, TransactionReason
 
-    # GOV-23: check the applicant's issuer may issue BEFORE taking money.
-    #
-    # `issue_builder_license` runs this same guard itself - but it runs it
-    # after this handler has already debited, so a minister standing in
-    # the wrong place charged the applicant and granted nothing. Found by
-    # the test below, not by reading the code.
-    #
-    # The charter's own check, not a copy of it: duplicating "who may
-    # issue a licence" is how the two answers drift.
     await world.charter.government.require_sitting(agent.agent_id, here)
 
     charter = await world.charter.store.get_charter()
@@ -325,13 +269,6 @@ async def issue_builder_license_handler(
             "holder_agent_id": params.holder_agent_id,
             "license_type": "builder_license",
         },
-        # GOV-04: `issue_builder_license` above emits politics.license.issued.
-        # This handler emitted a second copy - invisible while the charter
-        # sink was noop, a DOUBLE row once the runner wired it. The fields
-        # this copy carried and the engine's did not (`issued_by_agent_id`,
-        # `involved_agent_ids`) were moved onto the engine's payload rather
-        # than deleted with it: `involved_agent_ids` is GOV-20's interrupt
-        # list and `core/perception.py:52` wakes exactly those residents.
         events=[],
     )
 
@@ -346,17 +283,12 @@ async def set_tax_rate_handler(
     genesis value. It is now the number `charge_the_day_tax` reads at
     every day boundary, which is what makes it worth arguing about.
     """
-    # TOOL-08, as in `issue_builder_license_handler` above.
     here = place_for_charter(world, agent.agent_id, LOCATION_GOVERNMENT_COMPLEX)
     policy = await world.charter.government.set_tax_rate(
         params.tax_rate_bps, agent.agent_id, here, world.tick()
     )
     return ToolOutcome(
         result={"tax_rate_bps": policy.tax_rate_bps},
-        # GOV-04: `set_tax_rate` above emits this, and `build_event` now
-        # adds the generic `agent_id` this copy carried. Duplicate removed;
-        # the finding's acceptance is "one politics.tax_rate.set row per
-        # set_tax_rate call in the trace on both hosts".
         events=[],
     )
 
@@ -414,7 +346,6 @@ async def set_price_control_handler(
             "floor_sim": policy.price_floors.get(item),
             "policy_version": policy.version,
         },
-        # `set_price_control` emits politics.price_control.set itself.
         events=[],
     )
 
@@ -486,12 +417,6 @@ async def declare_candidacy_handler(
     anybody to vote for: the elections engine's `declare_candidacy` had no
     tool, so every ballot was empty by construction.
     """
-    # TOOL-08, and this is the one that was PROVEN live. Run 25, tick 42:
-    # a resident walked to the government complex and was refused with
-    # "must be at town_hall, was at Kasukabe Government Complex". `vote`
-    # got this fix and `declare_candidacy` did not, so the town could vote
-    # and could not stand - every ballot empty by construction, which the
-    # vacant-seat finding (GOV-01) only half explained.
     here = place_for_charter(world, agent.agent_id, LOCATION_TOWN_HALL)
     from world.tools.primitives.civic import eligibility_facts_for
 
@@ -504,12 +429,6 @@ async def declare_candidacy_handler(
             "election_id": election.election_id,
             "candidates": sorted(election.candidates),
         },
-        # GOV-04: `declare_candidacy` above emits politics.candidacy.declared.
-        # This handler emitted a second copy. GOV-20's `involved_agent_ids`
-        # - the interrupt list `core/perception.py:52` reads, and once
-        # `sorted(world.agents)`, which woke the whole town per candidacy -
-        # moved onto the engine's payload rather than being deleted with
-        # this one.
         events=[],
     )
 
@@ -540,8 +459,6 @@ async def convene_handler(
     conversation_id = world.open_conversation(
         place=LOCATION_TOWN_HALL,
         topic=params.subject,
-        # The convener first, so the roster reads as the order people
-        # joined and a reader can see who called it.
         participants=[agent.agent_id, *invited],
         now=world.tick(),
     )
@@ -617,12 +534,6 @@ async def arrest_handler(
             "crime case", params.case_id,
             [c.case_id for c in world.crime_cases if c.verdict is None],
         )
-    # GOV-02: a case with nobody accused cannot produce an arrest.
-    #
-    # A theft opens accusing nobody, because the town does not know who did
-    # it. Somebody has to say a name first, and `file_complaint` is where
-    # they say it. Before this, `steal` filed the case against the VICTIM,
-    # so the check below admitted exactly one arrest: the robbed.
     if not case.against_agent_id:
         raise ToolValidationError(
             "arrest",
@@ -666,22 +577,15 @@ async def arrest_handler(
                     "arrested_agent_id": params.agent_id,
                     "officer_agent_id": agent.agent_id,
                     "case_id": params.case_id,
-                    # GOV-21: the name the map draws, not the gate constant.
                     "location_id": jail_place(),
                     "involved_agent_ids": [agent.agent_id, params.agent_id],
                 },
             ),
-            # And they are actually moved. An arrest that leaves the
-            # accused standing in the field is a word, not an arrest -
-            # LocationIndex reads `agent.moved` with an agent_id and a
-            # location_id, which is why this is a second event rather than
-            # a field on the first.
             WorldEvent(
                 type="agent.moved",
                 tick=world.tick(),
                 payload={
                     "agent_id": params.agent_id,
-                    # GOV-21: the name the map draws, not the gate constant.
                     "location_id": jail_place(),
                     "reason": "arrested",
                 },
@@ -718,8 +622,6 @@ async def rule_handler(
         raise ToolValidationError(
             "rule", [f"case {params.case_id} was already ruled on: {case.verdict}."]
         )
-    # GOV-02, same reason as `arrest`: there has to be a defendant. A fine
-    # or a sentence with no accused used to fall on the victim.
     if not case.against_agent_id and verdict != "dismiss":
         raise ToolValidationError(
             "rule",
@@ -739,11 +641,6 @@ async def rule_handler(
             to_account_id=TREASURY_ACCOUNT_ID,
             amount=params.fine_sim,
             currency=Currency.SIM,
-            # GOV-15: booked as a FINE, not a TAX. `treasury_view.
-            # tax_collected_sim` and `family_api.money_flow` both group by
-            # reason, so every fine the courts levied was reported as tax
-            # revenue and no query could tell what the town RAISED from
-            # what it PUNISHED.
             reason=TransactionReason.FINE,
             tick=world.tick(),
             memo=f"fine on case {params.case_id}",
@@ -814,8 +711,6 @@ async def release_handler(
     )
 
 
-
-
 class TableAmendmentParams(BaseModel):
     field_name: str = Field(
         description="A charter field to change, e.g. election_interval_days."
@@ -865,10 +760,6 @@ async def table_amendment_handler(
                 "title": params.title,
                 "proposed_by_agent_id": agent.agent_id,
                 "agent_id": agent.agent_id,
-                # The other seats, and only them. A charter change is the
-                # one thing a seat holder must act on before it resolves,
-                # so this interrupt is bought for a reason - unlike the
-                # candidacy fan-out at GOV-20, which woke the whole town.
                 "involved_agent_ids": [agent.agent_id, *seats],
             },
         )],
@@ -988,20 +879,9 @@ def build_specs() -> list[ToolSpec]:
             params_model=SetTaxRateParams,
             handler=set_tax_rate_handler,
             namespace=ToolNamespace.GOVERNMENT,
-            # The GOVERNMENT COMPLEX, not the town hall.
-            #
-            # Part D's table says "town hall", but `charter/government.py`
-            # - which owns the rate and has since genesis - raises
-            # NotAtRequiredLocation for anything but `government_complex`,
-            # and `place_aliases` does not treat the two as one place. A
-            # tool gated somewhere its own engine refuses is a tool nobody
-            # can call, so the engine wins and the spec's shorthand is
-            # noted here rather than followed.
             location_gate=LOCATION_GOVERNMENT_COMPLEX,
             actor_requirements=ActorRequirements(require_government_seat=True),
         ),
-        # GOV-4. Price controls and licensing: the policy book's levers beyond
-        # tax and margin. Same place and seat rule as `set_tax_rate`.
         ToolSpec(
             name="set_price_control",
             description=(
@@ -1054,15 +934,6 @@ def build_specs() -> list[ToolSpec]:
             params_model=IssueBuilderLicenseParams,
             handler=issue_builder_license_handler,
             namespace=ToolNamespace.GOVERNMENT,
-            # The GOVERNMENT COMPLEX, not the town hall.
-            #
-            # Part D's table says "town hall", but `charter/government.py`
-            # - which owns the rate and has since genesis - raises
-            # NotAtRequiredLocation for anything but `government_complex`,
-            # and `place_aliases` does not treat the two as one place. A
-            # tool gated somewhere its own engine refuses is a tool nobody
-            # can call, so the engine wins and the spec's shorthand is
-            # noted here rather than followed.
             location_gate=LOCATION_GOVERNMENT_COMPLEX,
             actor_requirements=ActorRequirements(require_government_seat=True),
         ),
@@ -1078,15 +949,6 @@ def build_specs() -> list[ToolSpec]:
             params_model=GrantPlotParams,
             handler=grant_plot_handler,
             namespace=ToolNamespace.GOVERNMENT,
-            # The GOVERNMENT COMPLEX, not the town hall.
-            #
-            # Part D's table says "town hall", but `charter/government.py`
-            # - which owns the rate and has since genesis - raises
-            # NotAtRequiredLocation for anything but `government_complex`,
-            # and `place_aliases` does not treat the two as one place. A
-            # tool gated somewhere its own engine refuses is a tool nobody
-            # can call, so the engine wins and the spec's shorthand is
-            # noted here rather than followed.
             location_gate=LOCATION_GOVERNMENT_COMPLEX,
             actor_requirements=ActorRequirements(require_government_seat=True),
         ),
@@ -1143,7 +1005,7 @@ def build_specs() -> list[ToolSpec]:
             params_model=ArrestParams,
             handler=arrest_handler,
             namespace=ToolNamespace.PUBLIC,
-            location_gate=None,  # depends on where the accused is - see the handler
+            location_gate=None,
             actor_requirements=ActorRequirements(),
         ),
         ToolSpec(

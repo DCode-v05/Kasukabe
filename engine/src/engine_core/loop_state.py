@@ -16,7 +16,6 @@ from src.herald import StopReason
 from src.engine_core.schema import LoopExitReason, QueryChainTracking
 from src.engine_core.token_budget import BudgetTracker
 
-# Struggling detection thresholds
 STRUGGLE_CONSECUTIVE_ERRORS = 3
 STRUGGLE_TURNS_NO_CHECKPOINT = 12
 STRUGGLE_TURNS_NO_TEXT = 8
@@ -120,12 +119,11 @@ class LoopState:
     full_text: str = ""
     max_turns: int = 200
     thread_id: str = ""
-    # TOKEN_BUDGET feature state. Inert when settings.token_budget_enabled is False.
-    output_tokens_at_turn_start: int = 0  # snapshot at the top of each new turn
-    current_turn_token_budget: int | None = None  # None = no budget this turn
-    budget_tracker: BudgetTracker | None = None  # per-invocation continuation state
-    chain: QueryChainTracking | None = None  # query chain identity (None when flag off)
-    last_transition_reason: str = ""  # stamped at every recovery continue site
+    output_tokens_at_turn_start: int = 0
+    current_turn_token_budget: int | None = None
+    budget_tracker: BudgetTracker | None = None
+    chain: QueryChainTracking | None = None
+    last_transition_reason: str = ""
 
     def record_turn_usage(self, usage: Any) -> None:
         """Accumulate token counts from one turn's Usage object."""

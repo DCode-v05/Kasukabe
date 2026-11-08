@@ -17,11 +17,6 @@ import difflib
 from collections.abc import Sequence
 from typing import Any
 
-# How close a guess has to be before this module will name it. 0.6 is
-# difflib's own default and it is chosen, not inherited: at 0.5
-# "b_smelter" starts matching "b_bakery", which is the failure mode this
-# helper exists to avoid - a resident sent confidently to the wrong place
-# is further from acting than one sent nowhere.
 NEAR_MISS_RATIO = 0.6
 
 
@@ -210,21 +205,9 @@ class NotFoundError(ToolError):
             return
         message = f"no {kind} with id {entity_id!r}"
         if self.available:
-            # The same reason RecipeNotFoundError lists its recipes: a bare
-            # "no business with id 'b_smelter'" tells an agent its guess was
-            # wrong and leaves it guessing from the same empty vocabulary.
-            # Observed live: b_smelter, government_resource_buyer,
-            # harvey_supply_store - three inventions for a town with two
-            # businesses in it.
             shown = sorted(self.available)[:12]
-            # "business" -> "businesses", not "businesss". The message is
-            # read by a model that will echo the vocabulary back at us.
             plural = f"{kind}es" if kind.endswith(("s", "x", "ch", "sh")) else f"{kind}s"
             message += f" - the {plural} here are: " + ", ".join(shown)
-            # Doc 01 fix 5. The list alone still leaves a resident that
-            # guessed `b_bakerry` to scan twelve ids. Added to the list,
-            # never instead of it: a wrong guess about which one was meant
-            # must not cost the resident the vocabulary.
             near = nearest_name(entity_id, self.available)
             if near:
                 message += f" (did you mean {near!r}?)"
@@ -262,9 +245,6 @@ class RecipeNotFoundError(ToolError):
         message = f"no recipe {recipe_id!r}"
         if self.available:
             message += " - this tool makes: " + ", ".join(sorted(self.available))
-            # Doc 01 fix 5. `mill_flour` against `mill_flour_from_wheat` is
-            # the exact shape run 23 produced: the resident had the recipe
-            # nearly right and burned a turn on the gap.
             near = nearest_name(recipe_id, self.available)
             if near:
                 message += f" (did you mean {near!r}?)"
@@ -288,13 +268,6 @@ class PrimitiveNotWhitelistedError(ToolError):
     def __init__(self, tool_name: str, citable: "frozenset[str] | None" = None) -> None:
         self.tool_name = tool_name
         self.citable = citable or frozenset()
-        # TOOL-31. The refusal used to end "never another invented tool",
-        # and that was the wall a library hits: a resident that had
-        # written `look_here` could not write `find_food` on top of it, so
-        # every tool restated the same primitives and the town's tools
-        # never compounded. An invented tool may now be a step, because
-        # "no new physics" is a property of the LEAVES of a composition,
-        # not of its height - see meta.flatten_to_primitives.
         also = ""
         if self.citable:
             named = ", ".join(sorted(self.citable)[:6])

@@ -18,12 +18,6 @@ from world.tools.primitives.construction import (
 )
 from world.tools.tests.conftest import spawn_agent
 
-# app/world/tools/tests/test_construction.py -> parents[4] is the
-# kasukabe/ repo root - the identical walk-up-parents trick
-# world/map/tests/conftest.py's own `ville_dir` fixture uses (same depth:
-# world/<pkg>/tests/<file>.py either way), kept local here rather than
-# imported across packages since world/tools/tests/ has no conftest
-# dependency on world/map/tests/ otherwise.
 VILLE_DIR = (
     Path(__file__).resolve().parents[4]
     / "smallville"
@@ -170,8 +164,6 @@ async def test_complete_construction_flips_status_once_due(world, registry) -> N
         await complete_construction(world, building_id)
 
     world.current_tick = result.result["completion_tick"]
-    # GROW-18: the deadline is no longer enough on its own - somebody has
-    # to have built it. A one-tile shed is six ticks of work.
     with pytest.raises(ActorRequirementError):
         await complete_construction(world, building_id)
     while world.buildings[building_id].labour_remaining:
@@ -213,11 +205,6 @@ async def test_full_chain_unlicensed_refused_then_licensed_build_appears_in_worl
     live WorldMap - the exact seam parcel.py's own docstring names
     ("becomes a real Sector") and that this task exists to close.
     """
-    # GROW-27. This used to be a bare `pytest.skip`, which in CI - where
-    # the tileset is not mounted - meant the ONLY end-to-end proof that a
-    # resident can petition, be granted a plot, build, and have the
-    # building become a real map sector was one 's' in a field of dots.
-    # The suite reported green and nobody had checked the chain.
     require_ville_assets(
         "the full construction chain: petition -> plot -> build -> a real "
         "Sector on the live WorldMap"
@@ -234,8 +221,6 @@ async def test_full_chain_unlicensed_refused_then_licensed_build_appears_in_worl
     world.inventory.credit("drifter", "timber", 1_000)
     world.inventory.credit("drifter", "iron_ore", 1_000)
 
-    # 1. Unlicensed is refused - the real registry-level actor-requirement
-    # gate (ActorRequirements.required_license_types), not a stub.
     with pytest.raises(ActorRequirementError):
         await registry.execute(
             world,
@@ -250,7 +235,6 @@ async def test_full_chain_unlicensed_refused_then_licensed_build_appears_in_worl
         )
     assert world.buildings == {}
 
-    # 2. Licensed + government-permitted plot -> claims the footprint.
     await world.charter.store.put_license(
         License(
             license_id="lic-drifter",
@@ -275,7 +259,6 @@ async def test_full_chain_unlicensed_refused_then_licensed_build_appears_in_worl
     building_id = result.result["building_id"]
     building = world.buildings[building_id]
 
-    # 3. Materials consumed exactly per geometry; time proportional to size.
     area = len(footprint)
     perimeter = compute_perimeter(footprint)
     assert building.timber_used == area * 5
@@ -285,19 +268,12 @@ async def test_full_chain_unlicensed_refused_then_licensed_build_appears_in_worl
     assert building.completion_tick == world.tick() + area * 6
     assert building.status.value == "under_construction"
 
-    # Not on the map yet - still mid-construction.
     for tile in tiles:
         assert map_service.world.sector_at(tile) is None
 
-    # Not due yet.
     assert buildings_due_for_completion(world) == []
 
-    # 4. Tick forward to completion and complete it, wired to the real MapService.
     world.current_tick = building.completion_tick
-    # GROW-18: the deadline alone no longer makes a site due. A site
-    # nobody has worked is not due, it is unstarted - otherwise the tick
-    # loop would call complete_construction on it every tick for the rest
-    # of the run and swallow the refusal each time.
     assert buildings_due_for_completion(world) == []
     while world.buildings[building_id].labour_remaining:
         await registry.execute(
@@ -306,14 +282,10 @@ async def test_full_chain_unlicensed_refused_then_licensed_build_appears_in_worl
     assert buildings_due_for_completion(world) == [building_id]
     event = await complete_construction(world, building_id, map_service=map_service)
 
-    # 5. Appears in world state.
     assert event.type == "world.building.completed"
     assert world.buildings[building_id].status.value == "complete"
     assert buildings_due_for_completion(world) == []
 
-    # 6. Appears on the map: every footprint tile is now a real Sector
-    # (freshly minted, not one that pre-existed) with a matching Arena, on
-    # MapService's actual live WorldMap - not a mock, not WorldState.
     sector_id = event.payload["map_sector_id"]
     assert sector_id is not None
     minted_sector_name = None
@@ -324,8 +296,5 @@ async def test_full_chain_unlicensed_refused_then_licensed_build_appears_in_worl
         assert building.builder_agent_id in sector.name
         assert map_service.world.arena_at(tile) is not None
         minted_sector_name = sector.name
-    # Findable by name too, not just by tile lookup - what an agent's
-    # "go to <sector>" tool call would use once this is wired to
-    # location-gating (WorldMap.entry_point/find_arena).
     assert map_service.world.find_sector(minted_sector_name) is not None
     assert map_service.world.find_arena(minted_sector_name, minted_sector_name) is not None

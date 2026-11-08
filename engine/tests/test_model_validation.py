@@ -102,15 +102,12 @@ class TestSynced:
     def test_fallback_checked_only_when_set(self, overlay):
         overlay(FULL_CATALOG_IDS)
         fatal, _ = validate_resolved_models(Settings(), synced=True)
-        assert fatal == []  # default fallback is empty -> not checked
+        assert fatal == []
         s = Settings(fallback_model="ghost-model")
         fatal, _ = validate_resolved_models(s, synced=True)
         assert any("ghost-model" in f for f in fatal)
 
     def test_overlay_only_model_accepted(self, overlay):
-        # A model that exists only in the synced overlay (never in any
-        # static data) must satisfy validation - regression for the old
-        # seed-only override lookup.
         entries = FULL_CATALOG_IDS + [("brand-new-overlay-model", "standard")]
         overlay(entries)
         s = Settings(llm_model="brand-new-overlay-model")
@@ -127,7 +124,7 @@ class TestDegraded:
         assert "accelerated retry" in warnings[0]
 
     def test_degraded_findings_never_fatal(self, overlay):
-        overlay([(MODEL_DEFAULTS.primary, "standard")])  # sparse stale overlay
+        overlay([(MODEL_DEFAULTS.primary, "standard")])
         s = Settings(llm_model="missing-model")
         fatal, warnings = validate_resolved_models(s, synced=False)
         assert fatal == []

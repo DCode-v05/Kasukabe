@@ -42,9 +42,6 @@ from src.engine_core.thread_router import (  # noqa: E402
     build_thread_index,
 )
 
-# Extra threads so the index crosses the full-card limit and exercises the stub
-# tier: a stubbed thread must still be reachable, or triage duplicates work that
-# already has a home.
 EXTRA_ENTRIES = {
     "thread-5a10": ThreadIndexEntry(
         thread_id="thread-5a10",
@@ -115,7 +112,6 @@ EXTRA_ENTRIES = {
 ALL_ENTRIES = {**INDEX_ENTRIES, **EXTRA_ENTRIES}
 ALL_IDS = set(ALL_ENTRIES)
 
-# name, input, want_segments, want_verdicts, want_target (or None), why it is hard
 HARD_CASES = [
     (
         "near-miss target",

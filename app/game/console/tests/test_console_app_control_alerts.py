@@ -29,14 +29,6 @@ def test_alerts_respects_limit_query_param(client, fake_world, auth_headers) -> 
 
 
 def test_alerts_rejects_unknown_category_from_world(console_app, fake_world, auth_headers) -> None:
-    # AlertCategory is a closed set (schemas.py's module docstring: fail
-    # loudly on an alert type the console doesn't know how to render).
-    # Uses its own TestClient(raise_server_exceptions=False): the default
-    # `client` fixture re-raises exceptions caught by app.py's catch-all
-    # handler (Starlette TestClient's debugging behavior for a bare
-    # `Exception` handler - see broker/app.py's identical handler, which
-    # is untested through TestClient for the same reason), so asserting
-    # the actual HTTP response here needs that flag off.
     fake_world.seed_alert(category="earthquake_swarm")
     with TestClient(console_app, raise_server_exceptions=False) as lenient_client:
         response = lenient_client.get("/api/alerts", headers=auth_headers)

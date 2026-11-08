@@ -57,9 +57,9 @@ async def test_a_named_neighbour_is_the_addressee(town, content, expected):
 @pytest.mark.parametrize(
     "content",
     [
-        "I saw Greta yesterday at the mill.",   # a mention, not a vocative
+        "I saw Greta yesterday at the mill.",
         "Greta's wheat was the best this year.",
-        "Anyone selling flour?",                # addressed to the room
+        "Anyone selling flour?",
         "",
     ],
 )
@@ -128,14 +128,6 @@ async def test_a_remark_addressed_to_oneself_is_public(town):
     assert payload["is_public"] is True
 
 
-# ── shouting at somebody who is not there ───────────────────────────────
-#
-# Liora Thorne's perception read "With you: Wren Thorne, Marta Thorne, Idris
-# Thorne". She called out "Perrin! You walking or what?" - twice. Perrin was
-# across town. `say` returned a conversation id and nothing else, so she got
-# a success back, had no way to learn otherwise, and every reason to repeat
-# it.
-
 @pytest.mark.asyncio
 async def test_say_reports_who_actually_heard_it(town):
     from world.life.models import AgentLifeRecord, Sex
@@ -145,7 +137,6 @@ async def test_say_reports_who_actually_heard_it(town):
     town.agents["me"] = speaker
 
     out = await say_handler(town, speaker, SayParams(content="Morning, all."))
-    # a0087 and a0016 are HERE; a0121 is at AWAY.
     assert set(out.result["heard_by"]) == {"Greta Quarshie", "Ezra Jarrah"}
     assert "not_here" not in out.result
 

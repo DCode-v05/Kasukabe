@@ -55,9 +55,6 @@ def test_from_kasukabe_genesis_applies_config_and_mints_zones(
 def test_from_kasukabe_genesis_does_not_emit_any_events(
     genesis_service_state: GenesisServiceState,
 ) -> None:
-    # Genesis land is pre-approved (expansion.py's module docstring: not
-    # routed through a petition), so it should not itself fire a
-    # world.land.expanded event - only expand_land() does.
     _service, _zone_ids, sink = genesis_service_state
     assert sink.events == []
 
@@ -130,7 +127,6 @@ async def test_expand_land_regenerates_collision_and_an_agent_can_path_into_the_
     assert len(previous_collision) == previous_height
     assert all(len(row) == previous_width for row in previous_collision)
 
-    # A walkable tile right at the map's old southern edge, to path from.
     start = next(
         TileCoord(x, previous_height - 1)
         for x in range(previous_width)
@@ -139,28 +135,16 @@ async def test_expand_land_regenerates_collision_and_an_agent_can_path_into_the_
 
     result = await service.expand_land(edge=Edge.SOUTH, depth=6, tick=1)
 
-    # 1. Map dimensions actually changed.
     assert service.world.height == previous_height + 6
     assert service.world.width == previous_width
     assert result.new_height == previous_height + 6
 
-    # 2. The collision matrix was actually regenerated: it is the RIGHT
-    # SHAPE for the grown map (not the stale pre-expansion grid), every
-    # row is well-formed, and it is a genuinely different object than the
-    # pre-expansion grid (expand_land rebuilds self.world wholesale -
-    # model.py's WorldMap docstring - rather than mutating grids in place).
     new_collision = service.world.collision
     assert new_collision is not previous_collision
     assert len(new_collision) == previous_height + 6
     assert all(len(row) == previous_width for row in new_collision)
-    # Every pre-existing row is unchanged by the regeneration.
     assert new_collision[: len(previous_collision)] == previous_collision
 
-    # 3. Pathfinding is valid on the grown map: an agent standing at the
-    # map's old southern edge can path straight into the newly appended
-    # land (freshly grown rows are walkable ground by construction -
-    # tiled_json.append_rows fills every non-visual layer, including
-    # Collisions, with 0/walkable by default).
     goal = TileCoord(start.x, service.world.height - 1)
     assert service.world.is_walkable(goal)
     path = find_path(service.world, start, goal)
@@ -181,7 +165,7 @@ async def test_expand_land_preserves_existing_plot_claims(ville_dir: Path) -> No
     await service.expand_land(edge=Edge.SOUTH, depth=3, tick=2)
 
     assert service.plots.plot_at(tile) is plot
-    assert service.plots.world is service.world  # repointed at the grown map
+    assert service.plots.world is service.world
 
 
 @pytest.mark.asyncio
@@ -197,9 +181,6 @@ async def test_second_expansion_after_genesis_does_not_collide_with_genesis_zone
     assert result.new_sector_ids[0] != zone_ids.farmland_sector_id
     assert result.new_sector_ids[0] != zone_ids.ore_outcrop_sector_id
     assert result.new_sector_ids[0] != zone_ids.forest_sector_id
-
-
-# -- buildings ------------------------------------------------------------
 
 
 def find_adjacent_street_tiles(world_map, count: int) -> list[TileCoord]:
@@ -218,7 +199,7 @@ async def test_stamp_building_turns_a_freeform_footprint_into_a_real_sector(vill
     tiles = find_adjacent_street_tiles(service.world, 3)
     footprint = frozenset(tiles)
     for tile in footprint:
-        assert service.world.sector_at(tile) is None  # genuinely unclaimed ground beforehand
+        assert service.world.sector_at(tile) is None
 
     sector_id = await service.stamp_building(footprint, purpose="smithy", owner="agent-builder", tick=5)
 
@@ -282,9 +263,6 @@ async def test_stamp_building_after_land_expansion_builds_on_the_freshly_grown_s
         sector = service.world.sector_at(tile)
         assert sector is not None
         assert sector.id == sector_id
-
-
-# -- Checkpointable ------------------------------------------------------
 
 
 def test_snapshot_and_restore_round_trip(ville_dir: Path) -> None:

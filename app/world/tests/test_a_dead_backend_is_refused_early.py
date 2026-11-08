@@ -65,9 +65,6 @@ def test_the_process_backend_still_passes() -> None:
     assert _errors(mock_mode=False, supervisor_backend="process") == []
 
 
-# ── the contract, for whoever revives it ───────────────────────────────
-
-
 def test_the_gateway_now_has_the_method_the_runner_calls() -> None:
     """An AttributeError three layers down tells a reader nothing about
     what is missing."""
@@ -95,9 +92,6 @@ def test_it_refuses_rather_than_forwarding() -> None:
         "the refusal does not say WHAT cannot be carried, so a reviver has "
         "to work it out from the supervisor's signature"
     )
-
-
-# ── CORE-14: the mirror that wrote to nowhere ──────────────────────────
 
 
 def test_the_checkpoint_mirror_takes_a_client() -> None:

@@ -32,9 +32,6 @@ from src.errors import EngineError, ErrorCode
 
 logger = logging.getLogger(__name__)
 
-# 64 lowercase hex chars = a SHA-256 digest. Matches init_auth_state(hex)'s
-# expectation; rejecting non-hex here keeps bytes.fromhex from raising deep in
-# the swap path.
 HEX64_RE = re.compile(r"\A[0-9a-f]{64}\Z")
 
 
@@ -72,14 +69,12 @@ async def install_pending_key(new_hash: str, overlap_seconds: int = 60) -> dict:
     if state is None:
         raise EngineError(code=ErrorCode.INTERNAL_ERROR, message="auth state not initialised")
 
-    # Validate the hash payload: must be a 64-char lowercase hex SHA-256 digest.
     if not HEX64_RE.match(new_hash or ""):
         raise EngineError(
             code=ErrorCode.INVALID_PARAMS,
             message="new_hash must be 64 lowercase hex characters",
         )
 
-    # Validate overlap bounds.
     min_s, max_s = get_overlap_bounds()
     if overlap_seconds < min_s or overlap_seconds > max_s:
         raise EngineError(
@@ -88,19 +83,15 @@ async def install_pending_key(new_hash: str, overlap_seconds: int = 60) -> dict:
             details={"min": min_s, "max": max_s},
         )
 
-    # Under the lock: reject concurrent rotations, then install or immediately swap.
     start_wall = time.time()
     async with state.swap_lock:
         if state.pending_hash is not None:
-            # Transient conflict (retryable 409), distinct from the hard-reject
-            # INVALID_PARAMS used for bad hash / out-of-bounds overlap.
             raise EngineError(code=ErrorCode.ROTATION_IN_PROGRESS)
 
         rotation_id = "rot_" + secrets.token_hex(6)
         initiator_prefix = state.primary_hash.hex()[:8]
 
         if overlap_seconds == 0:
-            # Immediate switch: swap and zero in-place without creating a background task.
             old_primary = state.primary_hash
             state.primary_hash = bytearray(bytes.fromhex(new_hash))
             state.pending_hash = None
@@ -110,11 +101,6 @@ async def install_pending_key(new_hash: str, overlap_seconds: int = 60) -> dict:
         else:
             expires_at = install_pending_hash(state, new_hash, overlap_seconds)
 
-    # Persist only the LIVE primary so /data always reflects the key that
-    # actually authenticates after a restart. On the immediate-swap path the
-    # new hash is already primary, so persist it now. On the overlap path the
-    # OLD hash is still primary during the window — expire_rotation persists
-    # the new hash at promotion, not here.
     if overlap_seconds == 0:
         persist_key_hash(new_hash)
 
@@ -124,7 +110,6 @@ async def install_pending_key(new_hash: str, overlap_seconds: int = 60) -> dict:
         await emit_completed(rotation_id, time.time() - start_wall)
         logger.info("Key rotation completed immediately: rotation_id=%s", rotation_id)
     else:
-        # Schedule expiry in the background.
         asyncio.create_task(
             expire_rotation(state, rotation_id, overlap_seconds, start_wall),
             name=f"key-rotation-{rotation_id}",
@@ -145,25 +130,18 @@ async def expire_rotation(
 
     async with state.swap_lock:
         if state.pending_hash is None:
-            # Already handled (e.g., state was reset in tests).
             return
 
         old_primary = state.primary_hash
 
-        # Atomic swap — primary_hash is never None at any observable point.
         state.primary_hash = state.pending_hash
         state.pending_hash = None
         state.overlap_expires_at = None
 
-        # Capture the now-live primary inside the lock so the persisted /data
-        # value cannot race a concurrent swap.
         promoted_hex = state.primary_hash.hex()
 
-        # Best-effort zeroing of the old hash bytes from process memory.
         old_primary[:] = bytes(len(old_primary))
 
-    # Persist the promoted hash AFTER releasing the lock — /data now reflects
-    # the new live primary (it held the OLD hash during the overlap window).
     persist_key_hash(promoted_hex)
 
     duration = time.time() - start_wall

@@ -14,18 +14,14 @@ from typing import Union
 
 from src.herald.token_budget_parser import get_budget_continuation_message
 
-# ── Thresholds (ported exactly from src/query/tokenBudget.ts:3-4) ───────
 
-COMPLETION_THRESHOLD = 0.9  # stop when >= 90% of budget consumed
-DIMINISHING_THRESHOLD = 500  # per-turn delta below this counts as stalled
+COMPLETION_THRESHOLD = 0.9
+DIMINISHING_THRESHOLD = 500
 
 
 def pct_of_budget(used: int, budget: int) -> int:
     """Round(used/budget * 100). Shared by check_token_budget and thread.py."""
     return round(used / budget * 100)
-
-
-# ── Tracker state ───────────────────────────────────────────────────────
 
 
 @dataclass
@@ -35,7 +31,7 @@ class BudgetTracker:
     continuation_count: int = 0
     last_delta_tokens: int = 0
     last_global_turn_tokens: int = 0
-    started_at: float = 0.0  # time.time() at construction
+    started_at: float = 0.0
 
     def reset_delta_origin(self) -> None:
         """Reset the delta baseline to 0 after a compaction boundary.
@@ -76,9 +72,6 @@ def create_budget_tracker() -> BudgetTracker:
     return BudgetTracker(started_at=time.time())
 
 
-# ── Decision types ──────────────────────────────────────────────────────
-
-
 @dataclass
 class ContinueDecision:
     """Continue the turn loop — inject the nudge and loop back to the model."""
@@ -112,9 +105,6 @@ class StopDecision:
 TokenBudgetDecision = Union[ContinueDecision, StopDecision]
 
 
-# ── Decision function ──────────────────────────────────────────────────
-
-
 def check_token_budget(
     tracker: BudgetTracker,
     is_sub_agent: bool,
@@ -125,11 +115,9 @@ def check_token_budget(
 
     Mutates `tracker` only on a Continue decision (matches src mutation pattern).
     """
-    # 1. Short-circuit stop paths — sub-agents, missing/invalid budget.
     if is_sub_agent or budget is None or budget <= 0:
         return StopDecision(completion_event=None)
 
-    # 2. Compute current state.
     turn_tokens = global_turn_tokens
     pct = pct_of_budget(turn_tokens, budget)
     delta = global_turn_tokens - tracker.last_global_turn_tokens
@@ -140,7 +128,6 @@ def check_token_budget(
         and tracker.last_delta_tokens < DIMINISHING_THRESHOLD
     )
 
-    # 3. Under threshold AND not diminishing → continue (mutate tracker).
     if not is_diminishing and turn_tokens < budget * COMPLETION_THRESHOLD:
         tracker.continuation_count += 1
         tracker.last_delta_tokens = delta
@@ -153,8 +140,6 @@ def check_token_budget(
             budget=budget,
         )
 
-    # 4. Stopping. Emit an event only if we ever continued or diminishing fired
-    #    (matches src/query/tokenBudget.ts:78 — no event noise for passive stops).
     if is_diminishing or tracker.continuation_count > 0:
         duration_ms = int((time.time() - tracker.started_at) * 1000)
         return StopDecision(

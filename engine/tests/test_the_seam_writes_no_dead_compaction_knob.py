@@ -49,9 +49,6 @@ def test_the_persisted_threshold_has_nowhere_to_enter_the_decision():
     )
     assert COMPACTION_THRESHOLD == 0.80
 
-    # A 12,500-token window half full is far past 0.12 and nowhere near
-    # 0.80, and the engine does not compact: the stored knob is not
-    # consulted, which is the whole finding.
     window = 12_500
     used = window // 2
     assert used >= window * 0.12

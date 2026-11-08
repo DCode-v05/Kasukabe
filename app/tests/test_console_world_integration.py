@@ -135,15 +135,6 @@ class TestConsoleAgainstEmbeddedWorldApp:
 
             assert decision.petition.status == "approved"
             assert decision.petition.decision_note == "approved - farmland is scarce"
-            # GROW-06. This used to assert `decision.expansion is None`,
-            # and the comment explained why: the embedded world had no
-            # MapService, so approval "recorded the decision" and grew
-            # nothing. That was the finding, and this test was pinning it.
-            #
-            # Both hosts build a MapService at boot now, so the town the
-            # operator approves land for actually gets the land. The
-            # assertion is inverted rather than deleted: "the embedded host
-            # grows the map too" is the fact worth holding.
             assert decision.expansion is not None, (
                 "GROW-06: approving a petition on the embedded host grew no "
                 "map - the host every run uses could not expand the town"
@@ -151,8 +142,6 @@ class TestConsoleAgainstEmbeddedWorldApp:
             assert decision.expansion.new_height > decision.expansion.previous_height
             assert decision.expansion.depth == 5
 
-            # And the charter's own state genuinely transitioned - not
-            # just the HTTP response shape, the real CharterStore record.
             stored = await runner.world_state.charter.land_petitions.load_petition(petition.petition_id)
             assert stored.status.value == "approved"
 
@@ -210,13 +199,6 @@ class TestConsoleAgainstEmbeddedWorldApp:
             assert decision.decision == "silently_denied"
             assert decision.visible_to_agent is False
 
-            # DESIGN.md section 8, verbatim: "silent-deny (agent never
-            # learns)". world/admin_api.py's silent_deny_prayer route
-            # deliberately omits target_agent_id/involved_agent_ids/
-            # location_id from the emitted event's payload so the
-            # requester's own perception interrupt policy
-            # (world/core/perception.py) never surfaces it - checked here
-            # against the REAL event bus, not just trusted from a comment.
             denial_events = [
                 e for e in runner.world_state.event_bus.recent() if e.type == "religion.prayer.denied"
             ]
@@ -282,19 +264,10 @@ class TestConsoleAgainstEmbeddedWorldApp:
         client = admin_client_for(runner)
         try:
             spend = await client.get_spend_status()
-            # SpendStatusView.check_consistent already enforces
-            # burned + treasury + wallets == budget_total on parse (the
-            # $1000 invariant, app/CONVENTIONS.md) - reaching this line at
-            # all is half the proof. The other half: these are genesis's
-            # real numbers, not placeholders.
             assert spend.budget_total_usd_cents == 100_000
-            # Read from the genesis the runner booted, not pinned: the town
-            # now staffs its institutions, so more of the fixed $1000 sits
-            # in purses and correspondingly less in the treasury.
             genesis = runner.genesis
             assert spend.wallets_usd_cents == genesis.usd_ledger.agent_wallets_cents
             assert spend.treasury_usd_cents == genesis.usd_ledger.treasury_cents
-            # Whatever the split, the town is still worth exactly $1000.
             assert spend.wallets_usd_cents + spend.treasury_usd_cents == 100_000
             assert spend.burned_usd_cents == 0
 

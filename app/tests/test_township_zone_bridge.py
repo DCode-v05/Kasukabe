@@ -44,7 +44,6 @@ def test_every_bridged_sector_name_still_exists_on_the_real_map():
 
     real = {name.lower() for name in KNOWN_SECTOR_CATEGORIES}
     real |= {n.lower() for n in (FOREST_SECTOR_NAME, GOVERNMENT_SECTOR_NAME, TEMPLE_SECTOR_NAME)}
-    # Farmland and ore are minted by expansion.py under their own constants.
     real |= {"kasukabe farmland", "kasukabe ore outcrop"}
 
     unknown = sorted(set(TOWNSHIP_ZONE_BY_SECTOR) - real)
@@ -58,13 +57,11 @@ def test_every_bridged_sector_name_still_exists_on_the_real_map():
         ("hobbs cafe", "cafe"),
         ("Kasukabe Government Complex", "government"),
         ("Oak Hill College", "college"),
-        # Institutional housing is the college, not the housing district.
         ("Dorm for Oak Hill College", "college"),
         ("Adam Smith's house", "housing"),
         ("Moore family's house", "housing"),
         ("Ryan Park's apartment", "housing"),
         ("artist's co-living space", "housing"),
-        # The opaque slug namespace agents actually stand in.
         ("home:h0021", "housing"),
         ("farmland:wheat", "farmland"),
         ("ore:iron", "oreoutcrop"),
@@ -91,9 +88,6 @@ def test_an_unmapped_location_is_none_not_a_guess(location_id):
 @pytest.mark.parametrize(
     ("location_id", "expected"),
     [
-        # The real one: a genesis-minted business in neither table. One
-        # resident of thirty vanished from the map and the badge read
-        # "29 of 30 on Bedrock" with nothing to explain the missing one.
         ("Kasukabe Grocery", "grocery"),
         ("Kasukabe Bakery", "bakery"),
         ("Ferris Hardware Store", "marketrow"),
@@ -137,12 +131,6 @@ def _zones_village2_declares() -> set[str]:
 
     village = Path(__file__).resolve().parents[1] / "game/static/js/township/village2.js"
     source = village.read_text(encoding="utf-8")
-    # Two declaration forms, both real:
-    #   zone('park', 'Town Park', ...)          - a district rectangle
-    #   add(..., 'shop', {..., zone:'bakery'})  - a building that IS a zone
-    # The ten shop zones (bakery, cafe, grocery, pharmacy, bank, inn,
-    # hospital, police, fire, restaurant) are all the second kind, which
-    # is why a parser that knew only the first reported them missing.
     return (
         set(re.findall(r"^zone\(\s*'([^']+)'", source, re.M))
         | set(re.findall(r"zone\s*:\s*'([^']+)'", source))
@@ -178,23 +166,12 @@ def test_the_weak_form_of_this_check_would_have_passed_anyway():
     invented = "a_district_nobody_draws"
     doctored = source.replace("zone('park'", f"zone('{invented}'")
 
-    assert f"'{invented}'" in doctored          # the old check: satisfied
+    assert f"'{invented}'" in doctored
     assert "'park'" in doctored, (
         "the old check looked for a bare literal, and 'park' survives as a "
         "label elsewhere in the file even after the zone is renamed - so it "
         "passed while the zone was gone"
     )
-
-
-# -- provenance on the live feed -----------------------------------------
-#
-# The badge used to have two states and chose between them on bound > 0
-# alone, never asking where the rows came from. A mock feed whose ids
-# happened to match genesis would have been announced as "LIVE ENGINE",
-# in green, with a tick number. The only thing preventing that was
-# MockWorldClient naming its agents "mock-agent-000" - naming luck, not a
-# check. `source` makes provenance explicit so the viewer can refuse to
-# claim a live engine for fabricated rows.
 
 
 def test_live_feed_reports_mock_source_for_the_mock_world() -> None:
@@ -225,8 +202,8 @@ def test_source_follows_the_injected_client_not_the_setting() -> None:
     from game.mock_world import MockWorldClient
     from game.server import create_app
 
-    settings = GameSettings(mock_mode=False)  # says "real"...
-    injected = MockWorldClient(settings)      # ...but serves mock rows
+    settings = GameSettings(mock_mode=False)
+    injected = MockWorldClient(settings)
     client = TestClient(create_app(settings=settings, world_client=injected))
 
     assert client.get("/api/township/live").json()["source"] == "mock"
@@ -260,14 +237,6 @@ def test_source_is_present_even_when_the_world_is_unreachable() -> None:
     assert body["connected"] is False
     assert body["source"] == "world"
     assert "unreachable" in body["detail"]
-
-
-# -- cognition: are the agents actually thinking? ------------------------
-#
-# `source` answers "did these rows come from a real world server". It says
-# NOTHING about whether that world's agents are backed by real engines - a
-# real world driven entirely by MockAgentGateway looks identical. The two
-# are reported separately so the viewer can never imply one from the other.
 
 
 def live_body(settings, world_client=None):
@@ -316,7 +285,7 @@ def test_a_world_that_cannot_say_reports_null_not_mock() -> None:
     from game.config import GameSettings
     from game.contracts import Snapshot
 
-    class SilentWorld:  # no get_provenance at all - an older build
+    class SilentWorld:
         async def get_snapshot(self):
             return Snapshot(tick=1, map_tiled_json={}, agents=[])
 
@@ -373,6 +342,4 @@ def test_real_engines_on_a_mock_broker_are_not_reported_as_real() -> None:
     body = live_body(GameSettings(mock_mode=False), EnginesButCannedText())
     assert body["cognition"] == "engine"
     assert body["inference"] == "mock"
-    # Both fields present and distinct is the whole point - a consumer that
-    # only had `cognition` could not tell this from a genuinely real run.
     assert body["cognition"] != body["inference"]

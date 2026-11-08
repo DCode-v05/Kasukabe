@@ -62,8 +62,6 @@ async def test_acquire_drains_capacity_then_waits() -> None:
         waited = await bucket.acquire()
         assert waited == 0.0
 
-    # 4th request: bucket is empty, refill rate is 3/60 = 0.05 tokens/s,
-    # so exactly 20s must pass before one token is available.
     waited = await bucket.acquire()
     assert waited == pytest.approx(20.0)
 
@@ -73,8 +71,8 @@ async def test_refill_is_continuous_not_step() -> None:
     clock = FakeClock()
     bucket = TokenBucket(capacity=1, period_s=60.0, clock=clock, sleep=make_fake_sleep(clock))
 
-    await bucket.acquire()  # drains the single token
-    clock.advance(30.0)  # half the refill period -> half a token
+    await bucket.acquire()
+    clock.advance(30.0)
     bucket.refill()
     assert bucket.tokens == pytest.approx(0.5)
 
@@ -84,7 +82,7 @@ async def test_tokens_never_exceed_capacity() -> None:
     clock = FakeClock()
     bucket = TokenBucket(capacity=5, period_s=60.0, clock=clock, sleep=make_fake_sleep(clock))
 
-    clock.advance(10_000.0)  # far more than enough to refill many times over
+    clock.advance(10_000.0)
     bucket.refill()
 
     assert bucket.tokens == 5.0
@@ -95,10 +93,10 @@ async def test_throttled_count_only_increments_on_a_real_wait() -> None:
     clock = FakeClock()
     bucket = TokenBucket(capacity=1, period_s=60.0, clock=clock, sleep=make_fake_sleep(clock))
 
-    await bucket.acquire()  # immediate, not throttled
+    await bucket.acquire()
     assert bucket.throttled_count == 0
 
-    await bucket.acquire()  # must wait for refill
+    await bucket.acquire()
     assert bucket.throttled_count == 1
 
 
@@ -116,23 +114,15 @@ async def test_acquire_grants_tokens_in_strict_fifo_arrival_order() -> None:
         await bucket.acquire()
         order.append(n)
 
-    # Drain the single token, then immediately start waiter 0 so it's the
-    # one holding bucket.lock (across its own await inside fake_sleep)
-    # when waiters 1-4 arrive and are forced to genuinely queue on it.
     await bucket.acquire()
     tasks = [asyncio.ensure_future(waiter(0))]
-    await asyncio.sleep(0)  # let waiter 0 run up to its suspension inside fake_sleep
+    await asyncio.sleep(0)
 
     for n in range(1, 5):
         tasks.append(asyncio.ensure_future(waiter(n)))
-        await asyncio.sleep(0)  # let each subsequent waiter reach the lock and queue on it
+        await asyncio.sleep(0)
 
     await asyncio.gather(*tasks)
 
     assert order == [0, 1, 2, 3, 4]
 
-
-
-# INFRA-24: the RateLimiterRegistry tests were removed with the class on
-# 2026-09-05. `lanes.py` builds its six TokenBuckets directly, so the
-# registry had no caller and these passed forever about nothing that runs.

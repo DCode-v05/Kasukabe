@@ -66,7 +66,6 @@ class Town:
     def ledger(self) -> Any:
         return self.runner.ledger
 
-    # -- doing things -----------------------------------------------------
 
     async def do(self, actor: str, tool: str, **params: Any) -> Act:
         """Call one verb the way a resident's turn calls it.
@@ -89,7 +88,6 @@ class Town:
         self.ledger.check_invariant()
         return act
 
-    # -- asking questions -------------------------------------------------
 
     def refusals_for(self, actor: str) -> list[Any]:
         return [r for r in self.world.tool_refusals if r.agent_id == actor]
@@ -124,7 +122,7 @@ async def town(**overrides: Any) -> AsyncIterator[Town]:
 
     tmp = Path(tempfile.mkdtemp(prefix="proof-town-"))
     kwargs: dict[str, Any] = dict(
-        mock_mode=True,  # the agent gateway only - see the module docstring
+        mock_mode=True,
         checkpoint_dir=tmp / "checkpoints",
         world_mode="embedded",
         world_port=0,
@@ -134,7 +132,7 @@ async def town(**overrides: Any) -> AsyncIterator[Town]:
     runner = GenesisRunner(GenesisRunnerConfig(**kwargs))
     await runner.boot(resume=False)
     built = Town(runner=runner)
-    built.ledger.check_invariant()  # the town must start sound
+    built.ledger.check_invariant()
     try:
         yield built
     finally:

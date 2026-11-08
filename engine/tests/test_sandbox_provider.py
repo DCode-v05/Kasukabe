@@ -42,9 +42,8 @@ async def test_provision_returns_session_handle():
         assert isinstance(handle, SessionHandle)
         assert handle.session_id
         assert handle.provider is provider
-        # the backend is the provider-agnostic exec surface tools bind to
         assert isinstance(handle.backend, SandboxExecutor)
-        assert isinstance(handle.backend, ExecBackend)  # runtime_checkable Protocol
+        assert isinstance(handle.backend, ExecBackend)
     finally:
         await provider.destroy(handle)
 
@@ -56,7 +55,6 @@ async def test_build_tools_from_provider_session():
     try:
         tools = {t.name: t for t in build_sandbox_tools(handle.backend)}
         assert set(tools) == EXPECTED_TOOLS
-        # the workspace-search tool must NOT collide with the content-store tool
         assert "search_content" not in tools
     finally:
         await provider.destroy(handle)
@@ -66,7 +64,7 @@ async def test_build_tools_from_provider_session():
 async def test_destroy_removes_workspace():
     provider = LocalBwrapProvider()
     handle = await provider.provision(SandboxConfig(session_id="prov-3"))
-    ws = handle.backend.workspace  # property creates the dir
+    ws = handle.backend.workspace
     assert ws.exists()
     await provider.destroy(handle)
     assert not ws.exists()
@@ -87,13 +85,13 @@ async def test_pause_resume_are_noops():
 async def test_run_bash_fail_closed_without_bwrap(tmp_path):
     """Code execution refuses to run unsandboxed — never falls back to the host."""
     ex = SandboxExecutor(session_id="failclosed-1")
-    ex.use_bwrap = False  # simulate bwrap unavailable (prod seccomp block / non-Linux)
+    ex.use_bwrap = False
     sentinel = tmp_path / "should_not_exist"
     try:
         result = await ex.run_bash(f"echo escaped > {sentinel}")
         assert result.exit_code != 0
         assert "Refusing to run unsandboxed" in result.stderr
-        assert not sentinel.exists()  # nothing actually ran
+        assert not sentinel.exists()
     finally:
         ex.cleanup()
 
@@ -121,10 +119,6 @@ def test_build_cmd_raises_without_bwrap():
         ex.cleanup()
 
 
-# ── SandboxSessionManager: ephemeral lifetime (reap after idle, re-provision) ──
-# Uses read_file/write_file only (no bwrap needed), so these run cross-platform.
-
-
 async def new_manager(idle_ttl_s: float):
     provider = LocalBwrapProvider()
     cfg = SandboxConfig()
@@ -143,16 +137,15 @@ async def test_idle_reap_discards_workspace_and_reprovisions():
         ws = mgr.session.backend.workspace
         assert ws.exists()
 
-        await asyncio.sleep(0.1)  # go idle past TTL
+        await asyncio.sleep(0.1)
         assert await mgr.reap_if_idle() is True
         assert mgr.session is None
-        assert not ws.exists()  # workspace discarded (ephemeral)
+        assert not ws.exists()
 
-        # next use re-provisions a FRESH, empty sandbox — the marker is gone
         again = await mgr.read_file("marker.txt")
         assert again.exit_code != 0
         assert mgr.session is not None
-        assert mgr.session.backend.workspace != ws  # different workspace
+        assert mgr.session.backend.workspace != ws
     finally:
         await mgr.shutdown()
 
@@ -162,9 +155,9 @@ async def test_activity_resets_idle_clock():
     mgr = await new_manager(idle_ttl_s=0.2)
     try:
         for _ in range(3):
-            await mgr.write_file("a.txt", "x")  # activity → resets the clock
-            await asyncio.sleep(0.1)  # < TTL since last use
-            assert await mgr.reap_if_idle() is False  # still active → not reaped
+            await mgr.write_file("a.txt", "x")
+            await asyncio.sleep(0.1)
+            assert await mgr.reap_if_idle() is False
         assert mgr.session is not None
     finally:
         await mgr.shutdown()
@@ -172,15 +165,14 @@ async def test_activity_resets_idle_clock():
 
 @pytest.mark.asyncio
 async def test_not_reaped_while_busy():
-    mgr = await new_manager(idle_ttl_s=0.0)  # "always idle" by time
+    mgr = await new_manager(idle_ttl_s=0.0)
     try:
         await mgr.write_file("a.txt", "x")
-        # Force a busy backend: pretend a background process is live.
         mgr.session.backend.sessions["fake"] = object()
         assert mgr.is_busy is True
-        assert await mgr.reap_if_idle() is False  # idle but busy → not reaped
+        assert await mgr.reap_if_idle() is False
         mgr.session.backend.sessions.clear()
-        assert await mgr.reap_if_idle() is True  # now free → reaped
+        assert await mgr.reap_if_idle() is True
     finally:
         await mgr.shutdown()
 

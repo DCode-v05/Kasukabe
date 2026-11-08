@@ -32,9 +32,6 @@ async def columns(db, table: str) -> set[str]:
     return {dict(r)["name"] for r in rows}
 
 
-# ── Schema ────────────────────────────────────────────────────────
-
-
 class TestSchema:
     @pytest.mark.asyncio
     async def test_user_agents_has_learned_state(self, db):
@@ -63,9 +60,6 @@ class TestSchema:
                 "INSERT INTO user_agents (id, name, dspy_optimized_state) VALUES (?, ?, ?)",
                 (str(uuid.uuid4()), "ghost", "{}"),
             )
-
-
-# ── UDWrite ───────────────────────────────────────────────────────
 
 
 class TestUDWrite:
@@ -127,9 +121,6 @@ class TestUDWrite:
         assert after["learned_state"] == {"v": 1}
 
 
-# ── UDFull ────────────────────────────────────────────────────────
-
-
 class TestUDFull:
     @pytest.mark.asyncio
     async def test_get_agent_overlays_learned_state(self, db):
@@ -172,9 +163,6 @@ class TestUDFull:
         assert got["learned_state"] == {"n": 7}
 
 
-# ── PlatformRegistry ──────────────────────────────────────────────
-
-
 class TestPlatformRegistry:
     @pytest.mark.asyncio
     async def test_get_user_agent_parses_learned_state(self, db):
@@ -201,9 +189,6 @@ class TestPlatformRegistry:
         got = await reg.get_user_skill("reg-skill")
         assert got is not None
         assert got["learned_state"] == {"c": 3}
-
-
-# ── Dependency removal ────────────────────────────────────────────
 
 
 class TestDspyRemoved:

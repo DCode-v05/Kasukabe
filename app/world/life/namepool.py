@@ -184,8 +184,6 @@ SURNAMES: tuple[str, ...] = (
     "Lund",
 )
 
-# Ordered roughly severity/warmth-neutral so pairing two at random rarely
-# reads as contradictory on its face.
 PERSONALITY_TRAITS: tuple[str, ...] = (
     "curious",
     "frugal",
@@ -242,17 +240,12 @@ HABITS: tuple[str, ...] = (
     "checks the ledger twice before trusting it once",
 )
 
-MINOR_OCCUPATION_YOUNG = "child"  # under school age
+MINOR_OCCUPATION_YOUNG = "child"
 MINOR_OCCUPATION_SCHOOL = "student"
 MINOR_SCHOOL_AGE_YEARS = 6
 
 ELDERLY_OCCUPATION = "retired"
 
-# Occupations for working-age agents not slotted into a named business
-# role (construction company, café, grocery store, pharmacy). Chosen to
-# match DESIGN.md section 1's genesis buildings and resource zones
-# (farmland, ore outcrops, forest) so the persona roster visibly covers
-# the town's actual geography.
 GENERIC_OCCUPATIONS: tuple[str, ...] = (
     "farmer",
     "miner",
@@ -265,28 +258,6 @@ GENERIC_OCCUPATIONS: tuple[str, ...] = (
     "trader",
     "day_laborer",
 )
-
-# ══════════════════════════════════════════════════════════════════════
-# RICH PERSONA POOLS (DESIGN.md "Personas: a real starting point, not a
-# stub"). Everything below feeds world/life/genesis.py's persona builder.
-# Same reasoning as the pools above: templated and seeded, not LLM-
-# written, so genesis stays free, deterministic, and testable - but with
-# enough independent dimensions (tension, formative history, values,
-# fears, ambitions, scarcity behavior, stranger/family treatment,
-# competence/blind spot, speech, daily rhythm, four attitude axes, and a
-# private secret) that the combined per-agent bundle is, in practice,
-# unique across 250 agents even where any single dimension repeats.
-#
-# Templates use str.format() placeholders filled in by genesis.py from
-# the agent's own name/sex: {name} {Subj}/{subj} (He/he or She/she)
-# {Poss}/{poss} (His/his or Her/her) {obj} (him/her) {reflexive}
-# (himself/herself) {age} {years_ago} {origin} {hardship} {target_name}
-# (another real agent's name, for the templates that reference one).
-#
-# Genesis prompting must not leak real-world religions or ideologies
-# (DESIGN.md section 7); ATTITUDE_RELIGION_POOL and the temple-adjacent
-# lines elsewhere name no real doctrine, only the in-world temple.
-# ══════════════════════════════════════════════════════════════════════
 
 ORIGIN_TOWNS: tuple[str, ...] = (
     "the river settlements downstream",
@@ -314,9 +285,6 @@ HARDSHIP_EVENTS: tuple[str, ...] = (
     "the outbreak at the old settlement",
 )
 
-# ── internal tension: (virtue, flaw, template) ──────────────────────
-# Real contradiction, not a virtue list - DESIGN.md's own example is
-# "generous but proud."
 ADULT_TENSION: tuple[tuple[str, str, str], ...] = (
     ("generous", "proud", "{Subj} will give away the last of what {subj} has to someone in need, and can't stand to be thanked for it out loud."),
     ("careful", "envious", "{Subj} weighs every coin twice before spending it, and can't quite keep the sourness out of {poss} voice when a neighbour spends easily."),
@@ -370,7 +338,6 @@ MINOR_TENSION: tuple[tuple[str, str, str], ...] = (
     ("gentle", "timid", "{Subj} is careful with anything smaller and softer than {subj} is, and flinches from almost everything bigger."),
 )
 
-# ── formative history, keyed by occupation category ──────────────────
 FORMATIVE_HISTORY_BY_CATEGORY: dict[str, tuple[str, ...]] = {
     "outdoor": (
         "{Name} grew up working the same ground {subj} works now, one of a family that has farmed, mined, or felled timber in Kasukabe for as long as anyone can trace it.",
@@ -458,7 +425,6 @@ FORMATIVE_HISTORY_BY_CATEGORY: dict[str, tuple[str, ...]] = {
     ),
 }
 
-# ── values (adult / minor) ────────────────────────────────────────────
 VALUES_POOL: tuple[str, ...] = (
     "a fair price, openly stated",
     "a debt repaid before it has to be asked for",
@@ -750,7 +716,6 @@ FAMILY_TREATMENT_POOL: tuple[str, ...] = (
     "gives family the last word publicly, and the real word privately",
 )
 
-# ── competence / blind spot, keyed by occupation category ─────────────
 COMPETENCE_BLINDSPOT_BY_CATEGORY: dict[str, tuple[tuple[str, str], ...]] = {
     "outdoor": (
         ("can read the weather three days out better than the almanac can", "overplants in a good year and pays for it hard in a bad one"),
@@ -831,7 +796,6 @@ COMPETENCE_BLINDSPOT_BY_CATEGORY: dict[str, tuple[tuple[str, str], ...]] = {
     ),
 }
 
-# ── speech register + verbal habits ────────────────────────────────
 SPEECH_REGISTER_POOL: tuple[str, ...] = (
     "speaks plainly and briefly, and distrusts anyone who needs three sentences for one idea",
     "talks in long, winding stories that eventually arrive at the point",
@@ -914,7 +878,6 @@ MINOR_VERBAL_HABIT_POOL: tuple[str, ...] = (
     "makes a face before agreeing to something {subj} doesn't want to do",
 )
 
-# ── daily rhythm, keyed by occupation category ─────────────────────
 DAILY_RHYTHM_BY_CATEGORY: dict[str, tuple[str, ...]] = {
     "outdoor": (
         "wakes before first light to beat the heat to the fields or the outcrop, breaks at midday when the sun's too high for good sense, and is back at it until the light goes",
@@ -972,7 +935,6 @@ DAILY_RHYTHM_BY_CATEGORY: dict[str, tuple[str, ...]] = {
     ),
 }
 
-# ── attitudes: money, risk, authority, religion ───────────────────────
 ATTITUDE_MONEY_POOL: tuple[str, ...] = (
     "treats every coin like it has to answer for itself before it's spent",
     "spends freely when {subj} has it and shrugs when {subj} doesn't",
@@ -1048,7 +1010,6 @@ ATTITUDE_RELIGION_POOL: tuple[str, ...] = (
     "keeps a small private shrine of {poss} own making, told to no one",
 )
 
-# ── secrets: private hopes told to nobody ──────────────────────────
 SECRET_POOL: tuple[str, ...] = (
     "has never told anyone {subj} can't actually read as well as {subj} lets on",
     "keeps a small hoard of coin no one in the household knows about",
@@ -1111,7 +1072,6 @@ MINOR_SECRET_POOL: tuple[str, ...] = (
     "has never told anyone {subj} can already do the thing everyone thinks is too hard for {obj}",
 )
 
-# ── relationship graph: shared facts + per-role note phrasing ────────
 DEBT_REASON_POOL: tuple[str, ...] = (
     "to cover a bad harvest",
     "when the roof needed mending after {hardship}",

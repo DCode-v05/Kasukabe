@@ -18,11 +18,6 @@ from world.social_api import SocialDeps, build_social_router
 from world.wiring import WorldConfig, build_world_server
 from world.tests.map_assets import needs_the_map
 
-# TOOL-27. This module needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped, and red for environment hides real regressions inside the
-# noise - which is how TOOL-09 stayed invisible for a whole cycle.
 pytestmark = needs_the_map
 
 
@@ -66,9 +61,6 @@ async def test_scenario_trace_correlates_events_sharing_a_case_id() -> None:
         await server.event_bus.emit(
             "crime.warrant.issued", tick=20, payload={"case_id": "case-xyz", "warrant_id": "warrant-1"}
         )
-        # An unrelated crime event (different case_id) must NOT show up in
-        # the trace - proves correlation is by matching payload value, not
-        # just "same domain".
         await server.event_bus.emit(
             "crime.case.opened", tick=15, payload={"case_id": "case-other", "accused_agent_id": accused}
         )
@@ -93,7 +85,6 @@ async def test_conversations_cluster_individual_and_group_from_real_rows() -> No
         agent_ids = list(server.world.agents.keys())
         a, b, c, d, e = agent_ids[0], agent_ids[1], agent_ids[2], agent_ids[3], agent_ids[4]
 
-        # A clean 1:1 exchange - one conversation_id, two participants.
         await server.trace_store.client.insert(
             "utterances",
             [
@@ -107,9 +98,6 @@ async def test_conversations_cluster_individual_and_group_from_real_rows() -> No
                 },
             ],
         )
-        # A group scene logged as two separate conversation_ids at the
-        # same place, overlapping ticks, sharing participant c - must be
-        # merged into one group cluster by this router's clustering pass.
         await server.trace_store.client.insert(
             "utterances",
             [

@@ -40,7 +40,6 @@ from world.tools.bootstrap import build_world
 from world.tools.registry import json_schema_for, tool_registry_rows
 from world.tools.tests.conftest import spawn_agent
 
-# A plausible value per JSON type, the way a model fills a required field.
 SAMPLE = {
     "string": "xx", "integer": 1, "number": 1.0, "boolean": True,
     "array": ["xx"], "object": {},
@@ -77,19 +76,11 @@ def value_for(schema: dict, definitions: dict) -> object:
     if kind == "string":
         return "x" * max(2, int(schema.get("minLength") or 0) or 2)
     if kind == "array":
-        # A tuple - `footprint` is a list of [x, y] integer pairs - is
-        # described by prefixItems, not items.
         if schema.get("prefixItems"):
-            # The tuple ITSELF, not wrapped: `footprint` is an array whose
-            # items are [x, y] pairs, so this branch runs for the inner
-            # pair and the outer array branch below does the wrapping.
             return [value_for(part, definitions) for part in schema["prefixItems"]]
         item = value_for(schema.get("items") or {"type": "string"}, definitions)
         return [item] * max(1, int(schema.get("minItems") or 0) or 1)
     if kind == "object" and schema.get("properties"):
-        # Nested models - `steps` is a list of ToolStep, each with its own
-        # required fields. A shallow generator sends `{}` and reports the
-        # tool as broken when it is the generator that stopped early.
         inner = schema.get("properties") or {}
         return {
             field: value_for(inner.get(field) or {}, definitions)
@@ -166,8 +157,6 @@ async def test_what_a_resident_is_shown_names_what_it_must_supply(town):
         if not row.get("elsewhere"):
             continue
         if "Only at" in row["description"]:
-            # Gated elsewhere: "move there first" is the useful fact and
-            # the parameters do not matter yet.
             continue
         spec = registry.get(row["name"])
         if _required(spec) and "Needs:" not in row["description"]:
@@ -187,7 +176,6 @@ def test_the_town_asks_for_one_thing_under_one_name(town):
     a resident that learns one is wrong about the other.
     """
     _world, registry = town
-    # What each CONCEPT is called, by the tools that want it.
     concepts = {
         "a person you are acting on": (
             "to_agent_id", "counterparty_agent_id", "seller_id", "buyer_id",
@@ -205,10 +193,6 @@ def test_the_town_asks_for_one_thing_under_one_name(town):
                 if field in names:
                     used[concept].add(field)
 
-    # This is a LEDGER, not a ban: several of these distinctions are real
-    # (an `ask_sim` is not a `wage_sim`). What it prevents is the count
-    # growing without anyone noticing, which is how `to`/`recipient_id`/
-    # `to_agent_id` came to cost three calls for one transfer.
     assert len(used["how many of a thing"]) <= 2, (
         f"the town now has {len(used['how many of a thing'])} words for a "
         f"quantity: {sorted(used['how many of a thing'])}. Every extra one is "

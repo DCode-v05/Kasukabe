@@ -72,9 +72,6 @@ async def find_people_handler(
     )
     result: dict[str, Any] = {"query": params.query, "found": matches}
     if not matches:
-        # Said plainly, the same way `say` reports who did not hear it. An
-        # agent given a bare empty list has to guess whether it asked badly
-        # or the town genuinely has nobody.
         result["note"] = (
             "Nobody in town matches that. Try the trade rather than the "
             "goods - 'trader', 'miner', 'baker', 'forester', 'artisan' - or "
@@ -119,8 +116,6 @@ def build_specs() -> list[ToolSpec]:
             params_model=FindPeopleParams,
             handler=find_people_handler,
             namespace=ToolNamespace.PUBLIC,
-            # Knowing the town has a trader is not reaching one. Walking is
-            # `move`, which IS gated and does cost.
             location_gate=None,
             actor_requirements=ActorRequirements(),
         ),

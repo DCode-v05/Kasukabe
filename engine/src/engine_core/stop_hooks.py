@@ -75,9 +75,6 @@ from src.herald.types import Message
 logger = logging.getLogger(__name__)
 
 
-# --- Data types ---
-
-
 @dataclass(frozen=True)
 class StopHookInput:
     """Snapshot of turn state passed to every stop hook.
@@ -100,7 +97,7 @@ class StopHookInput:
     stop_hook_active: bool
     last_assistant_message: str
     turn_number: int
-    last_stop_reason: str  # "end_turn" | "tool_use" | "max_tokens" | "refusal" | ...
+    last_stop_reason: str
     thread_id: str
     cwd: str = ""
     hook_event_name: str = "Stop"
@@ -135,9 +132,6 @@ class AggregatedStopResult:
     hook_outcomes: list[dict] = field(default_factory=list)
 
 
-# --- Protocol ---
-
-
 class StopHook(Protocol):
     """A stop-hook callable.
 
@@ -149,9 +143,6 @@ class StopHook(Protocol):
     """
 
     async def execute(self, input: StopHookInput) -> StopHookResult: ...
-
-
-# --- Registry ---
 
 
 @dataclass
@@ -207,7 +198,6 @@ class StopHookRegistry:
         if not self.hooks:
             return AggregatedStopResult()
 
-        # Snapshot registration order so concurrency doesn't reshuffle it.
         registered = list(self.hooks)
 
         async def run_one(
@@ -226,7 +216,6 @@ class StopHookRegistry:
         try:
             raw = await asyncio.gather(*tasks)
         except asyncio.CancelledError:
-            # Cooperative cancellation must propagate.
             raise
 
         agg = AggregatedStopResult()
@@ -265,9 +254,6 @@ class StopHookRegistry:
             agg.hook_outcomes.append(entry)
 
         return agg
-
-
-# --- Hook implementations ---
 
 
 class CallableStopHook:
@@ -411,9 +397,6 @@ class PromptStopHook:
         return result_from_dict(data)
 
 
-# --- Helpers ---
-
-
 def result_from_dict(data: Any) -> StopHookResult:
     """Build a ``StopHookResult`` from a loose dict, defending against
     missing or mis-typed fields.
@@ -434,15 +417,12 @@ def extract_json_object(text: str) -> Any:
     """
     if not text:
         return None
-    # Strip common code-fence wrappers the model sometimes emits.
     stripped = text.strip()
     if stripped.startswith("```"):
         stripped = stripped.strip("`")
-        # Remove optional language tag on the first line.
         nl = stripped.find("\n")
         if nl != -1:
             stripped = stripped[nl + 1 :]
-    # Find the first brace-balanced object.
     start = stripped.find("{")
     if start == -1:
         return None

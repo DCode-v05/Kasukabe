@@ -97,11 +97,6 @@ ScrubMode = Literal["off", "default", "strict"]
 VALID_MODES: frozenset[str] = frozenset(("off", "default", "strict"))
 
 
-# ── Scrub categories ─────────────────────────────────────────────
-#
-# Category-organized so a future reader can tell WHY each var is here
-# and extend one category without touching the others.
-
 DEFAULT_TIER_VARS: dict[str, tuple[str, ...]] = {
     "engine_core": (
         "CDT_KEY",
@@ -125,16 +120,12 @@ DEFAULT_TIER_VARS: dict[str, tuple[str, ...]] = {
 
 
 STRICT_TIER_VARS: dict[str, tuple[str, ...]] = {
-    # OTLP exporter headers carry Authorization=Bearer tokens per the spec.
     "otlp_telemetry": (
         "OTEL_EXPORTER_OTLP_HEADERS",
         "OTEL_EXPORTER_OTLP_LOGS_HEADERS",
         "OTEL_EXPORTER_OTLP_METRICS_HEADERS",
         "OTEL_EXPORTER_OTLP_TRACES_HEADERS",
     ),
-    # GOOGLE_APPLICATION_CREDENTIALS and AZURE_CLIENT_CERTIFICATE_PATH are
-    # file paths — stripping prevents SDK auto-discovery but not filesystem
-    # access; bwrap/Landlock handles that layer.
     "cloud_creds": (
         "AWS_SECRET_ACCESS_KEY",
         "AWS_SESSION_TOKEN",
@@ -143,17 +134,14 @@ STRICT_TIER_VARS: dict[str, tuple[str, ...]] = {
         "AZURE_CLIENT_SECRET",
         "AZURE_CLIENT_CERTIFICATE_PATH",
     ),
-    # Leaked OIDC → App installation token → repo takeover.
     "gha_oidc": (
         "ACTIONS_ID_TOKEN_REQUEST_TOKEN",
         "ACTIONS_ID_TOKEN_REQUEST_URL",
     ),
-    # Leaked runtime token → action cache poisoning → supply-chain pivot.
     "gha_runtime": (
         "ACTIONS_RUNTIME_TOKEN",
         "ACTIONS_RUNTIME_URL",
     ),
-    # ALL_INPUTS is a JSON blob containing every `with:` input, secrets included.
     "action_duplicates": (
         "ALL_INPUTS",
         "OVERRIDE_GITHUB_TOKEN",
@@ -163,7 +151,6 @@ STRICT_TIER_VARS: dict[str, tuple[str, ...]] = {
 }
 
 
-# Precomputed at import so every spawn is a dict lookup, not a set rebuild.
 DEFAULT_SCRUB: frozenset[str] = frozenset(v for cat in DEFAULT_TIER_VARS.values() for v in cat)
 STRICT_SCRUB: frozenset[str] = DEFAULT_SCRUB | frozenset(
     v for cat in STRICT_TIER_VARS.values() for v in cat
@@ -175,9 +162,6 @@ SCRUB_SETS: dict[str, frozenset[str]] = {
 }
 
 
-# Vars that are NEVER stripped, regardless of tier. Each entry MUST carry
-# a rationale — if a future reader finds GITHUB_TOKEN in a child's env
-# and wonders if that is a bug, the answer is here.
 ALLOWLIST: dict[str, str] = {
     "GITHUB_TOKEN": (
         "job-scoped (minted by GHA at workflow start, expires at end); "
@@ -188,11 +172,6 @@ ALLOWLIST: dict[str, str] = {
     ),
 }
 
-
-# ── Session mode ─────────────────────────────────────────────────
-# Bootstrap pushes the resolved tier into this module once Settings.load()
-# has parsed .env. Spawn sites that call subprocess_env(mode=None) read
-# it via read_mode_from_settings().
 
 session_mode: ScrubMode | None = None
 
@@ -212,11 +191,6 @@ def set_session_mode(mode: ScrubMode) -> None:
     session_mode = mode
 
 
-# ── Proxy env registration hook ──────────────────────────────────
-# Optional extension point for corporate proxy / CCR relay / TLS
-# interception subsystems to inject HTTPS_PROXY + CA bundle vars
-# without a hard import dependency.
-
 proxy_env_fn: Callable[[], dict[str, str]] | None = None
 
 
@@ -229,11 +203,6 @@ def register_proxy_env_fn(fn: Callable[[], dict[str, str]] | None) -> None:
     global proxy_env_fn
     proxy_env_fn = fn
 
-
-# ── Spawn observer registration hook ─────────────────────────────
-# Bootstrap registers an observer that fans SubprocessSpawnedEvent to
-# the EngineState.emitter for audit, so we don't have to thread an
-# emitter through every spawn site's constructor chain.
 
 SpawnObserver = Callable[["SubprocessEnvResult", str], None]
 spawn_observer: SpawnObserver | None = None
@@ -250,9 +219,6 @@ def register_spawn_observer(fn: SpawnObserver | None) -> None:
     spawn_observer = fn
 
 
-# ── Result type ──────────────────────────────────────────────────
-
-
 @dataclass(frozen=True, slots=True)
 class SubprocessEnvResult:
     """Return value of ``subprocess_env()``.
@@ -265,9 +231,6 @@ class SubprocessEnvResult:
     mode: str
     scrubbed_count: int
     has_proxy_env: bool
-
-
-# ── Public helper ────────────────────────────────────────────────
 
 
 def subprocess_env(
@@ -310,10 +273,8 @@ def subprocess_env(
             f"subprocess_env: invalid mode {mode!r} — must be one of {sorted(VALID_MODES)}"
         )
 
-    env = dict(os.environ)  # fresh copy; does NOT mutate os.environ
+    env = dict(os.environ)
 
-    # Proxy env applied before scrub so a proxy that ever exposes a
-    # secret name still gets caught — defense in depth.
     has_proxy_env = False
     if proxy_env_fn is not None:
         try:
@@ -335,9 +296,6 @@ def subprocess_env(
             continue
         if env.pop(var, None) is not None:
             scrubbed_count += 1
-        # GitHub Actions auto-creates INPUT_<NAME> for every `with:` input,
-        # shadow-copying secrets like INPUT_ANTHROPIC_API_KEY. Sweep them
-        # alongside the base var.
         if env.pop("INPUT_" + var, None) is not None:
             scrubbed_count += 1
 
@@ -368,9 +326,6 @@ def subprocess_env(
             )
 
     return result
-
-
-# ── Internals ────────────────────────────────────────────────────
 
 
 def read_mode_from_settings() -> ScrubMode:

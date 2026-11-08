@@ -46,7 +46,7 @@ def test_record_spend_crossing_warn_fraction_transitions_to_warning() -> None:
     governor = SpendGovernor(cap_usd=100.0, warn_fraction=0.8)
     state = governor.record_spend(81 * NANO_PER_DOLLAR)
     assert state == SpendState.WARNING
-    assert governor.should_block_dispatch() is False  # warning still dispatches
+    assert governor.should_block_dispatch() is False
 
 
 def test_record_spend_reaching_cap_halts_and_blocks_dispatch() -> None:
@@ -63,7 +63,7 @@ def test_record_spend_accumulates_across_multiple_calls() -> None:
     governor.record_spend(30 * NANO_PER_DOLLAR)
     snapshot = governor.snapshot()
     assert snapshot.spent_usd == pytest.approx(90.0)
-    assert snapshot.state == SpendState.WARNING  # 90% >= 80% default warn_fraction
+    assert snapshot.state == SpendState.WARNING
 
 
 def test_record_spend_is_a_no_op_for_zero_or_negative_cost() -> None:
@@ -95,7 +95,7 @@ def test_fraction_used_is_clamped_to_one_past_the_cap() -> None:
 def test_burn_rate_reflects_spend_over_elapsed_time() -> None:
     clock = FakeClock()
     governor = SpendGovernor(cap_usd=400.0, clock=clock)
-    clock.advance(3600.0)  # exactly one hour
+    clock.advance(3600.0)
     governor.record_spend(10 * NANO_PER_DOLLAR)
 
     assert governor.snapshot().burn_rate_usd_per_hr == pytest.approx(10.0, rel=1e-6)
@@ -104,8 +104,8 @@ def test_burn_rate_reflects_spend_over_elapsed_time() -> None:
 def test_projected_exhaustion_extrapolates_from_the_current_burn_rate() -> None:
     clock = FakeClock()
     governor = SpendGovernor(cap_usd=100.0, clock=clock)
-    clock.advance(3600.0)  # one hour elapsed
-    governor.record_spend(10 * NANO_PER_DOLLAR)  # $10/hr burn rate, $90 remaining
+    clock.advance(3600.0)
+    governor.record_spend(10 * NANO_PER_DOLLAR)
 
     assert governor.snapshot().projected_exhaustion_s == pytest.approx(9 * 3600.0, rel=1e-6)
 

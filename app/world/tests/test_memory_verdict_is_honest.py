@@ -99,13 +99,11 @@ def test_preflight_does_not_pass_a_run_the_runner_will_refuse(
     FAIL to a WARN - it must not report PASS."""
     from world import preflight as pf
 
-    # 1881 MB free, 69 MB/engine, 20 engines: 1380 needed against 1369
-    # usable. These are the figures from the launch this test is named for.
     monkeypatch.setattr(memory_budget, "available_mb", lambda: 1881)
     monkeypatch.setattr(memory_budget, "measured_mb_per_engine", lambda *a, **k: (4, 69))
 
     report = pf.run(
-        broker_url="http://127.0.0.1:59999",  # down; unrelated checks may fail
+        broker_url="http://127.0.0.1:59999",
         expected_agents=20,
         genesis_path="world/genesis_20.json",
         home_root="/tmp/kasukabe-agents",

@@ -1,36 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════════
-   THE TOWN BOOKS — census, money, roster
-   ───────────────────────────────────────────────────────────────────
-   These books live inside a 620px drawer, so everything here is sized
-   for a narrow ruled column rather than for the wide page they were
-   first written against. township.css still gives them a card gallery:
-   rounded boxes on --surface-2, ocean-blue focus rings, filled state
-   chips — all inherited from the light theme. A ledger is ruled, not
-   boxed, so this layer takes the boxes off and leaves the rules, and
-   the only things still carrying colour are the figures that mean
-   something.
-
-   The signals are spent strictly: ember is money (balances, budgets,
-   wages, prices), mint is real and alive, rust is death and
-   insolvency, brass is watch and government. Copper appears nowhere in
-   this file — nothing in the census, the money books or the roster
-   card was authored by an agent.
-
-   Loaded last, so single-class selectors win outright. Where a rule
-   looks over-qualified it is matching a specificity it has to beat
-   (`.score-stat.warn`, `input[type="search"]`, `.bar-row .bar-lbl`)
-   rather than reaching for !important.
-   ═══════════════════════════════════════════════════════════════════ */
-
-
-/* ══ 1 · CENSUS ═════════════════════════════════════════════════════
-   Four counts of the same 314 people. They are readouts, not charts:
-   label left, rule through the middle, figure hard right, so the eye
-   can run the numbers column without reading a single bar. */
-
 .census-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(184px, 1fr)); gap: var(--s5) var(--s6); padding: 0; }
-/* The strip sits in a panel that is already a ruled sheet, so a block
-   needs no chrome of its own — its heading rule is its only edge. */
 .census-strip .census-block { background: none; border: 0; border-radius: 0; box-shadow: none; padding: 0; }
 .census-block h3 {
   margin: 0 0 var(--s2); padding-bottom: var(--s2); border-bottom: 1px solid var(--line);
@@ -42,43 +10,21 @@
   align-items: center; gap: var(--s2); padding: 5px 0; border-bottom: 1px solid var(--line-soft);
 }
 .bar-row:last-child { border-bottom: 0; }
-/* Row labels are read, not scanned, so they stay sentence-case body text. The
-   10px uppercase treatment elsewhere is for section labels; applied to
-   "Construction worker" in a 90px column it truncates the one word that
-   identifies the row. */
 .bar-row .bar-lbl {
   width: auto; font-family: var(--font-body); font-size: 11px; font-weight: 400;
   letter-spacing: 0; text-transform: none; color: var(--ink-soft);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .bar-row .bar-track { height: 4px; border-radius: 0; overflow: hidden; background: var(--surface-3); }
-/* renderCensus() writes `background:var(--brick)` onto the fill inline, and no
-   selector outranks an inline style without !important — which is why the ember
-   gradient township.css aims at `.bar-track > *` has never once been visible.
-   Those are the map's daylight hues and they do not belong inside the
-   instrument, so an inset shadow paints over the inline colour instead: drawn
-   above the background, below the content, and needing no change to the JS. The
-   ink is deliberately neutral — a census count is fact, not signal, and ember on
-   a headcount would say "money" about a person. */
 .bar-row .bar-track > span { border-radius: 0; background-image: none; box-shadow: inset 0 0 0 999px var(--ink-faint); transition: box-shadow .16s ease; }
 .bar-row .bar-n { width: auto; text-align: right; color: var(--ink); font-family: var(--font-mono); font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .bar-row:hover .bar-lbl { color: var(--ink); }
 .bar-row:hover .bar-track > span { box-shadow: inset 0 0 0 999px var(--ink-soft); }
 
 
-/* ══ 2 · THE MONEY BOOKS — shared skeleton ══════════════════════════
-   .score-body is the body of five panels: treasury, scoreboard, food,
-   health and the build log. Its 2fr/1fr/1fr layout was for a 1200px
-   page; in a drawer it has to be one column, and the horizontal
-   padding has to go so every figure hangs off the same left margin as
-   the panel head above it. */
-
 .score-body { display: block; padding: 0; font-family: var(--font-body); font-size: 12px; color: var(--ink-soft); }
 .score-body > * { margin: 0 0 var(--s5); }
 .score-body .score-list { gap: 0; }
-/* A section label binds to the list under it: generous above, tight below.
-   Display face, because it heads a section rather than counting anything — the
-   same treatment the Workshop's own section heads get. */
 .score-body .section-lbl {
   margin: var(--s5) 0 var(--s2); padding-bottom: var(--s2); border-bottom: 1px solid var(--line);
   font-family: var(--font-display); font-size: 11px; font-weight: 600;
@@ -88,9 +34,6 @@
 .score-body > *:first-child { margin-top: 0; }
 .score-body > *:last-child { margin-bottom: 0; }
 
-/* Stat tiles lose the box. What is left is a tick of rule beside each figure,
-   and that is what carries the state — a filled panel of brass shouts the same
-   news at four times the size. */
 .score-body .score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)); gap: var(--s4) var(--s5); }
 .score-body .score-stat {
   display: flex; flex-direction: column; gap: 2px; background: none;
@@ -109,19 +52,11 @@
 .score-body .stat-caret { color: var(--ink-faint); }
 .score-body .stat-help { margin-top: var(--s1); font-size: 10.5px; font-weight: 400; font-style: italic; line-height: 1.5; color: var(--ink-faint); }
 
-/* Sim and dollars are both money in motion, so every headline figure in the two
-   money books is ember. The people books keep theirs in ink: a headcount is not
-   a sum, and health already has mint and rust to say what it means. These need
-   the id to outrank `.score-stat.good .sv`, which would otherwise paint a tax
-   total mint — the colour of alive. */
 #scoreBody .score-stat .sv, #treasuryBody .score-stat .sv { color: var(--ember); }
 #scoreBody .score-stat.warn .sv, #treasuryBody .score-stat.warn .sv { color: var(--brass); }
 #scoreBody .score-stat.crit .sv, #scoreBody .score-stat.critical .sv,
 #treasuryBody .score-stat.crit .sv, #treasuryBody .score-stat.critical .sv { color: var(--rust); }
 
-/* A leaderboard row: who, what they do, what they hold. Name and qualifier
-   stack so the figure keeps its own column at drawer width, where three things
-   on one line would crush all three. */
 .score-body .score-row {
   display: grid; grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas: "name figure" "sub figure";
@@ -137,17 +72,10 @@
 .score-body .score-bal.bad { color: var(--rust); }
 .score-body .score-note, .score-body .rel-note { font-size: 11px; font-style: italic; line-height: 1.55; color: var(--ink-faint); }
 .score-body .rel-note b { font-style: normal; color: var(--ink-soft); }
-/* The list a stat opens is an aside, so it hangs off a rule rather than being
-   another panel inside a panel inside a drawer. */
 .score-body .stat-drill { background: none; border: 0; border-radius: 0; border-left: 2px solid var(--line-lit); padding: 0 0 0 var(--s3); margin: var(--s3) 0 0; }
 .score-body .drill-close { color: var(--ink-faint); }
 .score-body .drill-close:hover { background: none; color: var(--ink); }
 
-
-/* ══ 3 · TREASURY ═══════════════════════════════════════════════════
-   Money in is ember. Money out is brass, not rust: paying a clerk is
-   the government spending its own purse, which is a thing to watch and
-   not a death — rust is held back for the day the net goes under. */
 
 .score-body .bud-list, .score-body .seat-list { display: flex; flex-direction: column; gap: 0; }
 .score-body .bud-row {
@@ -176,11 +104,6 @@
 .score-body .seat-pay { grid-area: pay; align-self: center; text-align: right; color: var(--ember); font-family: var(--font-mono); font-size: 11.5px; font-variant-numeric: tabular-nums; }
 
 
-/* ══ 4 · HOUSEHOLDS — the rows that open ════════════════════════════
-   An open household is marked by a brighter rule and a turned caret,
-   not by a colour: which family you expanded is navigation, and
-   navigation is not one of the four things this town signals. */
-
 .score-body .hh-row.open { border-bottom-color: var(--line-lit); }
 .score-body .hh-row .hh-caret { color: var(--ink-faint); }
 .score-body .hh-row.open .hh-caret { transform: rotate(90deg); color: var(--ink); }
@@ -200,10 +123,6 @@
 .score-body .hm-bal { color: var(--ember); }
 
 
-/* ══ 5 · FOOD, HEALTH, THE BUILD LOG ════════════════════════════════ */
-
-/* Causes of death: one rust rule down the margin says what the list is, so no
-   row inside it has to repeat the alarm. */
 .score-body .cause-list { display: flex; flex-direction: column; gap: 0; padding-left: var(--s3); border-left: 2px solid var(--rust-dim); }
 .score-body .cause-row {
   display: flex; justify-content: space-between; gap: var(--s3); padding: 5px 0;
@@ -212,8 +131,6 @@
 }
 .score-body .cause-row:last-child { border-bottom: 0; }
 .score-body .cause-row .cause-n { font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--rust); }
-/* The log is the one place all three signals are true at once: someone died,
-   someone recovered, someone fell ill. */
 .score-body .health-log { display: flex; flex-direction: column; gap: 0; }
 .score-body .hl-row {
   display: grid; grid-template-columns: 2.6em minmax(0, 1fr);
@@ -228,16 +145,12 @@
 .score-body .hl-death .hl-what { color: var(--rust); }
 .score-body .hl-recovery .hl-what { color: var(--mint); }
 .score-body .hl-illness .hl-what { color: var(--brass); }
-/* Whether the hospital is open changes what every illness in the book means, so
-   it is the one note here allowed a tinted ground. */
 .score-body .hos-note { padding: var(--s3); border: 0; border-radius: 0; border-left: 2px solid var(--line); font-size: 11.5px; line-height: 1.55; }
 .score-body .hos-note b { font-family: var(--font-display); font-weight: 600; }
 .score-body .hos-note.open { background: var(--mint-soft); border-left-color: var(--mint-dim); }
 .score-body .hos-note.open b { color: var(--mint); }
 .score-body .hos-note.shut { background: var(--brass-soft); border-left-color: var(--brass-dim); }
 .score-body .hos-note.shut b { color: var(--brass); }
-/* An institution that has opened is real and standing, which is what mint is
-   for; one still on paper gets a plain rule. */
 .score-body .build-row {
   display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
   column-gap: var(--s3); row-gap: 2px; align-items: baseline; margin-bottom: 0;
@@ -253,19 +166,11 @@
 .score-body .pc-empty, .score-body .chat-empty { padding: var(--s5) 0; font-size: 11.5px; font-style: italic; color: var(--ink-faint); }
 
 
-/* ══ 6 · ROSTER CONTROLS ════════════════════════════════════════════
-   Filtering 314 people is the drawer's most-used control, so it reads
-   as an instrument bar: one rule under it, no rounded pills, and a
-   pressed state made of ink rather than of colour. Nothing filtered
-   here is a signal — an age bracket is not news. */
-
 .roster-controls {
   display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2);
   padding: 0 0 var(--s3); margin-bottom: var(--s3);
   background: none; border-bottom: 1px solid var(--line);
 }
-/* Names, not figures, are typed here, so this is the one input in the drawer
-   that is not in mono. Two classes, to outrank the sheet's `input[type=search]`. */
 .roster-controls .roster-search {
   flex: 1 1 220px; min-width: 180px; background: var(--void); color: var(--ink);
   font-family: var(--font-body); font-size: 12px; font-weight: 400;
@@ -293,14 +198,7 @@
 .roster-empty { padding: var(--s7) 0; text-align: center; font-size: 12px; font-style: italic; color: var(--ink-faint); }
 
 
-/* ══ 7 · THE ROSTER CARD, INSIDE ════════════════════════════════════ */
-
 .char-top { display: flex; gap: var(--s3); align-items: center; }
-/* buildCard() paints the avatar with the occupation's map colour inline, which
-   cannot be overridden without !important — and a 44px block of daylight pastel
-   is the loudest thing on a near-black card. An inset scrim in the void sinks it
-   to instrument depth: the hue survives as a tint, and the emoji, being content,
-   sits above the shadow and stays fully lit. */
 .char-top .char-avatar {
   width: 34px; height: 34px; flex-shrink: 0; border-radius: var(--rs);
   display: grid; place-items: center; font-size: 16px; border: 1px solid var(--line);
@@ -317,11 +215,6 @@
   display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2;
   -webkit-box-orient: vertical; overflow: hidden;
 }
-/* The skill chips are seeded fiction — skillBase and skillUnlockDay come out of
-   the generator, not out of the world — and they were wearing mint, the colour
-   reserved for what is real and live, an inch from a balance that genuinely
-   ticks. Unpainted, they read as what they are: a note on the card, not an
-   observation. */
 .char-skills { display: flex; flex-wrap: wrap; gap: var(--s1); }
 .char-skill {
   padding: 2px var(--s2); border-radius: var(--rs); background: none;
@@ -335,9 +228,5 @@
 .char-status.ok { color: var(--mint); }
 .char-status.ill { color: var(--brass); }
 .char-status.crit, .char-status.dead { color: var(--rust); }
-/* The balance is the town's money; the spend is real dollars burnt on cognition.
-   refreshRosterLiveValues() sets the spend's colour inline from how much of that
-   resident's $2 wallet is gone — mint, brass, rust — so this sets everything
-   about it except the one thing the run itself has an opinion about. */
 .char-bal, .char-spend { font-family: var(--font-mono); font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .char-bal { color: var(--ember); }

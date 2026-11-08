@@ -55,9 +55,6 @@ def write_legacy_skill(root, name, description, version="1.0.0"):
     return d
 
 
-# ── Roots as data ─────────────────────────────────────────────────
-
-
 class TestSkillRoots:
     def test_single_root_loads_skills(self, tmp_path):
         write_skill_md(tmp_path, "alpha", "First skill")
@@ -118,9 +115,6 @@ class TestSkillRoots:
         )
         assert got["one"].source == "core"
         assert got["two"].source == "managed"
-
-
-# ── SKILL.md format ───────────────────────────────────────────────
 
 
 class TestSkillMdFormat:
@@ -215,9 +209,6 @@ class TestSkillMdFormat:
         assert got["rich-skill"].data["has_gotchas"] is True
 
 
-# ── Metadata budget ───────────────────────────────────────────────
-
-
 class TestSkillMetadataBudget:
     def test_budget_is_a_percentage_of_the_context_window(self):
         window = 200_000
@@ -258,9 +249,6 @@ class TestSkillMetadataBudget:
 
     def test_empty_input_is_handled(self):
         assert apply_skill_metadata_budget([], budget_chars=100) == ([], 0)
-
-
-# ── Domain-pack removal ───────────────────────────────────────────
 
 
 class TestDomainPackRemoved:

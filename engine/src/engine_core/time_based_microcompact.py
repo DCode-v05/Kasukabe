@@ -53,14 +53,8 @@ from src.herald.types import (
 logger = logging.getLogger(__name__)
 
 
-#: Placeholder content written into cleared tool_result blocks. Chosen to
-#: tell the model exactly *what* was removed and *why*, so it can decide
-#: whether to re-execute the tool call rather than asking the user.
 STALENESS_MARKER: str = "[Old tool result content cleared]"
 
-#: Flat token estimate per image / document block. Matches the src reference
-#: (``IMAGE_MAX_TOKEN_SIZE = 2000`` in ``microCompact.ts``). A rough
-#: approximation avoids calling the real tokenizer on binary content.
 IMAGE_MAX_TOKEN_SIZE: int = 2000
 
 
@@ -167,7 +161,7 @@ def evaluate_trigger(
         gap_minutes = (time.time() - last_ts) / 60.0
         if gap_minutes < config.gap_threshold_minutes:
             return None
-    else:  # FORCED
+    else:
         if last_ts is not None:
             gap_minutes = max(0.0, (time.time() - last_ts) / 60.0)
 
@@ -189,9 +183,6 @@ def is_already_cleared(block: ToolResultBlock) -> bool:
     if isinstance(content, str):
         return content == STALENESS_MARKER
     if isinstance(content, list):
-        # The rebuild path only ever writes a string marker; a list-shaped
-        # content can't have been cleared by this module. Still, a single
-        # TextBlock matching the marker is worth catching for safety.
         if len(content) == 1:
             only = content[0]
             text = getattr(only, "text", None)
@@ -271,12 +262,8 @@ def estimate_tool_result_tokens(block: ToolResultBlock) -> int:
         elif isinstance(sub, (ImageBlock,)):
             total += IMAGE_MAX_TOKEN_SIZE
         elif isinstance(sub, PersistedBlock):
-            # Persisted blocks carry a text summary plus a path. Count the
-            # summary's tokens, not the full path.
             total += estimate_tokens_dense(sub.summary)
         else:
-            # Nested ToolResultBlock or other exotic inner block — fall
-            # back to the text attribute if present.
             text = getattr(sub, "text", None)
             if isinstance(text, str):
                 total += estimate_tokens_dense(text)
@@ -311,38 +298,20 @@ def maybe_microcompact(
     if not collected:
         return None
 
-    # Floor the keep-recent count at 1 — we must always preserve at least
-    # one piece of tool context so the LLM has something real to work from.
     keep_recent = max(1, config.keep_recent)
 
-    # Nothing to clear: every compactable result is already within the
-    # keep window. Return None so the orchestrator doesn't emit a no-op
-    # telemetry event. (Already-cleared blocks are filtered out in
-    # collect_compactable_tool_results, so ``collected`` only counts
-    # live results.)
     if len(collected) <= keep_recent:
         return None
 
-    # Mark the oldest (len - keep_recent) entries for clearing. The
-    # `collected` list is already in forward order, so the oldest come
-    # first and the most-recent come last.
     cleared_count = len(collected) - keep_recent
     to_clear = collected[:cleared_count]
 
-    # Group by message index so we can rebuild each affected message once.
     clear_by_msg: dict[int, set[int]] = {}
     tokens_saved_total = 0
     for msg_idx, block_idx, block in to_clear:
         clear_by_msg.setdefault(msg_idx, set()).add(block_idx)
         tokens_saved_total += estimate_tool_result_tokens(block)
 
-    # Cache-break awareness: content mutation invalidates the prompt cache
-    # prefix at the API layer. Set the pending-deletion flag that
-    # prompt_cache_break_detection.check_response_for_cache_break reads via
-    # consume_pending_cache_deletion to classify the next cache-read drop as
-    # EXPECTED rather than a break. That detector has no live call site, so
-    # the flag is not consumed at runtime and this warning line is the only
-    # signal that reaches operators.
     notify_cache_deletion()
     logger.warning(
         "microcompact: mutating tool_result content "
@@ -355,8 +324,6 @@ def maybe_microcompact(
         tokens_saved_total,
     )
 
-    # Rebuild affected messages. Unaffected messages are passed through
-    # by reference — no allocation.
     new_messages: list = []
     for i, msg in enumerate(messages):
         if i not in clear_by_msg:

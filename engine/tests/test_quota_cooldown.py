@@ -50,7 +50,6 @@ def test_enter_cooldown_arms_until_window_reset():
     )
     quota_cooldown.enter_cooldown(exc, now=1000.0)
 
-    # Inside the window → active, remaining counts down toward the reset.
     assert quota_cooldown.cooldown_active(now=1000.0) is True
     assert quota_cooldown.cooldown_remaining(now=1000.0) == 3600.0
     assert quota_cooldown.cooldown_active(now=1000.0 + 1800) is True
@@ -73,7 +72,6 @@ def test_later_exhaustion_extends_the_cooldown():
     tracks the furthest known reset, never shrinks it."""
     quota_cooldown.enter_cooldown(CitadelQuotaExhausted("first", window_seconds=600), now=1000.0)
     quota_cooldown.enter_cooldown(CitadelQuotaExhausted("second", window_seconds=3600), now=1100.0)
-    # Furthest reset = 1100 + 3600 = 4700, not the earlier 1600.
     assert quota_cooldown.cooldown_active(now=2000.0) is True
     assert quota_cooldown.cooldown_remaining(now=1100.0) == 3600.0
 
@@ -92,9 +90,6 @@ def test_reset_clears_the_cooldown():
     assert quota_cooldown.cooldown_active(now=1000.0) is False
 
 
-# ── Consumer-shaped gates: how background work uses the cooldown ───────────
-
-
 def test_background_consumer_skips_while_cooldown_active():
     """An LC-scheduler-style batch-start gate: when the cooldown is active, the
     consumer skips the LLM batch (it would only 429). This mirrors the check the
@@ -104,15 +99,14 @@ def test_background_consumer_skips_while_cooldown_active():
     calls = {"batches": 0}
 
     def run_batch_if_allowed(now: float) -> bool:
-        # Background gate: skip while cooled down; otherwise run.
         if quota_cooldown.cooldown_active(now=now):
             return False
         calls["batches"] += 1
         return True
 
-    assert run_batch_if_allowed(now=1500.0) is False  # mid-window → skipped
+    assert run_batch_if_allowed(now=1500.0) is False
     assert calls["batches"] == 0
-    assert run_batch_if_allowed(now=1000.0 + 3600) is True  # window reset → runs
+    assert run_batch_if_allowed(now=1000.0 + 3600) is True
     assert calls["batches"] == 1
 
 
@@ -125,10 +119,8 @@ def test_foreground_turn_is_unaffected_by_cooldown():
     attempts = {"foreground": 0}
 
     def foreground_attempt() -> None:
-        # Foreground code does NOT gate on the cooldown — it always attempts.
         attempts["foreground"] += 1
 
     foreground_attempt()
     assert attempts["foreground"] == 1
-    # The cooldown is still armed for background work, untouched by the fg call.
     assert quota_cooldown.cooldown_active(now=1500.0) is True

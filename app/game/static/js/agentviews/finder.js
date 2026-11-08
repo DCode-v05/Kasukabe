@@ -1,16 +1,7 @@
-// Agent Finder tab: search/sort/filter all 250 by name, age, sex,
-// occupation, business, household, place, wealth, health, org, ablation
-// arm, alive/dormant/dead. DESIGN.md section 8's "Agent finder" bullet.
-
 import { findAgents } from "./api.js";
 import { debounce, el, escapeHtml, fmtCents, setError, setLoading, statusBadge } from "./dom.js";
 import { selectAgent } from "./state.js";
 
-// `sortKey: null` columns (Org) are not offered as a sort key - sorting a
-// per-agent LIST of organization memberships has no single well-defined
-// order, and world/agent_viewer_api.py's FINDER_SORT_FIELDS excludes it
-// (400s if asked for) for the same reason - see that module's own
-// finder_sort_key() docstring.
 const COLUMNS = [
   { sortKey: "name", label: "Name" },
   { sortKey: "age_years", label: "Age" },

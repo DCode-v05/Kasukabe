@@ -73,11 +73,6 @@ class SpendSnapshot:
     state: SpendState
     burn_rate_usd_per_hr: float
     projected_exhaustion_s: "float | None"
-    # INFRA-14. `spent_usd` is now the RUN's total, seeded from the trace
-    # store at boot, so a restarted broker cannot spend the cap twice. That
-    # makes "what has this process burned" a separate question, and an
-    # operator watching a live run needs both: the first says how close the
-    # cap is, the second says whether anything is happening right now.
     spent_since_boot_usd: float = 0.0
 
 
@@ -88,8 +83,6 @@ class SpendGovernor:
     clock: Clock = field(default=time.monotonic)
 
     spent_nano_dollars: int = field(default=0, init=False)
-    # INFRA-14: what THIS process has added, kept apart from the seeded
-    # run total so the burn rate stays a rate and not a step function.
     spent_since_boot_nano_dollars: int = field(default=0, init=False)
     started_at: float = field(default=0.0, init=False)
     state: SpendState = field(default=SpendState.NORMAL, init=False)
@@ -133,9 +126,6 @@ class SpendGovernor:
         spent_usd = self.spent_nano_dollars / NANO_PER_DOLLAR
         since_boot_usd = self.spent_since_boot_nano_dollars / NANO_PER_DOLLAR
         elapsed_s = max(self.clock() - self.started_at, 1e-9)
-        # Rate off THIS process's spend: seeding the run total into the
-        # numerator would report an enormous burn rate in the first second
-        # after every restart and project exhaustion immediately.
         burn_rate_usd_per_hr = since_boot_usd / elapsed_s * 3600.0
         remaining_usd = max(self.cap_usd - spent_usd, 0.0)
         projected_exhaustion_s: "float | None" = None
@@ -172,9 +162,6 @@ def spend_already_recorded(client: Any) -> int:
     governor still covers the same line.
     """
     try:
-        # `client.conn` is SqliteClient's own single connection (it holds
-        # exactly one, deliberately - see its comment about two writers on
-        # one WAL). Read-only and synchronous, at boot, before any request.
         row = client.conn.execute(
             "SELECT COALESCE(SUM(cost_nano_dollars), 0) FROM llm_calls"
         ).fetchone()

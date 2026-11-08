@@ -108,9 +108,6 @@ def test_a_plain_transfer_is_still_a_transfer() -> None:
     assert TX_REASON_TO_SCHEMA_TYPE[TransactionReason.TRANSFER] == "transfer"
 
 
-# -- The gate reads them ----------------------------------------------
-
-
 def test_the_settlement_detector_counts_a_purchase() -> None:
     """A bargain settled at the bakery counter is a bargain settled. G4
     is defined as a price agreed in speech and then moved by a tool call,
@@ -129,21 +126,6 @@ def test_the_settlement_detector_counts_a_purchase() -> None:
         "a plain transfer is a gift, and counting it would make G4 pass on "
         "somebody handing over money for nothing"
     )
-
-
-# -- Which shop took the money ----------------------------------------
-#
-# The other half of the same blindness. A purchase moves sim from an
-# agent to a BUSINESS, and build_transaction_row writes an agent id only
-# when the account is a known agent - so the business leg is null and the
-# row does not say which shop was paid. `from_agent_id is not null and
-# to_agent_id is not null` then excludes the row from the settlement
-# query entirely, so widening the type list alone would have changed
-# nothing at all.
-#
-# The row now carries the non-agent account it moved to or from. Not a
-# second agent column: a business is not an agent, and conflating them is
-# how the pool columns went wrong once already.
 
 
 def test_the_row_says_which_account_was_not_an_agent() -> None:

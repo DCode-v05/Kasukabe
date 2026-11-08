@@ -34,7 +34,6 @@ class TestLandlockProfile:
         (tmp_path / "workspace").mkdir()
         profile = default_sandbox_profile(workspace)
         usr_rules = [r for r in profile.rules if r.path == "/usr"]
-        # /usr might not exist on all test systems; if it does, it should be read-only
         for rule in usr_rules:
             assert rule.access == FS_READ_ONLY
 
@@ -72,11 +71,6 @@ class TestLandlockProfile:
         assert len(rt_rules) == 0
 
     def test_handled_access_covers_all_rule_bits(self, tmp_path):
-        # handled_access must be a SUPERSET of every bit used by any rule —
-        # Landlock's add_rule syscall returns EINVAL otherwise. The default
-        # profile uses FS_READ_WRITE which includes ABI v3 bits (TRUNCATE),
-        # so handled_access spans beyond FS_ALL_V1. The kernel ignores bits
-        # it doesn't support, so this is safe on older kernels too.
         workspace = str(tmp_path / "workspace")
         (tmp_path / "workspace").mkdir()
         profile = default_sandbox_profile(workspace)
@@ -84,7 +78,6 @@ class TestLandlockProfile:
         for rule in profile.rules:
             union |= rule.access
         assert profile.handled_access == union
-        # Sanity: every rule's access bits are a subset of handled_access.
         for rule in profile.rules:
             assert (rule.access & profile.handled_access) == rule.access
 
@@ -98,7 +91,6 @@ class TestLandlockWrapper:
             handled_access=FS_ALL_V1,
         )
         source = generate_landlock_wrapper(profile)
-        # Should compile without syntax errors
         compile(source, "<wrapper>", "exec")
 
     def test_wrapper_contains_rule_paths(self):
@@ -179,7 +171,7 @@ class TestDetection:
     def test_abi_zero_on_non_linux(self, _):
         from src.sandbox import landlock
 
-        landlock.landlock_abi_cached = None  # reset cache
+        landlock.landlock_abi_cached = None
         assert detect_landlock_abi_version() == 0
 
     @patch("src.sandbox.landlock.is_linux", return_value=False)

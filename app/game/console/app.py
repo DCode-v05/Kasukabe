@@ -85,8 +85,6 @@ def get_world_client(request: Request) -> WorldAdminClient:
     return request.app.state.world_client
 
 
-# -- President tab ------------------------------------------------------------
-
 president_router = APIRouter(prefix="/president", tags=["president"])
 
 
@@ -188,8 +186,6 @@ async def list_honors(
 ) -> list[HonorView]:
     return await client.list_honors()
 
-
-# -- God tab --------------------------------------------------------------------
 
 god_router = APIRouter(prefix="/god", tags=["god"])
 
@@ -320,8 +316,6 @@ async def update_population_dials(
     return await client.update_population_dials(req)
 
 
-# -- Spend: live burn tracking ---------------------------------------------------
-
 spend_router = APIRouter(prefix="/spend", tags=["spend"])
 
 
@@ -332,8 +326,6 @@ async def spend_status(
 ) -> SpendStatusView:
     return await client.get_spend_status()
 
-
-# -- Alert feed -----------------------------------------------------------------
 
 alerts_router = APIRouter(prefix="/alerts", tags=["alerts"])
 
@@ -346,17 +338,6 @@ async def list_alerts(
 ) -> list[AlertView]:
     return await client.list_alerts(limit=limit)
 
-
-# -- B7: the town, in plain language (The 250 sections 19.7, 22, 23) ----------
-# Every read-only view B3-B6 built, rendered the way section 19.7 argues for:
-# a question a person would actually ask, answered, with an explicit
-# confidence label attached - "Nothing is shown as a bare number without also
-# saying how much to trust it."
-#
-# The framing itself lives in game/console/framing.py, not in this file and
-# not in console.js, because a confidence label is a claim and a claim needs
-# a test. This router fetches and arranges; framing.py decides what the
-# sentence says.
 
 town_router = APIRouter(prefix="/town", tags=["town"])
 
@@ -375,10 +356,6 @@ async def town_overview(
     skills = await client.town_skills()
     flow = await client.town_money_flow()
 
-    # Days observed comes from the books, which are the only thing here that
-    # actually knows how long the town has been running. Claiming a
-    # confidence without it would be exactly the failure section 19.7 warns
-    # against.
     days_observed = max((len(b.get("by_day", []) or []) for b in businesses), default=0)
 
     return {
@@ -420,8 +397,6 @@ async def town_terms(
 ) -> list[dict[str, Any]]:
     return await client.town_terms()
 
-
-# -- Top-level dials: pause/resume, tick speed, checkpoint-now -----------------
 
 control_router = APIRouter(prefix="/control", tags=["control"])
 
@@ -467,9 +442,6 @@ async def checkpoint_now(
     return await client.checkpoint_now()
 
 
-# -- app factory ----------------------------------------------------------------
-
-
 def create_app(
     settings: ConsoleSettings | None = None,
     world_client: WorldAdminClient | None = None,
@@ -513,11 +485,6 @@ def create_app(
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-        # Last-resort safety net, mirrors broker/app.py's: an unexpected
-        # bug here should never leak a raw traceback to the operator's
-        # browser, but it must be loud in server logs (this is an
-        # operator console - a swallowed bug here means the President or
-        # God tab silently does nothing, which is worse than a 500).
         logger.exception("game.console.app: unhandled exception in %s", request.url.path)
         return JSONResponse(status_code=500, content={"detail": f"internal error: {exc}"})
 
@@ -538,11 +505,6 @@ def create_app(
         @app.get("/")
         @app.get("/console")
         async def console_page() -> FileResponse:
-            # The page itself is unauthenticated (it is just HTML/CSS/JS,
-            # nothing sensitive) - every real action it takes goes
-            # through /api/* routes gated by require_operator_token
-            # above; the operator pastes the token into the page once and
-            # console.js attaches it as a header on every fetch.
             return FileResponse(str(STATIC_DIR / "index.html"))
 
     return app

@@ -75,12 +75,6 @@ class CallClass(str, Enum):
     BACKGROUND = "background"
 
 
-# TASK spec: "background work (learning centre, dream probes, importance
-# scoring, summarizer)". Matched by case-insensitive PREFIX against the
-# X-Kasukabe-Purpose header, so a caller tagging e.g.
-# "learning_centre.review" or "dream_probe.sleep_tick_3" still classifies
-# correctly without every future purpose-tagging call site needing to
-# know the exact set of literal strings this module expects.
 BACKGROUND_PURPOSE_PREFIXES: tuple[str, ...] = (
     "learning_centre",
     "dream_probe",
@@ -89,8 +83,6 @@ BACKGROUND_PURPOSE_PREFIXES: tuple[str, ...] = (
 )
 
 
-# Marks a tag as inferred from the request rather than declared by the
-# caller. Stripped before routing; see `classify_purpose`.
 DERIVED_PREFIX = "auto:"
 
 
@@ -133,9 +125,6 @@ def derive_purpose(declared: str, body: dict) -> str:
     if "episode" in lowered or "learning" in lowered:
         return "auto:learning"
     if tools:
-        # The town's own tool schemas ride along with every agent turn, so
-        # their presence is the clearest signal a request is a resident
-        # thinking rather than machinery running.
         return "auto:agent_turn"
     return "auto:other"
 
@@ -164,39 +153,8 @@ def classify_purpose(purpose: str) -> CallClass:
     return CallClass.COGNITION
 
 
-# TASK spec: "agent cognition prefers Kimi lanes ... may overflow to
-# DeepSeek when all Kimi lanes are saturated" and "background work ...
-# uses DeepSeek lanes" (no mention of a reverse overflow FROM background
-# work back onto Kimi - background never borrows cognition's dedicated
-# capacity; a saturated DeepSeek queue for background work waits on
-# DeepSeek's own fair FIFO queue, per LanePool.select's pass 2 below).
-# Qwen is the THIRD tier, and it is last on purpose. A deployment with
-# profiles in one region only buys RPM by adding models (see
-# config.QWEN_MODEL_ID), but every call that overflows onto a different
-# model is a call the run's findings can no longer attribute to one
-# model - run 29 was 100% Kimi across all 20 engines. So the order is
-# still "prefer Kimi", and Qwen exists to absorb the peak rather than to
-# carry the run: at 50 agents the measured peak is ~282 RPM against 300,
-# so third place should be reached rarely and the report's per-model
-# breakdown is what says whether it was.
-#
-# Background gets Qwen as a SECOND option, which is new. It still never
-# borrows Kimi - the rule above is unchanged - but letting summariser and
-# importance-scoring traffic spill onto Qwen keeps DeepSeek freer for the
-# cognition overflow that matters, instead of both classes queueing on
-# the one lane.
-# Models a deployment may run without - see build_lane_pool.
 OVERFLOW_ONLY_MODELS: tuple[str, ...] = (QWEN_MODEL_ID,)
 
-#: Models whose absence is a deployment fact rather than a broken build.
-#:
-#: Two different reasons, deliberately kept in one list because the boot
-#: check asks one question - "is it fatal that this model has no lanes?":
-#:   * Qwen needs an inference profile an account admin has to provision;
-#:   * an OpenAI model needs a key, and a box that has not been given one
-#:     should still run on Bedrock rather than refuse to start.
-#: Kimi and DeepSeek are in neither list: the routing policy is built on
-#: them, and serving one of THOSE silently would make it meaningless.
 MAY_BE_ABSENT_MODELS: tuple[str, ...] = (QWEN_MODEL_ID, *OPENAI_MODELS)
 
 MODEL_PREFERENCE_ORDER: dict[CallClass, tuple[str, ...]] = {
@@ -238,8 +196,6 @@ class CircuitBreaker:
     consecutive_failures: int = field(default=0, init=False)
     opened_at: "float | None" = field(default=None, init=False)
     trial_in_flight: bool = field(default=False, init=False)
-    # Observability only (broker/app.py's admin lane status): how many
-    # times this lane has tripped open over the process lifetime.
     trip_count: int = field(default=0, init=False)
 
     def is_open(self) -> bool:
@@ -342,29 +298,8 @@ class LanePool:
     """Owns all six lanes and the routing policy across them."""
 
     lanes_by_model: dict[str, list[Lane]]
-    #: The model cognition should PREFER, when it is not the default.
-    #:
-    #: The order in MODEL_PREFERENCE_ORDER is a policy decision - "prefer
-    #: Kimi, let the rest absorb the peak" - and it was right while every
-    #: model was priced within a factor of two of every other. `gpt-6-luna`
-    #: is 3.6x cheaper than Kimi on this town's actual token shape, which is
-    #: the difference between a 50-resident run reaching game-day 2.5 and
-    #: reaching 4.5 on the same $60. That is a run-level choice, so it is a
-    #: setting rather than an edit to the table.
-    #:
-    #: It only ever MOVES a model to the front; it cannot add one that is not
-    #: allowlisted, and the rest of the order is unchanged behind it, so
-    #: overflow still works exactly as before.
     cognition_first: "str | None" = None
 
-    #: The only model this pool will serve, for EVERY call class. None is the
-    #: normal case and means the preference order above, overflow included.
-    #:
-    #: `cognition_first` is a preference and this is a restriction, which is a
-    #: difference worth a bill: preferring leaves Kimi and deepseek behind the
-    #: chosen model so a peak still overflows onto Bedrock, and it only
-    #: touches COGNITION - every BACKGROUND call goes to Bedrock whatever is
-    #: preferred. A run paid for on one provider's key sets this instead.
     only_model: "str | None" = None
 
     def __post_init__(self) -> None:
@@ -373,18 +308,11 @@ class LanePool:
     def preference_for(self, call_class: CallClass) -> tuple[str, ...]:
         order = MODEL_PREFERENCE_ORDER[call_class]
         if self.only_model:
-            # Every class, not just cognition, and with nothing behind it:
-            # there is no overflow because overflow is the thing being
-            # refused. build_lane_pool has already refused to boot if this
-            # model has no lanes, so an empty tuple cannot come out of here.
             return (self.only_model,)
         first = self.cognition_first
         if call_class is not CallClass.COGNITION or not first:
             return order
         if not self.lanes_by_model.get(first):
-            # Asked for a model with no lanes - no key, or no profile. Say so
-            # and carry on with the default rather than routing cognition
-            # into nothing.
             logger.warning(
                 "cognition_first=%s has no lanes; falling back to %s", first, order[0]
             )
@@ -409,9 +337,6 @@ class LanePool:
         dispatches."""
         lanes = self.lanes_by_model.get(model) or []
         if not lanes:
-            # An OVERFLOW_ONLY model with no profile on this deployment
-            # (see build_lane_pool): nothing to rotate, so preference moves
-            # past it rather than dividing by zero.
             return []
         start = self.rotation_cursor[model] % len(lanes)
         self.rotation_cursor[model] = (start + 1) % len(lanes)
@@ -488,32 +413,17 @@ def build_lane_pool(
     "each lane owns its own ... regional boto3 client", literally.
     """
     sleep = sleep or asyncio.sleep
-    # When inference profiles are configured at all, a lane WITHOUT one
-    # cannot serve: this account may only invoke through a profile, so a
-    # bare model id is an AccessDenied waiting to happen mid-run. Build
-    # only the lanes that can actually serve. An empty mapping means "this
-    # account invokes foundation models directly" and every lane is built,
-    # which is why no existing test changes.
     profiles = settings.bedrock_inference_profiles
     skipped: list[str] = []
     lanes_by_model: dict[str, list[Lane]] = {}
     for model in MODEL_ALLOWLIST:
         lanes: list[Lane] = []
-        # An OpenAI model has no regions and no inference profile: one lane,
-        # built unconditionally. Running it through the region loop would ask
-        # for `gpt-6-luna@ap-south-1` and then skip it for want of a Bedrock
-        # profile it can never have.
         if model in OPENAI_MODELS:
-            # No key, no lane. A lane built around an empty key is worse
-            # than no lane: routing would offer it and every call would come
-            # back 401, which reads as the model refusing rather than as a
-            # deployment that was never given one.
             if not settings.openai_api_key:
                 lanes_by_model[model] = []
                 continue
             lanes.append(Lane(
                 model=model, region=OPENAI_REGION,
-                # OpenAI's limit is per account, not Bedrock's per-region 100.
                 bucket=TokenBucket(settings.openai_rpm, clock=clock, sleep=sleep),
                 circuit=CircuitBreaker(
                     threshold=settings.circuit_breaker_threshold,
@@ -535,8 +445,6 @@ def build_lane_pool(
             lanes.append(Lane(model=model, region=region, bucket=bucket, circuit=circuit, gateway=gateway))
         lanes_by_model[model] = lanes
     if skipped:
-        # Never drop capacity silently - an operator who thinks they have
-        # six lanes and has two will misread every throughput number.
         logger.warning(
             "%d of %d lanes have no inference profile and were NOT built: %s. "
             "Aggregate throughput is %d RPM, not %d.",
@@ -546,16 +454,6 @@ def build_lane_pool(
             sum(len(v) for v in lanes_by_model.values()) * settings.rpm_per_lane,
             len(MODEL_ALLOWLIST) * len(BEDROCK_LANE_REGIONS) * settings.rpm_per_lane,
         )
-    # Qwen is overflow, and overflow may be absent. It was added (d1af582)
-    # to lift ap-south-1 from 200 to 300 RPM at 50 residents - but its
-    # profile has to be provisioned by an account admin, and a deployment
-    # that has not got one yet refused to boot at all, taking the two
-    # models the routing policy is actually built on down with it. So a
-    # model named in OVERFLOW_ONLY_MODELS may have no lanes: it is left out
-    # of routing and said LOUDLY, with the capacity that leaves, because an
-    # operator planning a 50-resident run needs to know the peak (~282 RPM)
-    # no longer fits. Kimi and DeepSeek are still required - serving one of
-    # THOSE silently would make the preference order meaningless.
     if absent := [m for m in OVERFLOW_ONLY_MODELS if m in lanes_by_model and not lanes_by_model[m]]:
         served = sum(len(v) for v in lanes_by_model.values()) * settings.rpm_per_lane
         logger.warning(
@@ -572,12 +470,6 @@ def build_lane_pool(
             + " - that model cannot be served at all. Add a profile or remove it "
             "from MODEL_ALLOWLIST."
         )
-    # ONLY_MODEL with no lanes must not boot. Every other "model is absent"
-    # case here degrades - the pool routes elsewhere and the run continues -
-    # but degrading is precisely what ONLY_MODEL was set to forbid, and the
-    # fallback it would degrade onto is the provider whose bill the operator
-    # was trying not to pay. A missing key would otherwise be discovered as a
-    # Bedrock invoice.
     if settings.only_model and not lanes_by_model.get(settings.only_model):
         raise ValueError(
             f"ONLY_MODEL={settings.only_model} has no lanes, so this broker can "

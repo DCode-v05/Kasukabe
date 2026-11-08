@@ -39,8 +39,6 @@ def test_media_gates():
 
 
 def test_routing_is_always_on():
-    # The dispatch says what the input became and which threads are running.
-    # A client cannot read a multiplexed turn without it, so no gate hides it.
     for level in ("off", "trace", "full"):
         assert passes_gates(blk("routing"), Gates(telemetry=level)) is True
 
@@ -68,15 +66,13 @@ def test_telemetry_levels():
         assert passes_gates(blk(t), full) is True
     for t in full_types:
         assert passes_gates(blk(t), off) is False
-        assert passes_gates(blk(t), trace) is False  # trace does NOT show full
+        assert passes_gates(blk(t), trace) is False
         assert passes_gates(blk(t), full) is True
 
 
 def test_asset_gate():
-    # The whole asset channel rides the dedicated asset gate, not telemetry:
-    # default on, gateable off, and independent of the telemetry level.
     for t in ("asset",):
-        assert passes_gates(blk(t), Gates()) is True  # default on
+        assert passes_gates(blk(t), Gates()) is True
         assert passes_gates(blk(t), Gates(assets=True)) is True
         assert passes_gates(blk(t), Gates(assets=False)) is False
         assert passes_gates(blk(t), Gates(telemetry="off")) is True

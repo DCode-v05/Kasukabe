@@ -28,8 +28,6 @@ def spec(unit_id: str) -> UnitSpec:
     return UnitSpec(unit_id=unit_id, engine_id="e", cdt_url="http://broker", cdt_key="k")
 
 
-# -- the missing restart() ------------------------------------------------
-
 def test_the_runners_protocol_now_declares_restart():
     assert hasattr(Supervisor, "restart")
 
@@ -62,8 +60,6 @@ async def test_restart_works_on_a_unit_that_was_stopped():
     assert (await sup.restart("agent-0002")).state is UnitState.RUNNING
 
 
-# -- the cross-enum trap --------------------------------------------------
-
 @pytest.mark.asyncio
 async def test_the_watchdog_compares_states_by_value_not_identity():
     """run_genesis declares its OWN UnitState rather than importing infra's
@@ -81,13 +77,9 @@ async def test_the_watchdog_compares_states_by_value_not_identity():
     assert sup.restarts == ["agent-0003"]
 
 
-# -- the runner wiring ----------------------------------------------------
-
 def test_the_config_carries_the_watchdog_knobs():
     cfg = GenesisRunnerConfig()
     assert cfg.watchdog_poll_interval_s > 0
-    # A silence timeout shorter than a tick would restart engines that are
-    # merely mid-inference on a slow model.
     assert cfg.watchdog_silence_timeout_s > cfg.tick_timeout_s
 
 

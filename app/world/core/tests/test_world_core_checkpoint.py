@@ -47,12 +47,12 @@ def test_unregister_removes_component() -> None:
     manager = CheckpointManager()
     manager.register("thing", FakeComponent())
     manager.unregister("thing")
-    manager.register("thing", FakeComponent())  # must not raise now
+    manager.register("thing", FakeComponent())
 
 
 def test_unregister_unknown_name_is_noop() -> None:
     manager = CheckpointManager()
-    manager.unregister("nothing")  # must not raise
+    manager.unregister("nothing")
 
 
 @pytest.mark.asyncio
@@ -167,7 +167,7 @@ async def test_restore_warns_and_skips_unregistered_components(
     )
 
     with caplog.at_level(logging.WARNING):
-        await manager.restore(checkpoint)  # must not raise
+        await manager.restore(checkpoint)
 
     assert "unknown_thing" in caplog.text
 

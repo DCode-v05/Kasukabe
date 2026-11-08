@@ -128,26 +128,8 @@ def build_admin_deps() -> AdminDeps:
     )
 
 
-# ── error translation ──────────────────────────────────────────────────
-# Every business-logic failure this process can raise (a bad tool call,
-# a halted ledger, a rejected charter action, a crime/ports violation, a
-# missing/wrong operator token on an /admin/* route) is already a
-# well-typed exception from the module that detected it (see
-# tools/registry.py's own docstring on why those are not re-wrapped) -
-# install_admin_exception_handlers is the one place that typing becomes
-# an HTTP status for every route in this process (both the ones below and
-# every /admin/* route admin_api.py's router adds), so no route needs its
-# own try/except for the common case.
-
 install_admin_exception_handlers(app)
 app.include_router(build_admin_router(build_admin_deps))
-
-
-# ── viewer routers ─────────────────────────────────────────────────────
-# Every module below was built as a standalone router and then never
-# mounted, which is how the game server ended up serving mock-agent-*
-# rows: the real data existed and nothing exposed it. Mounted here AND in
-# run_genesis.py's embedded app, because a live run boots that one.
 
 
 def build_agents_deps() -> AgentsDeps:
@@ -200,14 +182,9 @@ app.include_router(build_location_router(build_location_deps))
 app.include_router(build_governance_router(build_governance_deps))
 app.include_router(build_social_router(build_social_deps))
 app.include_router(build_agent_viewer_router(build_agent_viewer_deps))
-# B3/B6: the survival and skill views. Read-only, no token - DESIGN.md
-# section 8's viewers "are windows, never authorities."
 app.include_router(build_family_router(build_family_deps))
 app.include_router(build_skills_router(build_skills_deps))
 app.include_router(build_workshop_router(build_workshop_deps))
-
-
-# ── health / summary ────────────────────────────────────────────────────
 
 
 @app.get("/health")
@@ -215,19 +192,12 @@ async def health() -> dict[str, str]:
     """Liveness probe. Does not require the world to be booted (unlike
     every other route below) so an orchestrator can distinguish
     "process is up, still booting" from "process is dead"."""
-    # cognition="none": this host serves world state but runs no agent
-    # engines at all - only world/run_genesis.py's embedded app supervises
-    # them. Reported explicitly rather than omitted so game/ can tell
-    # "no engines here" apart from "an older world that cannot say".
     return {"status": "ok", "service": "world", "cognition": "none"}
 
 
 @app.get("/state/summary")
 async def state_summary() -> dict[str, Any]:
     return server_dep().world_summary()
-
-
-# ── agents (reads) ──────────────────────────────────────────────────────
 
 
 @app.get("/agents")
@@ -241,9 +211,6 @@ async def get_agent(agent_id: str) -> dict[str, Any]:
     if summary is None:
         raise HTTPException(status_code=404, detail=f"no agent {agent_id!r}")
     return summary
-
-
-# ── ledger ───────────────────────────────────────────────────────────────
 
 
 @app.get("/ledger/invariant")
@@ -276,9 +243,6 @@ async def ledger_payer(agent_id: str, purpose: str = "", amount_cents: int = 0) 
     ledger = server.world.ledger
     try:
         account = ledger.get_account(agent_id)
-        # What the call is FOR decides who pays: a broke resident's learning
-        # falls to the treasury (`Ledger.payer_for`). A caller that says
-        # nothing gets exactly the answer it always got.
         payer_id = ledger.payer_for(agent_id, amount_cents, purpose)
     except LedgerError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -338,9 +302,6 @@ async def ledger_burn(payload: BurnRequest) -> dict[str, Any]:
     server = server_dep()
     transaction = await server.burn_inference(payload.agent_id, payload.usd_cents, memo=payload.memo)
     return transaction.model_dump(mode="json")
-
-
-# ── the law of physics: tool calls ────────────────────────────────────────
 
 
 class ToolCallRequest(BaseModel):
@@ -420,7 +381,6 @@ async def world_vitals() -> dict[str, Any]:
     """
     agents = world_state.agents
 
-    # ── health ──────────────────────────────────────────────────────
     by_state: dict[str, int] = {}
     dormant = dead = 0
     for agent in agents.values():
@@ -437,7 +397,6 @@ async def world_vitals() -> dict[str, Any]:
         if d is not None and getattr(d, "is_dormant", False):
             dormant += 1
 
-    # ── what the town has actually built ────────────────────────────
     buildings = [
         {
             "building_id": getattr(b, "building_id", ""),
@@ -457,9 +416,6 @@ async def world_vitals() -> dict[str, Any]:
         for b in world_state.businesses.values()
     ]
 
-    # ── food: what is actually held, by whom ────────────────────────
-    # The Inventory is the town's real stock. Edible goods only, because
-    # "the town holds 40 timber" is not a food figure.
     edible = {"wheat", "rice", "corn", "potato", "tomato", "carrot",
               "cabbage", "soybean", "barley", "flour", "bread", "meal",
               "apple", "milk", "egg", "fish"}
@@ -482,7 +438,6 @@ async def world_vitals() -> dict[str, Any]:
         for z in world_state.resource_zones.values()
     ]
 
-    # ── treasury: the ledger's own figure ───────────────────────────
     treasury_sim = None
     try:
         from world.ledger.money import TREASURY_ACCOUNT_ID
@@ -603,9 +558,6 @@ async def call_tool(tool_name: str, payload: ToolCallRequest) -> dict[str, Any]:
     }
 
 
-# ── tick loop ────────────────────────────────────────────────────────────
-
-
 class MarkDecidedRequest(BaseModel):
     agent_id: str
 
@@ -615,13 +567,6 @@ async def advance_tick() -> dict[str, Any]:
     server = server_dep()
     extras = admin_extras_dep()
     if extras.sim_control.paused:
-        # This process has no continuous in-loop tick driver of its own
-        # (ticks are single-stepped by whatever external driver calls this
-        # route); honoring pause here IS the "ticks halt at a boundary"
-        # guarantee for this host, matching the real block-until-resumed
-        # wait run_genesis.py's GenesisRunner.run_tick does for a live
-        # run's own continuous loop (world/admin_api.py's SimControl
-        # docstring).
         raise HTTPException(status_code=409, detail="sim is paused, resume via POST /admin/control/resume")
     result = await server.advance_tick()
     return {
@@ -640,17 +585,6 @@ async def mark_decided(agent_id: str) -> dict[str, str]:
     return {"status": "ok", "agent_id": agent_id}
 
 
-# ── President/God console ───────────────────────────────────────────────
-# Superseded by world/admin_api.py's build_admin_router(), mounted above
-# at import time - the full game/console/world_client.py contract under
-# /admin/*, not this hand-rolled non-admin-prefixed subset (STATUS.md risk
-# #2). See admin_api.py's own module docstring for what replaced each of
-# these routes and why.
-
-
-# ── crime/ reads ─────────────────────────────────────────────────────────
-
-
 @app.get("/crime/cases")
 async def crime_cases() -> list[dict[str, Any]]:
     return server_dep().crime_cases()
@@ -661,15 +595,9 @@ async def crime_metrics() -> dict[str, Any]:
     return await server_dep().crime_metrics()
 
 
-# ── research reads ──────────────────────────────────────────────────────
-
-
 @app.get("/research/control-businesses")
 async def control_businesses() -> list[dict[str, Any]]:
     return list(server_dep().control_businesses.values())
-
-
-# ── WebSocket event relay for the game frontend ─────────────────────────
 
 
 @app.websocket("/ws/events")
@@ -693,8 +621,6 @@ async def ws_events(websocket: WebSocket) -> None:
     server.event_bus.subscribe("*", on_event)
     try:
         while True:
-            # The relay is one-directional (world -> client); block on any
-            # inbound message only to detect disconnect promptly.
             await websocket.receive_text()
     except WebSocketDisconnect:
         pass

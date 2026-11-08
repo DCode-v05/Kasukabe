@@ -1,40 +1,6 @@
-/* Kasukabe — Part E: what self-authoring looks like on screen.
- *
- * None of this was visible before. An agent could invent a trade, teach it to
- * its daughter and reach mastery, and the map would show a figure walking to
- * the forest. This module renders the four views that make that legible:
- *
- *   E.1  the Skills tab in a resident's file — a skill AS THE DOCUMENT it is
- *   E.2  the step a resident is on, wherever they are listed
- *   E.3  the Workshop book — every tool invented, every workflow authored
- *   E.4  the Council book — governmental workflows, and only those
- *
- * Three rules, all of them learned the hard way and all of them load-bearing:
- *
- * ONE POLL, ONE INSTANT. E.1/E.2 never fetch. They read what township-v2.js
- * already pulled from /api/township/live and republished as a `kasukabe:live`
- * event, because a resident's money and the step they are on must be true at
- * the same moment. A second poll of the same URL would disagree by a tick and
- * nobody would be able to tell why.
- *
- * NEVER A FABRICATED NUMBER BESIDE A REAL ONE. Everything here is either live
- * from the world server or says plainly that it is not. There is no client
- * model behind any figure in this file.
- *
- * POLL WHETHER OR NOT THE PANEL IS OPEN — but only for the two views that
- * have their own source. Workshop and Council are on a 15s timer that runs
- * regardless of whether their tab is showing, because a tool is invented
- * every few game-days at most and a panel that starts empty and fills in a
- * quarter of a minute after you open it reads as broken.
- */
 (function () {
   'use strict';
 
-  // Skill names, notes and preconditions are written BY AGENTS. They are
-  // model output rendered into innerHTML, so every one of them is escaped
-  // here. This is the only reason this module builds strings at all rather
-  // than nodes: it matches the surrounding renderers, so it must match their
-  // care too.
   function esc(v) {
     return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -42,13 +8,13 @@
   }
 
   const state = {
-    skills: Object.create(null),      // agentId -> [HeldSkillView]
-    following: Object.create(null),   // agentId -> {skill, step, total}
+    skills: Object.create(null),
+    following: Object.create(null),
     connected: false,
     tick: null,
-    workshop: null,                   // last /api/town/workshop payload
-    council: null,                    // last /api/town/council payload
-    openSkill: Object.create(null),   // "agentId::skill" -> expanded?
+    workshop: null,
+    council: null,
+    openSkill: Object.create(null),
   };
 
   document.addEventListener('kasukabe:live', function (e) {
@@ -57,16 +23,11 @@
     state.following = d.following || Object.create(null);
     state.connected = !!d.connected;
     state.tick = d.tick;
-    // The resident file is open on somebody: keep their step current without
-    // waiting for them to click away and back.
     if (typeof window.refreshOpenSkillsTab === 'function') window.refreshOpenSkillsTab();
     paintFollowSlots();
-    renderWorkshop();   // followers_now changes every tick; cheap to redraw
+    renderWorkshop();
   });
 
-  /** E.2 on the roster cards. The cards are built once and reused, so the
-   *  step is painted into a slot on each poll rather than rebuilding 314
-   *  cards every two seconds. */
   function paintFollowSlots() {
     const slots = document.querySelectorAll('[data-follow]');
     for (let i = 0; i < slots.length; i++) {
@@ -75,10 +36,6 @@
     }
   }
 
-  // ---------------------------------------------------------------- E.1/E.2
-
-  /** A proficiency bar. Eight cells, because the spec's sketch is eight and a
-   *  count you can read at a glance beats a percentage you have to parse. */
   function profBar(level) {
     const filled = Math.max(0, Math.min(8, Math.round((Number(level) || 0) / 12.5)));
     let out = '<span class="prof-bar" aria-hidden="true">';
@@ -86,9 +43,6 @@
     return out + '</span><span class="prof-num">' + (Number(level) || 0) + '</span>';
   }
 
-  /** Where a skill came from. This is the sentence that makes the experiment
-   *  visible: "invented by her" and "taught by Dorian Dunn" are the two ways
-   *  knowledge moves through the town, and they must never be conflated. */
   function provenance(sk, agentId) {
     if (sk.authored && sk.author_agent_id === agentId) return 'invented by them';
     if (sk.taught_by_name) return 'taught by ' + esc(sk.taught_by_name);
@@ -119,9 +73,6 @@
 
   function skillCard(sk, agentId) {
     const key = agentId + '::' + sk.name;
-    // A workflow being walked right now opens itself. Anything else starts
-    // collapsed: a resident with nine skills should not need scrolling past
-    // eight documents to reach the one they are actually doing.
     const open = state.openSkill[key] != null ? state.openSkill[key] : !!sk.following;
     const stepLine = sk.following && sk.steps.length
       ? '<span class="skill-step">step ' + (Math.min(sk.next_step + 1, sk.steps.length)) +
@@ -145,10 +96,6 @@
     '</div>';
   }
 
-  /** E.1. The most important view in Part E: a skill is a document, so show
-   *  the document. Two foresters at the same level with a different step 3 is
-   *  the town's knowledge diverging — which is the experiment, and which a
-   *  proficiency number alone can never show. */
   function skillsTabHtml(agentId) {
     if (!state.connected) {
       return '<div class="inspector-empty">No world server bound, so nothing can be ' +
@@ -174,10 +121,6 @@
     '</div>';
   }
 
-  /** E.2. One line for a list row: what they are following and how far in.
-   *  "(no skill)" is deliberately visible — an agent acting outside any
-   *  workflow it holds is the normal early state, and watching that fraction
-   *  fall across a run is the clearest signal that skills are being adopted. */
   function followingLabel(agentId) {
     const f = state.following[agentId];
     if (!state.connected) return '';
@@ -186,7 +129,6 @@
            ' <span class="follow-step">step ' + f.step + '/' + f.total + '</span></span>';
   }
 
-  /** E.5's data half: is this resident mid-workflow? village2.js asks. */
   function isFollowing(agentId) { return !!state.following[agentId]; }
 
   document.addEventListener('click', function (e) {
@@ -202,8 +144,6 @@
     state.openSkill[key] = open;
   });
 
-  // ------------------------------------------------------------------ E.3/E.4
-
   function fetchJson(url) {
     return fetch(url, { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : { available: false, detail: 'HTTP ' + r.status }; })
@@ -215,9 +155,6 @@
            '<span>' + esc((d && d.detail) || 'no world server bound') + '</span></div>';
   }
 
-  /** E.3. The Workshop. The warning mark is the interesting part: a filing
-   *  nobody adopted is the town telling you which ideas did not take, which
-   *  is as interesting as the ones that did. */
   function workshopHtml(d) {
     if (!d || !d.available) return unavailable(d, 'Workshop');
     const tools = d.tools || [], skills = d.skills || [];
@@ -226,8 +163,6 @@
         '<span>The town is connected and has invented nothing so far. ' +
         'This is the honest early state of a run, not a missing panel.</span></div>';
     }
-    // "Spreading fastest" is a measurement, not a guess: holders per game-day
-    // since filing, computed server-side, maximum taken here.
     let fastest = null;
     skills.forEach(function (s) {
       if (s.holders > 1 && (!fastest || s.spread_per_day > fastest.spread_per_day)) fastest = s;
@@ -271,9 +206,6 @@
     '</div>';
   }
 
-  /** E.4. The Council. Only governmental workflows appear here, which is the
-   *  point — the tab should be mostly empty, and when it is not, something
-   *  constitutional is happening. */
   function councilHtml(d) {
     if (!d || !d.available) return unavailable(d, 'Council');
     const before = d.before_council || [], force = d.in_force || [], refused = d.refused || [];
@@ -344,9 +276,6 @@
     escape: esc,
   };
 
-  // A tool is invented every few game-days at most, so 15s is generous; and
-  // it runs whether or not the tab is open, because a panel that fills in a
-  // quarter-minute after you first look at it reads as broken.
   if (location.protocol !== 'file:') {
     pollTown();
     setInterval(pollTown, 15000);

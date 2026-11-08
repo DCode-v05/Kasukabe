@@ -97,20 +97,14 @@ from src.sim.session_log import RECORD_HEADING
 
 logger = logging.getLogger("kasukabe.sim.resident_voice")
 
-# Verbatim prefix of the frozen complexity nudge (thread.py:2921). Matched, not
-# imported, for the same reason as FROZEN_SUMMARY_PROMPT: it is built inline.
 PLAN_NUDGE = re.compile(
     r"<system-reminder>This task appears complex\. Consider calling request_plan\b"
     r".*?</system-reminder>\s*",
     re.S,
 )
 
-# The first line of every perception the world writes:
-# "It is game-day 0, 10:00 (day). You are at street."
 PERCEPTION_HEAD = re.compile(r"^It is game-day \d+, \d{2}:\d{2}[^\n]*", re.M)
 
-# Whether a turn is handed its OLDER perceptions in full. Off by default -
-# see `_rewrite_turn`. Set to 1 to put the full pictures back and measure.
 OLD_PERCEPTIONS_IN_FULL = os.environ.get(
     "KASUKABE_OLD_PERCEPTIONS_IN_FULL", "0"
 ).strip().lower() in {"1", "true", "yes", "on"}
@@ -119,12 +113,6 @@ RECORDS_IN_WORLD_VOICE = os.environ.get(
     "KASUKABE_RECORDS_IN_WORLD_VOICE", "1"
 ).strip().lower() not in {"0", "false", "no", "off"}
 
-# Verbatim from src/engine_core/thread.py. Matched rather than imported
-# because it is built inline there, in a local variable, inside a method:
-# there is no name to import. If that text ever changes this stops
-# matching, the frozen prompt goes through untouched, and the run gets
-# worse summaries rather than a crash - so `saw_frozen_prompt` below is
-# counted and logged, and a run that never sees it says so.
 FROZEN_SUMMARY_PROMPT = (
     "Summarize this exchange in under 100 tokens total. "
     "Format: [user] what they said/asked (50 tok max) "
@@ -152,20 +140,6 @@ def resident_summary_prompt(agent_name: str | None) -> str:
         "you decided, who was there, what you actually did. Facts only - "
         "do not invent anything that did not happen, and do not write down "
         "things you only considered or imagined as if you had done them. "
-        # PROMPT-04. Two additions, both from `deni-a6f9eb4-5h`.
-        #
-        # The first: this note is the ONLY thing that survives into the
-        # next turn, and 595 turns in that run wrote out acts they had
-        # not performed. A summary that records an unperformed intention
-        # as a fact is how a resident spends day two acting on a sale
-        # that never happened. Separating the two is cheap here and
-        # impossible later.
-        #
-        # The second: a resident whose plan was interrupted had nowhere
-        # to put it, so every tick re-derived the whole day from the
-        # persona. Codex's agents carry an explicit plan across steps for
-        # exactly this reason. One clause, and only what is unfinished -
-        # not a strategy, a loose end.
         "If something you meant to do was left undone, say so in a few "
         "words and say what is still needed, separately from what "
         "happened. Never write an intention as an outcome. "
@@ -200,13 +174,11 @@ def turn_did_something(messages: Any) -> bool:
         items = list(messages)
     except TypeError:
         return True
-    for message in reversed(items[:-1]):  # skip the summary prompt itself
+    for message in reversed(items[:-1]):
         content = getattr(message, "content", None)
         if isinstance(content, list):
             return True
         if getattr(message, "role", None) == "user" and isinstance(content, str):
-            # The perception that opened this turn. Nothing before it
-            # belongs to this turn.
             return False
     return True
 
@@ -248,7 +220,7 @@ def _without_plan_nudge(content: Any) -> tuple[Any, int]:
             text, cut = PLAN_NUDGE.subn("", block.text)
             removed += cut
             if cut and not text.strip():
-                continue  # Converse refuses an empty text block
+                continue
             if cut:
                 block = dataclasses.replace(block, text=text)
         kept.append(block)
@@ -312,15 +284,11 @@ class _ResidentVoiceAdapter:
         self._agent_name = agent_name
         self.rewrites = 0
         self.skipped = 0
-        # Counted so a run can say the rewrite happened, not leave it inferred.
         self.plan_nudges_removed = 0
         self.records_moved = 0
         self.perceptions_compacted = 0
 
     def __getattr__(self, item: str) -> Any:
-        # Only reached for attributes this class does not define, so the
-        # wrapper adds `generate`, `stream_with_tools` and `stream` and
-        # hides nothing.
         return getattr(self._inner, item)
 
     async def stream_with_tools(self, messages: Any, *args: Any, **kwargs: Any) -> Any:
@@ -344,19 +312,6 @@ class _ResidentVoiceAdapter:
             return messages
 
     def _rewrite_turn(self, items: list[Any]) -> list[Any]:
-        # An OLDER perception is reduced to its first line - when and where.
-        #
-        # Run 29: the median resident call grew from 14,110 input tokens in
-        # the first game-hour to 23,759 by the last (N10's bar is 1.25x;
-        # this was 1.68x), and late in the run 61% of the world's message -
-        # a median 20,747 characters - was older perceptions. Each one is a
-        # full picture of the world at a moment the current perception has
-        # already superseded: the people here then, the prices then, the
-        # civic notice then, the backlog of things said then. With no prompt
-        # cache every one of them was paid for again on every call of every
-        # turn. A record needs to know when and where it happened, and that
-        # is the first line; the records themselves stay whole, and the
-        # current perception is never touched.
         heads = [i for i, m in enumerate(items) if _perception_head(m) is not None]
         current = heads[-1] if heads else None
 
@@ -382,8 +337,6 @@ class _ResidentVoiceAdapter:
                 and _is_plain_text(previous.content)
                 and _is_plain_text(message.content)
             ):
-                # Converse needs the roles to alternate; a moved record now
-                # sits between two of the world's messages.
                 out[-1] = dataclasses.replace(previous, content=_joined(previous.content, message.content))
                 continue
             out.append(message)
@@ -391,8 +344,6 @@ class _ResidentVoiceAdapter:
 
     async def generate(self, messages: Any, *args: Any, **kwargs: Any) -> Any:
         if self._is_summary_call(messages) and not turn_did_something(messages):
-            # B3, and NOT the way the spec worded it - see the module
-            # docstring's "What B3 asked for, and what it gets instead".
             self.skipped += 1
             return cheap_summary(messages, self._agent_name)
         rewritten = self._rewrite(messages)
@@ -421,9 +372,6 @@ class _ResidentVoiceAdapter:
             if isinstance(content, str) and content.strip() == FROZEN_SUMMARY_PROMPT.strip():
                 try:
                     prompt = resident_summary_prompt(self._agent_name)
-                    # The engine's Message is a frozen dataclass. Assigning to
-                    # it raised here on every live call: run 28b sent all 87
-                    # post-turn summaries with the frozen prompt.
                     if dataclasses.is_dataclass(message):
                         out[index] = dataclasses.replace(message, content=prompt)
                     else:

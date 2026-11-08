@@ -22,7 +22,6 @@ import pytest
 from world.map.blocks import SpecialBlockTables
 from world.map.model import WorldMap, build_world_map
 
-# app/world/map/tests/conftest.py -> parents[4] is the kasukabe/ repo root.
 VILLE_DIR = (
     Path(__file__).resolve().parents[4]
     / "smallville"
@@ -36,12 +35,6 @@ VILLE_DIR = (
 TINY_WIDTH = 5
 TINY_HEIGHT = 5
 
-# Row-major, y0 (north) first. # = wall/collision, . = open ground.
-#   y0: # # # # #
-#   y1: # . . . #   ("Test House" interior, bed at (1,1))
-#   y2: # . . . #   (spawn point at (2,2))
-#   y3: # # . # #   (door at (2,3))
-#   y4: . . . . .   (exterior street)
 TINY_COLLISION = [
     1, 1, 1, 1, 1,
     1, 0, 0, 0, 1,

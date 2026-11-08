@@ -67,7 +67,7 @@ async def test_a_declared_bakery_becomes_a_running_control(runner) -> None:
 async def test_the_tick_gives_it_its_turn(runner) -> None:
     """`ControlBakery.act` is the thing with no caller. This is the caller."""
     _declare(runner, _bakery())
-    await runner.act_the_controls(tick=1)      # must not raise
+    await runner.act_the_controls(tick=1)
 
     control = runner._controls[0]
     assert control.actions or control.refusals, (
@@ -103,7 +103,7 @@ async def test_a_control_that_fails_does_not_end_the_tick(runner, monkeypatch) -
             raise RuntimeError("the oven exploded")
 
     runner._controls = [_Exploding()]
-    assert await runner.act_the_controls(tick=1) == []      # must not raise
+    assert await runner.act_the_controls(tick=1) == []
 
 
 @pytest.mark.asyncio
@@ -170,8 +170,6 @@ async def test_the_tick_loop_really_calls_it(runner) -> None:
 
     runner.gateway = SpyGateway()
 
-    # No due residents at all: a control is the baseline the residents are
-    # measured against, so it takes its turn whether or not anyone was due.
     await runner.dispatch_due_agents(TickResult(tick=timestamp_for(60), due_agents=[]))
 
     assert runner._controls, (

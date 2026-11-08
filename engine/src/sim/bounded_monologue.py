@@ -110,13 +110,9 @@ def end_the_turn_on_a_cut_monologue(adapter: Any) -> Any:
 class _NoContinuationAdapter:
     def __init__(self, inner: Any) -> None:
         self._inner = inner
-        # How many turns this resident ended because its own sentence was
-        # cut off. Read by tests; worth reading in a run report too.
         self.monologues_cut = 0
 
     def __getattr__(self, item: str) -> Any:
-        # Only reached for attributes this class does not define, so the
-        # wrapper adds `stream_with_tools` and hides nothing.
         return getattr(self._inner, item)
 
     async def stream_with_tools(self, *args: Any, **kwargs: Any) -> AsyncIterator[StreamEvent]:

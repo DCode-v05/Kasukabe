@@ -38,8 +38,6 @@ from world.map.model import TileCoord
 from world.tools.bootstrap import build_world
 from world.tools.primitives.places import known_places
 
-# Agreed BEFORE measuring, per §8.5. A resident must be able to cross the
-# town and still have a working day left: two game-hours is twelve ticks.
 MAX_CROSSING_TICKS = 12
 MAX_CROSSING_GAME_HOURS = 2
 

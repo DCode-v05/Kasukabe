@@ -35,11 +35,6 @@ from world.tools.state import WorldState
 from .conftest import spawn_agent
 from world.tests.map_assets import needs_the_map
 
-# TOOL-27. This module needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped, and red for environment hides real regressions inside the
-# noise - which is how TOOL-09 stayed invisible for a whole cycle.
 pytestmark = needs_the_map
 
 MILL_AT = "Kasukabe Market"
@@ -76,28 +71,18 @@ async def _bakery(world: WorldState, *, owner: str = "n07") -> Business:
     return business
 
 
-# ── the trade table ───────────────────────────────────────────────────
-
-
 def test_a_trade_brings_its_own_workshop():
     assert workshops_for_business_type("mill") == {"mill"}
     assert workshops_for_business_type("bakery") == {"kitchen"}
     assert workshops_for_business_type("construction") == {"carpentry", "sawmill"}
-    # A shop that sells what others made brings none. Otherwise anybody who
-    # registered "grocery" could bake, and the gate would mean nothing.
     assert workshops_for_business_type("grocery") == set()
     assert workshops_for_business_type("nonsense") == set()
-
-
-# ── the gate ──────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
 async def test_standing_in_the_mill_satisfies_the_mill_gate(world):
     await _mill(world)
 
-    # The pure fold cannot know this - being a mill is a property of the
-    # business standing there, not of the string.
     assert not satisfies_gate(MILL_AT, "mill")
     assert satisfies_gate_in(world, MILL_AT, "mill")
 
@@ -128,9 +113,6 @@ async def test_two_shops_on_one_square_each_lend_their_own(world):
     )
 
     assert satisfies_gate_in(world, BAKERY_AT, "kitchen")
-
-
-# ── the two refusals from run 23 ──────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -191,9 +173,6 @@ async def test_a_grocer_cannot_bake_in_a_grocery(world, registry):
         )
 
 
-# ── the phantom door is closed ────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_workshop_a_business_provides_is_not_listed_as_its_own_place(world):
     """GROW-28: `known_places` was the invitation into the empty room.
@@ -206,7 +185,6 @@ async def test_a_workshop_a_business_provides_is_not_listed_as_its_own_place(wor
     ids = {p["place_id"] for p in known_places(world)}
 
     assert "mill" not in ids
-    # The real mill IS listed - under the name people call it by.
     assert any("mill" in p.lower() for p in ids)
 
 

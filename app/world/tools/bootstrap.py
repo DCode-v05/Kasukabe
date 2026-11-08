@@ -78,13 +78,6 @@ from world.tools.state import WorldState
 
 logger = logging.getLogger(__name__)
 
-# app/world/tools/bootstrap.py -> parents[3] is the kasukabe/ repo root,
-# matching world/wiring.py's own REPO_ROOT (PACKAGE_DIR.parent.parent from
-# world/wiring.py - same two-hops-above-app/ destination, just walked from
-# one directory deeper here) and world/map/tests/conftest.py's identical
-# walk-up-parents trick, so this resolves the same way on a host checkout
-# and inside the "test" docker-compose service (which mounts the repo's
-# sibling smallville/ at /smallville - see that file's own comment).
 DEFAULT_VILLE_DIR = (
     Path(__file__).resolve().parents[3]
     / "smallville"
@@ -95,40 +88,18 @@ DEFAULT_VILLE_DIR = (
     / "the_ville"
 )
 
-# One module per primitive family (primitives/__init__.py's convention).
-# Order does not matter for correctness (every ToolSpec name is unique,
-# checked by ToolRegistry.register); listed in roughly DESIGN.md section
-# 2's own primitive order for readability.
 PRIMITIVE_MODULES = (
     institutions,
     intent,
-    # ENG-24, immediately after intent because it is the same family
-    # grown up: an intention is one sentence about the next few ticks,
-    # a goal has a horizon, a priority, progress and a way to be
-    # superseded. Both stay - a resident should be able to note "going
-    # to the mill" without declaring a goal about it.
     goals,
     labour,
     living,
     movement,
-    # Immediately after movement: an agent that can walk needs to know where
-    # it can walk TO. Without these three the town had 27 tools and no way
-    # to answer "where can I go?", so an agent could only name places its
-    # persona already mentioned.
     places,
-    # And, immediately after places, who. `places` answered "where can I go";
-    # nothing answered "who can help me", so an agent holding four units of
-    # copper asked the room five times in one tick while a trader stood two
-    # buildings away. Discovery is the other half of that pair.
     people,
     resources,
     production,
     commerce,
-    # Land ownership sits with commerce, not construction: The 250 section
-    # 31's unit of ownership is the 1x1 tile and its transfer is the same
-    # shape as `transfer`, while construction.py's Plot is a development
-    # RIGHT the government grants over a footprint - two different facts
-    # about the same ground.
     property,
     civic,
     social,
@@ -168,10 +139,7 @@ def load_movement_world_map(ville_dir: Path) -> WorldMap | None:
     return world_map
 
 
-# One game-day of a talkative 50-agent town, roughly. The viewer shows the
-# tail; the full history lives in the `utterances` trace table.
 MAX_UTTERANCES_KEPT = 2000
-
 
 
 def display_name(world: WorldState, agent_id: "str | None") -> "str | None":
@@ -218,10 +186,6 @@ def attach_utterance_log(world: WorldState) -> None:
         world.utterances.append(
             {
                 "tick": event.tick,
-                # Wall clock as well as tick. The tick locates a remark
-                # inside the simulation; only this locates it inside the
-                # run, which is what a reader needs to line a conversation
-                # up against the API calls that produced it.
                 "said_at": time.time(),
                 "speaker_agent_id": speaker,
                 "speaker_name": display_name(world, speaker),
@@ -231,13 +195,7 @@ def attach_utterance_log(world: WorldState) -> None:
                 "content": payload.get("content", ""),
                 "is_public": payload.get("is_public", True),
                 "conversation_id": payload.get("conversation_id"),
-                # Everyone the remark spoke to, not only the parameter's
-                # single id. open_questions and awaiting_reply both read
-                # this to decide who is still owed an answer - see
-                # social.everyone_addressed for the run-19 case it fixes.
                 "addressed_agent_ids": list(payload.get("addressed_agent_ids") or []),
-                # A2A intent: why the speaker said it, when it said. Research
-                # data; no perception reads this row's `intent`.
                 "intent": payload.get("intent"),
             }
         )
@@ -307,9 +265,6 @@ async def build_world(
     locations.attach(event_bus)
 
     ledger = Ledger(event_sink=lambda event: event_bus.publish(ledger_event_to_world_event(event)))
-    # GROW-12: threaded from the genesis file rather than defaulted here.
-    # A parameter that stops at the first boundary it meets is a fold
-    # that never reaches the storage key.
     charter = await create_genesis_charter_engine(
         genesis_tick,
         caretaker_pm_agent_id=caretaker_pm_agent_id,
@@ -326,17 +281,6 @@ async def build_world(
     )
     resources.seed_resource_zones(world)
 
-    # TOOL-09: the utterance log is not a map feature.
-    #
-    # `attach_utterance_log` used to be called from inside
-    # `attach_tile_tracking`, which runs only when the Ville assets are
-    # present. Without them `world.utterances` stayed empty and
-    # `open_questions`, `awaiting_reply`, `_continuing_conversation`, the
-    # convening hint and the control bakery's "answer whoever asked" all
-    # went silently dead - no error, no warning, just a town where nobody
-    # had ever said anything to anybody. Production has the map, so no run
-    # was affected; a CI host without the assets loses every "said to you"
-    # mechanism and reports it as three unrelated test failures.
     attach_utterance_log(world)
 
     resolved_map = world_map if world_map is not None else load_movement_world_map(ville_dir)
@@ -353,45 +297,12 @@ async def build_world(
     for spec in meta.build_specs(registry):
         registry.register(spec)
 
-    # B2: `set_intention` refuses a `done_when_tool` naming no tool, so it
-    # needs the vocabulary. The NAMES, not the registry - WorldState holds
-    # no reference to it (see that module's docstring on sibling systems),
-    # and a frozenset of strings is not a back door into one.
     world.registry_tool_names = frozenset(registry.tools)
 
-    # ── Prices, where the agent will actually read them ──────────────────
-    #
-    # cost_disclosure.py's own "Wiring this in" section, followed exactly.
-    # Two halves, and the first is the one that matters:
-    #
-    # 1. Every tool's description gains one sentence saying what it costs.
-    #    This is the only place an agent reliably looks - the tool list it is
-    #    handed each turn - so a price anywhere else is a price it has to go
-    #    and ask for. Acting costs money as of Part A; an agent that cannot
-    #    see that is being charged for something nobody told it about.
-    # 2. `quote_action_cost` is registered so an agent can price ONE specific
-    #    call, params and skill discount included, rather than reading the
-    #    minimum off a description.
-    #
-    # ToolSpec is frozen, so this is a dataclasses.replace per spec.
     world.action_costs = DEFAULT_SCHEDULE
-    # ECON-14: every world gets a head-tax debt store, so `pay_tax` has
-    # something to pay into no matter who built the world.
-    #
-    # Created HERE rather than by each composition root because the roots
-    # are exactly what went wrong: both made their own on the runner,
-    # where no tool handler could reach it, and `repay_head_tax_debt` sat
-    # complete and uncalled while residents carried debts they could not
-    # settle. A store the roots ADOPT cannot drift from the one the tool
-    # writes to; two stores that merely agree can.
     world.head_tax_debts = HeadTaxDebtStore()
-    # ECON-06: the same dict the day boundary keeps, so a tool can ask how
-    # hungry the resident calling it is.
     world.hunger_by_agent = {}
     world.gap_feedback = GapFeedback()
-    # Registered BEFORE the annotation loop, or it would be the one tool in the
-    # registry with no price on it - the tool whose entire job is telling
-    # agents what things cost.
     registry.register(cost_disclosure.build_action_cost_quote_spec())
     for name, spec in list(registry.tools.items()):
         registry.tools[name] = dataclasses.replace(
@@ -401,16 +312,6 @@ async def build_world(
             ),
         )
 
-    # The world holds the registry so a HANDLER can answer "what could I
-    # do", not just the caller who built it. `authoring_context` needs the
-    # whole vocabulary priced for one resident, and closing over the
-    # registry the way `describe_primitives` does would have meant
-    # threading it through every authoring handler by hand.
-    #
-    # Set LAST, after the price annotation above, so the descriptions a
-    # resident reads through this reference are the same annotated ones it
-    # gets in its tool schemas. Set before return, so no handler can ever
-    # observe a world with a half-built registry on it.
     world.tool_registry = registry
 
     return world, registry

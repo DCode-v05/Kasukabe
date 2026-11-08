@@ -33,7 +33,7 @@ from world.map.tiled_json import (
 def test_get_layer_returns_the_named_layers_data(tiny_tiled: dict) -> None:
     data = get_layer(tiny_tiled, COLLISION_LAYER)
     assert len(data) == 25
-    assert data[0] == 1  # top-left wall
+    assert data[0] == 1
 
 
 def test_get_layer_missing_name_raises(tiny_tiled: dict) -> None:
@@ -52,14 +52,14 @@ def test_set_layer_replaces_data_and_updates_declared_dimensions(tiny_tiled: dic
 
 
 def test_validate_tiled_map_accepts_the_fixture(tiny_tiled: dict) -> None:
-    validate_tiled_map(tiny_tiled)  # does not raise
+    validate_tiled_map(tiny_tiled)
 
 
 def test_validate_tiled_map_reports_every_missing_layer() -> None:
     broken = {"width": 5, "height": 5, "tilewidth": 32, "layers": []}
     with pytest.raises(TiledJsonError) as exc_info:
         validate_tiled_map(broken)
-    assert len(exc_info.value.errors) == 5  # all five required layers missing
+    assert len(exc_info.value.errors) == 5
 
 
 def test_append_rows_grows_height_not_width(tiny_tiled: dict) -> None:
@@ -79,7 +79,6 @@ def test_append_rows_preserves_existing_cells_and_fills_new_ones(tiny_tiled: dic
 def test_append_rows_default_fill_is_zero(tiny_tiled: dict) -> None:
     append_rows(tiny_tiled, 1)
     grown = get_layer(tiny_tiled, "Bottom Ground")
-    # Bottom Ground fixture starts all-2s; new row has no override, so 0.
     assert grown[-5:] == [0] * 5
 
 
@@ -100,10 +99,8 @@ def test_append_columns_inserts_at_the_end_of_every_row(tiny_tiled: dict) -> Non
     new_width = 7
 
     row0 = grown[0 * new_width : 1 * new_width]
-    assert row0 == [1, 1, 1, 1, 1, 7, 7]  # all-wall row, then the two new columns
+    assert row0 == [1, 1, 1, 1, 1, 7, 7]
 
-    # Row 1 ("# . . . #") must still read the same in its first 5 cells,
-    # with the new columns appended after.
     row1 = grown[1 * new_width : 2 * new_width]
     assert row1 == [1, 0, 0, 0, 1, 7, 7]
 
@@ -112,7 +109,6 @@ def test_stamp_rect_sets_exactly_the_requested_region(tiny_tiled: dict) -> None:
     stamp_rect(tiny_tiled, COLLISION_LAYER, 1, 1, 3, 2, 42)
     grid = get_layer(tiny_tiled, COLLISION_LAYER)
     width = tiny_tiled["width"]
-    # (1,1) and (2,1) are inside [1,3)x[1,2); (3,1) and (1,2) are not.
     assert grid[1 * width + 1] == 42
     assert grid[1 * width + 2] == 42
     assert grid[1 * width + 3] != 42
@@ -126,10 +122,10 @@ def test_stamp_rect_out_of_bounds_raises(tiny_tiled: dict) -> None:
 
 def test_regenerate_collision_layer_matches_the_fixture(tiny_tiled: dict) -> None:
     grid = regenerate_collision_layer(tiny_tiled)
-    assert grid[0][0] is True  # wall
-    assert grid[1][1] is False  # bed tile, open
-    assert grid[3][2] is False  # door, open
-    assert grid[4][0] is False  # street
+    assert grid[0][0] is True
+    assert grid[1][1] is False
+    assert grid[3][2] is False
+    assert grid[4][0] is False
 
 
 def test_regenerate_collision_layer_reflects_a_stamp(tiny_tiled: dict) -> None:
@@ -141,7 +137,7 @@ def test_regenerate_collision_layer_reflects_a_stamp(tiny_tiled: dict) -> None:
 def test_clone_tiled_map_is_a_deep_independent_copy(tiny_tiled: dict) -> None:
     clone = clone_tiled_map(tiny_tiled)
     append_rows(clone, 1)
-    assert tiny_tiled["height"] == 5  # original untouched
+    assert tiny_tiled["height"] == 5
     assert clone["height"] == 6
 
 
@@ -156,9 +152,6 @@ def test_id_allocator_default_floor_is_well_above_any_real_ville_gid() -> None:
     from world.map.tiled_json import SYNTHETIC_ID_FLOOR
 
     assert SYNTHETIC_ID_FLOOR > 40_000
-
-
-# -- integration: the real Ville visuals JSON -----------------------------
 
 
 def test_real_tiled_json_loads_and_validates(ville_dir: Path) -> None:

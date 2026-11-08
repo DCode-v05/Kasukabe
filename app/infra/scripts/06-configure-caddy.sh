@@ -1,16 +1,4 @@
 #!/usr/bin/env bash
-# Kasukabe host-bringup, step 6 (RUNBOOK.md section 8).
-#
-# Run ON THE m5.metal INSTANCE, after 05-deploy-services.sh and after DNS
-# (RUNBOOK.md section 5) has had time to propagate - Caddy's automatic
-# HTTPS will fail its ACME HTTP-01 challenge if kasukabe.september.wtf /
-# console.kasukabe.september.wtf don't yet resolve to this box's public
-# IP when it tries.
-#
-# Requires app/infra/env/caddy.env filled in (copy from
-# caddy.env.example, fill in KASUKABE_ACME_EMAIL and
-# KASUKABE_BASIC_AUTH_HASH - the latter from `caddy hash-password`, see
-# RUNBOOK.md section 8 for the exact command).
 set -euo pipefail
 
 APP_DIR=/opt/kasukabe/app
@@ -27,9 +15,6 @@ fi
 
 sudo cp "${APP_DIR}/infra/Caddyfile" /etc/caddy/Caddyfile
 
-# Drop-in so caddy.service loads KASUKABE_* env vars before Caddyfile's
-# {$VAR} substitution runs (systemd's own caddy.service ships with no
-# EnvironmentFile= by default).
 sudo mkdir -p /etc/systemd/system/caddy.service.d
 sudo tee /etc/systemd/system/caddy.service.d/override.conf >/dev/null <<EOF
 [Service]

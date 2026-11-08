@@ -127,7 +127,6 @@ async def test_the_labour_alone_does_not_beat_the_clock(world, registry) -> None
         await registry.execute(
             world, "builder", "work_site", {"building_id": building_id}
         )
-    # Deliberately do NOT advance the clock.
     with pytest.raises(ActorRequirementError) as refused:
         await complete_construction(world, building_id)
     assert "not due until" in str(refused.value)
@@ -146,8 +145,6 @@ async def test_a_tick_of_work_is_reported(world, registry) -> None:
         world.buildings[building_id].labour_ticks_required - 1
     )
     assert outcome.events[0].type == "world.building.worked"
-    # UI-33 asks every world.building.* event to carry {rect, kind,
-    # status}; this is the third such event.
     assert set(outcome.events[0].payload) >= {"rect", "kind", "status"}
 
 
@@ -156,9 +153,6 @@ async def test_you_cannot_work_a_site_you_are_not_standing_on(world, registry) -
     """The same rule `build_structure` follows (GROW-17). A crew that is
     not on site is not a crew."""
     building_id = await _a_site(world, registry)
-    # The real event path, so LocationIndex updates the way it does in
-    # production - reaching into state directly would test a shape
-    # rather than the behaviour.
     await move_agent(world, "builder", "Hobbs Cafe")
 
     with pytest.raises(LocationGateError):

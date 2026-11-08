@@ -24,8 +24,6 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 MANIFEST = ROOT / "docs" / "policy" / "LAW-1-MANIFEST.md"
 
-# `95e8788` "Vendor the Kasukabe engine". Everything in the frozen tree at
-# that commit is upstream's; everything after it is ours.
 VENDORED_BASE = "95e8788"
 
 FROZEN = (
@@ -35,18 +33,8 @@ FROZEN = (
     "engine/src/learning_centre",
 )
 
-# Read off the manifest's own table rather than kept in step with it by
-# hand. The file is the contract; a second copy of the contract in a test
-# is a second thing to forget, and this list was already one row stale the
-# first time the freeze was breached again.
 DECLARED = {
     "engine/src/learning_centre/pipeline.py",
-    # 2026-09-10, operator-directed: `SignalStore.delete_batch`, replacing
-    # a cleanup that ran `DELETE ... WHERE processed = 1` - every row
-    # claimed by ANY batch. Harmless while batches were six hours apart;
-    # a silent data-loss window at the 18-tick waking cadence. The
-    # learning-cadence spec called this the one change that had to land
-    # BEFORE that cadence, and the cadence shipped first.
     "engine/src/learning_centre/signals.py",
 }
 

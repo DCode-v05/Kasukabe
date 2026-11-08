@@ -40,8 +40,8 @@ from world.tools.bootstrap import build_world
 from world.tools.tests.conftest import spawn_agent
 
 FARM = "Kasukabe Farmland"
-MILL = "mill"        # `craft`'s gate
-KITCHEN = "kitchen"  # `cook`'s gate
+MILL = "mill"
+KITCHEN = "kitchen"
 WHO = "a_survivor"
 
 
@@ -92,9 +92,6 @@ def _held(world, item: str) -> int:
     return world.inventory.quantity(WHO, item)
 
 
-# ── field to mouth ───────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_resident_can_grow_mill_bake_and_eat(town):
     """The whole food chain, in the order a person would do it.
@@ -136,7 +133,7 @@ async def test_eating_actually_clears_the_hunger(running_town):
     await registry.execute(world, WHO, "eat", {"item": "bread"})
     import asyncio
 
-    await asyncio.sleep(0.2)   # the subscriber is on the bus
+    await asyncio.sleep(0.2)
 
     assert runner.hunger_by_agent[WHO].days_since_meal == 0, (
         "a resident ate a real loaf and the town still counts it as starving"
@@ -163,9 +160,6 @@ async def test_the_hunger_a_meal_relieves_is_the_one_the_needs_read(running_town
     assert compute_needs(world, WHO)["food"].level == 0.0
 
 
-# ── ground to goods ──────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_resident_can_take_something_out_of_the_ground(town):
     """The other production path. A town with only farming has one trade
@@ -180,18 +174,12 @@ async def test_a_resident_can_take_something_out_of_the_ground(town):
         pytest.skip("this genesis has no ore to dig")
 
     await spawn_agent(world, "a_miner", quarry.location_id, starting_sim=5_000)
-    # `mine` takes the METAL, not the item it yields: "iron", not
-    # "iron_ore". Worth the line - it is precisely the vocabulary gap
-    # that cost the run its transactions.
     metal = (quarry.resource_item or "").removesuffix("_ore")
     outcome = await registry.execute(world, "a_miner", "mine", {"metal": metal})
 
     assert world.inventory.quantity("a_miner", quarry.resource_item) > 0, (
         f"mining {quarry.resource_item} produced nothing: {outcome.result}"
     )
-
-
-# ── the ladder is real ───────────────────────────────────────────────
 
 
 def test_not_eating_escalates_and_the_thresholds_are_ordered():
@@ -216,9 +204,6 @@ async def test_a_day_of_not_eating_is_counted(town):
     )
 
 
-# ── work to wage to upkeep ───────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_household_that_pays_its_upkeep_is_not_billed_into_hunger(town):
     """The solvency loop. A resident whose household pays should not be
@@ -227,9 +212,6 @@ async def test_a_household_that_pays_its_upkeep_is_not_billed_into_hunger(town):
 
     world, _registry = town
     assert UPKEEP_TOTAL_SIM_PER_DAY > 0, "living is free; the stakes are fiction"
-    # A day's upkeep must be earnable: if one day of living costs more
-    # than a resident starts with, the town is unsurvivable by
-    # construction and no behaviour can fix it.
     assert world.ledger.sim_balance(WHO) > UPKEEP_TOTAL_SIM_PER_DAY, (
         "a resident cannot afford even one day of existing"
     )

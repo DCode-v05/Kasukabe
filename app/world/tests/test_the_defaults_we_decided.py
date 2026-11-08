@@ -30,8 +30,6 @@ def _runner(tmp_path, **kw) -> GenesisRunner:
     return GenesisRunner(GenesisRunnerConfig(**cfg))
 
 
-# ── 12.4 / 06.5 — midnight, not dawn ────────────────────────────────────
-
 def test_the_day_boundary_is_midnight_not_dawn():
     """`game_day` must turn over at day_tick 0, so the day's billing lands
     at midnight rather than at whatever hour a run happened to boot."""
@@ -50,12 +48,9 @@ async def test_a_dawn_boot_does_not_bill_at_dawn(tmp_path):
     runner = _runner(tmp_path, start_at_dawn=True)
     await runner.boot()
     assert runner.counters.last_life_day_processed == 0
-    # The next billing is tick 144 - midnight - not tick 36.
     assert timestamp_for(TICKS_PER_DAY).game_day != runner.counters.last_life_day_processed
     assert timestamp_for(DAWN_TICK + 1).game_day == runner.counters.last_life_day_processed
 
-
-# ── 12.6 / 06.6 — the richest member pays ───────────────────────────────
 
 @pytest.mark.asyncio
 async def test_the_richest_member_of_a_household_pays_its_tax(tmp_path):
@@ -65,8 +60,6 @@ async def test_the_richest_member_of_a_household_pays_its_tax(tmp_path):
     poor, middle, rich = ids
 
     ledger = runner.world_state.ledger
-    # Top the richest up rather than trying to drain the others: this test
-    # is about WHO is picked, not about exact balances.
     await ledger.mint_sim(rich, 50_000, tick=0, reason="blessing")
 
     assert runner.who_pays_for([poor, middle, rich]) == rich, (
@@ -74,7 +67,6 @@ async def test_the_richest_member_of_a_household_pays_its_tax(tmp_path):
         "first, which in practice was often a dependent with no income "
         "while an earning adult beside them held sim"
     )
-    # Order must not matter - that was the whole bug.
     assert runner.who_pays_for([rich, poor, middle]) == rich
 
 
@@ -83,13 +75,9 @@ async def test_the_payer_is_deterministic_on_a_tie(tmp_path):
     runner = _runner(tmp_path)
     await runner.boot()
     a, b = list(runner.world_state.agents)[:2]
-    # Equal balances: the id breaks the tie, so two runs of one seed bill
-    # the same person.
     first = runner.who_pays_for([a, b])
     assert runner.who_pays_for([b, a]) == first
 
-
-# ── 11.7 — hiring asks ──────────────────────────────────────────────────
 
 def test_hiring_requires_the_employee_to_have_agreed():
     from world.tools.primitives.civic import HireEmployeeParams
@@ -98,20 +86,6 @@ def test_hiring_requires_the_employee_to_have_agreed():
         "an owner can still name anyone in the town as their employee, and "
         "the first that person learns of it is a wage they did not agree to"
     )
-    # Silence is not consent - and it is now not even expressible.
-    #
-    # This used to read `default=False`, so omitting the flag meant "not
-    # consented" and the handler refused. Correct in spirit, and it made
-    # the tool uncallable: pydantic does not list a defaulted field in
-    # `required`, an index row carries only the required names
-    # (TRADE-02), so the one parameter deciding success never reached the
-    # resident's schema at all. Run 25's baker was refused six times for a
-    # parameter she had never been shown, after her employee had said
-    # "I agree" out loud.
-    #
-    # Required is the stronger form of the same rule: the caller must say
-    # true or false, and cannot leave it unsaid. `teach_skill` has always
-    # done it this way.
     import pytest as _pytest
 
     with _pytest.raises(Exception):
@@ -124,8 +98,6 @@ def test_hiring_requires_the_employee_to_have_agreed():
         is False
     )
 
-
-# ── 11.8 — steal reaches a shelf ────────────────────────────────────────
 
 def test_a_shop_shelf_is_a_thing_that_can_be_stolen_from():
     from world.tools.primitives.crime import _stealable

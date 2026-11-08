@@ -56,8 +56,6 @@ async def test_a_day_boundary_actually_moves_money(tmp_path):
     before = {a: world.ledger.sim_balance(a) for a in world.agents}
     assert any(v > 0 for v in before.values()), "nobody holds sim; the fixture is empty"
 
-    # The first real day boundary. CORE-04 made the boot day not count, so
-    # this is the first tick at which upkeep is due.
     await runner.run_life_ticks(timestamp_for(TICKS_PER_DAY))
 
     after = {a: world.ledger.sim_balance(a) for a in world.agents}
@@ -94,8 +92,6 @@ async def test_one_households_failure_does_not_stop_the_others(tmp_path):
     await runner.boot()
     world = runner.world_state
 
-    # Make one resident far richer than the rest, so the day's billing has
-    # both a payer who can and payers who cannot.
     rich = next(iter(world.agents))
     await world.ledger.mint_sim(rich, 100_000, tick=0, reason="blessing")
 
@@ -134,8 +130,6 @@ async def test_eating_is_wired_to_hunger(tmp_path):
         "there is nowhere to record that a resident is hungry, so eating "
         "cannot mean anything"
     )
-    # Populated lazily, so the claim worth testing is that a day fills it -
-    # otherwise upkeep's escalation ladder has nothing to climb.
     await runner.run_life_ticks(timestamp_for(TICKS_PER_DAY))
     assert runner.hunger_by_agent, (
         "a whole game-day passed and no resident has a hunger state, so "

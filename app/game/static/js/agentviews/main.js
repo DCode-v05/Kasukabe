@@ -1,6 +1,3 @@
-// Entry point for agents.html: tab wiring, world-API connection
-// indicator, and the selected-agent strip shared by Activity/Reasoning.
-
 import { checkWorldHealth, getWorldBaseUrl, setWorldBaseUrl } from "./api.js";
 import { el } from "./dom.js";
 import { initFinder, loadFinder } from "./finder.js";
@@ -10,8 +7,6 @@ import { getSelectedAgent, onAgentSelected } from "./state.js";
 
 function activateTab(name) {
   if ((name === "activity" || name === "reasoning") && !getSelectedAgent()) {
-    // Nothing selected yet - stay on Finder rather than showing two empty
-    // panels with no way to know why.
     name = "finder";
   }
   document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.tab === name));

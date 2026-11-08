@@ -75,27 +75,6 @@ class Inventory:
         return dict(self.balances.get(owner_id, {}))
 
 
-# TOOL-04: a resident could not see what it was holding.
-#
-# The standing brief reduced a whole inventory to one number - "food
-# units", the sum of everything in `living.EDIBLE` - and `look_around`
-# returned place, people, conversations and prices but never holdings. No
-# `check_inventory` tool existed. `authoring_context` was the only surface
-# in the town that returned `holding`, and only on an authoring call.
-#
-# So the model read the brief's own word back at the world. Run 23's
-# refusal taxonomy:
-#
-#     eat: 'food' is not food                        x4
-#     you hold N X, not M   (give / trade / eat)     x13
-#     nN needs N timber, has N                       x2
-#
-# and twenty `check_debts` calls, several of which were residents hunting
-# for any read of their own state at all.
-#
-# Free, and in the brief rather than behind a tool: a resident too poor to
-# act must never also be too poor to find out what it has. Same argument
-# `check_debts` and `quote_action_cost` are already priced at zero for.
 MAX_HOLDINGS_SHOWN = 8
 
 

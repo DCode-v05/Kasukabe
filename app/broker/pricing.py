@@ -40,7 +40,7 @@ from broker.config import MODEL_ALLOWLIST, MODEL_PRICES_USD_PER_MILLION
 from broker.errors import ModelNotAllowedError
 
 NANO_PER_DOLLAR = 1_000_000_000
-NANO_PER_CENT = NANO_PER_DOLLAR // 100  # 10,000,000
+NANO_PER_CENT = NANO_PER_DOLLAR // 100
 
 
 @dataclass(frozen=True)
@@ -76,22 +76,6 @@ def build_price_table() -> dict[str, ModelPrice]:
             MODEL_PRICES_USD_PER_MILLION.items()
         )
     }
-    # An allowlisted model with no price is a lane that boots healthy and
-    # then dies on its first real call.
-    #
-    # `lanes.build_lane_pool` already refuses to start with an allowlisted
-    # model that has no inference profile - "fewer lanes, all of them
-    # real, instead of six lanes of which four are traps". The price is
-    # the same class of prerequisite one layer down, and nothing checked
-    # it: `allowlist.py` passes the model, `select()` routes to it, the
-    # call reaches Bedrock and is BILLED, and only then does
-    # `price_for_model` raise - after the money is spent, with the cost
-    # unrecordable. On an overflow lane that would surface as a handful of
-    # dead turns partway through a paid run, which is the most expensive
-    # place to learn it.
-    #
-    # Import-time, so it fails at boot alongside the profile check rather
-    # than on whichever unlucky turn first overflows.
     if unpriced := [m for m in MODEL_ALLOWLIST if m not in table]:
         raise ModelNotAllowedError(
             "no price configured for allowlisted model(s): "
@@ -110,10 +94,6 @@ PRICE_TABLE: dict[str, ModelPrice] = build_price_table()
 def price_for_model(model_id: str) -> ModelPrice:
     price = PRICE_TABLE.get(model_id)
     if price is None:
-        # Should be unreachable in the request path (allowlist.py checks
-        # first), but pricing.py must never silently price an unknown
-        # model at $0 - that would let a rogue call burn real Bedrock
-        # spend while debiting nothing, breaking the $1000 invariant.
         raise ModelNotAllowedError(f"model {model_id!r} has no configured price")
     return price
 
@@ -137,7 +117,7 @@ def estimate_cost_cents_ceiling(model_id: str, input_tokens: int, output_tokens:
     only what gets refused.
     """
     nano = exact_cost_nano_dollars(model_id, input_tokens, output_tokens)
-    return -(-nano // NANO_PER_CENT)  # ceiling division, integers only
+    return -(-nano // NANO_PER_CENT)
 
 
 @dataclass

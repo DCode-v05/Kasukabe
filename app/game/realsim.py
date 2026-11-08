@@ -38,51 +38,24 @@ logger = logging.getLogger("game.realsim")
 
 APP_ROOT = Path(__file__).resolve().parent.parent
 
-# Bounds on what the dialog may ask for. The upper bound on the cast is the
-# genesis file's own population; the lower is "a town", not "an agent".
 MIN_AGENTS = 2
 MAX_AGENTS = 250
 DEFAULT_AGENTS = 50
 
-# $2.00, matching world/genesis.json's own usd_wallet_cents.
 DEFAULT_WALLET_CENTS = 200
-# The whole cast can hold at most the fixed $1000 between them.
 TOTAL_USD_CENTS = 100_000
 
-DEFAULT_BUDGET_CAP_CENTS = 100          # $1.00
+DEFAULT_BUDGET_CAP_CENTS = 100
 
-# Stop when this many are left alive. 1 = "run until the last one standing".
-# 0 turns the watcher off and the run goes until its budget cap.
 DEFAULT_UNTIL_SURVIVORS = 1
 
-# The run's container, and the paths inside it. Named so stop() can find
-# and remove the run even if this process restarted since starting it -
-# a host PID does not survive that, a container name does.
 CONTAINER_NAME = "kasukabe-realsim"
 CONTAINER_HOME_ROOT = "/tmp/kasukabe-agents"
 CONTAINER_CHECKPOINT_DIR = "/tmp/realsim-checkpoints"
-# Reachable from inside the compose network. The broker must already be up:
-# starting a money-spending service as a side effect of starting a run is
-# one surprise too many, so start() checks and refuses with instructions.
-#
-# UI-15: this said `http://broker-real:8200` and NO SERVICE OF THAT NAME
-# EXISTS. `docker-compose.yml` defines test, world, broker, observatory
-# and game; `broker-real` is in none of them, so on the compose network
-# the hostname does not resolve and every call the run makes fails at DNS
-# - a button whose whole purpose is to spend real money on real
-# inference, wired to a host that is not there.
-#
-# `broker` is the service that exists. BROKER_BASE_URL still overrides,
-# for a deployment that really does run a separate one.
 DEFAULT_BROKER_URL = "http://broker:8200"
 
-# How often the survival watcher asks the world who is still alive. The world
-# is in-process with the runner and this is one cheap HTTP GET, but a survival
-# run lasts hours, so once every few seconds is plenty.
 SURVIVOR_POLL_S = 5.0
 
-# The embedded world every run brings up. Fixed because
-# run_genesis.py is spawned with --world-port 8100 below.
 WORLD_BASE_URL = "http://127.0.0.1:8100"
 
 
@@ -104,9 +77,6 @@ class RunHandle:
     log_path: Path | None = None
     error: str | None = None
     started_monotonic: float = 0.0
-    # Set when the run lives in a container. A host PID does not survive a
-    # viewer restart; a container name does, so this is also what lets stop()
-    # clean up a run this process did not start.
     container_name: str | None = None
     _log_handle: object | None = field(default=None, repr=False)
 
@@ -168,15 +138,6 @@ class RealSimController:
         self.app_root = app_root or APP_ROOT
         self.run: RunHandle | None = None
         self._lock = asyncio.Lock()
-        # A WorldClient pointed at the run's own embedded world, built when a
-        # run starts and dropped when it stops.
-        #
-        # Without this the button starts 50 engines on port 8100 and the map
-        # keeps showing whatever world the game server was launched against -
-        # normally the 12-agent mock. Observed exactly that: a healthy 50-agent
-        # run with zero tick failures, and a viewer reporting
-        # `cognition: mock, reported: 12`. The operator has no way to fix it
-        # from the page, because the binding was decided at process start.
         self.world_client = None
         self._world_client_factory = world_client_factory or self._default_world_client
         self._watcher: asyncio.Task | None = None
@@ -188,7 +149,6 @@ class RealSimController:
 
         return HttpWorldClient(GameSettings(mock_mode=False, world_base_url=base_url))
 
-    # ── status ───────────────────────────────────────────────────────
     def status(self) -> dict[str, object]:
         run = self.run
         if run is None:
@@ -201,8 +161,6 @@ class RealSimController:
             "agents": run.agents,
             "wallet_cents": run.wallet_cents,
             "budget_cap_cents": run.budget_cap_cents,
-            # A run that died on its own is not "not running": the operator
-            # needs to see that it started and then stopped, and why.
             "exit_code": None if proc is None else proc.poll(),
             "error": run.error,
             "alive": run.alive,
@@ -212,7 +170,6 @@ class RealSimController:
             "log_path": None if run.log_path is None else str(run.log_path),
         }
 
-    # ── start ────────────────────────────────────────────────────────
     async def start(self, agents: int, wallet_cents: int,
                     budget_cap_cents: int = DEFAULT_BUDGET_CAP_CENTS,
                     until_survivors: int = DEFAULT_UNTIL_SURVIVORS) -> dict[str, object]:
@@ -236,7 +193,6 @@ class RealSimController:
                 return {"ok": False, "error": handle.error, "status": self.status()}
 
             self.run = handle
-            # Point the viewer at the world this run just brought up.
             await self._close_world_client()
             self.world_client = self._world_client_factory(WORLD_BASE_URL)
             if handle.until_survivors:
@@ -245,18 +201,6 @@ class RealSimController:
 
     def _spawn(self, handle: RunHandle) -> None:
         """Blocking half of start(): write the genesis, clear the state, exec."""
-        # UI-14. This used to be
-        # `from world.make_genesis_subset import build_subset`, writing
-        # the result into `app/world/` - game/ importing world/, and
-        # game/ writing into world/'s own directory. app/CONVENTIONS.md:
-        # "no package imports another package's internals across this
-        # diagram", and game/README.md makes game/ presentation only,
-        # possibly a separately deployed process - which this import would
-        # make impossible.
-        #
-        # A subprocess, which is what the rest of this module already does
-        # for the runner itself. And into `data/`, which belongs to
-        # nobody in particular, rather than into a sibling package.
         genesis_path = self.app_root / "data" / f"genesis_realsim_{handle.agents}.json"
         genesis_path.parent.mkdir(parents=True, exist_ok=True)
         result = subprocess.run(
@@ -277,9 +221,6 @@ class RealSimController:
             )
         handle.genesis_path = genesis_path
 
-        # A FRESH town. Deleting the homes is what makes it fresh: persona.txt
-        # is rewritten each boot, but brain.sqlite is not, so a second run
-        # would start with the first run's memories intact.
         home_root = Path("/tmp/kasukabe-realsim")
         checkpoint_dir = self.app_root / "data" / "realsim-checkpoints"
         for path in (home_root, checkpoint_dir):
@@ -292,32 +233,15 @@ class RealSimController:
         log_path = self.app_root / "data" / "realsim.log"
         log_path.parent.mkdir(parents=True, exist_ok=True)
         handle.log_path = log_path
-        # Kept open for the life of the child: a pipe nobody drains fills and
-        # blocks the engine, which is why this is a file rather than PIPE.
         log_handle = log_path.open("w", encoding="utf-8")
         handle._log_handle = log_handle
 
-        # THE RUNNER RUNS IN DOCKER, NOT ON THIS HOST.
-        #
-        # The September engine is Linux by architecture - its sandbox uses
-        # seccomp, /proc, unshare and prctl, and it dies at import on
-        # signal.SIGKILL anywhere else. Spawned as a host subprocess this
-        # button started a runner whose engines could never boot, on any
-        # machine that is not Linux. ROADMAP.md Law 1 rules out forking the
-        # engine to fix that, so the runner goes where the engine works.
-        #
-        # Paths below are CONTAINER paths. app/world is bind-mounted into
-        # the world service, so the genesis file written above at
-        # app/world/genesis_realsim_N.json is visible at world/... inside.
         env = {**os.environ}
         genesis_arg = f"world/{genesis_path.name}"
         cmd = [
             "docker", "compose", "run", "-d",
             "--name", CONTAINER_NAME,
             "--no-deps",
-            # The map polls 127.0.0.1:8100 on the host, so the run's embedded
-            # world has to be published AND bound to 0.0.0.0 - the default
-            # 127.0.0.1 is only reachable from inside the container.
             "-p", "8100:8100",
             "-v", "../engine:/engine:ro",
             "-e", f"KASUKABE_HOME_ROOT={CONTAINER_HOME_ROOT}",
@@ -333,9 +257,6 @@ class RealSimController:
             "--no-resume",
             "--checkpoint-dir", CONTAINER_CHECKPOINT_DIR,
         ]
-        # Remove any container left by a previous run before reusing the
-        # name - docker refuses a duplicate, and the failure would look
-        # like "the button does nothing".
         try:
             subprocess.run(["docker", "rm", "-f", CONTAINER_NAME],
                            capture_output=True, text=True, timeout=60)
@@ -347,13 +268,9 @@ class RealSimController:
         handle.process = subprocess.Popen(
             cmd, cwd=str(self.app_root), env=env,
             stdout=log_handle, stderr=subprocess.STDOUT,
-            # Its own process group, so stop() can take the engines down with
-            # it. The runner spawns one subprocess per agent; killing only the
-            # parent leaves 50 engines holding their ports.
             start_new_session=True,
         )
 
-    # ── stop ─────────────────────────────────────────────────────────
     async def stop(self) -> dict[str, object]:
         async with self._lock:
             run = self.run
@@ -363,16 +280,11 @@ class RealSimController:
                 self._watcher.cancel()
                 self._watcher = None
             await asyncio.to_thread(self._terminate, run)
-            # And release the binding, so the map falls back to whatever world
-            # the server was started against rather than polling a dead port.
             await self._close_world_client()
             return {"ok": True, "error": None, "status": self.status()}
 
     def _terminate(self, run: RunHandle) -> None:
         if run.container_name is not None:
-            # Removes the runner AND every engine it spawned: they are
-            # children inside that container, so there is nothing left to
-            # leak holding port 8100.
             try:
                 subprocess.run(
                     ["docker", "rm", "-f", run.container_name],
@@ -391,15 +303,8 @@ class RealSimController:
         import signal
 
         try:
-            # The whole group: the runner plus every engine it spawned.
             os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
         except (AttributeError, OSError):
-            # UI-15: `os.killpg`/`os.getpgid` DO NOT EXIST on Windows, and
-            # this project is developed on Windows. The old clause caught
-            # ProcessLookupError and PermissionError, neither of which is
-            # what a missing attribute raises, so stopping a non-container
-            # run raised AttributeError out of `stop()` and the run was
-            # left alive with its engines still spending.
             proc.terminate()
         try:
             proc.wait(timeout=20)

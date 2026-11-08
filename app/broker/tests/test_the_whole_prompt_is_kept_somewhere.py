@@ -71,7 +71,7 @@ def _record(system_prompt: str) -> TraceRecord:
     )
 
 
-HUGE = "the law of the town. " * 12_000        # ~250 KB, past every cap
+HUGE = "the law of the town. " * 12_000
 SMALL = "a short system prompt"
 
 

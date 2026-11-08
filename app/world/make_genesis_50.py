@@ -49,8 +49,6 @@ TARGET = HERE / "genesis_50_town.json"
 
 WANTED_TOTAL = 50
 
-# Trades the authored twenty do not have. A household bringing one of these
-# is taken before a household that brings a third forester.
 TRADES_THE_TOWN_LACKS = (
     "pharmacist",
     "cafe_owner",
@@ -75,7 +73,6 @@ def choose_thirty(carve: dict[str, Any], want: int) -> list[dict]:
     households = _households(carve["agents"])
 
     def value(members: list[dict]) -> tuple[int, int]:
-        # (how many scarce trades this household brings, how many people)
         scarce = sum(1 for m in members if m["occupation"] in TRADES_THE_TOWN_LACKS)
         return (scarce, len(members))
 
@@ -84,7 +81,7 @@ def choose_thirty(carve: dict[str, Any], want: int) -> list[dict]:
     kept: list[dict] = []
     for _household_id, members in ordered:
         if len(kept) + len(members) > want:
-            continue  # never split a household to make the number come out
+            continue
         kept.extend(members)
         if len(kept) == want:
             break
@@ -106,12 +103,10 @@ def remap(kept: list[dict], carve: dict[str, Any]) -> dict[str, Any]:
 
     agents: list[dict] = []
     for agent in kept:
-        new = json.loads(json.dumps(agent))  # deep copy, no shared lists
+        new = json.loads(json.dumps(agent))
         new["agent_id"] = id_of[agent["agent_id"]]
         new["household_id"] = household_of[agent["household_id"]]
         new["spouse_id"] = ref(agent.get("spouse_id"))
-        # marital_status must follow the spouse link, or somebody is
-        # "married" to nobody - the exact repair make_genesis_subset makes.
         if not new["spouse_id"] and new.get("marital_status") == "married":
             new["marital_status"] = "single"
         new["parent_ids"] = [ref(p) for p in agent.get("parent_ids") or []]
@@ -121,9 +116,6 @@ def remap(kept: list[dict], carve: dict[str, Any]) -> dict[str, Any]:
         new["sponsor_parent_id"] = ref(agent.get("sponsor_parent_id"))
 
         persona = new.get("persona") or {}
-        # The opinion web. A dangling target here is worse than a dangling
-        # spouse: this is the text an agent is TOLD about its neighbours,
-        # so a stale id becomes a person it believes in and can never find.
         persona["opinions"] = [
             {**op, "target_agent_id": ref(op.get("target_agent_id"))}
             for op in persona.get("opinions") or []
@@ -147,10 +139,9 @@ def remap(kept: list[dict], carve: dict[str, Any]) -> dict[str, Any]:
     for business in carve.get("small_businesses") or []:
         owner = ref(business.get("owner_agent_id"))
         if not owner:
-            continue  # a shop whose owner did not come is a shop that never opens
+            continue
         businesses.append({
             **business,
-            # The carve has its own b_grocery, and so does genesis_20.
             "business_id": f"{business['business_id']}_2",
             "owner_agent_id": owner,
             "employee_agent_ids": [
@@ -158,7 +149,6 @@ def remap(kept: list[dict], carve: dict[str, Any]) -> dict[str, Any]:
             ],
         })
 
-    # business_id on an agent must point at a business that survived.
     kept_business_ids = {b["business_id"] for b in businesses}
     old_to_new_business = {
         b["business_id"]: f"{b['business_id']}_2" for b in carve.get("small_businesses") or []
@@ -170,11 +160,6 @@ def remap(kept: list[dict], carve: dict[str, Any]) -> dict[str, Any]:
     return {"agents": agents, "households": households, "small_businesses": businesses}
 
 
-# Who the newcomers deal with, by trade. Each pair is a real dependency in
-# this town's food and materials chain, so the tie is a fact about work
-# rather than a decorative acquaintance.
-#
-# (newcomer occupation, authored resident, what passes between them)
 TRADE_TIES: list[tuple[str, str, str, str]] = [
     ("farmer", "n11", "grain", "grain goes from the field to the Vance mill or it rots"),
     ("miner", "n15", "ore", "ore comes up out of the ground and Ezra Okonjo works it or nobody does"),
@@ -247,7 +232,6 @@ def tie_the_town_together(genesis: dict[str, Any]) -> None:
         agent_id = agent["agent_id"]
         agent.setdefault("persona", {}).setdefault("opinions", [])
 
-        # 1. the trade the work depends on, both ways round
         tie = ties.get(agent["occupation"])
         if tie:
             other, goods, fact = tie
@@ -256,14 +240,11 @@ def tie_the_town_together(genesis: dict[str, Any]) -> None:
             add(other, agent_id, "trade", "seller",
                 fact, f"a new face wanting {goods}; time will tell if they pay")
 
-        # 2. the people they live with
         for housemate in households.get(agent["household_id"], []):
             add(agent_id, housemate, "kin", "household",
                 f"they share the roof at {agent['household_id']}",
                 "the person across the table, for better or worse")
 
-    # 3. neighbours: each household is introduced to the next one along, so
-    #    nobody's whole world is the people they eat with.
     order = sorted(households)
     for index, household_id in enumerate(order):
         neighbour = order[(index + 1) % len(order)]
@@ -317,17 +298,12 @@ def build() -> dict[str, Any]:
     tie_the_town_together(genesis)
     name_the_shops_apart(genesis)
 
-    # The $1,000 invariant is the ledger's and does not change with the
-    # population: fifty purses come out of the same hundred thousand cents.
     wallets = 600 * genesis["population"]
     genesis["usd_ledger"] = {
         "agent_wallets_cents": wallets,
         "treasury_cents": 100_000 - wallets,
         "total_cents": 100_000,
     }
-    # Derived from the agents, like population and usd_ledger above.
-    # This builder doubles the cast and used to leave the summary
-    # describing the half it started from (EVAL-16).
     recount_ablation_summary(genesis)
     return genesis
 

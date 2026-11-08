@@ -14,9 +14,6 @@ from src.engine_core.token_budget import (
 )
 
 
-# --- create_budget_tracker ---
-
-
 class TestCreateBudgetTracker:
     def test_zero_init(self):
         t = create_budget_tracker()
@@ -31,9 +28,6 @@ class TestCreateBudgetTracker:
         assert before <= t.started_at <= after
 
 
-# --- Short-circuit paths ---
-
-
 class TestShortCircuit:
     def test_sub_agent_returns_stop_with_null_event(self):
         t = create_budget_tracker()
@@ -45,7 +39,6 @@ class TestShortCircuit:
         )
         assert isinstance(decision, StopDecision)
         assert decision.completion_event is None
-        # Tracker must NOT be mutated on short-circuit.
         assert t.continuation_count == 0
 
     def test_null_budget_returns_stop_with_null_event(self):
@@ -83,9 +76,6 @@ class TestShortCircuit:
         assert decision.completion_event is None
 
 
-# --- Continue path ---
-
-
 class TestContinue:
     def test_under_90pct_returns_continue(self):
         t = create_budget_tracker()
@@ -93,7 +83,7 @@ class TestContinue:
             tracker=t,
             is_sub_agent=False,
             budget=500_000,
-            global_turn_tokens=100_000,  # 20%
+            global_turn_tokens=100_000,
         )
         assert isinstance(decision, ContinueDecision)
         assert decision.pct == 20
@@ -131,7 +121,7 @@ class TestContinue:
             global_turn_tokens=180_000,
         )
         assert t.continuation_count == 2
-        assert t.last_delta_tokens == 80_000  # 180k - 100k
+        assert t.last_delta_tokens == 80_000
         assert t.last_global_turn_tokens == 180_000
 
     def test_continue_at_0pct(self):
@@ -146,21 +136,16 @@ class TestContinue:
         assert decision.pct == 0
 
 
-# --- 90% completion threshold ---
-
-
 class TestCompletionThreshold:
     def test_exactly_90pct_stops(self):
-        # At exactly 90% the condition `< budget * 0.9` is False → stop.
         t = create_budget_tracker()
         decision = check_token_budget(
             tracker=t,
             is_sub_agent=False,
             budget=500_000,
-            global_turn_tokens=450_000,  # exactly 90%
+            global_turn_tokens=450_000,
         )
         assert isinstance(decision, StopDecision)
-        # No prior continuations and not diminishing → no event
         assert decision.completion_event is None
 
     def test_above_90pct_stops(self):
@@ -169,7 +154,7 @@ class TestCompletionThreshold:
             tracker=t,
             is_sub_agent=False,
             budget=500_000,
-            global_turn_tokens=460_000,  # 92%
+            global_turn_tokens=460_000,
         )
         assert isinstance(decision, StopDecision)
         assert decision.completion_event is None
@@ -179,13 +164,13 @@ class TestCompletionThreshold:
             continuation_count=2,
             last_delta_tokens=50_000,
             last_global_turn_tokens=400_000,
-            started_at=time.time() - 5,  # 5 seconds ago
+            started_at=time.time() - 5,
         )
         decision = check_token_budget(
             tracker=t,
             is_sub_agent=False,
             budget=500_000,
-            global_turn_tokens=460_000,  # 92%
+            global_turn_tokens=460_000,
         )
         assert isinstance(decision, StopDecision)
         assert decision.completion_event is not None
@@ -194,10 +179,7 @@ class TestCompletionThreshold:
         assert decision.completion_event.turn_tokens == 460_000
         assert decision.completion_event.budget == 500_000
         assert decision.completion_event.continuation_count == 2
-        assert decision.completion_event.duration_ms >= 4_000  # >= 4 seconds
-
-
-# --- Diminishing returns ---
+        assert decision.completion_event.duration_ms >= 4_000
 
 
 class TestDiminishingReturns:
@@ -213,9 +195,8 @@ class TestDiminishingReturns:
             tracker=t,
             is_sub_agent=False,
             budget=500_000,
-            global_turn_tokens=10_200,  # delta = 200 < 500
+            global_turn_tokens=10_200,
         )
-        # continuation_count 2 < 3 → not diminishing. Under 90% → continue.
         assert isinstance(decision, ContinueDecision)
 
     def test_needs_two_consecutive_lows(self):
@@ -223,7 +204,7 @@ class TestDiminishingReturns:
         alone should not fire — needs two consecutive lows."""
         t = BudgetTracker(
             continuation_count=3,
-            last_delta_tokens=800,  # previous was high
+            last_delta_tokens=800,
             last_global_turn_tokens=10_000,
             started_at=time.time(),
         )
@@ -231,17 +212,15 @@ class TestDiminishingReturns:
             tracker=t,
             is_sub_agent=False,
             budget=500_000,
-            global_turn_tokens=10_200,  # delta = 200 < 500
+            global_turn_tokens=10_200,
         )
-        # Only one low so far → not diminishing → continue
         assert isinstance(decision, ContinueDecision)
-        # Tracker updated, last_delta_tokens is now 200
         assert t.last_delta_tokens == 200
 
     def test_fires_when_all_three_conditions_met(self):
         t = BudgetTracker(
             continuation_count=3,
-            last_delta_tokens=200,  # previous was already low
+            last_delta_tokens=200,
             last_global_turn_tokens=10_000,
             started_at=time.time() - 10,
         )
@@ -249,7 +228,7 @@ class TestDiminishingReturns:
             tracker=t,
             is_sub_agent=False,
             budget=500_000,
-            global_turn_tokens=10_150,  # delta = 150 < 500
+            global_turn_tokens=10_150,
         )
         assert isinstance(decision, StopDecision)
         assert decision.completion_event is not None
@@ -260,39 +239,30 @@ class TestDiminishingReturns:
     def test_scenario_from_spec_edge_cases(self):
         """Spec edge case: continuation #4 delta=200, last_delta=800 → does NOT fire.
         Continuation #5 delta=150, last_delta=200 → fires."""
-        # Start at continuation 4, previous delta 800 (not low)
         t = BudgetTracker(
             continuation_count=4,
             last_delta_tokens=800,
             last_global_turn_tokens=50_000,
             started_at=time.time(),
         )
-        # Turn emits 200 tokens (delta = 200 < 500)
         decision = check_token_budget(
             tracker=t,
             is_sub_agent=False,
             budget=500_000,
             global_turn_tokens=50_200,
         )
-        # continuation_count=4 >= 3 True, delta=200 < 500 True, last_delta=800 > 500 False → continue
         assert isinstance(decision, ContinueDecision)
-        # Tracker should now record the 200 delta
         assert t.last_delta_tokens == 200
         assert t.last_global_turn_tokens == 50_200
-        # Next turn emits 150 tokens (delta = 150 < 500)
         decision2 = check_token_budget(
             tracker=t,
             is_sub_agent=False,
             budget=500_000,
             global_turn_tokens=50_350,
         )
-        # Now both current and last are < 500, continuation_count=5 >= 3 → diminishing
         assert isinstance(decision2, StopDecision)
         assert decision2.completion_event is not None
         assert decision2.completion_event.diminishing_returns is True
-
-
-# --- "Never continued" no-op ---
 
 
 class TestNoOpWhenNeverContinued:
@@ -304,14 +274,11 @@ class TestNoOpWhenNeverContinued:
             tracker=t,
             is_sub_agent=False,
             budget=100,
-            global_turn_tokens=5_000,  # 5000% of budget
+            global_turn_tokens=5_000,
         )
         assert isinstance(decision, StopDecision)
-        assert decision.completion_event is None  # no event noise
+        assert decision.completion_event is None
         assert t.continuation_count == 0
-
-
-# --- Serialization ---
 
 
 class TestSerialization:
@@ -343,9 +310,6 @@ class TestSerialization:
         assert t.started_at == 0.0
 
 
-# --- Constants ---
-
-
 class TestConstants:
     def test_completion_threshold(self):
         assert COMPLETION_THRESHOLD == 0.9
@@ -356,7 +320,7 @@ class TestConstants:
 
 class TestPctOfBudget:
     def test_rounds_half_up(self):
-        assert pct_of_budget(125, 1000) == 12  # 12.5 → 12 (banker's on Python but 12 here)
+        assert pct_of_budget(125, 1000) == 12
 
     def test_zero_used(self):
         assert pct_of_budget(0, 500_000) == 0
@@ -382,7 +346,6 @@ class TestResetDeltaOrigin:
         )
         t.reset_delta_origin()
         assert t.last_global_turn_tokens == 0
-        # Preserves history for the two-consecutive-lows check
         assert t.continuation_count == 4
         assert t.last_delta_tokens == 3_000
         assert t.started_at == 1700000000.0
@@ -400,8 +363,6 @@ class TestResetDeltaOrigin:
         )
         t.reset_delta_origin()
 
-        # New turn emits 10_000 tokens post-compaction (delta = 10_000, not
-        # -40_000 which would trivially trip diminishing).
         decision = check_token_budget(
             tracker=t,
             is_sub_agent=False,
@@ -409,7 +370,6 @@ class TestResetDeltaOrigin:
             global_turn_tokens=10_000,
         )
         assert isinstance(decision, ContinueDecision)
-        # Delta recorded on the tracker is positive, not negative
         assert t.last_delta_tokens == 10_000
 
     def test_without_reset_would_fire_false_diminishing(self):
@@ -419,19 +379,16 @@ class TestResetDeltaOrigin:
         """
         t = BudgetTracker(
             continuation_count=4,
-            last_delta_tokens=200,  # already low
-            last_global_turn_tokens=50_000,  # stale pre-compaction
+            last_delta_tokens=200,
+            last_global_turn_tokens=50_000,
             started_at=time.time(),
         )
-        # Simulate forgetting the reset: tracker still has stale origin.
-        # New turn's global_turn_tokens = 10_000 (post-compaction fresh count).
         decision = check_token_budget(
             tracker=t,
             is_sub_agent=False,
             budget=500_000,
             global_turn_tokens=10_000,
         )
-        # delta = 10_000 - 50_000 = -40_000 < 500 → both lows → diminishing
         assert isinstance(decision, StopDecision)
         assert decision.completion_event is not None
         assert decision.completion_event.diminishing_returns is True
@@ -444,12 +401,11 @@ class TestResetDeltaOrigin:
             last_global_turn_tokens=50_000,
             started_at=time.time(),
         )
-        t.reset_delta_origin()  # the fix
+        t.reset_delta_origin()
         decision = check_token_budget(
             tracker=t,
             is_sub_agent=False,
             budget=500_000,
             global_turn_tokens=10_000,
         )
-        # delta = 10_000 - 0 = 10_000, not low → continue
         assert isinstance(decision, ContinueDecision)

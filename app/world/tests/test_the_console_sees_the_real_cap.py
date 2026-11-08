@@ -45,7 +45,7 @@ async def _app_and_client(tmp_path, cap_cents: int):
 
 @pytest.mark.asyncio
 async def test_the_status_reports_this_runs_cap(tmp_path):
-    app = await _app_and_client(tmp_path, cap_cents=500)   # a $5 run, like run 24
+    app = await _app_and_client(tmp_path, cap_cents=500)
     with TestClient(app) as client:
         body = client.get(
             "/admin/spend/status", headers={"X-Operator-Token": "t"}

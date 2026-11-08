@@ -18,11 +18,6 @@ def tokens(*args: str) -> list[str]:
     return ["sed", *args]
 
 
-# ---------------------------------------------------------------------------
-# parse_sed_args
-# ---------------------------------------------------------------------------
-
-
 class TestParseSedArgs:
     def test_positional_expression_and_files(self):
         p = parse_sed_args(["s/foo/bar/", "a.txt", "b.txt"])
@@ -77,7 +72,6 @@ class TestParseSedArgs:
         assert p.has_inplace is True
 
     def test_combined_ne_then_expr(self):
-        # -ne means -n + -e, and the expression is the NEXT token.
         p = parse_sed_args(["-ne", "1p", "file.txt"])
         assert p.parse_ok is True
         assert "-n" in p.flags
@@ -104,8 +98,6 @@ class TestParseSedArgs:
         assert "dangerous flag" in p.parse_error
 
     def test_Ee_is_not_a_dangerous_combo(self):
-        # `-Ee` splits into `-E` (extended regex) + `-e` (expression follows).
-        # Both are legitimate sed flags — not a dangerous combination.
         p = parse_sed_args(["-Ee", "s/a/b/"])
         assert p.parse_ok is True
         assert "-E" in p.flags
@@ -116,11 +108,6 @@ class TestParseSedArgs:
         assert p.parse_ok is True
         assert p.expressions == ("s/a/b/",)
         assert p.files == ()
-
-
-# ---------------------------------------------------------------------------
-# Safe-print allowlist
-# ---------------------------------------------------------------------------
 
 
 class TestSafePrintAllowlist:
@@ -158,12 +145,9 @@ class TestSafePrintAllowlist:
             tokens("-n", "-e", "s/foo/bar/"),
             allow_file_writes=False,
         )
-        # Not a safe print (has substitution), but is a safe substitution.
         assert result.behavior is SedBehavior.PASSTHROUGH
 
     def test_safe_print_rejects_unknown_flag(self):
-        # `-x` is not a recognized short flag; parser splits it into `-x`,
-        # which then fails the SAFE_PRINT_FLAGS membership check.
         result = check_sed_constraints(
             tokens("-n", "-x", "-e", "1p"),
             allow_file_writes=False,
@@ -176,11 +160,6 @@ class TestSafePrintAllowlist:
             allow_file_writes=False,
         )
         assert result.behavior is SedBehavior.ASK
-
-
-# ---------------------------------------------------------------------------
-# Safe-substitution allowlist
-# ---------------------------------------------------------------------------
 
 
 class TestSafeSubstitutionAllowlist:
@@ -257,11 +236,6 @@ class TestSafeSubstitutionAllowlist:
             assert d in SAFE_SUB_FLAGS
 
 
-# ---------------------------------------------------------------------------
-# Denylist — one test per dangerous pattern
-# ---------------------------------------------------------------------------
-
-
 class TestDenylist:
     @pytest.mark.parametrize(
         "expr,label",
@@ -297,9 +271,6 @@ class TestDenylist:
         assert result.reason.startswith("sed-denylist:") or result.reason.startswith("sed-parse:")
 
     def test_substitution_with_w_flag_blocked(self):
-        # `s/foo/bar/w outfile` hits multiple denylist rules — the exact rule
-        # that catches it is an implementation detail; the important thing is
-        # that it is rejected.
         result = check_sed_constraints(
             tokens("-e", "s/foo/bar/w outfile"),
             allow_file_writes=True,
@@ -343,21 +314,13 @@ class TestDenylist:
         assert result.behavior is SedBehavior.ASK
 
 
-# ---------------------------------------------------------------------------
-# Defense-in-depth — allowlist match AND denylist hit still rejected
-# ---------------------------------------------------------------------------
-
-
 class TestSrcParityTightenings:
     """Parity with src sedValidation.ts strictness — tighter than our earlier
     first-pass implementation.
     """
 
-    # --- Gap #3: Pattern 2 rejects any semicolon ---
 
     def test_semicolon_literal_in_replacement_rejected(self):
-        # Even a literal `;` in the replacement is unsafe — src refuses to
-        # parse substitution expressions that contain any semicolon.
         result = check_sed_constraints(
             tokens("-e", "s/foo/bar;baz/g"),
             allow_file_writes=False,
@@ -371,11 +334,8 @@ class TestSrcParityTightenings:
         )
         assert result.behavior is SedBehavior.ASK
 
-    # --- Gap #5: broader y transliterate detection ---
 
     def test_y_transliterate_with_w_in_address_prefix_rejected(self):
-        # src's y detection is positional-agnostic: any `y<char>` anywhere
-        # combined with any w/W/e/E anywhere rejects the expression.
         result = check_sed_constraints(
             tokens("-e", "1,10 y/abc/def/ w outfile"),
             allow_file_writes=True,
@@ -383,20 +343,14 @@ class TestSrcParityTightenings:
         assert result.behavior is SedBehavior.ASK
 
     def test_y_transliterate_alone_still_allowed_as_unknown(self):
-        # A bare `y/abc/def/` with no w/W/e/E is not in the denylist but also
-        # not in the allowlist — it falls through to ASK as "unknown pattern"
-        # rather than as a denylist hit. Either way, the behavior is ASK.
         result = check_sed_constraints(
             tokens("-e", "y/abc/def/"),
             allow_file_writes=False,
         )
         assert result.behavior is SedBehavior.ASK
 
-    # --- Gap #6: Pattern 2 requires exactly one expression ---
 
     def test_multiple_dash_e_substitutions_rejected(self):
-        # Even if both expressions are individually safe, src allows only a
-        # single expression for Pattern 2.
         result = check_sed_constraints(
             tokens("-e", "s/a/1/g", "-e", "s/b/2/g"),
             allow_file_writes=False,
@@ -413,8 +367,6 @@ class TestSrcParityTightenings:
 
 class TestDefenseInDepth:
     def test_safe_sub_shape_plus_dangerous_flag(self):
-        # Regex shape looks like s/a/b/flags, but `w outfile` has a dangerous
-        # flag pattern that the denylist must catch first.
         result = check_sed_constraints(
             tokens("-e", "s/foo/bar/gw outfile"),
             allow_file_writes=True,
@@ -438,11 +390,6 @@ class TestDefenseInDepth:
         assert result.behavior is SedBehavior.ASK
 
 
-# ---------------------------------------------------------------------------
-# check_sed_constraints entry point semantics
-# ---------------------------------------------------------------------------
-
-
 class TestCheckSedConstraintsEntry:
     def test_empty_tokens_asks(self):
         result = check_sed_constraints([], allow_file_writes=False)
@@ -455,8 +402,6 @@ class TestCheckSedConstraintsEntry:
         assert result.reason.startswith("sed-parse:")
 
     def test_unknown_shape_asks(self):
-        # `1,10d` deletes lines. Not in either allowlist, not in denylist.
-        # Falls through to the unknown bucket.
         result = check_sed_constraints(
             tokens("-e", "1,10d"),
             allow_file_writes=False,
@@ -469,17 +414,8 @@ class TestCheckSedConstraintsEntry:
         assert result.behavior is SedBehavior.ASK
 
 
-# ---------------------------------------------------------------------------
-# Combined flag split + mode gating
-# ---------------------------------------------------------------------------
-
-
 class TestCombinedFlagAndMode:
     def test_nEi_with_writes_allowed(self):
-        # `-nEi 's/foo/bar/g' file.txt` splits into `-n`, `-E`, `-i`.
-        # Safe-substitution allowlist doesn't care about extra read/quiet flags
-        # — they are benign add-ons — so this is a legitimate in-place
-        # substitution when writes are allowed.
         result = check_sed_constraints(
             tokens("-nEi", "s/foo/bar/g", "file.txt"),
             allow_file_writes=True,
@@ -520,11 +456,6 @@ class TestCombinedFlagAndMode:
             allow_file_writes=True,
         )
         assert result.behavior is SedBehavior.PASSTHROUGH
-
-
-# ---------------------------------------------------------------------------
-# Safe flag set / constants sanity
-# ---------------------------------------------------------------------------
 
 
 class TestConstants:

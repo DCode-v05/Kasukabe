@@ -70,8 +70,6 @@ async def test_a_regime_change_survives_the_ring_overflowing(tmp_path):
             "the alert was never raised at all - this test proves nothing"
         )
 
-        # Now bury it. `size_for_population` sized the ring for this cast;
-        # filling past that evicts the regime event entirely.
         for i in range(bus.buffer.maxlen + 10):
             await bus.emit("agent.moved", tick=6, payload={"agent_id": f"a{i}"})
         assert not any(
@@ -109,7 +107,6 @@ async def test_five_crimes_across_a_long_run_is_not_a_spike(tmp_path):
     bus = runner.world_state.event_bus
     for i in range(CRIME_SPIKE_THRESHOLD):
         await bus.emit("crime.case.opened", tick=i * 50, payload={"case_id": f"c{i}"})
-    # The town has moved on well past all of them.
     runner.world_state.current_tick = 5_000
 
     with TestClient(app) as client:

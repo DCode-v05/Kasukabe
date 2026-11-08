@@ -42,9 +42,6 @@ async def trade_world(world, registry):
     every negotiation in the run actually happened in."""
     await spawn_agent(world, "seller", "home:h_field")
     await spawn_agent(world, "buyer", "home:h_field")
-    # Two people agreeing a price are talking to each other: a trade is
-    # agreed in conversation (`commerce._require_dealing`). A trade WITHOUT
-    # one is refused, and `test_a_sale_is_agreed_in_conversation` proves it.
     in_conversation(world, "seller", "buyer")
     return world, registry, "seller", "buyer"
 
@@ -61,8 +58,6 @@ async def test_two_co_located_agents_swap_goods_for_money(trade_world) -> None:
     )
     assert world.inventory.quantity(a, "wheat") == 0
     assert world.inventory.quantity(b, "wheat") == 10
-    # The seller pays the action cost of striking the bargain, the same
-    # way `transfer`'s sender pays for the transfer.
     assert world.ledger.sim_balance(a) == before_a + 450 - action_cost(
         "trade", {"counterparty_agent_id": b, "item": "wheat", "quantity": 10, "price_sim": 450}
     )

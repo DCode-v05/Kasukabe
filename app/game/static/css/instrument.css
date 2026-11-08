@@ -1,46 +1,13 @@
-/* ═══════════════════════════════════════════════════════════════════
-   THE INSTRUMENT — everything on this page that is not the map
-   ───────────────────────────────────────────────────────────────────
-   township.css owns the tokens (the four signal hues, the type, the
-   chrome) and 402 var() references depend on them, so this layer
-   extends that vocabulary rather than replacing it. What it DOES
-   replace is the component surface, which had drifted:
-
-     - three drawers with three different heads, paddings and scroll
-       behaviours, because each was added on its own;
-     - panel heads that were an emoji and a bold string;
-     - badges still carrying mint-on-white from a light theme that no
-       longer exists, sitting inside a near-black instrument;
-     - a roster card putting a fabricated skill chip an inch from a
-       real balance, which is the one thing this app must never do.
-
-   Loaded AFTER township.css, so it wins on equal specificity and the
-   old rules stay readable as history rather than being deleted.
-
-   COPPER is the single hue this layer adds, and it is spent on exactly
-   one idea: SOMETHING AN AGENT AUTHORED. An invented tool, a written
-   workflow, a resident mid-procedure. It is the colour of the spec's
-   own diagram and it appears nowhere else — so copper anywhere on this
-   page means the town made this, not us.
-
-   The map is not touched by a single rule in this file.
-   ═══════════════════════════════════════════════════════════════════ */
-
 :root {
   --copper:      #C9803C;
   --copper-lit:  #E9A063;
   --copper-dim:  #7A4A20;
   --copper-soft: #26150A;
 
-  /* One spacing ramp, so every drawer, sheet and row in this layer is
-     measured off the same scale rather than off whatever looked right
-     in the moment it was written. */
   --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
   --s5: 22px; --s6: 30px; --s7: 44px;
   --rs: 6px;  --rm: 10px; --rl: 14px;
 }
-
-/* ── docks: one drawer, three positions ──────────────────────────── */
 
 .dock {
   background: linear-gradient(180deg, rgba(16,22,30,.97), rgba(10,14,19,.99));
@@ -73,8 +40,6 @@
 }
 .dock-close:hover { background: var(--surface-2); color: var(--ink); border-color: var(--line-lit); }
 
-/* Book tabs are ruled labels, not pills: a row of pills inside a drawer
-   inside a page is three nested containers competing for the same edge. */
 .dock-tabs {
   display: flex; gap: 2px; flex-wrap: wrap;
   padding: var(--s3) var(--s4) 0;
@@ -110,9 +75,6 @@
 }
 .dock-tab:hover { transform: translateY(-2px); color: var(--ink); border-color: var(--line-lit); }
 
-/* ── panels become ruled sheets ──────────────────────────────────────
-   A stack of bordered cards inside a drawer is a box in a box in a box.
-   Hairline rules separate them instead. */
 .book-page > .panel,
 .dock-body .panel {
   background: transparent; border: 0; border-radius: 0; box-shadow: none;
@@ -133,7 +95,6 @@
   letter-spacing: .02em; color: var(--ink-faint); text-transform: none;
 }
 
-/* ── badges: correcting the light-theme leftovers ────────────────── */
 .live-badge {
   font-family: var(--font-mono); font-size: 11px; font-weight: 500;
   letter-spacing: .06em; text-transform: uppercase;
@@ -154,7 +115,6 @@
 }
 .cost-readout.idle { border-color: var(--line); background: var(--surface); color: var(--ink-faint); }
 
-/* ── E.1 — a skill is a document, so show the document ───────────── */
 .skills-tab { display: flex; flex-direction: column; gap: var(--s3); }
 .skills-summary {
   font-size: 12px; color: var(--ink-soft);
@@ -168,7 +128,6 @@
   border: 1px solid var(--line-soft); border-radius: var(--rm);
   background: var(--surface); overflow: hidden;
 }
-/* The workflow being walked right now is the one you came to read. */
 .skill-card.walking {
   border-color: var(--copper-dim);
   background: linear-gradient(180deg, var(--copper-soft), var(--surface) 60%);
@@ -194,7 +153,6 @@
   font-size: 11px; color: var(--ink-faint); font-style: italic; padding: var(--s2) 0 var(--s3);
 }
 
-/* Eight cells. A count read at a glance beats a percentage parsed. */
 .prof-bar { display: inline-flex; gap: 3px; align-items: center; }
 .prof-bar i { width: 7px; height: 12px; border-radius: 2px; background: var(--surface-3); display: inline-block; }
 .prof-bar i.on { background: var(--copper); }
@@ -212,7 +170,6 @@
 .skill-steps li:first-child { border-top: 0; }
 .skill-steps li.done { color: var(--ink-faint); }
 .skill-steps li.done .st-mark { color: var(--mint-dim); }
-/* The step expected next: the only loud thing in the list. */
 .skill-steps li.here {
   color: var(--ink); background: var(--copper-soft);
   margin: 0 calc(var(--s3) * -1); padding-left: var(--s3); padding-right: var(--s3);
@@ -228,13 +185,11 @@
 .st-check { font-style: italic; color: var(--ink-soft); }
 .st-note { color: var(--ink-faint); }
 
-/* ── E.2 — the step, wherever a resident is listed ────────────────── */
 .char-follow { padding: var(--s2) 0 0; font-size: 11px; }
 .follow.none { color: var(--ink-faint); font-style: italic; }
 .follow.on { color: var(--copper-lit); }
 .follow-step { font-family: var(--font-mono); color: var(--ink-soft); }
 
-/* ── E.3 / E.4 — the Workshop and the Council ─────────────────────── */
 .workshop, .council { display: flex; flex-direction: column; gap: var(--s6); }
 .ws-section h3, .cn-section h3 {
   font-family: var(--font-display); font-size: 13px; font-weight: 600;
@@ -258,8 +213,6 @@
 .ws-stat b { color: var(--copper-lit); }
 .ws-rev { font-size: 10px; color: var(--ink-faint); font-style: italic; }
 .ws-none { font-size: 12px; color: var(--ink-faint); font-style: italic; padding: var(--s2) 0; }
-/* A filing nobody adopted: dimmed, not alarmed. The town is telling you
-   which ideas did not take, which is as interesting as the ones that did. */
 .ws-row.orphan { opacity: .72; }
 .orphan-mark { color: var(--brass); cursor: help; }
 .spreading { color: var(--mint); }
@@ -292,9 +245,6 @@
 .tag.walking { color: var(--copper-lit); border-color: var(--copper-dim); background: var(--copper-soft); }
 .tag.pending { color: var(--brass); border-color: var(--brass-dim); }
 
-/* An empty view must say WHICH empty it is. Nothing filed yet and no
-   world server look identical otherwise, and one is a finding while the
-   other is a broken pipe. */
 .book-empty {
   display: flex; flex-direction: column; gap: var(--s2);
   padding: var(--s6) var(--s4); text-align: center;
@@ -304,7 +254,6 @@
 .book-empty span { font-size: 12px; line-height: 1.6; }
 .book-body { display: block; }
 
-/* ── roster cards ─────────────────────────────────────────────────── */
 .char-card {
   background: var(--surface); border: 1px solid var(--line-soft);
   border-radius: var(--rm); padding: var(--s3); text-align: left;
@@ -316,7 +265,6 @@
 .char-occ { font-size: 11px; color: var(--copper-lit); }
 .char-meta { font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); }
 
-/* ── the resident file's own tab strip ────────────────────────────── */
 .tab {
   padding: 7px var(--s3); border: 0; background: transparent;
   border-bottom: 2px solid transparent; cursor: pointer;
@@ -333,7 +281,6 @@
 }
 .inspector-empty .dim { color: var(--ink-faint); opacity: .8; }
 
-/* ── focus and motion ─────────────────────────────────────────────── */
 :where(button, a, input, select, [tabindex]):focus-visible {
   outline: 2px solid var(--copper-lit); outline-offset: 2px; border-radius: var(--rs);
 }
@@ -344,16 +291,10 @@
   }
 }
 
-/* A narrow window gives the drawer the whole width: a remaining sliver
-   of map is too small to read and too small to pan. */
 @media (max-width: 780px) {
   .dock.left, .dock.right, .dock.controls { width: 100%; }
 }
 
-/* The roster on this page and the world it is pointed at can name the same
-   id differently - a subset genesis renumbers the town. The header says so
-   in place rather than letting a modelled biography sit silently under a
-   real name. */
 .agent-sub2.modelled {
   color: var(--brass);
   font-size: 11px;
@@ -362,7 +303,5 @@
   padding-left: var(--s2);
   margin-top: var(--s1);
 }
-/* Typography the older rules left in monospace: names and headings belong
-   to the display face, and only figures belong in mono. */
 .ws-main b, .cn-title, .skill-name { font-family: var(--font-display); }
 .panel-head .hint, .book-empty span, .ws-by { font-family: var(--font-body); }

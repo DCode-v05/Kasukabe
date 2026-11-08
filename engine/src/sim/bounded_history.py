@@ -86,15 +86,6 @@ import os
 from src.engine_core.conversation_store import ConversationStore
 from src.sim.session_log import active_session_log
 
-# How many stored messages a turn may see. Not "how many fit" - how many are
-# WORTH seeing. A resident acts on what is in front of it now: the last
-# handful of exchanges plus the perception it was just handed. Everything
-# older is the memory system's job, and the memory system is a real one
-# (memory_stream, memory_query, the learning centre) rather than a prefix
-# nobody chose.
-#
-# Kept as an env knob because the right number is an empirical question and
-# this is the first run that can ask it honestly.
 DEFAULT_HISTORY_MESSAGES = int(os.environ.get("KASUKABE_HISTORY_MESSAGES", "24"))
 
 
@@ -113,18 +104,8 @@ class BoundedConversationStore(ConversationStore):
     def __init__(self, db, *, keep: int | None = None, actions=None) -> None:
         super().__init__(db)
         self.keep = DEFAULT_HISTORY_MESSAGES if keep is None else keep
-        # Counted so a run can say how much it dropped rather than leaving
-        # it to be inferred from a bill.
         self.messages_dropped = 0
-        # Where "what did this turn do" is asked. Any object with an
-        # `action_record()` - in a real run, the process's SessionLogWriter;
-        # in a test, one built for the test. `None` means look it up at save
-        # time instead of holding a reference, so this class does not care
-        # whether boot built the session log before or after it built this.
         self._actions = actions
-        # Counted for the same reason `messages_dropped` is: a run that
-        # rewrote nothing looks identical to a run without this code, and
-        # the difference should be a number rather than an inference.
         self.assistant_turns_recorded_as_actions = 0
 
     @property
@@ -172,10 +153,6 @@ class BoundedConversationStore(ConversationStore):
         kept = rows[-self.keep :]
         self.messages_dropped += len(rows) - len(kept)
 
-        # Do not start the window on an orphaned tool result: a `tool` role
-        # whose matching call was dropped is a message the model cannot
-        # interpret, and some providers reject it outright. Walk forward to
-        # the first message that can legally begin a conversation.
         while kept and kept[0].get("role") not in ("user", "assistant"):
             kept = kept[1:]
             self.messages_dropped += 1

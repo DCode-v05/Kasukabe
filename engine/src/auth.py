@@ -31,9 +31,6 @@ logger = logging.getLogger(__name__)
 
 KEY_PREFIX = "sk-sept-"
 
-# A SHA-256 digest rendered as 64 lowercase hex chars. Used to validate any
-# hash before it reaches bytes.fromhex() so a corrupt persisted/admin value can
-# never raise out of boot.
 HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
@@ -79,11 +76,6 @@ def hash_key_bytes(raw_key: str) -> bytearray:
 def validate_format(key: str) -> bool:
     """Check that a key has the correct prefix and minimum length."""
     return key.startswith(KEY_PREFIX) and len(key) > len(KEY_PREFIX) + 16
-
-
-# ---------------------------------------------------------------------------
-# Hot-rotation auth state
-# ---------------------------------------------------------------------------
 
 
 @dataclass
@@ -179,18 +171,12 @@ def persist_key_hash(key_hash_hex: str) -> None:
     target_dir = os.path.dirname(target_path) or "."
     tmp_path = None
     try:
-        # Create the parent at the write site rather than relying on boot
-        # having run ensure_layout — the same discipline codex and Claude Code
-        # apply, so this works from any entry point.
         os.makedirs(target_dir, mode=0o700, exist_ok=True)
         fd, tmp_path = tempfile.mkstemp(dir=target_dir, prefix=".engine_key_hash.")
-        # os.fdopen takes ownership of fd; its context manager closes fd on exit
-        # (including on error), so no separate os.close is needed.
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             f.write(key_hash_hex)
             f.flush()
             os.fsync(f.fileno())
-        # Atomic rename onto the target (same filesystem — same dir).
         os.replace(tmp_path, target_path)
         tmp_path = None
     except Exception:
@@ -201,14 +187,6 @@ def persist_key_hash(key_hash_hex: str) -> None:
             except Exception:
                 logger.exception("Failed to clean up temp key hash file %s", tmp_path)
 
-
-# ---------------------------------------------------------------------------
-# Admin auth state — orchestrator-only control credential (x-admin-key)
-# ---------------------------------------------------------------------------
-# Mirrors the engine-key path exactly: the orchestrator mints a per-engine
-# admin secret, injects it as ENGINE_ADMIN_KEY (raw), and the engine hashes it
-# at boot and validates x-admin-key against that hash. No overlap/rotation —
-# the admin secret is a static control credential, not a product credential.
 
 admin_hash: bytes | None = None
 
@@ -246,7 +224,3 @@ def verify_admin_key(incoming_key: str) -> bool:
     incoming = bytes(hash_key_bytes(incoming_key))
     return hmac.compare_digest(incoming, admin_hash)
 
-
-# provision_engine_key, load_key_hash, revoke_key — moved to orchestrator.
-# The engine reads ENGINE_KEY_HASH from env var at startup.
-# These functions are no longer called by the engine container.

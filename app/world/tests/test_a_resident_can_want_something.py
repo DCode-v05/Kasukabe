@@ -57,10 +57,6 @@ from world.tools.needs import (
 from world.tools.state import WorldState
 
 
-# `build_world` builds the town, not its population - the runner loads
-# genesis separately - so the fixture puts one resident in it. Everything
-# under test reads facts off the world about a named agent, and one is
-# enough to make each of those readings observable.
 RESIDENT = "a_test_resident"
 
 
@@ -81,9 +77,6 @@ def _somebody(world: WorldState) -> str:
     return sorted(world.agents)[0]
 
 
-# ── the state exists at all ──────────────────────────────────────────
-
-
 def test_a_world_has_somewhere_to_keep_goals(world):
     """The finding in its plainest form: the three fields exist."""
     assert isinstance(world.goals, dict)
@@ -99,8 +92,6 @@ def test_a_goal_is_more_than_a_sentence():
     assert goal.progress == 0.0
     assert goal.status is GoalStatus.ACTIVE
     assert goal.origin is GoalOrigin.PERSONA
-    # And it can be superseded, which is how changing your mind is
-    # distinguished from giving up.
     assert GoalStatus.SUPERSEDED in set(GoalStatus)
 
 
@@ -108,9 +99,6 @@ def test_a_goal_cannot_be_a_paragraph():
     """160 characters, because it rides in every prompt after this one."""
     with pytest.raises(Exception):
         Goal(goal_id="g", agent_id="a", text="x" * 161)
-
-
-# ── needs are the world's reading, not the resident's ────────────────
 
 
 def test_needs_are_computed_from_facts_the_world_holds(world):
@@ -170,9 +158,6 @@ def test_a_need_remembers_how_long_it_has_pressed(world):
     assert world.needs[who]["food"].since_tick == 10, "a standing need restarted its clock"
 
 
-# ── a need produces a goal, and relief closes it ─────────────────────
-
-
 def test_a_pressing_need_produces_a_goal(world):
     from world.life.upkeep import HungerState
 
@@ -213,9 +198,6 @@ def test_eating_closes_the_goal_without_the_resident_saying_so(world):
     assert any(e.type == "agent.goal.progressed" for e in events)
 
 
-# ── progress arrives from acts ───────────────────────────────────────
-
-
 def test_a_tool_that_succeeds_moves_the_goal_by_itself(world):
     who = _somebody(world)
     goal = Goal(
@@ -248,9 +230,6 @@ def test_another_residents_success_moves_nothing(world):
     assert goal.progress == 0.0
 
 
-# ── a refusal is evidence ────────────────────────────────────────────
-
-
 def test_being_refused_leaves_something_behind(world):
     who = _somebody(world)
     events = note_refusal_belief(world, who, "world_cook", "not a kitchen", "sector:farmland")
@@ -278,9 +257,6 @@ def test_a_belief_never_reaches_certainty(world):
     assert [b for b in world.beliefs.values() if b.agent_id == who][0].confidence < 1.0
 
 
-# ── horizons ─────────────────────────────────────────────────────────
-
-
 def test_todays_goals_do_not_survive_the_night(world):
     who = _somebody(world)
     for horizon in GoalHorizon:
@@ -296,9 +272,6 @@ def test_todays_goals_do_not_survive_the_night(world):
     assert len(events) == 2
 
 
-# ── the resident is told ─────────────────────────────────────────────
-
-
 def test_the_perception_says_what_you_want_and_what_is_pressing():
     block = format_goals(
         goals=[{"text": "Get something to eat.", "horizon": "now", "progress": 0.0}],
@@ -309,8 +282,6 @@ def test_the_perception_says_what_you_want_and_what_is_pressing():
     assert "starving" in block
     assert "Get something to eat." in block
     assert "world_cook does not work here" in block
-    # No arithmetic put in front of the resident: the float is the
-    # world's bookkeeping, not something a person feels.
     assert "0.9" not in block
 
 
@@ -341,9 +312,6 @@ def test_progress_is_shown_only_once_there_is_some():
     assert "50%" in moved
 
 
-# ── and the wiring, without which none of the above ships ────────────
-
-
 def test_the_goal_verbs_are_registered_and_free():
     """A tool nobody can call is a tool that does not exist.
 
@@ -361,8 +329,6 @@ def test_the_goal_verbs_are_registered_and_free():
     named = {spec.name for spec in goals_module.build_specs()}
     assert named == {
         "set_goal", "update_goal", "retire_goal", "note_belief",
-        # The read the sleep reflection goes through, rather than being
-        # handed a private window onto world state.
         "recall_goals",
     }
     for name in named:
@@ -396,7 +362,6 @@ def test_goal_events_reach_the_events_table():
         "agent.belief.updated",
     ):
         assert is_worth_recording(kind), f"{kind} would publish and never record"
-    # And the thing the allow-list must not undo.
     assert not is_worth_recording("agent.moved")
     assert not is_worth_recording("agent.perceived")
 
@@ -420,28 +385,16 @@ async def test_a_hungry_resident_is_actually_told_so(tmp_path, monkeypatch):
         mock_mode=True, checkpoint_dir=tmp_path / "cp",
         world_mode="embedded", world_port=0, start_at_dawn=True,
     ))
-    # boot() + start_agents(), the sequence a real run does before it
-    # ticks: `run_tick` asserts a gateway, and a booted-but-unlaunched
-    # runner has none.
     await runner.boot(resume=False)
     await runner.start_agents()
     town = runner.world_state
 
-    # Starve everybody, so whoever the scheduler picks is hungry. The
-    # test must not choose the resident it then inspects - `dispatch_due_
-    # agents` chooses, and the point is that the DISPATCH refreshes needs.
     for agent_id in town.agents:
         runner.hunger_by_agent[agent_id] = HungerState(
             days_since_meal=3, consecutive_unpaid_days=3
         )
     town.hunger_by_agent = runner.hunger_by_agent
 
-    # Capture the perception the gateway is actually handed. Asserting on
-    # `format_goals` alone would pass on a tree where the block is built
-    # and never passed to `render_perception_text` - which is the exact
-    # shape of the ENG-16 failure (a fix that reached zero residents),
-    # and it is what this test did until removing the `goals=` argument
-    # from the runner changed nothing here.
     sent: dict[str, str] = {}
     real_send = runner.gateway.send_tick
 
@@ -455,11 +408,6 @@ async def test_a_hungry_resident_is_actually_told_so(tmp_path, monkeypatch):
 
     runner.gateway.send_tick = remember
 
-    # One real tick through `run_tick`, which is what drives a run -
-    # `tick_engine.tick()` alone only advances the clock and returns who
-    # is due; `dispatch_due_agents` is the half that builds a perception,
-    # and that is the half the wiring lives in. Nothing below calls
-    # `refresh_goals_for`; unwiring it from the dispatch must break this.
     await runner.run_tick()
 
     woken = sorted(town.needs)
@@ -473,7 +421,6 @@ async def test_a_hungry_resident_is_actually_told_so(tmp_path, monkeypatch):
     spawned = [g for g in town.goals.values() if g.agent_id == who]
     assert spawned, "a starving resident was handed nothing to want"
 
-    # And it is in the prompt that left the building.
     prompt = sent.get(who)
     assert prompt, f"{who} took a turn and no perception was sent"
     assert "You are starving" in prompt, (
@@ -580,9 +527,6 @@ def test_a_town_that_resumes_remembers_what_everyone_wanted(world):
         assert field in OWNED_STATE_FIELDS, f"{field} is not carried across a resume"
 
 
-# ── §5.3's acceptance line: the outcome renders once ─────────────────
-
-
 def test_eating_tells_the_resident_its_goal_closed_exactly_once(world):
     """"a buy+eat marks it done and the outcome line renders once".
 
@@ -606,7 +550,6 @@ def test_eating_tells_the_resident_its_goal_closed_exactly_once(world):
     rendered = format_goal_outcomes([{"text": g.text, "reason": r} for g, r in queued])
     assert rendered is not None and "no longer need to" in rendered
 
-    # Popped: the second turn carries no news, because there is none.
     world.last_goal_outcome.pop(who)
     refresh_and_spawn(world, who)
     assert not (world.last_goal_outcome.get(who) or []), "the outcome line repeated"
@@ -649,9 +592,6 @@ def test_a_lapsed_goal_says_so(world):
     rendered = format_goal_outcomes([{"text": g.text, "reason": r} for g, r in queued])
     assert rendered is not None and "did not manage to" in rendered
     assert "Sell the wheat" in rendered
-
-
-# ── ENG-05: the world as corrector, in its own acceptance terms ──────
 
 
 def test_two_refusals_of_the_same_thing_put_it_in_the_next_prompt(world):

@@ -45,8 +45,8 @@ class TestQuery:
     async def test_window_excludes_old(self, db):
         store = RavenStore(db)
         now = time.time()
-        await seed_usage(store, "m1", 100, now - 7200)  # 2h ago
-        await seed_usage(store, "m1", 200, now - 60)  # 1m ago
+        await seed_usage(store, "m1", 100, now - 7200)
+        await seed_usage(store, "m1", 200, now - 60)
         result = await query(db, metric="tokens_used", window="1h")
         assert result.total == 200
 

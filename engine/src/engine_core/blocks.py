@@ -25,7 +25,6 @@ from datetime import datetime, timezone
 
 from src.engine_core.events import (
     Event,
-    # content
     TextDelta,
     SourceDiscovered,
     ThinkingDelta,
@@ -37,13 +36,11 @@ from src.engine_core.events import (
     ToolUseSummary,
     CraftRequest,
     CraftAuthored,
-    # progress / status
     NodeProgress,
     CharterCreated,
     InterruptibleStateChanged,
     StrugglingDetected,
     ActivityStateChanged,
-    # trace
     ThreadLifecycle,
     ThreadCreated,
     ThreadArchived,
@@ -62,7 +59,6 @@ from src.engine_core.events import (
     AssetActionEvent,
     PermissionRequestEvent,
     AssetStatusEvent,
-    # system
     CompactionEvent,
     ReactiveCompactionEvent,
     MicrocompactEvent,
@@ -81,7 +77,6 @@ from src.engine_core.events import (
     PreToolUseHookExecuted,
     PostToolUseHookExecuted,
     StopHookExecuted,
-    # audit
     MemoryWriteEvent,
     FileRestorationEvent,
     FileRestorationFailedEvent,
@@ -98,12 +93,6 @@ def source_block_id(turn_id: str, handle: str) -> str:
     used to mint the handles.
     """
     return f"source:{turn_id}:{handle}"
-
-
-
-# ---------------------------------------------------------------------------
-# The envelope
-# ---------------------------------------------------------------------------
 
 
 @dataclass
@@ -132,11 +121,6 @@ def sse_frame(block: Block, seq: int, cursor: int | None = None) -> str:
         {
             "id": block.id,
             "type": block.type,
-            # null means the engine itself is speaking rather than any one
-            # thread (a dispatch report, an aggregate done). Consumers derive
-            # a block's origin from this and nothing else - there is never a
-            # sentinel id here, because thread_id is an address: a name that
-            # resolves to no thread would break replay and resume.
             "thread_id": block.thread_id or None,
             "ts": block.ts,
             "payload": block.payload,
@@ -148,12 +132,7 @@ def sse_frame(block: Block, seq: int, cursor: int | None = None) -> str:
     return f"seq: {seq}\ncursor: {cursor}\nevent: block\ndata: {data}\n\n"
 
 
-# ---------------------------------------------------------------------------
-# The 27 types + gate buckets (here for the table)
-# ---------------------------------------------------------------------------
-
 BLOCK_TYPES: tuple[str, ...] = (
-    # content (8)
     "text",
     "reasoning",
     "tool",
@@ -162,39 +141,28 @@ BLOCK_TYPES: tuple[str, ...] = (
     "audio",
     "video",
     "craft",
-    # sourcing (1)
     "source",
-    # progress (2)
     "progress",
     "status",
-    # trace (5)
     "thread",
     "summary",
     "sub_agent",
     "routing",
     "replan",
-    # asset (1) - one block per domain; folded events set payload.kind
     "asset",
-    # system (4)
     "compaction",
     "budget",
     "model",
     "hook",
-    # audit (4)
     "memory",
     "file",
     "subprocess",
     "session",
-    # outcome (2)
     "error",
     "done",
 )
 assert len(BLOCK_TYPES) == 27, "block vocabulary must be exactly 27 types"
 
-# "routing" carries the dispatch: which pieces of work the input became, which
-# are running, which were handed back for the caller to resolve. That is the
-# turn's shape, not telemetry about it, so it is always on - a caller cannot
-# make sense of a multiplexed turn without it.
 ALWAYS = {"text", "reasoning", "progress", "status", "error", "done", "routing"}
 TELEMETRY_TRACE = {"thread", "summary", "sub_agent", "replan"}
 TELEMETRY_FULL = {
@@ -209,9 +177,6 @@ TELEMETRY_FULL = {
 }
 APPEND_TYPES = {"text", "reasoning", "voice"}
 
-# Dedicated asset-domain channel. User-actionable and default-on, gated
-# separately from telemetry so the product can subscribe to (or mute) the whole
-# asset stream in one flag.
 ASSET = {"asset"}
 
 
@@ -231,10 +196,10 @@ class Gates:
     audio: bool = False
     video: bool = False
     tool: bool = True
-    telemetry: str = "off"  # "off" | "trace" | "full"
-    assets: bool = True  # asset-domain channel (the single asset block, any payload.kind); default on
+    telemetry: str = "off"
+    assets: bool = True
     super_thinking: bool = False
-    sources: bool = False  # gate — citation/source blocks (set from the request citations flag)
+    sources: bool = False
 
     @classmethod
     def from_request(cls, req) -> "Gates":
@@ -295,8 +260,6 @@ def passes_gates(block: "Block", g: Gates) -> bool:
     return True
 
 
-# Event class → block type. Anything absent (IncrementalFlush and any future
-# internal-only event) folds to nothing and never crosses the wire.
 FOLD: dict[type, str] = {
     TextDelta: "text",
     ThinkingDelta: "reasoning",
@@ -394,9 +357,8 @@ class BlockSerializer:
     """
 
     def __init__(self, scope_id: str = "_") -> None:
-        self.scope_id = scope_id  # fallback turn scope when no request in context
+        self.scope_id = scope_id
 
-    # -- id derivation -----------------------------------------------------
 
     def turn_id(self, event: Event) -> str:
         """Per-turn correlation for append-stream and per-turn-singleton ids.
@@ -425,16 +387,6 @@ class BlockSerializer:
         tid = self.turn_id(event)
 
         if btype in APPEND_TYPES:
-            # Scoped to the owning THREAD as well as the turn. TextDelta and
-            # ThinkingDelta carry no turn_id, so every segment of a fanned-out
-            # turn used to fold to the same text:{rid} / reasoning:{rid}. The
-            # blocks still carried distinct thread_ids and the sink routed them
-            # correctly, so the wire looked right - but a client following the
-            # documented append-by-id rule interleaved two threads' prose into
-            # one block token by token, and voice:{rid} made the product's TTS
-            # speak two threads as a single utterance. VoiceDelta already
-            # carries a turn_id override so sub-agent narration gets its own
-            # block; that separation just was not extended to sibling threads.
             owner = thread_id_of(event, self.scope_id)
             return f"{btype}:{tid}:{owner}" if owner else f"{btype}:{tid}"
 
@@ -442,15 +394,9 @@ class BlockSerializer:
             return source_block_id(tid, getattr(event, "handle", "") or tid)
 
         if btype == "craft":
-            # The coordinator's await_block_input mints this id and registers
-            # the waiter under it, so Block.id == pending_inputs key == the id
-            # the client echoes back in block_input. Fall back to a per-turn id
-            # for craft-authoring blocks that carry no pre-minted id.
             return getattr(event, "block_id", "") or f"craft:{tid}"
 
         if btype in ("image", "audio", "video"):
-            # voice_parser mints "{kind}:{thread}:{turn_key}:{n}" so several
-            # media galleries in one turn never collide under replace-by-id.
             return getattr(event, "block_id", "") or f"{btype}:{tid}"
 
         if btype == "tool":
@@ -504,10 +450,8 @@ class BlockSerializer:
         if btype == "status":
             return f"status:{self.status_kind(event)}:{tid}"
 
-        # per-turn singletons: summary, routing, replan, budget, session, done, error
         return f"{btype}:{tid}"
 
-    # -- discriminators ----------------------------------------------------
 
     @staticmethod
     def asset_kind(event: Event) -> str:
@@ -596,7 +540,6 @@ class BlockSerializer:
         """Map an event class to its block type. None = internal-only."""
         return FOLD.get(type(event))
 
-    # -- the fold ----------------------------------------------------------
 
     def fold(self, event: Event) -> Block | None:
         """Fold one internal event into a Block, or None if it does not cross
@@ -639,24 +582,16 @@ class BlockSerializer:
         elif btype == "progress":
             payload.setdefault("phase", "charter" if isinstance(event, CharterCreated) else "node")
         elif btype == "source":
-            # Reshape to display-only {kind, **data}: handle/turn_id scope the
-            # block id (not shown to the product), and data is flattened up.
             payload.pop("handle", None)
             payload.pop("turn_id", None)
             data = payload.pop("data", {}) or {}
             payload.update(data)
         elif btype == "text":
-            # Off-path (no citations): drop the empty key so the text payload is
-            # byte-identical to today. Present only when the gate produced spans.
             if not payload.get("citations"):
                 payload.pop("citations", None)
         elif btype == "voice":
-            # turn_id only scopes the append-block id (sub-agent narration gets
-            # its own block); the wire payload is exactly {"text": ...}.
             payload.pop("turn_id", None)
         elif btype in ("image", "audio", "video"):
-            # block_id already IS the envelope id; the wire payload is exactly
-            # {"title": ..., "items": [...]}.
             payload.pop("block_id", None)
 
 
@@ -789,13 +724,6 @@ def make_done_block(
     payload = dict(summary)
     if not terminal:
         payload["terminal"] = False
-    # A per-segment done is keyed on its thread. All N+1 dones of a fanned-out
-    # turn used to share id done:{scope_id}, so a client applying the contract's
-    # replace-by-id reconciliation ended the turn with ONE done entry whose
-    # thread_id had mutated from thread-a to thread-b to null. The numbers
-    # survived in the aggregate's `segments` list, but the per-thread identity
-    # server.py promises ("each thread gets its own done so a caller can tell
-    # which piece of work finished") did not. The aggregate keeps done:{scope_id}.
     block_id = f"done:{scope_id}:{thread_id}" if (thread_id and not terminal) else f"done:{scope_id}"
     return Block(
         type="done",

@@ -16,16 +16,6 @@ import pytest
 
 from .conftest import spawn_agent
 
-# The run-19 remark, with one word changed, and the change is the point.
-#
-# Ezra really said "Girl. Two sim for walking, you said?" to Tova. NO name
-# matcher can catch that - "Girl" is not her name - so the second addressee
-# in the actual incident is undetectable by the mechanism this file tests,
-# and `test_a_name_the_world_does_not_know_is_not_an_address` below pins
-# that limit rather than pretending it away.
-#
-# What IS detectable, and what the fix is for, is the ordinary case: two
-# people named by name in one remark. Ezra addressing Anselm and Tova.
 REMARK = (
     "Anselm. You want temple bread, walk to temple. "
     "Tova. Two sim for walking, you said?"
@@ -59,8 +49,6 @@ async def test_say_puts_every_addressee_in_involved(world, registry) -> None:
         "Tova is addressed but would stop hearing the remark the moment "
         "she left the room"
     )
-
-
 
 
 def test_a_name_the_world_does_not_know_is_not_an_address(world, registry) -> None:

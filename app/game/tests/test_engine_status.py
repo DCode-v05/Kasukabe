@@ -36,12 +36,6 @@ class FakeWorld:
                 agent_id=f"agent-{i}",
                 display_name=f"Agent {i}",
                 sprite_key="Isabella Rodriguez",
-                # One unmappable location, so `bound` and `reported` cannot
-                # be the same number by accident.
-                # One agent with no location at all, so `bound` and
-                # `reported` cannot be the same number by accident. An
-                # unrecognised location name is NOT this case: the server
-                # draws that one at the square (see _drawable_zone).
                 position=AgentPosition(location_id="hospital" if i else ""),
                 current_action=None if i == 1 else "walking to the market",
                 is_alive=i != 2,
@@ -52,8 +46,6 @@ class FakeWorld:
         return Snapshot(tick=99, map_tiled_json={}, agents=agents)
 
     async def get_provenance(self) -> dict[str, str | None]:
-        # Both axes: cognition alone cannot say whether anything is
-        # actually thinking - real engines can be fed canned text.
         return {"cognition": self.cognition,
                 "inference": "bedrock" if self.cognition == "engine" else "mock"}
 
@@ -63,8 +55,6 @@ class FakeWorld:
     async def get_places(self):  # pragma: no cover - unused
         return []
 
-    # The relay pump and the app's shutdown reach for these on any world
-    # client, engine-backed or not.
     async def stream_events(self):  # pragma: no cover - the relay is not under test
         if False:
             yield None
@@ -88,10 +78,6 @@ def test_counts_are_each_a_different_question() -> None:
     body = engine(FakeWorld(n=6))["world"]
     assert body["connected"] is True
     assert body["reported"] == 6
-    # Every agent the world reports at a location is drawable - an
-    # unrecognised place falls back to the square rather than dropping that
-    # resident. `bound` therefore separates from `reported` on agents with
-    # NO location at all, which is the case that genuinely cannot be drawn.
     assert body["bound"] == 5, "the agent with no location at all is not on the map"
     assert body["alive"] == 5
     assert body["dormant"] == 1
@@ -135,7 +121,7 @@ def test_a_missing_broker_is_normal_and_says_so(monkeypatch) -> None:
     broker was started on the same machine, which is a test depending on
     ambient state, not on the code it is testing.
     """
-    monkeypatch.setenv("BROKER_BASE_URL", "http://127.0.0.1:9")  # discard port
+    monkeypatch.setenv("BROKER_BASE_URL", "http://127.0.0.1:9")
     body = engine(FakeWorld())["broker"]
     assert body["live"] is False
     assert "not reachable" in (body["reason"] or "")

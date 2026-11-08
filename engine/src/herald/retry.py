@@ -25,20 +25,18 @@ from src.engine_core.schema import FOREGROUND_QUERY_SOURCES
 
 logger = logging.getLogger(__name__)
 
-NON_RETRYABLE_CODES: frozenset[int] = frozenset({402})  # billing only
+NON_RETRYABLE_CODES: frozenset[int] = frozenset({402})
 BASE_DELAY: float = 1.0
 MAX_DELAY: float = 30.0
 
-# Context overflow detection — citadel forwards the upstream error message,
-# so the same patterns that worked against direct provider SDKs still match.
 OVERFLOW_PATTERNS = (
-    "maximum context length",  # OpenAI
-    "prompt is too long",  # Anthropic
-    "context_length_exceeded",  # OpenAI error code
-    "request too large",  # Anthropic
-    "exceeds the model's maximum",  # Gemini
-    "content size exceeds",  # Gemini
-    "too many tokens",  # Generic
+    "maximum context length",
+    "prompt is too long",
+    "context_length_exceeded",
+    "request too large",
+    "exceeds the model's maximum",
+    "content size exceeds",
+    "too many tokens",
 )
 
 

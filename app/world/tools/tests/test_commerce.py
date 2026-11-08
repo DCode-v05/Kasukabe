@@ -12,11 +12,6 @@ async def open_business(
 ) -> Business:
     await world.ledger.register_business(business_id, owner_id, fee_sim=100, tick=world.tick())
     if starting_sim > 0:
-        # register_business opens the account at a zero sim balance
-        # (world.ledger.core.Ledger.open_business); a business needs
-        # working capital to ever pay a seller, so tests that exercise
-        # `sell` fund it here the same way a real business would build up
-        # a balance from its own earlier sales.
         await world.ledger.mint_sim(business_id, starting_sim, tick=world.tick())
     business = Business(
         business_id=business_id, name=business_id, business_type="grocery", owner_agent_id=owner_id,
@@ -40,7 +35,7 @@ async def post(world, registry, owner_id: str, business_id: str, item: str, **pr
 async def test_buy_moves_money_and_item(world, registry) -> None:
     await spawn_agent(world, "owner", "shop")
     await spawn_agent(world, "buyer", "shop")
-    in_conversation(world, "buyer", "owner")   # a sale is agreed in conversation
+    in_conversation(world, "buyer", "owner")
     await open_business(world, "biz-1", "owner", "shop", starting_sim=0)
     world.inventory.credit("biz-1", "bread", 10)
 
@@ -119,8 +114,6 @@ async def test_transfer_moves_sim_currency(world, registry) -> None:
 
     result = await registry.execute(world, "payer", "transfer", {"to_agent_id": "payee", "amount_sim": 500})
 
-    # C2 added `reason` to the result: an untagged transfer is `other`,
-    # and nothing is repaid because nothing was lent.
     assert result.result == {"amount_sim": 500, "reason": "other", "repaid_sim": 0}
     assert world.ledger.sim_balance("payer") == payer_before - 500 - action_cost(
         "transfer", {"amount_sim": 500}

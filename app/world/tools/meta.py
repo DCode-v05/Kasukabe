@@ -85,9 +85,6 @@ from world.tools.state import WorldState
 
 DEFINE_TOOL_MIN_AGE_YEARS = 18.0
 
-# TOOL-31. Re-exported from program.py (which owns the run-time ceiling of
-# the same name) so a reader of the authoring module finds the height limit
-# beside the rules it bounds, and the two can never drift.
 MAX_TOOL_DEPTH = program.MAX_TOOL_DEPTH
 
 
@@ -164,7 +161,7 @@ def same_name(a: str, b: str) -> bool:
 
 def existing_skill_named_like(world: WorldState, name: str) -> "str | None":
     """The skill already filed under this name, however it was written."""
-    if name in world.skill_definitions:  # the common case, and exact
+    if name in world.skill_definitions:
         return name
     return next((held for held in world.skill_definitions if same_name(held, name)), None)
 
@@ -236,16 +233,6 @@ def flatten_to_primitives(
     return leaves
 
 
-# PROG-02 removed `resolve_step_params` from this module. It resolved a
-# step's `$placeholders` against the composite's own call params, one
-# level, no expressions - and `world/tools/program.py:resolve_params` now
-# does exactly that plus `@bindings`, on the one path every composite
-# takes. Leaving the old one here would have been a second implementation
-# of the same rule with no caller, which is this repository's most-cited
-# defect shape and a poor one to commit inside the module that documents
-# it. `$` still means what it always meant; see `resolve_reference`.
-
-
 def validate_steps(
     registry: ToolRegistry,
     param_schema: dict[str, ParamType],
@@ -276,10 +263,6 @@ def validate_steps(
     allowed = citable if citable is not None else registry.primitive_names
     for index, step in enumerate(steps):
         if step.tool_name not in allowed:
-            # TOOL-31: a primitive, or a tool this actor can already call.
-            # `citable` is None only for a caller that did not say who is
-            # filing (tests, and the do_in_order path before a world is
-            # known), and then the old primitives-only rule stands.
             errors.append(str(PrimitiveNotWhitelistedError(step.tool_name, citable)))
             continue
         for value in step.params.values():
@@ -290,27 +273,12 @@ def validate_steps(
                         f"step {index} ({step.tool_name}): {str(UnknownStepPlaceholderError(value, frozenset(param_schema.keys())))}"
                     )
         errors.extend(_step_would_be_refused(registry, index, step))
-    # PROG-02. Control flow, folded into the SAME aggregation rather than
-    # raised on its own. An author told about the whitelist on one turn
-    # and about an unbound `@name` on the next has paid twice for one
-    # filing, which is the thing this function's aggregate-errors idiom
-    # exists to prevent - and a program is exactly the filing most likely
-    # to be wrong in two ways at once.
     program_problems = program.program_step_problems(steps, dict(param_schema))
     errors.extend(program_problems)
-    # TOOL-31. The projection is part of the filing, so a tool that would
-    # answer with nothing is refused while the author is still holding it.
     answer_problems = program.returns_problems(returns, dict(param_schema), steps)
-    # Folded into the control-flow set so a refusal about `@bindings` carries
-    # the same vocabulary whichever half of the filing got them wrong.
     program_problems.extend(answer_problems)
     errors.extend(answer_problems)
 
-    # TOOL-31. The tower, checked once the individual steps are known to
-    # name something real: how deep it stands, whether it loops, and how
-    # many acts one call of it would make. Skipped when a step was already
-    # refused above, because a filing told "no such tool" does not also
-    # need to be told the consequences of the tool it does not have.
     if world is not None and not errors:
         try:
             leaves = flatten_to_primitives(
@@ -327,11 +295,6 @@ def validate_steps(
                 )
     if errors:
         if program_problems:
-            # The caps and the condition vocabulary only when the refusal
-            # is actually about control flow. A composition with one
-            # misspelled primitive does not need to be told the loop
-            # ceiling, and a refusal that answers questions nobody asked
-            # is how the useful half stops being read.
             context = {**(context or {}), **program.PROGRAM_HELP_CONTEXT}
         raise ToolValidationError(tool_name, errors, context=context)
 
@@ -377,7 +340,6 @@ def _step_would_be_refused(
         if not (isinstance(value, str) and value[:1] in ("$", "@"))
     }
     if len(literal) != len(step.params):
-        # Something is templated; the shape is not knowable yet.
         return []
 
     problems: list[str] = []
@@ -391,8 +353,6 @@ def _step_would_be_refused(
             )
         return problems
 
-    # And the one refusal a params model cannot express: a recipe id is
-    # a plain string to pydantic and a real thing to the town.
     recipe_id = literal.get("recipe_id")
     if isinstance(recipe_id, str) and step.tool_name in _RECIPE_TOOLS:
         from world.tools.recipes import RECIPES
@@ -406,8 +366,6 @@ def _step_would_be_refused(
     return problems
 
 
-# The primitives that take a `recipe_id`, so a mistyped one is caught at
-# filing rather than three steps into a paid-for call.
 _RECIPE_TOOLS = frozenset({"craft", "cook"})
 
 
@@ -427,30 +385,6 @@ def build_composite_handler(registry: ToolRegistry, tool_name: str) -> ToolHandl
             raise PatentNotApprovedError(tool_name)
 
         call_params = params.model_dump()
-        # C1: under whoever called it, not under whoever invented it.
-        #
-        # DESIGN.md section 2 says an invented tool's steps run "under the
-        # creator's identity/wallet", written when the creator was the only
-        # person who would ever call one. Conveyance makes that wrong in
-        # the addendum's own words - a licensee "calls it under their own
-        # name at their own cost" - and leaving it would have a licensee
-        # spend the inventor's money and act as the inventor. For the
-        # creator's own calls the two are the same id, so nothing changes
-        # there; `is_visible` is what guarantees the caller is entitled.
-        #
-        # PROG-02. The step walk moved into `world/tools/program.py`. What
-        # did NOT move is the guarantee this module's docstring makes:
-        # the runtime replays filed `ToolStep`s one at a time through
-        # `ToolRegistry.dispatch()`, the same gate-checked path every
-        # ordinary call takes. It has no other way to touch the world, so
-        # "an invented tool is data, never a new code path" is as true of
-        # a program with a condition in it as it was of a fixed list.
-        #
-        # Every composite goes through the runtime, including one filed
-        # before programs existed. A plain composite is a program whose
-        # every step is unconditional, unrepeated and unbound, and routing
-        # it anywhere else would mean the older and commoner shape was the
-        # one PROG-01 never measured.
         run, events = await program.run_program(
             registry, world, caller, tool_name, definition.steps, call_params,
             returns=definition.returns,
@@ -465,10 +399,6 @@ def build_composite_handler(registry: ToolRegistry, tool_name: str) -> ToolHandl
                     "invoked_by_agent_id": caller.agent_id,
                     "creator_agent_id": definition.creator_agent_id,
                     "involved_agent_ids": [caller.agent_id, definition.creator_agent_id],
-                    # PROG-01. The id the invocation log files every step
-                    # of this call under, in the event too, so a consumer
-                    # reading the bus rather than the trace store can join
-                    # the same way.
                     "program_id": run.program_id,
                     "calls_made": run.calls_made,
                     "stopped_early": run.stopped_early,
@@ -485,8 +415,6 @@ class DefineToolParams(BaseModel):
     description: str
     param_schema: dict[str, ParamType] = {}
     steps: list[ToolStep]
-    # TOOL-31. What one call answers with: a reference to what a step
-    # found, or one closed selector. See program.resolve_answer.
     returns: dict[str, Any] = {}
 
 
@@ -506,8 +434,6 @@ def build_define_tool_spec(registry: ToolRegistry) -> ToolSpec:
         fee = charter.patent_filing_fee_sim
         location = place_for_charter(world, agent.agent_id, LOCATION_PATENT_OFFICE)
 
-        # Fallible external call (insufficient funds) before any
-        # tools-owned mutation - see registry.py's ordering discipline.
         await world.ledger.move(
             from_account_id=agent.agent_id,
             to_account_id=TREASURY_ACCOUNT_ID,
@@ -540,8 +466,6 @@ def build_define_tool_spec(registry: ToolRegistry) -> ToolSpec:
                 "application_id": application.application_id,
                 "tool_name": params.name,
                 "inventor_agent_id": agent.agent_id,
-                # For tools_registry.patent_fee_paid_sim - the column that
-                # gave Part D its name and had never had a value put in it.
                 "fee_sim": fee,
                 "steps": [step.tool_name for step in params.steps],
             },
@@ -694,8 +618,6 @@ class DefineBusinessToolParams(BaseModel):
     description: str
     param_schema: dict[str, ParamType] = {}
     steps: list[ToolStep]
-    # TOOL-31. What one call answers with: a reference to what a step
-    # found, or one closed selector. See program.resolve_answer.
     returns: dict[str, Any] = {}
 
 
@@ -777,8 +699,6 @@ class DefineOrganizationToolParams(BaseModel):
     description: str
     param_schema: dict[str, ParamType] = {}
     steps: list[ToolStep]
-    # TOOL-31. What one call answers with: a reference to what a step
-    # found, or one closed selector. See program.resolve_answer.
     returns: dict[str, Any] = {}
 
 
@@ -789,13 +709,6 @@ def build_define_organization_tool_spec(registry: ToolRegistry) -> ToolSpec:
         organization = await world.charter.store.get_organization(params.org_id)
         if organization is None:
             raise NotFoundError("organization", params.org_id)
-        # ASSUMPTION (DESIGN.md section 7 does not say who within an
-        # organization may mint a new secret rite): restricted to the
-        # founder, mirroring define_business_tool's owner-only rule - any
-        # member may still *call* it once defined (registry.py's
-        # ORGANIZATION-namespace visibility already checks membership, not
-        # founder status), same owner-defines/staff-uses split as a
-        # business.
         if organization.founder_agent_id != agent.agent_id:
             raise ActorRequirementError(
                 "define_organization_tool", [f"{agent.agent_id} did not found {params.org_id}"]
@@ -862,8 +775,6 @@ def build_define_organization_tool_spec(registry: ToolRegistry) -> ToolSpec:
 
 class DoInOrderParams(BaseModel):
     steps: list[ToolStep]
-    # TOOL-31. What one call answers with: a reference to what a step
-    # found, or one closed selector. See program.resolve_answer.
     returns: dict[str, Any] = {}
 
 
@@ -903,8 +814,6 @@ def build_do_in_order_spec(registry: ToolRegistry) -> ToolSpec:
                 returns=params.returns,
             )
         except ToolValidationError as refused:
-            # The vocabulary only on a refusal: this runs on every call, and
-            # an author who got it right needs no price list read back.
             refused.context = {
                 **(refused.context or {}),
                 **(await world.authoring_context(agent.agent_id)),
@@ -919,9 +828,6 @@ def build_do_in_order_spec(registry: ToolRegistry) -> ToolSpec:
     return ToolSpec(
         name="do_in_order",
         description=(
-            # Physics only, per TOOL-26, and every figure read from the
-            # constant that enforces it - the same rule `toolify`'s blurb
-            # follows, for the same reason.
             "Run a short program now, in one call: a list of steps done in order, each a "
             "real action {tool_name, params}. A step may also carry `when`, `repeat` and "
             f"`bind`. `when` is one comparison ({', '.join(sorted(program.CONDITION_OPS))}); "
@@ -973,18 +879,6 @@ def build_specs(registry: ToolRegistry) -> list[ToolSpec]:
     ]
 
 
-# ── Part B: skillify - authoring a workflow ──────────────────────────────
-#
-# The counterpart to define_tool above, and deliberately NOT built on it. An
-# invented tool is data the REGISTRY replays: one call, every step, no
-# judgement in between. A skill is a document the AGENT walks - it is shown
-# the steps in its prompt and chooses each one, so it can stop halfway when
-# the stand turns out to be already cleared. Collapsing the two would lose
-# exactly the thing that makes a skill interesting to study.
-
-# Matches build_composite_handler's own guard. A skill may call a skill, but
-# that skill may not call a third: two workflows naming each other cannot
-# loop, and a reader of the prompt can still see the whole procedure.
 MAX_SKILL_NESTING = 2
 
 
@@ -1014,8 +908,6 @@ class DefineSkillParams(BaseModel):
                     "{\"order\": 1, \"kind\": \"tool\", \"ref\": \"<the tool>\"}."
                 )
         return data
-    # Optional. Given, the workflow belongs to that business rather than to
-    # the town, and only the owner and its employees may be taught it.
     business_id: str | None = None
 
 
@@ -1143,8 +1035,6 @@ def validate_skill_steps(
         elif not step.ref:
             problems.append(f"step {step.order}: a {step.kind} step needs a ref")
         elif step.kind == "tool" and registry.get(step.ref) is None:
-            # Name the alternatives. A bare "no tool named 'x'" leaves an
-            # agent to guess again from the same wrong vocabulary.
             problems.append(
                 f"step {step.order}: no tool named {step.ref!r}"
                 f" - {_nearest_tools_hint(step.ref, registry.tools)}"
@@ -1164,15 +1054,6 @@ def validate_skill_steps(
                     )
                 )
             elif not may_follow_skill(world, author_agent_id, step.ref):
-                # A trade secret is locked at the LESSON (see
-                # social.teach_skill: "teaching is the only way a skill
-                # leaves the person who has it, so this is the one door
-                # that needs a lock"). Citing is the second door. It does
-                # not leak the procedure - a playbook shows the outer
-                # skill's own steps and the name of the inner one, never
-                # its contents - but it lets a stranger file a workflow
-                # that can never advance past step one, and then spend
-                # turns discovering that. Refused, and said plainly.
                 owner = world.skill_definitions[step.ref].owner_id
                 problems.append(
                     f"step {step.order}: {step.ref!r} belongs to {owner} and you "
@@ -1210,23 +1091,12 @@ def build_skillify_spec(registry: ToolRegistry) -> ToolSpec:
             registry, world, params.name, params.steps, agent.agent_id
         )
         if problems:
-            # With the whole vocabulary attached, priced for this author.
-            # Marta filed six steps as world_move, world_harvest and the
-            # rest and lost all six to "no tool named 'world_move'" - for a
-            # workflow whose every step she had used that morning. A
-            # refusal that teaches costs one turn; one that does not costs
-            # two.
             raise ToolValidationError(
                 "skillify", problems, context=await world.authoring_context(agent.agent_id)
             )
 
-        # Derived, never declared - the guard that makes a skill pointing at
-        # forty tools cost forty steps to write.
         discounts = discounted_tools(world, params.steps, params.name)
 
-        # Governmental is likewise read off the steps. An agent cannot file a
-        # procedure of state as an ordinary trade to dodge the council,
-        # because the classifier reads what the workflow actually does.
         governmental = any(
             (spec := registry.get(s.ref)) is not None
             and spec.actor_requirements.require_government_seat
@@ -1239,8 +1109,6 @@ def build_skillify_spec(registry: ToolRegistry) -> ToolSpec:
             business = resolve_business(world, params.business_id)
             if business is None:
                 raise NotFoundError("business", params.business_id, sorted(world.businesses))
-            # Own it or work there. A trade secret filed by a stranger would
-            # be a way to attach a private procedure to somebody else's shop.
             if (
                 business.owner_agent_id != agent.agent_id
                 and agent.agent_id not in business.employee_agent_ids
@@ -1250,10 +1118,6 @@ def build_skillify_spec(registry: ToolRegistry) -> ToolSpec:
                     [f"{agent.agent_id} neither owns nor works at {params.business_id}"],
                 )
             if governmental:
-                # A standing order belongs in the town's book of rules, which
-                # is public by construction. A secret procedure of state is a
-                # contradiction, and refusing it here is cheaper than
-                # explaining later why one exists.
                 raise ToolValidationError(
                     "skillify",
                     ["a workflow that uses state power cannot be a trade secret"],
@@ -1282,12 +1146,6 @@ def build_skillify_spec(registry: ToolRegistry) -> ToolSpec:
 
         amendment_id: str | None = None
         if governmental:
-            # A standing order goes into the book of rules the way every other
-            # rule does: proposed by a seat-holder, voted to threshold, signed
-            # or vetoed by the president. propose_amendment refuses a proposer
-            # who holds no seat, and that refusal is correct rather than an
-            # obstacle - an agent with no seat is not writing the town's
-            # procedures, whatever it may call the document.
             charter = world.charter.store.current_charter()
             proposal = await world.charter.amendments.propose_amendment(
                 field_name="standing_orders",
@@ -1301,8 +1159,6 @@ def build_skillify_spec(registry: ToolRegistry) -> ToolSpec:
             definition = definition.model_copy(update={"amendment_id": amendment_id})
 
         world.skill_definitions[params.name] = definition
-        # The author holds it at 1: they have written the procedure, not yet
-        # walked it. Everything above that has to be earned by completing it.
         world.skills.setdefault(agent.agent_id, {}).setdefault(params.name, 1)
 
         event = WorldEvent(
@@ -1317,10 +1173,6 @@ def build_skillify_spec(registry: ToolRegistry) -> ToolSpec:
                 "amendment_id": amendment_id,
                 "namespace": namespace,
                 "owner_id": owner_id,
-                # The workflow itself, for `skills.skill_artifact_text`. The
-                # column is TEXT and has existed since the schema was written;
-                # nothing had ever put anything in it, so "what does this
-                # agent think this job IS" was unanswerable from the trace.
                 "steps_json": {
                     "name": params.name,
                     "preconditions": params.preconditions,
@@ -1338,11 +1190,6 @@ def build_skillify_spec(registry: ToolRegistry) -> ToolSpec:
                 "status": definition.status,
                 "amendment_id": amendment_id,
                 "namespace": namespace,
-                # `revise_skill` has been registered and reachable for
-                # nineteen runs and was called zero times. A resident who
-                # believes a filing is permanent writes nothing, because
-                # writing something wrong would be forever. Said here,
-                # which is the one place an author is certain to read.
                 "note": (
                     "Walk it to find out whether it works. If it does not, "
                     "`revise_skill` changes the steps - a filing is a draft, "
@@ -1383,8 +1230,6 @@ def build_skillify_spec(registry: ToolRegistry) -> ToolSpec:
 
 
 class DescribePrimitivesParams(BaseModel):
-    # Optional filter, so an agent hunting for "something that moves goods"
-    # does not have to read the whole vocabulary to find it.
     contains: str | None = None
 
 
@@ -1404,9 +1249,6 @@ def _quoted_minimum(
     the steps will be charged at, and a quote priced at somebody else's
     skill is a number nobody can plan against.
     """
-    # Imported here rather than at module scope, matching the handler
-    # below: `world.ledger.action_costs` imports from this package, and a
-    # top-level import would close the cycle.
     from world.ledger.action_costs import DEFAULT_SCHEDULE, ActionActor, proficiency_for
 
     if name not in world.custom_tools:
@@ -1458,42 +1300,11 @@ def build_describe_primitives_spec(registry: ToolRegistry) -> ToolSpec:
                     "name": name,
                     "description": spec.description,
                     "params": sorted(spec.params_model.model_fields.keys()),
-                    # What it would cost THIS agent, discount included - not
-                    # a list price it would then have to adjust in its head.
-                    #
-                    # Named `sim_cost_minimum` rather than `sim_cost` because
-                    # it is priced with no params: tools that charge per unit
-                    # (harvest, move, craft) cost more for a bigger job, and a
-                    # bare "cost 3" beside a call that actually took 9 would
-                    # be a number an agent could reasonably plan against and
-                    # be wrong. quote_action_cost answers the exact question
-                    # for a specific call; this is the floor.
-                    # PROG-02. An INVENTED name has no row in the
-                    # schedule, so `cost_for` falls to DEFAULT_RULE and
-                    # quotes 5 - while `dispatch` charges nothing for the
-                    # wrapper (TOOL-06) and only the steps cost anything.
-                    # So the listing a resident reads before composing
-                    # said an invented tool costs 5 sim more than doing
-                    # the work by hand, and it does not.
-                    #
-                    # This is the third place the same disagreement was
-                    # found in this area: the `toolify` blurb said it, the
-                    # cost-disclosure row said it, and this quoted it. The
-                    # words followed the charge in the first two; this is
-                    # the number doing the same.
-                    #
-                    # Quoted as the SUM OF THE STEPS, which is what the
-                    # call will actually cost, rather than 0 - a floor of
-                    # zero on a five-step tool would be as wrong in the
-                    # other direction, and this field's own comment below
-                    # says it is a floor, not a list price.
                     "sim_cost_minimum": _quoted_minimum(
                         world, name, agent.agent_id, proficiency
                     ),
                     "your_proficiency": proficiency,
                     "requires_seat": spec.actor_requirements.require_government_seat,
-                    # Plain data: a gate that depends on the call is a
-                    # function, and a function is not JSON.
                     "at_location": location_label(spec.location_gate),
                 }
             )
@@ -1502,10 +1313,6 @@ def build_describe_primitives_spec(registry: ToolRegistry) -> ToolSpec:
     return ToolSpec(
         name="describe_primitives",
         description=(
-            # TOOL-26. The closing sentence told the resident when in its
-            # own reasoning to reach for this - Addendum rule 2's "never
-            # the strategy". The listing itself is what makes composing
-            # informed; nothing here needs to tell anybody to think first.
             "List the actions you can actually take: the least each would cost YOU "
             "(your skill discount included), what it needs, and where you must be. "
             "Costs shown are the minimum - a bigger job costs more, and quote_action_cost "
@@ -1520,16 +1327,11 @@ def build_describe_primitives_spec(registry: ToolRegistry) -> ToolSpec:
     )
 
 
-# ── Part B: toolify - authoring a tool without asking anyone ─────────────
-
-
 class ToolifyParams(BaseModel):
     name: str
     description: str
     param_schema: dict[str, ParamType] = {}
     steps: list[ToolStep]
-    # TOOL-31. What one call answers with: a reference to what a step
-    # found, or one closed selector. See program.resolve_answer.
     returns: dict[str, Any] = {}
 
     @model_validator(mode="before")
@@ -1597,9 +1399,6 @@ def build_toolify_spec(registry: ToolRegistry) -> ToolSpec:
             raise ToolValidationError(
                 "toolify", ["a tool needs at least one step"], context=context
             )
-        # The same whitelist define_tool validates against: steps must be real
-        # primitives, and placeholders must resolve against the declared
-        # schema. Composition cannot conjure capability, only order it.
         validate_steps(
             registry, params.param_schema, params.steps, "toolify", context,
             world=world, citable=await citable_tool_names(registry, world, agent.agent_id),
@@ -1638,12 +1437,6 @@ def build_toolify_spec(registry: ToolRegistry) -> ToolSpec:
                 "inventor_agent_id": agent.agent_id,
                 "step_count": len(params.steps),
                 "steps": [s.tool_name for s in params.steps],
-                # PROG-03. Whether this filing took up control flow, said
-                # once, here, by the one function that decides it. The
-                # adoption figure the cost-model decision turns on is
-                # this count, and computing it a second time downstream
-                # by re-parsing the stored composition would be two
-                # readers that can disagree about the same tool.
                 "has_control_flow": program.has_control_flow(params.steps),
             },
         )
@@ -1654,40 +1447,15 @@ def build_toolify_spec(registry: ToolRegistry) -> ToolSpec:
                 "steps": len(params.steps),
                 "callable_now": True,
                 "registry_version": registry.version,
-                # `revise_tool` has been reachable the whole time and was
-                # never called. A tool that cannot be changed is a tool
-                # worth not building, which is close to what the town
-                # concluded.
                 "note": (
                     f"`{params.name}` is callable now. Use it, and when it turns "
                     "out to be the wrong shape, `revise_tool` changes the steps."
                 ),
-                # Recomputed AFTER registration, so the vocabulary the
-                # inventor reads back includes the tool it just made.
                 **(await world.authoring_context(agent.agent_id)),
             },
             events=[event],
         )
 
-    # TOOL-29, then TOOL-06, and the second undid the first.
-    #
-    # TOOL-29 found that this description said "Each step still costs what
-    # it always did" and stopped, which reads as "a composite costs the
-    # sum of its steps" - and it did not. `SCHEDULE_TABLE` cannot hold a
-    # row for a tool nobody has invented yet, so the wrapper's own name
-    # fell to `DEFAULT_RULE` and every call was charged 5 sim on top of
-    # the steps it ran. TOOL-29 could not remove the charge (it lives in
-    # the pricing half, which that agent did not own) so it did the
-    # honest remaining thing and made the sentence name the surcharge.
-    #
-    # TOOL-06 removed the surcharge: `dispatch` now skips the charge
-    # entirely for a name in `world.custom_tools`. So the sentence has to
-    # follow, and the guard TOOL-29 left behind - which MEASURES what an
-    # invented tool costs over its steps rather than checking the words
-    # against a constant - is what made this a two-line change instead of
-    # a second lie with the sign flipped.
-    #
-    # The original sentence is back, and now it is true.
     return ToolSpec(
         name="toolify",
         description=(
@@ -1703,17 +1471,6 @@ def build_toolify_spec(registry: ToolRegistry) -> ToolSpec:
             "first. Each step still costs what it always did and the wrapper itself is "
             "free, so one call of the new tool costs exactly the sum of its steps; what "
             "you save is deciding. "
-            # PROG-02. The mechanism, stated, and the numbers taken from
-            # the constants that enforce them rather than typed out
-            # beside them. A blurb whose figures are written by hand is
-            # a blurb that will disagree with the world the first time
-            # an operator moves a ceiling, which is the same shape as a
-            # price table reading fields the world does not emit.
-            #
-            # Physics only, per TOOL-26: what a step may carry, what a
-            # condition can see, what the ceilings are and what happens
-            # at them. Nothing here says when to write a program, what
-            # to put in one, or that writing one is worth doing.
             "A step may also carry `when`, `repeat` and `bind`. `when` is one comparison "
             f"({', '.join(sorted(program.CONDITION_OPS))}); a step whose condition is "
             "false is skipped, not failed. `repeat` runs one step up to "
@@ -1725,8 +1482,6 @@ def build_toolify_spec(registry: ToolRegistry) -> ToolSpec:
             f"at most {program.PROGRAM_WALLET_SHARE_PERCENT}% of the sim-currency you held "
             "when it began; at either ceiling it stops, keeps everything it already did, "
             "and tells you which one it met. "
-            # TOOL-31, physics only: what the projection may read and what
-            # it may do with it. Nothing here says what to build.
             "`returns` says what one call ANSWERS with, so the tool hands back the thing "
             "you wanted rather than the whole account of what it did: each entry is either "
             "a name of something a step found (`@bound`, `@bound.field`, or `$your_param`) "
@@ -1746,16 +1501,10 @@ def build_toolify_spec(registry: ToolRegistry) -> ToolSpec:
     )
 
 
-# ── Part D: changing your mind, without losing what you thought before ───
-
-
 class ReviseSkillParams(BaseModel):
     name: str
     preconditions: str | None = None
     steps: list[SkillStep]
-    # Why. Free text, unvalidated, and kept - the reason an agent revised a
-    # procedure is the most interesting field on the record and the one thing
-    # the system cannot derive.
     because: str = ""
 
 
@@ -1803,9 +1552,6 @@ def build_revise_skill_spec(registry: ToolRegistry) -> ToolSpec:
             registry, world, params.name, params.steps, agent.agent_id
         )
         if problems:
-            # Same context as the original filing. A revision refused
-            # blind is exactly as expensive as a first draft refused
-            # blind, and the whole point of revision is that it is cheap.
             raise ToolValidationError(
                 "revise_skill",
                 problems,
@@ -1819,16 +1565,11 @@ def build_revise_skill_spec(registry: ToolRegistry) -> ToolSpec:
             for s in params.steps
             if s.kind == "tool" and s.ref
         ):
-            # A trade skill cannot be revised INTO a procedure of state - that
-            # would be a way to put state power in the book without the
-            # council ever seeing it.
             raise ToolValidationError(
                 "revise_skill",
                 ["a revision cannot add a step that needs a government seat"],
             )
 
-        # The old version, frozen, with its own history dropped so the chain
-        # does not nest exponentially - `superseded` stays a flat list.
         previous = existing.model_copy(update={"superseded": []})
         revised = existing.model_copy(
             update={
@@ -1845,10 +1586,6 @@ def build_revise_skill_spec(registry: ToolRegistry) -> ToolSpec:
         )
         world.skill_definitions[params.name] = revised
 
-        # Anyone partway through the old steps is now following a document
-        # that no longer says what they think it says. Cleared rather than
-        # remapped: step 4 of version 1 is not step 4 of version 2, and
-        # guessing which step it became would be inventing a fact.
         for key in [k for k in world.skill_progress if k.endswith(f"::{params.name}")]:
             del world.skill_progress[key]
 
@@ -1938,15 +1675,10 @@ def build_revise_tool_spec(registry: ToolRegistry) -> ToolSpec:
                     "are what was approved, and cannot be swapped"
                 ],
             )
-        # `defining` is what makes a cycle unrepresentable: revising is the
-        # only way a tool could come to stand on something that stands on it.
         validate_steps(
             registry, existing.param_schema, params.steps, "revise_tool",
             world=world, citable=await citable_tool_names(registry, world, agent.agent_id),
             defining=frozenset({params.name}),
-            # The answer has to still be readable from the NEW steps: a
-            # revision that removed the step its projection read would
-            # otherwise leave a tool that answers with nothing.
             returns=existing.returns,
         )
 
@@ -1962,8 +1694,6 @@ def build_revise_tool_spec(registry: ToolRegistry) -> ToolSpec:
                 "revised_tick": world.tick(),
             }
         )
-        # Rebuild the live spec so callers get the new steps, and so the
-        # registry version moves and engines refetch.
         spec = registry.get(params.name)
         registry.tools.pop(params.name, None)
         registry.register(
@@ -1996,12 +1726,6 @@ def build_revise_tool_spec(registry: ToolRegistry) -> ToolSpec:
                 "tool_name": params.name,
                 "version": existing.version + 1,
                 "registry_version": registry.version,
-                # The same context skillify, toolify and revise_skill all
-                # return. This was the one authoring path that answered
-                # blind, and it is the improvement path: revising is where
-                # an author most needs to see its repetitions, what the
-                # revised procedure currently says, and what else it could
-                # have used instead.
                 **(await world.authoring_context(agent.agent_id)),
             },
             events=[event],

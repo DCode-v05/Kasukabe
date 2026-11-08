@@ -47,9 +47,6 @@ async def insert_state_row(db, name, source="user", status="active"):
     await db.commit()
 
 
-# ── Schema: definitions no longer live in SQLite ──────────────────
-
-
 class TestSchema:
     @pytest.mark.asyncio
     async def test_definition_columns_are_gone(self, db):
@@ -79,9 +76,6 @@ class TestSchema:
             "last_used",
         ):
             assert state_col in cols
-
-
-# ── The duplication this closes ───────────────────────────────────
 
 
 class TestNoDuplication:
@@ -122,9 +116,6 @@ class TestNoDuplication:
         assert "ghost-skill" not in [s["name"] for s in await search.skills()]
 
 
-# ── UDWrite is state-only ─────────────────────────────────────────
-
-
 class TestUDWriteStateOnly:
     @pytest.mark.asyncio
     async def test_learned_state_still_round_trips(self, db):
@@ -148,9 +139,6 @@ class TestUDWriteStateOnly:
         row = await db.fetchrow("SELECT * FROM user_skills WHERE name = ?", ("defn",))
         assert "description" not in dict(row)
         assert "source_code" not in dict(row)
-
-
-# ── UDFull reads definitions from the catalog ─────────────────────
 
 
 class TestUDFullReadsCatalog:
@@ -178,9 +166,6 @@ class TestUDFullReadsCatalog:
     async def test_missing_skill_returns_none(self, db):
         catalog = Catalog(agents={}, skills={}, tools={})
         assert await UDFull(db, catalog).get_skill_user_created("nope") is None
-
-
-# ── Fails loudly ──────────────────────────────────────────────────
 
 
 class TestFailsLoudly:

@@ -71,13 +71,6 @@ from world.life.health import onset_ailment, work_capacity
 from world.life.models import AgentLifeRecord, AilmentKind, HealthState, LifeEvent, PopulationDials
 from world.life.ports import EconomyPort, InsufficientFundsError
 
-# ── ASSUMPTION: daily upkeep rates (see module docstring) ────────────
-# Picked small relative to GENESIS_AGENT_STARTING_SIM_BALANCE (5,000,
-# constants.py) so a funded agent has real runway, and large enough that
-# an idle household with no income visibly bleeds out over a handful of
-# game-days rather than centuries - "food, shelter, heat" split evenly
-# across a round total is the simplest internally-consistent starting
-# point pending real game-balance data.
 UPKEEP_FOOD_SIM_PER_DAY = 40
 UPKEEP_SHELTER_SIM_PER_DAY = 30
 UPKEEP_HEAT_SIM_PER_DAY = 20
@@ -85,21 +78,8 @@ UPKEEP_TOTAL_SIM_PER_DAY = (
     UPKEEP_FOOD_SIM_PER_DAY + UPKEEP_SHELTER_SIM_PER_DAY + UPKEEP_HEAT_SIM_PER_DAY
 )
 
-# The free-text reason EconomyPort.debit_sim records. ports.py's
-# EconomyPort takes a plain string here (not world.ledger.models.
-# TransactionReason) precisely so this package never needs to import the
-# ledger's enum - see ports.py's module docstring. A real ledger-backed
-# EconomyPort implementation is free to map this string onto whatever
-# TransactionReason it likes (ledger/models.py has no dedicated UPKEEP
-# member yet; TRANSFER is the closest existing fit until one is added).
 UPKEEP_TRANSACTION_REASON = "daily_upkeep"
 
-# ── ASSUMPTION: hunger escalation ladder (see module docstring) ──────
-# Ordered strictly increasing so "severe" always implies "at least mild"
-# and "dormant" always implies "at least severe" - advance_hunger checks
-# the most severe threshold first for the same reason tick.py checks
-# terminal before chronic before elderly: an agent only needs the single
-# worst consequence that applies today, not a stack of all of them.
 HUNGER_MILD_WORK_CAPACITY_MULTIPLIER = 0.75
 HUNGER_SEVERE_UNPAID_DAYS_THRESHOLD = 2
 HUNGER_DORMANCY_UNPAID_DAYS_THRESHOLD = 3
@@ -336,20 +316,6 @@ class HungerState(BaseModel):
     keeping AgentLifeRecord itself.
     """
 
-    # ECON-16. TWO counters, because they answer two different questions
-    # and one field was answering both wrongly.
-    #
-    # `consecutive_unpaid_days` is MONEY: how many days running the
-    # household bill went unpaid. Only paying clears it.
-    #
-    # `days_since_meal` is FOOD: how long since this resident actually
-    # ate. Paying the bill feeds you, and so does the `eat` tool.
-    #
-    # Conflated, the `agent.ate` subscriber zeroed the money counter on
-    # every meal - so a household could skip upkeep forever as long as
-    # each member ate one apple a day, and "doing nothing is also a way to
-    # die" (this module's own rule) was void. The tool's note already said
-    # "Your household still owes its daily upkeep"; nothing enforced it.
     consecutive_unpaid_days: int = Field(default=0, ge=0)
     days_since_meal: int = Field(default=0, ge=0)
 
@@ -365,9 +331,6 @@ def effective_work_capacity(health: HealthState, hunger: HungerState) -> float:
     would double-penalise the same day of hunger.
     """
     base = work_capacity(health)
-    # ECON-16: HUNGER reduces what you can do - not an unpaid invoice.
-    # A resident who ate today works at full strength however far behind
-    # the rent is; a resident who has not eaten is weak whoever paid.
     if 0 < hunger.days_since_meal < HUNGER_SEVERE_UNPAID_DAYS_THRESHOLD:
         return base * HUNGER_MILD_WORK_CAPACITY_MULTIPLIER
     return base
@@ -397,16 +360,8 @@ def advance_hunger(
     if not agent.alive:
         return agent, hunger, []
 
-    # ECON-16: the two halves move independently from here down.
-    #
-    # Money: only paying clears the arrears streak. Eating does not, which
-    # is the whole finding - a meal used to wipe the record of every
-    # skipped bill, so the escalation that is the ONLY consequence of not
-    # paying could be reset for the price of an apple.
     unpaid_days = 0 if paid_in_full else hunger.consecutive_unpaid_days + 1
 
-    # Food: the bill buys the meal, and so does the `eat` tool. A resident
-    # who fed itself is fed, whoever paid the rent.
     fed_today = paid_in_full or ate_today
     streak = 0 if fed_today else hunger.days_since_meal + 1
     updated_hunger = HungerState(
@@ -431,11 +386,6 @@ def advance_hunger(
         LifeEvent(
             type="health.hunger.worsened",
             agent_id=agent.agent_id,
-            # ECON-16: `streak` now counts DAYS SINCE A MEAL, so
-            # publishing it as `consecutive_unpaid_days` would put the
-            # hunger number under the money name and mislead every
-            # consumer of this event. Both are carried, each under its
-            # own name.
             payload={
                 "day": day,
                 "days_since_meal": streak,
@@ -487,9 +437,6 @@ async def run_daily_upkeep_tick(
     hunger_by_agent: dict[str, HungerState],
     economy: EconomyPort,
     dials: PopulationDials,
-    # ECON-16: who has eaten today, so a meal can relieve hunger without
-    # clearing the arrears. Defaults to nobody, which is the old
-    # behaviour for every caller that has not been taught about food yet.
     fed_agent_ids: set[str] | None = None,
 ) -> UpkeepTickResult:
     """One household's complete daily upkeep cycle: bill, collect,
@@ -524,10 +471,6 @@ async def run_daily_upkeep_tick(
             hunger,
             day,
             outcome.paid_in_full,
-            # ECON-16: eating feeds you without paying the bill. Absent
-            # this the `eat` tool would stop working entirely - the old
-            # code let a meal clear the ARREARS, which was the bug, but it
-            # did at least let a meal relieve hunger.
             ate_today=member.agent_id in (fed_agent_ids or ()),
         )
         updated_members.append(updated_agent)
@@ -543,28 +486,3 @@ async def run_daily_upkeep_tick(
         events=events,
     )
 
-
-# ── Integration report for the daily tick's owner ─────────────────────
-#
-# world's tick engine does not yet call ANY of life/'s daily-cycle
-# functions (run_daily_health_tick included - see world/core/engine.py's
-# TickEngine.tick(), which only advances the clock, movement, scheduling,
-# and day-boundary checkpointing today). Whoever wires that day boundary
-# should add exactly one call per household, alongside wherever
-# run_daily_health_tick ends up being called per agent:
-#
-#     result = await upkeep.run_daily_upkeep_tick(
-#         rng, household.household_id, day, member_records,
-#         hunger_state_by_agent, economy, dials,
-#     )
-#
-# then persist result.updated_members back into the agent store,
-# result.updated_hunger back into whatever dict is tracking HungerState
-# per agent_id (a new, small piece of tick-engine state - HungerState is
-# not part of AgentLifeRecord, see module docstring), and publish
-# result.events the same way every other life/ tick function's events are
-# published. Effective work capacity for a day's action budget should be
-# read through upkeep.effective_work_capacity(agent.health, hunger) rather
-# than health.work_capacity(agent.health) directly, so mild hunger's
-# capacity penalty is not silently skipped by callers that only know
-# about the health module.

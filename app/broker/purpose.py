@@ -42,10 +42,6 @@ from typing import Any
 
 from broker.lanes import derive_purpose
 
-# Distinctive openings of the engine's own housekeeping prompts, matched
-# against the SYSTEM prompt. Each is a verbatim fragment observed in the
-# trace store, not a guess: `learning_centre/pipeline.py` builds these and
-# they are stable because they are literals in frozen code.
 BACKGROUND_SYSTEM_MARKERS: tuple[tuple[str, str], ...] = (
     ("knowledge extraction", "learning_centre.knowledge_extraction"),
     ("episode creation engine", "learning_centre.episode_creation"),
@@ -53,22 +49,7 @@ BACKGROUND_SYSTEM_MARKERS: tuple[tuple[str, str], ...] = (
     ("social graph", "learning_centre.social_graph"),
 )
 
-# The post-turn learning signal, matched against the LAST USER MESSAGE.
-# `learning_centre/signals.py`: "the post-turn hook captures a
-# model-summarized signal after every agent loop turn. No voluntary tool
-# call - every exchange." One of these fires per agent turn, which is what
-# makes it the most expensive single line in the system.
 BACKGROUND_MESSAGE_MARKERS: tuple[tuple[str, str], ...] = (
-    # The engine's working-memory flush. `wm_flush` is the literal `source`
-    # the frozen memory layer stamps on every buffered entry, so it is as
-    # reliable a marker as the summariser's own instruction text.
-    #
-    # This one is not merely mis-billed, it is the most expensive single
-    # failure in the run log. In data/loop4.db, 41 of 1,047 calls were
-    # flushes - 4% - and EIGHTEEN OF THE RUN'S NINETEEN FAILURES were
-    # flushes that overflowed the context window, all from one resident,
-    # every one of them served on a Kimi lane an agent needed and billed to
-    # that agent's own wallet. Median 1,221 tokens, worst 99,591.
     ("wm_flush", "summarizer.working_memory"),
     ("summarize this exchange", "summarizer.post_turn"),
     ("summarise this exchange", "summarizer.post_turn"),
@@ -78,31 +59,11 @@ BACKGROUND_MESSAGE_MARKERS: tuple[tuple[str, str], ...] = (
 
 UNSPECIFIED = "unspecified"
 
-# Every tag this module invents carries this prefix, so a reader can never
-# mistake a guess for a statement. Borrowed from `lanes.derive_purpose`,
-# which established the convention on the Real branch, and applied here to
-# the rerouting inference as well - more important there, because that one
-# also moved the call.
 DERIVED = "auto:"
 
-# CORE-30. Where a purpose tag came from, as a recorded fact rather than a
-# string convention.
-#
-# ROADMAP T4's gate is "background share > 0 AND matches sleep-onset
-# edges", and it is now met by a broker INFERENCE - nothing in the engine
-# sends `X-Kasukabe-Purpose`, so every background classification in every
-# run is this module's guess. That is a legitimate way to route a call and
-# a poor foundation for a research claim, and the two must be
-# distinguishable in the record.
-#
-# The `auto:` prefix carried this implicitly, and implicitly is not good
-# enough: it is a substring check on a free-text column that a future tag
-# could break without anyone noticing, and it cannot distinguish the
-# marker match (which MOVED the call to another lane) from the shape tag
-# (which merely named it). These three can.
-SOURCE_HEADER = "header"       # the caller said so
-SOURCE_MARKER = "inferred"     # matched frozen learning-centre prompt text
-SOURCE_SHAPE = "shape"         # named by request shape; did not move the call
+SOURCE_HEADER = "header"
+SOURCE_MARKER = "inferred"
+SOURCE_SHAPE = "shape"
 
 def system_text(body: dict[str, Any]) -> str:
     """The system prompt as one lowercased string, whatever shape it came in.
@@ -168,9 +129,6 @@ def purpose_and_source(header: str, body: dict[str, Any]) -> tuple[str, str]:
     if tagged and tagged != UNSPECIFIED:
         return tagged, SOURCE_HEADER
     purpose = infer_purpose(header, body)
-    # A marker match is the only inference that reroutes, and it is the
-    # only one that produces a background class - so it is the one a
-    # reader of the T4 gate needs told apart from the rest.
     if purpose.startswith(DERIVED) and any(
         purpose == DERIVED + tag
         for _marker, tag in BACKGROUND_SYSTEM_MARKERS + BACKGROUND_MESSAGE_MARKERS
@@ -215,9 +173,6 @@ def infer_purpose(header: str, body: dict[str, Any]) -> str:
                 if marker in message:
                     return DERIVED + purpose
     except (AttributeError, TypeError):
-        # A body shaped in some way this function did not anticipate.
-        # Cognition is the safe answer: see the module docstring on why the
-        # two misclassification costs are not symmetric.
         return DERIVED + "other"
 
     try:

@@ -28,19 +28,6 @@ from src.sandbox.permissions import HardDeny, PermissionBehavior, PermissionRule
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# PermissionProvenance — where a rule originated
-# ---------------------------------------------------------------------------
-
-
-# HardDeny is defined in src/sandbox/permissions.py, next to the HARDCODED_DENIALS
-# it tags, and re-exported here so callers can reach the whole vocabulary from one
-# module. Deliberately NOT a member of PermissionProvenance: it is an invariant
-# above the ladder, not a tier on it. Ranking it alongside the others —
-# necessarily at the bottom, since it is code-defined — would let a user rule
-# outrank `rm -rf /`, and would read as a clean rename in review.
-
-
 class PermissionProvenance(Enum):
     """Who granted a permission rule, in the engine's one authority vocabulary.
 
@@ -49,27 +36,17 @@ class PermissionProvenance(Enum):
     separate ladder per subsystem.
     """
 
-    SEPTEMBERAI = "septemberai"  # baked auto-allows, ship with the build
-    ENGINE = "engine"  # runtime self-governance, session-only
-    USER = "user"  # $SEPTEMBER_HOME/config/permissions.json
-    MANAGED = "managed"  # org policy from the control plane (reserved)
+    SEPTEMBERAI = "septemberai"
+    ENGINE = "engine"
+    USER = "user"
+    MANAGED = "managed"
 
 
-# Written to disk by the engine. Only the user's own file: managed rules arrive
-# from the control plane and must never be persisted into a file the user or
-# the agent can edit.
 PERSISTABLE_PROVENANCE = frozenset({PermissionProvenance.USER})
 
-# Tiers a runtime may create or modify. Separate axis from authority — the
-# distinction Claude Code draws with EDITABLE_SOURCES, which excludes its
-# managed (policySettings) tier for the same reason.
 EDITABLE_PROVENANCE = frozenset({PermissionProvenance.ENGINE, PermissionProvenance.USER})
 
 
-# Backward compat: old source strings from files written by earlier engines.
-# `operator_project` folds into USER rather than disappearing — the tier is gone
-# but a rule someone already wrote should keep applying at the tier that
-# replaced it, not be silently dropped.
 LEGACY_SOURCE_MAP: dict[str, str] = {
     "hardcoded": HardDeny,
     "system_deny": HardDeny,
@@ -92,11 +69,6 @@ def normalize_source(source_str: str) -> str:
     if source_str in {p.value for p in PermissionProvenance} or source_str == HardDeny:
         return source_str
     return LEGACY_SOURCE_MAP.get(source_str, source_str)
-
-
-# ---------------------------------------------------------------------------
-# Rule string parsing — Tool(content) format with escape handling
-# ---------------------------------------------------------------------------
 
 
 @dataclass
@@ -202,11 +174,6 @@ def rule_from_string(
     )
 
 
-# ---------------------------------------------------------------------------
-# PermissionStore — load, save, and manage rules across sources
-# ---------------------------------------------------------------------------
-
-
 def load_json(path: Path) -> dict:
     """Load JSON file, returning empty dict if missing or invalid."""
     if not path.exists():
@@ -297,7 +264,6 @@ class PermissionStore:
             return self.user_path
         return None
 
-    # --- CRUD ---
 
     def add_rule(self, rule: PermissionRule) -> None:
         """Add a rule. Deduplicates against existing rules with same tool+pattern+behavior+source."""
@@ -308,7 +274,7 @@ class PermissionStore:
                 and existing.behavior == rule.behavior
                 and existing.source == rule.source
             ):
-                return  # already exists
+                return
         self.rules.append(rule)
 
     def remove_rule(
@@ -344,7 +310,6 @@ class PermissionStore:
         ]
         self.rules.extend(rules)
 
-    # --- Query ---
 
     def get_rules(self) -> list[PermissionRule]:
         """Return all rules (all sources). Returns internal list — do not mutate."""

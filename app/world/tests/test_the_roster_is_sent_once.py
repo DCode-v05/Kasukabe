@@ -88,9 +88,6 @@ def test_the_roster_says_nothing_about_where_anyone_is(runner) -> None:
         assert word not in text.lower()
 
 
-# ── what a snapshot cannot know ────────────────────────────────────────
-
-
 def test_a_resident_born_later_is_still_announced(runner) -> None:
     """The failure the roster prevents, arriving by a different door: a
     resident born on day three is in nobody's persona.txt."""

@@ -17,10 +17,6 @@ from src.sandbox.permissions import PermissionBehavior, PermissionRule
 
 logger = logging.getLogger(__name__)
 
-# Keyed on the CURRENT vocabulary only. Legacy strings reach it through
-# normalize_source in format_source, so the list of old names lives in exactly
-# one place (permission_store.LEGACY_SOURCE_MAP) rather than being mirrored here
-# where the two could drift apart.
 SOURCE_DISPLAY: dict[str, tuple[str, str]] = {
     "hard_deny": ("System safety rule", "(code-defined, never overridable)"),
     "septemberai": ("Baked auto-allow", "(ships with the build)"),
@@ -29,9 +25,6 @@ SOURCE_DISPLAY: dict[str, tuple[str, str]] = {
     "managed": ("Managed policy", "(control plane)"),
 }
 
-# Shared = authored by someone other than this user, so a shadow warning here
-# is not something they can simply fix themselves. Only the managed tier
-# qualifies now that the cwd-relative project tier is gone.
 SHARED_SOURCES: frozenset[str] = frozenset({"managed"})
 
 
@@ -63,9 +56,9 @@ def format_source(source: str) -> str:
 class ShadowedRule:
     shadowed_rule: PermissionRule
     shadowed_by: PermissionRule
-    shadow_type: str  # "deny" or "ask"
-    severity: str  # "critical" or "warning"
-    reason: str  # descriptive explanation
+    shadow_type: str
+    severity: str
+    reason: str
     fix_suggestion: str
 
 
@@ -110,7 +103,6 @@ def detect_shadowed_rules(
     allow_rules = [r for r in rules if r.behavior == PermissionBehavior.ALLOW]
     ask_rules = [r for r in rules if r.behavior == PermissionBehavior.ASK]
 
-    # Phase 1: deny shadows (highest severity)
     tool_wide_denies = [r for r in deny_rules if not r.pattern]
     for deny_rule in tool_wide_denies:
         for allow_rule in allow_rules:
@@ -128,7 +120,6 @@ def detect_shadowed_rules(
                 )
                 deny_shadowed_keys.add((allow_rule.tool, allow_rule.pattern))
 
-    # Phase 2: ask shadows (lower severity, skip if already deny-shadowed)
     tool_wide_asks = [r for r in ask_rules if not r.pattern]
     for ask_rule in tool_wide_asks:
         for allow_rule in allow_rules:
@@ -136,11 +127,6 @@ def detect_shadowed_rules(
                 key = (allow_rule.tool, allow_rule.pattern)
                 if key in deny_shadowed_keys:
                     continue
-                # Sandbox exception: personal ask rules for Bash don't
-                # shadow when sandbox auto-allow is active — the user's
-                # own sandbox handles those. Shared sources (project
-                # config) always warn because other agents may not have
-                # sandbox enabled.
                 if (
                     sandbox_auto_allow_enabled
                     and allow_rule.tool == "Bash"

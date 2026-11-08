@@ -57,9 +57,6 @@ async def _bakery(world: WorldState, *, owner: str = "n07", staff: str | None = 
     return business
 
 
-# ── the shelf ─────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_the_baker_can_put_her_bread_on_her_own_shelf(world, registry):
     await _bakery(world)
@@ -134,9 +131,6 @@ async def test_the_shelf_is_out_of_reach_from_across_town(world, registry):
             "stock_shelf",
             {"business_id": "b_bakery", "item": "bread", "quantity": 1},
         )
-
-
-# ── the till ──────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -214,9 +208,6 @@ async def test_the_till_answers_to_the_prefixed_id_too(world, registry):
     assert world.ledger.sim_balance("b_bakery") == 100
 
 
-# ── TOOL-15 ───────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_an_owner_cannot_hire_herself(world, registry):
     """Until `draw_from_till` existed this was the only way to open a till."""
@@ -232,9 +223,6 @@ async def test_an_owner_cannot_hire_herself(world, registry):
     assert "n07" not in world.businesses["b_bakery"].employee_agent_ids
 
 
-# ── the gate for this block ───────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_bake_shelve_price_sell_and_bank_it(world, registry):
     """One trace: a resident stocks a shelf and another buys from it.
@@ -247,14 +235,12 @@ async def test_bake_shelve_price_sell_and_bank_it(world, registry):
     await spawn_agent(world, "n02", BAKERY_AT)
     world.inventory.credit("n07", "flour", 6)
 
-    # Bake, in her own bakery (TOOL-02).
     await registry.execute(
         world, "n07", "cook", {"recipe_id": "cook:flour->bread", "batches": 2}
     )
     baked = world.inventory.quantity("n07", "bread")
     assert baked > 0
 
-    # Shelve it (TOOL-03).
     await registry.execute(
         world,
         "n07",
@@ -262,7 +248,6 @@ async def test_bake_shelve_price_sell_and_bank_it(world, registry):
         {"business_id": "b_bakery", "item": "bread", "quantity": baked},
     )
 
-    # Price it, using the spelling the world prints (TOOL-01).
     await registry.execute(
         world,
         "n07",
@@ -270,8 +255,6 @@ async def test_bake_shelve_price_sell_and_bank_it(world, registry):
         {"item": "bread", "ask_sim": 20, "on_behalf_of_business": "business:b_bakery"},
     )
 
-    # A customer speaks to the baker, then buys - a sale is agreed in
-    # conversation, so a stranger who never says a word cannot.
     in_conversation(world, "n02", "n07")
     await registry.execute(
         world,
@@ -281,7 +264,6 @@ async def test_bake_shelve_price_sell_and_bank_it(world, registry):
     )
     assert world.inventory.quantity("n02", "bread") == 1
 
-    # And the takings are the owner's to draw.
     till = world.ledger.sim_balance("b_bakery")
     assert till >= 20
     await registry.execute(

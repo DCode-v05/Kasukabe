@@ -1,18 +1,3 @@
-// Bootstrap: fetch the initial snapshot, boot the Phaser game with it,
-// open the WebSocket relay, and wire the top-bar clock/connection status
-// plus the transient town-banner. Nothing else in this file computes
-// game state - it only sequences the other modules (app/CONVENTIONS.md:
-// "game/ is presentation only").
-//
-// Map-changing events no longer reload the page (KNOWN_ISSUES.md, now
-// deleted - this was the fix): town.js owns applying every WireEvent to
-// the live Phaser scene, including new buildings (drawn incrementally,
-// see town.js's addBuildingMarker()) and land expansion (tilemap rebuilt
-// in place, see town.js's rebuildMapInPlace()). This file's only
-// involvement is showing the operator a transient banner for the rare
-// land-expansion case, driven by the "map-rebuild-*" bus events town.js
-// emits around that call.
-
 import { on } from "./bus.js";
 import { fetchSnapshot } from "./api.js";
 import { connectEvents } from "./ws_client.js";
@@ -101,10 +86,6 @@ async function boot() {
     applyEvent(event);
   });
 
-  // town.js drives the actual land-expansion rebuild (rebuildMapInPlace())
-  // and only tells this module how it went, via the bus - this module's
-  // job is exactly the transient banner text, nothing about the map
-  // itself (see this file's module docstring).
   on("map-rebuild-start", () => showBanner("Kasukabe is growing - redrawing the map..."));
   on("map-rebuild-complete", () => showBanner("Kasukabe has grown.", { autoHide: true }));
   on("map-rebuild-failed", (e) =>

@@ -128,8 +128,6 @@ def test_the_tool_says_so_rather_than_searching_for_nothing() -> None:
     )
 
 
-# ── the wiring, not the helper ──────────────────────────────────────────
-
 def test_the_tool_sends_the_sanitised_query_to_search() -> None:
     """`fts_terms` having no caller would be the whole finding again.
 

@@ -75,7 +75,6 @@ class TestToolClassHierarchy:
         assert s_read > s_glob
 
     def test_write_base_matches_edit_base(self):
-        # Both are in the EDIT class
         e = tool_use("Edit")
         w = tool_use("Write")
         assert score_message_importance(e, 0, 10) == pytest.approx(
@@ -127,7 +126,6 @@ class TestScoreBounds:
         assert score_message_importance(msg, 0, 10) >= 0.0
 
     def test_score_never_above_one(self):
-        # Top-of-conversation error-bearing edit
         msg = Message(
             role="assistant",
             content=[
@@ -141,18 +139,15 @@ class TestScoreBounds:
 
 class TestConstantsSanity:
     def test_read_base_below_mid_threshold(self):
-        # RISK_MID is 0.60 in context_collapse
         assert BASE_TOOL_USE_READ < 0.60
 
     def test_search_base_below_low_threshold(self):
-        # RISK_LOW is 0.30
         assert BASE_TOOL_USE_SEARCH < 0.30
 
     def test_edit_base_above_mid_threshold(self):
         assert BASE_TOOL_USE_EDIT >= 0.60
 
     def test_assistant_text_between(self):
-        # Assistant text should be collapsible under MID band but not LOW
         assert 0.30 < BASE_ASSISTANT_TEXT < 0.60
 
     def test_tool_result_base_below_low_threshold(self):

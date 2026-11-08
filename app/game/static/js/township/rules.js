@@ -1,12 +1,3 @@
-// The town's rulebook, bundled for the browser. GENERATED - DO NOT EDIT.
-//   source:      world/rules/village_rules.json
-//   regenerate:  python3 game/static/js/township/build_rules.py
-//
-// Edit the JSON, not this file. The JSON is what the world server loads and
-// validates; this is a copy so the page also works opened straight off disk,
-// where fetch() cannot read a file:// path. When the page is served,
-// township-v2.js re-fetches /api/rules and prefers that, so a rule changed on
-// a running server needs no regeneration.
 const VILLAGE_RULES = {
   "_README": [
     "THE RULES OF KASUKABE. This file is the town's rulebook, kept as data so it",

@@ -78,7 +78,7 @@ class TestGetOrLoad:
                 await cache.get_or_load("k", failing_loader)
 
         asyncio.run(run())
-        assert calls["n"] == 2  # retried, not served from cache
+        assert calls["n"] == 2
         assert cache.get("k") is None
         assert cache.in_flight == {}
 
@@ -115,13 +115,13 @@ class TestGetOrLoad:
         async def run():
             task = asyncio.create_task(cache.get_or_load("k", slow_loader))
             await started.wait()
-            cache.invalidate("")  # intent: discard what you knew AND what you're learning
+            cache.invalidate("")
             result = await task
             return result
 
         result = asyncio.run(run())
-        assert result == "stale-result"  # the caller still gets its value...
-        assert cache.get("k") is None  # ...but nothing was stored
+        assert result == "stale-result"
+        assert cache.get("k") is None
         assert cache.in_flight == {}
 
     def test_cache_hit_skips_loader(self):

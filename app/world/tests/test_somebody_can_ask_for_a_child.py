@@ -88,10 +88,6 @@ async def test_the_console_reads_what_the_town_wrote(runner) -> None:
     """The other half of the finding: the queue the console shows was a
     DIFFERENT dict from any the world could write to."""
     who = _housed(runner)
-    # The runner's OWN extras, built the way the live host builds them.
-    # An earlier draft of this test constructed its own AdminExtras with
-    # the world's dict passed in, which shares the queue by construction
-    # and so passed against the broken wiring too.
     extras = runner.build_admin_extras()
     assert extras.birth_requests is runner.world_state.birth_requests, (
         "UI-05: the console is handed a different dict from the one the "

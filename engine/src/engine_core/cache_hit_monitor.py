@@ -58,7 +58,6 @@ class CacheAlert:
     message: str = ""
 
 
-# TTL constants matching Anthropic's server-side prompt cache windows.
 CACHE_TTL_5MIN_MS = 5 * 60 * 1000
 CACHE_TTL_1HOUR_MS = 60 * 60 * 1000
 
@@ -75,18 +74,12 @@ class CacheHitMonitor:
     edits are not reported as instability.
     """
 
-    # Minimum fraction of prev_cache_read that constitutes a "drop".
-    # >10% drop → PREFIX_UNSTABLE alert.
     DROP_THRESHOLD: float = 0.10
 
-    # Minimum absolute token drop to trigger PREFIX_UNSTABLE.
-    # Small drops from normal variance are not worth alerting on.
     MIN_CACHE_MISS_TOKENS: int = 2000
 
-    # cache_ratio below this value triggers RATIO_LOW (after turn guard).
     RATIO_THRESHOLD: float = 0.50
 
-    # Only fire RATIO_LOW from this turn onward (1-indexed).
     RATIO_MIN_TURN: int = 2
 
     def __init__(self) -> None:
@@ -137,7 +130,6 @@ class CacheHitMonitor:
         cache_total = cache_read + cache_create + uncached
         cache_ratio = cache_read / cache_total if cache_total > 0 else 0.0
 
-        # ── Prefix instability: cache_read dropped > 10% AND > 2000 tokens ─
         prev = self.prev_cache_read
         suppressed = self.suppress_next
         if suppressed:
@@ -165,7 +157,6 @@ class CacheHitMonitor:
                     )
                 )
 
-        # ── Ratio threshold: warn when < 0.5 after turn 2 ─────────────
         if (
             turn >= self.RATIO_MIN_TURN
             and cache_ratio < self.RATIO_THRESHOLD

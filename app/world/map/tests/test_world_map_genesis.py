@@ -16,9 +16,6 @@ from world.map.genesis import (
 from world.map.model import BuildingCategory, WorldMap
 
 
-# -- classify_sector: exact-name table -----------------------------------
-
-
 def test_hobbs_cafe_classifies_as_cafe() -> None:
     assert classify_sector("Hobbs Cafe") == frozenset({BuildingCategory.CAFE})
 
@@ -42,9 +39,6 @@ def test_apartment_classifies_as_house() -> None:
     assert classify_sector("Ryan Park's apartment") == frozenset({BuildingCategory.HOUSE})
 
 
-# -- classify_sector: fallback keyword rules for unknown names -----------
-
-
 def test_unknown_name_with_house_keyword_falls_back_to_house() -> None:
     assert classify_sector("Some New Family's House") == frozenset({BuildingCategory.HOUSE})
 
@@ -58,12 +52,7 @@ def test_fallback_is_case_insensitive() -> None:
 
 
 def test_leading_and_trailing_whitespace_is_stripped() -> None:
-    # sector_blocks.csv has at least one name with a trailing space
-    # ("Ryan Park's apartment ") - the exact-match table must still hit.
     assert classify_sector("  Hobbs Cafe  ") == frozenset({BuildingCategory.CAFE})
-
-
-# -- apply_genesis_config against the real base map -----------------------
 
 
 @pytest.fixture(scope="session")
@@ -86,8 +75,6 @@ def test_pub_is_present_but_inactive(base_map: WorldMap) -> None:
 
 
 def test_pub_tiles_are_still_walkable(base_map: WorldMap) -> None:
-    # Closed for business is not the same as removed from the map -
-    # DESIGN.md section 3 keeps it contestable, someone can re-register it.
     sector = base_map.find_sector("The Rose and Crown Pub")
     assert sector is not None
     walkable_tiles = [tile for tile in sector.tiles if base_map.is_walkable(tile)]
@@ -139,8 +126,6 @@ def test_park_is_active(base_map: WorldMap) -> None:
 
 
 def test_exactly_one_sector_is_inactive_on_the_base_map(base_map: WorldMap) -> None:
-    # Of the 19 base sectors, only the pub falls outside DESIGN.md's
-    # genesis-active list.
     inactive = [s.name for s in base_map.sectors.values() if not s.active]
     assert inactive == ["The Rose and Crown Pub"]
 
@@ -148,9 +133,6 @@ def test_exactly_one_sector_is_inactive_on_the_base_map(base_map: WorldMap) -> N
 def test_known_exterior_tile_is_a_street(base_map: WorldMap) -> None:
     from world.map.model import TileCoord
 
-    # Confirmed directly against the loaded map while building this
-    # module: (5, 5) and (0, 0) sit in open exterior ground, outside
-    # every sector's footprint.
     for x, y in ((5, 5), (0, 0)):
         tile = TileCoord(x, y)
         assert base_map.is_walkable(tile)

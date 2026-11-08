@@ -107,7 +107,6 @@ async def test_every_field_the_panel_reads_is_one_the_world_sends(
     missing_line = line_fields - served_line
     assert not missing_line, f"the panel reads line fields nobody sends: {missing_line}"
 
-    # And the world really does hold what those names promise.
     assert record["topic"] == "the boundary marker"
     assert len(record["participants"]) == 3
     assert record["open"] is True

@@ -107,17 +107,6 @@ def test_messages_rejects_model_outside_allowlist() -> None:
 
 
 def test_messages_rejects_unknown_agent_before_dispatch() -> None:
-    # Mock ledger (InMemoryLedgerClient, unseeded) has no account for this
-    # agent id, so the pre-dispatch balance check 404s before Bedrock is
-    # ever called.
-    #
-    # Settings are PINNED rather than taken from the module-level `app`,
-    # which is built by create_app() -> load_validated() and therefore
-    # reads whatever .env happens to sit in the working directory. This
-    # test's whole premise is "unseeded", so it has to state that instead
-    # of inheriting it: a developer .env carrying
-    # MOCK_LEDGER_BALANCE_CENTS turns the 404 into a 200 and the failure
-    # looks like a broker regression rather than ambient config.
     client = TestClient(create_app(settings=BrokerSettings(mock_mode=True, mock_ledger_balance_cents=0)))
     response = client.post(
         "/v1/messages",
@@ -141,13 +130,6 @@ def test_create_app_accepts_explicit_settings() -> None:
 
 
 def test_admin_lanes_lists_every_lane() -> None:
-    # Settings PINNED, not taken from the module-level `app`. That app is
-    # built by create_app() -> load_validated(), which reads whatever .env
-    # is in the working directory - and a real deployment .env carries
-    # BEDROCK_INFERENCE_PROFILES, which makes build_lane_pool build only
-    # the lanes that have a profile (two, on an account holding profiles in
-    # one region per model). This test is about the DEFAULT cross product,
-    # so it has to say so rather than inherit it.
     client = TestClient(create_app(settings=BrokerSettings(mock_mode=True)))
     response = client.get("/admin/lanes")
 
@@ -155,9 +137,6 @@ def test_admin_lanes_lists_every_lane() -> None:
     lanes = response.json()
     assert len(lanes) == len(expected_lane_keys())
     ids = {lane["lane_id"] for lane in lanes}
-    # The endpoint has to report the WHOLE cross product, so this is
-    # derived. The literal list it replaced is what turned one new model
-    # into six unrelated-looking failures.
     assert ids == set(expected_lane_keys())
     assert all(lane["circuit_state"] == "closed" for lane in lanes)
 
@@ -175,12 +154,7 @@ def test_admin_spend_reports_a_fresh_snapshot() -> None:
     assert body["cap_usd"] == 123.0
     assert body["fraction_used"] == 0.0
     assert body["state"] == "normal"
-    assert body["projected_exhaustion_s"] is None  # zero burn rate so far
-
-
-# ── GET /admin/trace + halted-dispatch gate (TASK spec: "count failures,
-# expose them on the broker admin API, and halt dispatch when writes fail
-# persistently") ─────────────────────────────────────────────────────────
+    assert body["projected_exhaustion_s"] is None
 
 
 def test_admin_trace_reports_healthy_fresh_writers() -> None:
@@ -246,10 +220,6 @@ def test_messages_refuses_dispatch_when_trace_writer_is_halted() -> None:
     assert body["type"] == "error"
     assert body["error"]["type"] == "overloaded_error"
     assert "event_writer" in body["error"]["message"]
-    # Confirms this was refused at the gate, not by the (also-503-capable)
-    # normal pipeline: an unknown agent would otherwise 404, not 503 - see
-    # test_messages_rejects_unknown_agent_before_dispatch above using the
-    # exact same request against a healthy app.
     assert response.json()["error"]["type"] != "not_found_error"
 
 
@@ -290,8 +260,4 @@ def test_messages_success_debits_and_serves_from_a_lane() -> None:
         headers={"Authorization": "Bearer agent-does-not-exist"},
     )
 
-    # Same unseeded-ledger 404 as test_messages_rejects_unknown_agent_
-    # before_dispatch above, exercised through a fresh app instance -
-    # confirms create_app's lane-pool wiring doesn't blow up before
-    # auth/allowlist/ledger checks even run.
     assert response.status_code == 404

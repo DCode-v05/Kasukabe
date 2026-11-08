@@ -73,10 +73,8 @@ def create_bubble_token(parent: CancellationToken) -> CancellationToken:
     upward propagation — they only cancel siblings, not the parent turn.
     """
     child = CancellationToken()
-    # parent → child (always)
     parent.on_cancel(lambda: child.cancel(parent.reason, parent.abort_reason))
 
-    # child → parent (only for non-sibling reasons)
     def bubble_up() -> None:
         if child.abort_reason != AbortReason.SIBLING_ERROR and not parent.cancelled:
             parent.cancel(child.reason, child.abort_reason)
@@ -130,8 +128,6 @@ class CombinedCancellationToken(CancellationToken):
             try:
                 loop = asyncio.get_running_loop()
             except RuntimeError:
-                # No running loop — timeout arming is best-effort; caller
-                # can still use parent/sibling sources.
                 return
 
             def on_timeout() -> None:

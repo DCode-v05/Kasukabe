@@ -78,53 +78,19 @@ def read_env_file(env_path: Path | None = None) -> dict[str, str]:
 
 @dataclass
 class GameSettings:
-    # ── Mode ────────────────────────────────────────────────────────────
-    # True: MockWorldClient, an in-process simulated town (mock_world.py).
-    # False: HttpWorldClient, real HTTP+WS calls to a running world
-    # process. See module docstring for why the default is True.
-    # A REAL WORLD SERVER IS THE ONLY THING THIS SERVES.
-    #
-    # Defaults False and is no longer readable from MOCK_MODE. The map used
-    # to be able to show 12 invented residents that match no genesis id,
-    # which is fine as a demo and indistinguishable from a broken live feed
-    # the moment anyone is trying to watch a real run.
-    #
-    # Still a field: game/tests/*.py construct GameSettings(mock_mode=True)
-    # to exercise the relay and the town view without a world/ process.
     mock_mode: bool = False
 
-    # ── World connection (only read when mock_mode is False) ────────────
-    # app/CONVENTIONS.md: world's default dev port is 8100.
     world_base_url: str = "http://localhost:8100"
     world_ws_url: str = "ws://localhost:8100/ws/events"
     world_http_timeout_s: float = 10.0
-    # Backoff between reconnect attempts to world's event WebSocket
-    # (relay.py) if the connection drops - a live m5.metal deploy runs
-    # world/ and game/ as separate processes on the same box (DESIGN.md
-    # section 9 architecture diagram), so a world/ restart should not
-    # require restarting game/ too.
     world_ws_reconnect_delay_s: float = 2.0
 
-    # ── HTTP server ───────────────────────────────────────────────────────
-    # 8100 is world/, 8200 is broker/, 8300 is game/console (the
-    # operator's separate auth-gated FastAPI app - see game/README.md and
-    # game/console/config.py's own PORT default). This service is the
-    # unauthenticated live town view, one port further down the same
-    # sequence.
     host: str = "0.0.0.0"
     port: int = 8400
 
-    # ── Mock town (mock_world.py; only used when mock_mode is True) ─────
     mock_agent_count: int = 12
     mock_seed: int = 20260730
 
-    # ── Snapshot fan-out ──────────────────────────────────────────────────
-    # relay.py buffers this many recent WireEvents so a browser tab that
-    # briefly disconnects and reconnects (a laptop lid closing, a flaky
-    # wifi hop) can catch up without a full snapshot refetch. Mirrors
-    # world.core.events.EventBus's own buffer_size default (2000) at a
-    # smaller scale, since game/ only needs "recent," not "since sim
-    # start."
     replay_buffer_size: int = 200
 
     extra_static_root: Path | None = field(default=None, repr=False)
@@ -165,9 +131,6 @@ class GameSettings:
         def get(name: str) -> str | None:
             return os.environ.get(name, env_vars.get(name))
 
-        # MOCK_MODE is deliberately NOT read - see GameSettings.mock_mode.
-        # Rejected rather than ignored: someone setting it expects a fake
-        # town, and quietly giving them a live one instead is worse.
         if get("MOCK_MODE") is not None:
             errors.append(
                 "MOCK_MODE is no longer supported - game/ only serves a real world "

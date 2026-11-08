@@ -69,9 +69,6 @@ def flush_body(entries: int = 1, max_tokens: int = 4096) -> dict:
     }
 
 
-# -- The flush is machinery, not thinking -----------------------------
-
-
 def test_a_working_memory_flush_is_background() -> None:
     """Every context-overflow failure in loop4 was one of these, served on
     a Kimi lane and billed to n09's own wallet."""
@@ -86,9 +83,6 @@ def test_an_agent_turn_that_merely_mentions_the_flush_is_not_rerouted() -> None:
     body = flush_body()
     body["tools"] = [{"name": "world_say"}]
     assert classify_purpose(infer_purpose("", body)) is CallClass.COGNITION
-
-
-# -- The arithmetic, before the round trip ----------------------------
 
 
 def test_a_request_that_fits_is_left_completely_alone() -> None:
@@ -149,10 +143,6 @@ def test_the_prompt_is_never_trimmed_to_make_it_fit() -> None:
     conversation nobody chose is worse than no answer: the run looks
     healthy and the record is fiction."""
     window = CONTEXT_WINDOW_TOKENS[DEEPSEEK_MODEL_ID]
-    # Sized so a CLAMP saves it: the prompt fits with room for a usable
-    # reply, and only the requested max_tokens pushes it over. If the
-    # implementation ever answered by dropping a message instead, this
-    # would still return successfully - and be caught here.
     body = {
         "model": KIMI_MODEL_ID,
         "max_tokens": 8192,
@@ -182,9 +172,6 @@ def test_an_unknown_model_is_left_alone_rather_than_guessed_at() -> None:
     body = flush_body()
     fitted, note = fit_to_context_window(body, "some.model.we.have.not.met")
     assert fitted is body and note is None
-
-
-# -- Wired to the live path, not only to its own test ------------------
 
 
 @pytest.mark.asyncio

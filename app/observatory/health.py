@@ -72,8 +72,6 @@ def read_health(
         calls=calls,
         successes=successes,
         failures=calls - successes,
-        # Nano-dollars, not cents: cents_debited rounds per call and a run of
-        # cheap calls would report $0.00 while really having spent dollars.
         spend_usd=cost_nano / 1_000_000_000,
         agents_seen=agents,
         dormant_agents=dormant_agents,

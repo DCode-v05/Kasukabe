@@ -21,9 +21,6 @@ from src.herald.types import (
 )
 
 
-# --- Fake adapter for testing escalation flow ---
-
-
 @dataclass
 class CallRecord:
     max_output_tokens: int | None = None
@@ -60,9 +57,6 @@ class FakeAdapter:
         return "summary"
 
 
-# --- Escalation decision logic (extracted from thread.py) ---
-
-
 def escalation_decision(
     escalation_attempted: bool,
     escalation_eligible: bool,
@@ -78,9 +72,6 @@ def escalation_decision(
     if continuation_count < max_continuations:
         return "continue_multi_turn"
     return "exhausted"
-
-
-# --- Unit tests for escalation decision logic ---
 
 
 class TestEscalationDecision:
@@ -126,9 +117,6 @@ class TestEscalationDecision:
         assert result == "continue_multi_turn"
 
 
-# --- Escalation eligibility guard ---
-
-
 class TestEscalationEligibility:
     def test_eligible_when_default_max_tokens(self):
         settings = Settings()
@@ -144,9 +132,6 @@ class TestEscalationEligibility:
         settings = Settings(max_tokens=2048)
         eligible = settings.max_tokens == Settings.max_tokens
         assert eligible is False
-
-
-# --- Escalation capped at model max ---
 
 
 class TestEscalationCapping:
@@ -174,13 +159,11 @@ class TestEscalationCapping:
         assert eligible is True
 
     def test_all_synced_models_have_max_output(self, monkeypatch):
-        # Catalog rows come exclusively from citadel sync; row_to_modeldef
-        # guarantees a positive max_output on every converted row.
         from src.herald import catalog_sync
 
         rows = [
             {"id": "model-a", "tier": "standard", "max_output": 8192},
-            {"id": "model-b", "tier": "light"},  # absent -> converter default
+            {"id": "model-b", "tier": "light"},
         ]
         canned = {}
         for row in rows:
@@ -191,16 +174,12 @@ class TestEscalationCapping:
             assert model_def.max_output_tokens > 0, f"{model_id} has no max_output_tokens"
 
 
-# --- State reset logic ---
-
-
 class TestRecoveryStateReset:
     def test_reset_after_tool_execution(self):
         escalation_attempted = True
         max_output_override = 64_000
         continuation_count = 2
 
-        # Simulate reset after successful tool execution
         escalation_attempted = False
         max_output_override = None
         continuation_count = 0
@@ -211,12 +190,8 @@ class TestRecoveryStateReset:
 
     def test_override_cleared_before_multi_turn(self):
         max_output_override = 64_000
-        # Before multi-turn continuation, override is cleared
         max_output_override = None
         assert max_output_override is None
-
-
-# --- Adapter receives correct max_output_tokens ---
 
 
 class TestAdapterReceivesOverride:
@@ -229,7 +204,6 @@ class TestAdapterReceivesOverride:
         ESCALATED = 64_000
         max_output_override = None
 
-        # First call — normal
         async for _ in adapter.stream_with_tools(
             [],
             max_output_tokens=max_output_override,
@@ -237,7 +211,6 @@ class TestAdapterReceivesOverride:
             pass
         assert adapter.calls[0].max_output_tokens is None
 
-        # Simulate escalation
         max_output_override = ESCALATED
         async for _ in adapter.stream_with_tools(
             [],
@@ -251,7 +224,6 @@ class TestAdapterReceivesOverride:
         adapter = FakeAdapter(max_tokens=4096)
         adapter.queue_response(StopReason.END_TURN, "continued")
 
-        # After escalation fails, override is cleared for multi-turn
         max_output_override = None
         async for _ in adapter.stream_with_tools(
             [],
@@ -261,9 +233,6 @@ class TestAdapterReceivesOverride:
         assert adapter.calls[0].max_output_tokens is None
 
 
-# --- Withholding behavior ---
-
-
 class TestWithholding:
     def test_exit_reason_not_set_during_escalation(self):
         """During escalation recovery, the loop continues without setting exit_reason."""
@@ -271,7 +240,6 @@ class TestWithholding:
         from src.engine_core.loop_state import LoopState
 
         state = LoopState()
-        # Escalation fires → continue → exit_reason stays COMPLETED (default)
         assert state.exit_reason == LoopExitReason.COMPLETED
 
     def test_exit_reason_set_when_exhausted(self):
@@ -279,12 +247,8 @@ class TestWithholding:
         from src.engine_core.loop_state import LoopState
 
         state = LoopState()
-        # All recovery exhausted → set MAX_TOKENS
         state.exit_reason = LoopExitReason.MAX_TOKENS
         assert state.exit_reason == LoopExitReason.MAX_TOKENS
-
-
-# --- Integration: full escalation-then-continuation flow ---
 
 
 class TestEscalationIntegration:
@@ -327,7 +291,7 @@ class TestEscalationIntegration:
                     break
                 continue
 
-            break  # END_TURN — done
+            break
 
         assert len(adapter.calls) == 2
         assert adapter.calls[0].max_output_tokens is None
@@ -408,6 +372,5 @@ class TestEscalationIntegration:
                 continue
             break
 
-        # Escalation was skipped — went straight to multi-turn
         assert adapter.calls[0].max_output_tokens is None
         assert adapter.calls[1].max_output_tokens is None

@@ -51,12 +51,7 @@ from src.engine_core.hooks import HookEvent
 logger = logging.getLogger(__name__)
 
 MAX_CONSECUTIVE_FAILURES = 3
-# Half-open: after this many seconds in tripped state, allow one probe attempt.
-# Kept as module-level constants for backward compat (tests import these directly).
-# New code should use CompactionConfig.circuit_breaker_half_open_seconds etc.
-CIRCUIT_BREAKER_HALF_OPEN_SECONDS = 300  # 5 minutes
-# Context-shrink reset: if a mechanical pass frees ≥ this fraction of tokens,
-# reset consecutive_failures to 0 — the original overload condition is gone.
+CIRCUIT_BREAKER_HALF_OPEN_SECONDS = 300
 CIRCUIT_BREAKER_SHRINK_THRESHOLD = 0.30
 
 
@@ -86,7 +81,6 @@ FILE_UNCHANGED_STUB = (
 )
 TRUNCATION_MARKER = "\n[File truncated for post-compact restoration]"
 
-# Feature flags
 FEATURE_POST_COMPACT_HARDENED = "FEATURE_POST_COMPACT_HARDENED"
 FEATURE_STRUCTURED_FILE_EXTRACTION = "FEATURE_STRUCTURED_FILE_EXTRACTION"
 
@@ -108,11 +102,8 @@ class CompactionConfig:
     max_tokens: int = 40_000
     compaction_threshold: float = 0.80
     circuit_breaker_max_failures: int = 3
-    # How long (seconds) the breaker stays OPEN before transitioning to HALF_OPEN.
     circuit_breaker_half_open_seconds: int = CIRCUIT_BREAKER_HALF_OPEN_SECONDS
-    # Fraction of tokens freed by mechanical compaction that triggers a shrink-reset.
     circuit_breaker_shrink_threshold: float = CIRCUIT_BREAKER_SHRINK_THRESHOLD
-    # When True, reset_for_new_user_message() applies per-message decay/half-open logic.
     circuit_breaker_reset_per_user_message: bool = True
 
     @classmethod
@@ -175,11 +166,6 @@ class CompactionResult:
     tokens_freed: int = 0
     was_compacted: bool = False
     hook_contexts: list[str] = field(default_factory=list)
-    # True when time-based microcompact rewrote tool_result content this call.
-    # Reported separately from was_compacted because microcompact runs before
-    # the threshold strategies and mutates the prefix without any of them
-    # firing. Callers that care about prompt cache continuity (the cache hit
-    # monitor) must treat it as a prefix mutation even when strategy is "none".
     microcompacted: bool = False
 
 
@@ -208,14 +194,13 @@ class FileReadRecord:
 class PostCompactAttachment:
     """Typed wrapper for post-compact injected content."""
 
-    type: str  # "file", "tool_reminder", "skill_context"
+    type: str
     content: str
     path: str = ""
     tokens: int = 0
     truncated: bool = False
 
 
-# Categorized exclude patterns — prevents false positives from substring matching.
 EXCLUDE_EXTENSIONS = frozenset({".key", ".pem", ".p12"})
 EXCLUDE_DIR_SEGMENTS = frozenset(
     {
@@ -246,7 +231,6 @@ EXCLUDE_SENSITIVE_BASENAMES = frozenset(
     }
 )
 EXCLUDE_EXACT_NAMES = frozenset({".env"})
-# System-context paths — already in system prompt, re-injecting wastes tokens.
 SYSTEM_CONTEXT_DIR_SEGMENTS = frozenset({".claude"})
 SYSTEM_CONTEXT_FILENAMES = frozenset({"claude.md", ".claudeignore", ".clauderc"})
 READ_TOOL_NAMES = frozenset({"file_read", "read_file"})
@@ -277,10 +261,8 @@ def should_exclude_from_restore(path: str, *, plan_file_path: str = "") -> bool:
         return True
     if basename in EXCLUDE_EXACT_NAMES:
         return True
-    # .env.local, .env.production — but not .env.example
     if basename.startswith(".env.") and not basename.endswith(".example"):
         return True
-    # System-context: already in system prompt, re-injecting wastes tokens
     if any(seg in SYSTEM_CONTEXT_DIR_SEGMENTS for seg in parts):
         return True
     if basename in SYSTEM_CONTEXT_FILENAMES:
@@ -325,7 +307,6 @@ def collect_file_paths_structured(messages: list) -> set[str]:
 
     paths: set[str] = set()
 
-    # Pass 1: collect stub tool_use_ids from tool_result messages
     stub_ids: set[str] = set()
     for msg in messages:
         if getattr(msg, "role", "") != "user":
@@ -339,7 +320,6 @@ def collect_file_paths_structured(messages: list) -> set[str]:
                 if isinstance(result_text, str) and result_text.startswith(FILE_UNCHANGED_STUB):
                     stub_ids.add(getattr(block, "tool_use_id", ""))
 
-    # Pass 2: walk assistant messages for file_read tool_use blocks, skip stubs.
     for msg in messages:
         content = getattr(msg, "content", "")
         if isinstance(content, list):
@@ -355,9 +335,6 @@ def collect_file_paths_structured(messages: list) -> set[str]:
                     if p:
                         paths.add(os.path.normpath(p))
 
-        # Regex fallback for plain-text and list-of-TextBlock messages.
-        # Exclude ToolUseBlock and ToolResultBlock — tool results contain file
-        # content that would produce phantom path matches via regex.
         if isinstance(content, str):
             text = content
         elif isinstance(content, list):
@@ -452,30 +429,19 @@ class CompactionOrchestrator:
         self.db = db
         self.config = config or CompactionConfig()
         self.microcompact_config = microcompact_config or MicrocompactConfig()
-        # Cache owners passed through to run_post_compact_cleanup. Optional
-        # so tests and partial wiring paths (orchestrator constructed without
-        # a full thread context) continue to work.
         self.search = search
         self.utility = utility
         self.assets = assets
-        # Context Collapse manager — runs as a pre-pass inside
-        # compact_if_needed when enabled. Optional so tests that only
-        # exercise the full-compaction path can omit it.
         self.collapse_manager = collapse_manager
         self.skill_catalog = skill_catalog
         self.agent_id = agent_id
         self.lifecycle_bundle = lifecycle_bundle
         self.consecutive_failures = 0
-        # Primary state machine — replaces the former boolean pair.
         self.circuit_state: CircuitState = CircuitState.CLOSED
-        # Timestamp when the breaker entered OPEN; used for half-open cooldown.
         self.tripped_at: float | None = None
-        # Snapshot of message/token counts at the time of last trip.
         self.last_message_count_at_trip: int = 0
         self.last_token_count_at_trip: int = 0
         self.last_trip_error: str = ""
-        # Session-level trip/probe counters — persist across reset_for_new_user_message
-        # and are only cleared by full reset() (session teardown).
         self.total_trips: int = 0
         self.total_probes: int = 0
         self.total_probe_successes: int = 0
@@ -485,7 +451,6 @@ class CompactionOrchestrator:
         self.last_summarized_msg_index: int | None = None
         self.replacement_state_cache: "ContentReplacementState | None" = None
 
-    # ── Backward-compatible boolean shims ────────────────────────────────────
 
     @property
     def circuit_breaker_tripped(self) -> bool:
@@ -510,7 +475,6 @@ class CompactionOrchestrator:
         if value:
             self.circuit_state = CircuitState.HALF_OPEN
         elif self.circuit_state == CircuitState.HALF_OPEN:
-            # Revert to OPEN when probe is de-armed without a full reset.
             self.circuit_state = CircuitState.OPEN
 
     @property
@@ -551,7 +515,6 @@ class CompactionOrchestrator:
                 size=size,
             )
 
-    # ── Named circuit-breaker methods ─────────────────────────────────────────
 
     async def trip_breaker(
         self,
@@ -760,10 +723,6 @@ class CompactionOrchestrator:
         if os.environ.get("DISABLE_COMPACT") or os.environ.get("DISABLE_AUTO_COMPACT"):
             return CompactionResult(messages=messages)
 
-        # Step 0: time-based microcompact — fires when the gap since the
-        # last assistant message exceeds the idle threshold. Clears old
-        # tool_result content (keeping the most recent N) so the user
-        # doesn't drag an hour-stale conversation state into the next turn.
         mc_result = maybe_microcompact(
             messages,
             self.microcompact_config,
@@ -772,8 +731,6 @@ class CompactionOrchestrator:
         microcompacted = mc_result is not None
         if mc_result is not None:
             messages = mc_result.messages
-            # Time-based microcompact rewrites the prefix — the cache is cold,
-            # so cached-snip state (which assumes a warm cache) is invalid.
             if hasattr(self.adapter, "reset_snip_state"):
                 self.adapter.reset_snip_state()
             await self.emitter.emit(
@@ -789,12 +746,6 @@ class CompactionOrchestrator:
                 )
             )
 
-        # Step 1: snip_prepass — always runs, cheap, no LLM.
-        # Must run BEFORE the Context Collapse pre-pass so collapse's
-        # importance-scoring sees the post-snip token count. Otherwise
-        # redundant tool results that snip would remove for free would
-        # inflate the ratio and cause collapse to stage spans that
-        # would not have qualified after the cheap pre-clean.
         from src.engine_core.cached_snip import (
             cached_snip_prepass_enabled,
             is_model_supported_for_cache_editing,
@@ -810,25 +761,12 @@ class CompactionOrchestrator:
             and is_model_supported_for_cache_editing(adapter_model)
         )
         if use_cached_path:
-            # Cache-aware path: identify redundant tool results and queue
-            # server-side deletions. Messages are NOT mutated here — the
-            # cache_reference + cache_edits blocks are injected by
-            # Provider.build_kwargs at the next API call.
             tool_ids = snip_prepass_get_deletes(messages)
             if tool_ids:
-                # Provider-only capability; the cache-aware path only runs with a
-                # real provider adapter that implements it.
                 cast(Any, self.adapter).queue_snip_cache_edits(tool_ids)
         else:
             messages = snip_prepass(messages)
 
-        # ── Context Collapse pre-pass ─────────────────────────────
-        # Collapse OWNS the threshold ladder when enabled. It stages
-        # and projects BEFORE the threshold-based compaction strategies
-        # run. If projection relieves enough pressure we return early —
-        # the LLM-based compaction never runs. If projection is still
-        # over budget (e.g. everything in the conversation is high-risk)
-        # we fall through to the normal pipeline as a backstop.
         if self.collapse_manager is not None and self.collapse_manager.enabled:
             collapse_pre_tok = estimate_messages_tokens(messages)
             collapse_pre_count = len(messages)
@@ -874,9 +812,6 @@ class CompactionOrchestrator:
                         turn_number=turn_number,
                     )
                 )
-            # Happy path: projection got us below the compaction
-            # threshold, return early without running the rest of the
-            # pipeline.
             if not needs_compaction(collapse_post_tok, context_window):
                 return CompactionResult(
                     messages=messages,
@@ -885,19 +820,10 @@ class CompactionOrchestrator:
                     was_compacted=(collapse_post_count < collapse_pre_count),
                     microcompacted=microcompacted,
                 )
-            # Fall through: all messages were high-risk. Run the
-            # existing compaction strategies on the (possibly
-            # partially-projected) message list.
 
         pre_tokens = estimate_messages_tokens(messages)
         pre_count = len(messages)
 
-        # PreCompact hook — fires when a compaction is about to happen.
-        # Hooks can veto by returning prevent_continuation=True; the
-        # orchestrator then returns the messages unchanged (no-op).
-        # has_hooks() is a .get()-based check so it does not materialize
-        # the registry; registry() creates one on first access, so gate
-        # first for the zero-overhead no-hooks path.
         pre_hook_veto = False
         pre_hook_contexts: list[str] = []
         threshold_compact_needed = needs_compaction(pre_tokens, context_window)
@@ -930,11 +856,8 @@ class CompactionOrchestrator:
                 microcompacted=microcompacted,
             )
 
-        # Step 2: threshold-based compaction
         strategy = "none"
         if threshold_compact_needed:
-            # OPEN state: LLM compaction blocked; emit skip and use mechanical fallback.
-            # HALF_OPEN state: one probe attempt allowed.
             if self.circuit_state == CircuitState.OPEN:
                 logger.warning("Circuit breaker OPEN — using mechanical round-drop")
                 from src.engine_core.context_engineering import drop_oldest_rounds
@@ -971,7 +894,6 @@ class CompactionOrchestrator:
                 if session_result is not None:
                     messages = session_result
                     strategy = "session_memory"
-                    # Session memory success counts as a recovery.
                     if self.circuit_state in (CircuitState.OPEN, CircuitState.HALF_OPEN):
                         await self.reset_breaker(
                             thread_id, "reset_success", "session_memory_success"
@@ -1003,7 +925,6 @@ class CompactionOrchestrator:
                     except Exception as exc:
                         logger.exception("LLM compaction failed, falling back to mechanical")
                         was_probe = self.circuit_state == CircuitState.HALF_OPEN
-                        # Revert probe back to OPEN so cooldown restarts.
                         if was_probe:
                             self.circuit_state = CircuitState.OPEN
                         self.consecutive_failures += 1
@@ -1027,7 +948,6 @@ class CompactionOrchestrator:
             if len(messages) < pre_count:
                 strategy = "mechanical"
 
-        # Context-shrink reset via named method.
         if strategy == "mechanical":
             await self.check_context_shrink_reset(
                 thread_id,
@@ -1035,7 +955,6 @@ class CompactionOrchestrator:
                 post_tokens=estimate_messages_tokens(messages),
             )
 
-        # Step 3: tool result aggregate guard
         messages = guard_tool_results(
             messages, context_window, replacement_state=self.replacement_state
         )
@@ -1058,7 +977,6 @@ class CompactionOrchestrator:
                 )
             )
 
-        # Step 4: preflight budget check — emergency if still over
         sys_tokens = estimate_system_tokens(system_prompt)
         tools_tokens = (
             sum(estimate_tokens(json.dumps(t, default=str)) for t in tools_schema)
@@ -1106,12 +1024,6 @@ class CompactionOrchestrator:
                 query_source=query_source,
             )
 
-        # PostCompact hook — fires after any compaction (including
-        # emergency and collapse-pre-pass fallthrough). Non-blocking:
-        # additional_contexts flow back to the caller via CompactionResult
-        # so Thread.agent_loop can prepend them to the next system prompt
-        # alongside the PreCompact contexts. Shared helper so the reactive
-        # (413 overflow) path fires the same hooks.
         post_hook_contexts: list[str] = []
         if was_compacted:
             post_hook_contexts = await self.fire_post_compact_hook(
@@ -1202,13 +1114,6 @@ class CompactionOrchestrator:
         pre_tokens = estimate_messages_tokens(messages)
         pre_count = len(messages)
 
-        # ── Context Collapse 413 rescue ───────────────────────────
-        # If the collapse manager has a staged queue, drain it before
-        # dropping any whole messages. Draining commits every staged
-        # span into a mechanical summary; projection then rewrites
-        # the working message list. This path is cheaper than any of
-        # the reactive tiers below — zero LLM calls, no timed loops,
-        # just a scan-and-splice.
         if (
             self.collapse_manager is not None
             and self.collapse_manager.enabled
@@ -1220,10 +1125,6 @@ class CompactionOrchestrator:
                 messages = repair_tool_use_result_pairing(messages)
             except Exception:
                 logger.exception("context_collapse: 413 rescue failed, falling through")
-            # Use needs_compaction so we keep RESERVE_FLOOR headroom for
-            # the LLM's output + system prompt + tool schemas. A raw
-            # `< context_window` check would leave no room for the next
-            # response and immediately 413 again.
             drain_tokens = estimate_messages_tokens(messages)
             if not needs_compaction(drain_tokens, context_window):
                 logger.info(
@@ -1468,7 +1369,6 @@ class CompactionOrchestrator:
         """
         from src.herald.types import ToolUseBlock, ToolResultBlock
 
-        # Single pass: collect both result IDs and use IDs in the kept range
         result_ids: set[str] = set()
         use_ids_in_range: set[str] = set()
         for msg in messages[start_index:]:
@@ -1530,7 +1430,6 @@ class CompactionOrchestrator:
 
         raw_start = self.calculate_messages_to_keep_index(messages)
         adjusted_start = self.adjust_keep_index(messages, raw_start)
-        # Strip old compaction boundary messages from the kept range
         recent = [
             m
             for m in messages[adjusted_start:]
@@ -1755,7 +1654,6 @@ class CompactionOrchestrator:
 
             truncated = False
 
-            # TOCTOU annotation: compare content hash with stored hash
             toctou_note = ""
             record = self.file_read_state.get(path)
             if record and record.content_hash:
@@ -1820,7 +1718,6 @@ class CompactionOrchestrator:
         )
         tokens = estimate_tokens_dense(content)
         if tokens > POST_COMPACT_TOOL_REMINDER_TOKEN_BUDGET:
-            # Truncate tool list to fit budget
             parts = ["[Post-compact tool reminder] These tools remain available and can be called:"]
             budget_chars = tokens_to_dense_chars(POST_COMPACT_TOOL_REMINDER_TOKEN_BUDGET)
             running = len(parts[0])

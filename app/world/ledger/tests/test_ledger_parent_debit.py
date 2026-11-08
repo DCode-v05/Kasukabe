@@ -24,7 +24,7 @@ async def test_minor_inference_burn_charges_the_parent() -> None:
     assert transaction.to_account == BURNED_ACCOUNT_ID
     assert transaction.on_behalf_of == "child"
     assert ledger.usd_balance("parent") == 150
-    assert ledger.usd_balance("child") == 200  # untouched
+    assert ledger.usd_balance("child") == 200
     assert ledger.usd_balance(BURNED_ACCOUNT_ID) == 50
 
 

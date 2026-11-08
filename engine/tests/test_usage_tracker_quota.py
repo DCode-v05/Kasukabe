@@ -72,6 +72,5 @@ def test_module_record_quota_snapshot_writes_to_active_tracker():
 def test_module_record_quota_snapshot_noop_without_tracker():
     """No active tracker on the contextvar → record_quota_snapshot is a
     silent no-op (must not raise)."""
-    # Ensure nothing is bound in this context.
     assert usage_tracker_var.get(None) is None
-    record_quota_snapshot({"metered": {"spent_usd": 1.0}})  # no error
+    record_quota_snapshot({"metered": {"spent_usd": 1.0}})

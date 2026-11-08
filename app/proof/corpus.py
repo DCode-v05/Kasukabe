@@ -36,7 +36,6 @@ REPO = Path(__file__).resolve().parents[2]
 DATA = REPO / "app" / "data"
 SERIES = REPO / "docs" / "runs" / "series"
 
-# `world:look_around` on the wire, `look_around` in the registry.
 TOOL_PREFIXES = ("world:", "world_")
 
 
@@ -63,7 +62,6 @@ class RecordedTurn:
 
     @property
     def series(self) -> str:
-        # docs/runs/series/<series>/sessions/<agent>.jsonl
         return self.path.parent.parent.name
 
     def called(self) -> Iterator[tuple[str, str]]:

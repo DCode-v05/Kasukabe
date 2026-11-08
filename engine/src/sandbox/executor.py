@@ -59,12 +59,11 @@ DEFAULT_TIMEOUT = 30
 DEFAULT_YIELD_MS = 10_000
 DEFAULT_MAX_OUTPUT = 200_000
 DEFAULT_TAIL_CHARS = 2000
-SESSION_TTL_SEC = 1800  # 30 min
-MAX_REGEX_LEN = 200  # ReDoS protection: reject user-supplied regex longer than this
-MAX_BG_OUTPUT_BYTES = 100 * 1024 * 1024  # 100 MB — background process output watchdog limit
+SESSION_TTL_SEC = 1800
+MAX_REGEX_LEN = 200
+MAX_BG_OUTPUT_BYTES = 100 * 1024 * 1024
 BG_WATCHDOG_INTERVAL_SEC = 5.0
 
-# ── Feature flags ────────────────────────────────────────────────
 
 TREE_KILL_FLAG = "FEATURE_TREE_KILL"
 TREE_KILL_DEFAULT = "true"
@@ -94,9 +93,6 @@ def kill_process_tree(proc: Any) -> None:
             proc.kill()
     else:
         proc.kill()
-
-
-# ── Safe binary allowlist ────────────────────────────────────────
 
 
 @dataclass
@@ -134,10 +130,7 @@ DEFAULT_SAFE_BINS: dict[str, SafeBinProfile] = {
     "echo": SafeBinProfile(max_positional=20),
     "ls": SafeBinProfile(max_positional=5),
     "find": SafeBinProfile(max_positional=5, denied_flags={"-exec", "-execdir", "-delete"}),
-    # `sed` is gated at permission-time by src/sandbox/sed_validation.py
-    # (step 4.5 of check_permission), not here.
     "awk": SafeBinProfile(stdin_only=True, max_positional=1, denied_flags={"-f"}),
-    # pip and node removed from safe bins — must go through approval flow
 }
 
 DEFAULT_TRUSTED_DIRS = ["/bin", "/usr/bin", "/usr/local/bin"]
@@ -158,13 +151,11 @@ def validate_safe_bin(
 
     profile = safe_bins[cmd_name]
 
-    # Check binary location if full path given
     if "/" in argv[0]:
         cmd_dir = str(Path(argv[0]).parent)
         if cmd_dir not in trusted_dirs:
             return False
 
-    # Parse args
     positional = []
     i = 1
     while i < len(argv):
@@ -173,7 +164,7 @@ def validate_safe_bin(
             if arg in profile.denied_flags:
                 return False
             if arg in profile.allowed_value_flags and i + 1 < len(argv):
-                i += 2  # skip flag + value
+                i += 2
                 continue
         else:
             positional.append(arg)
@@ -187,9 +178,6 @@ def validate_safe_bin(
     return True
 
 
-# ── Process session tracking ─────────────────────────────────────
-
-
 @dataclass
 class ProcessSession:
     """State for a running or finished process."""
@@ -199,10 +187,6 @@ class ProcessSession:
     pid: int | None = None
     cwd: str = ""
     started_at: float = field(default_factory=time.monotonic)
-    # Stamped when the session transitions into the finished registry.
-    # Retention (reap_finished) keys on THIS, not started_at: a job whose
-    # runtime exceeded the TTL must still get a full post-finish retention
-    # window. None while running; never refreshed on re-insertion.
     finished_at: float | None = None
     aggregated: str = ""
     tail: str = ""
@@ -282,9 +266,6 @@ class ProcessSession:
         }
 
 
-# ── Sandbox result ───────────────────────────────────────────────
-
-
 @dataclass
 class SandboxResult:
     """Result of a sandboxed code execution."""
@@ -318,7 +299,6 @@ class SandboxResult:
         if self.session_id:
             parts.append(f"[session: {self.session_id}]")
 
-        # Semantic annotation for known commands with non-zero exit
         if self.command and self.exit_code != 0:
             from src.sandbox.command_semantics import interpret_exit_code
 
@@ -336,9 +316,6 @@ class SandboxResult:
         if not parts:
             return f"[exit code {self.exit_code}]"
         return "\n".join(parts)
-
-
-# ── Main executor ────────────────────────────────────────────────
 
 
 def is_linux() -> bool:
@@ -359,7 +336,6 @@ def resolve_python() -> str:
 def resolve_shell() -> tuple[str, list[str]]:
     """Find the shell binary and args — PowerShell on Windows, bash/sh on Linux/macOS."""
     if is_windows():
-        # PowerShell 7 preferred, fall back to 5.1
         for candidate in ["pwsh", "powershell"]:
             if shutil.which(candidate):
                 return candidate, ["-NoProfile", "-NonInteractive", "-Command"]
@@ -368,7 +344,6 @@ def resolve_shell() -> tuple[str, list[str]]:
     env_shell = os.environ.get("SHELL", "").strip()
     if env_shell:
         name = Path(env_shell).name
-        # Fish rejects common bashisms — prefer bash
         if name == "fish":
             bash = shutil.which("bash")
             if bash:
@@ -405,14 +380,12 @@ def has_bwrap() -> bool:
             import subprocess
 
             try:
-                # Phase 1: basic namespace creation
                 subprocess.run(
                     ["bwrap", "--ro-bind", "/", "/", "--", "/bin/true"],
                     capture_output=True,
                     timeout=5,
                     check=True,
                 )
-                # Phase 2: fork inside namespace (pipes need fork)
                 result = subprocess.run(
                     ["bwrap", "--ro-bind", "/", "/", "--", "/bin/sh", "-c", "echo bwrap_ok | cat"],
                     capture_output=True,
@@ -467,7 +440,6 @@ def build_bwrap_args(
     ]
     if Path("/lib64").exists():
         bwrap += ["--symlink", "/usr/lib64", "/lib64"]
-    # Bundled runtimes (read-only)
     if runtimes_path and Path(runtimes_path).exists():
         bwrap += ["--ro-bind", runtimes_path, "/runtimes"]
     bwrap += ["--bind", workspace, "/workspace"]
@@ -486,10 +458,8 @@ def build_bwrap_args(
         "/workspace",
         "--die-with-parent",
     ]
-    # Seccomp BPF filter
     if seccomp_fd is not None:
         bwrap += ["--seccomp", str(seccomp_fd)]
-    # Extra environment variables
     if extra_env:
         for k, v in extra_env.items():
             bwrap += ["--setenv", k, v]
@@ -497,7 +467,6 @@ def build_bwrap_args(
     return bwrap
 
 
-# Binaries that require network access — triggers permission flow
 NETWORK_BINARIES = frozenset(
     {
         "curl",
@@ -543,9 +512,7 @@ def needs_network(command: str) -> bool:
     return cmd_name in NETWORK_BINARIES
 
 
-# Async callback type for permission requests
-# Signature: async (commands: list[str]) -> bool
-PermissionCallback = Any  # Callable[[list[str]], Awaitable[bool]]
+PermissionCallback = Any
 
 
 class SandboxExecutor:
@@ -565,8 +532,8 @@ class SandboxExecutor:
         safe_bins: dict[str, SafeBinProfile] | None = None,
         trusted_dirs: list[str] | None = None,
         permission_callback: PermissionCallback | None = None,
-        policy: Any | None = None,  # SandboxPolicy — imported lazily to avoid circular
-        proxy: Any | None = None,  # TrustedZoneProxy — imported lazily to avoid circular
+        policy: Any | None = None,
+        proxy: Any | None = None,
     ) -> None:
         self.session_id = session_id or uuid.uuid4().hex[:12]
         self.workspace_dir: Path | None = None
@@ -575,19 +542,12 @@ class SandboxExecutor:
         self.finished: dict[str, ProcessSession] = {}
         self.policy = policy
         self.proxy = proxy
-        # Raw FD of the seccomp BPF file. Held open across bwrap subprocess
-        # launches and closed in cleanup(). Stored as int (not a file object)
-        # because the FD must be inheritable across exec — Python's open()
-        # sets O_CLOEXEC by default since 3.4. We use os.open + set_inheritable
-        # and pass it via pass_fds= on create_subprocess_exec.
         self.seccomp_fd: int | None = None
 
-        # Derive safe bins from policy if provided, else from explicit param or defaults
         if policy is not None:
             effective_bins = dict(policy.to_safe_bins())
         else:
             effective_bins = dict(safe_bins or DEFAULT_SAFE_BINS)
-        # Python only safe when bubblewrap provides isolation
         if self.use_bwrap:
             effective_bins.setdefault("python3", SafeBinProfile(max_positional=5))
             effective_bins.setdefault("python", SafeBinProfile(max_positional=5))
@@ -674,7 +634,6 @@ class SandboxExecutor:
         self.task_network_approved = False
         self.pending_network_commands.clear()
 
-    # ── Foreground execution ──────────────────────────────────
 
     async def run_python(self, code: str, timeout: int = DEFAULT_TIMEOUT) -> SandboxResult:
         if not self.use_bwrap:
@@ -701,8 +660,6 @@ class SandboxExecutor:
         If network=True or command needs network (detected by binary name),
         requests per-task permission before running."""
         if not self.use_bwrap:
-            # Fail-closed: never run a shell unsandboxed. bwrap is the inner ring;
-            # if it isn't active we refuse rather than execute on the host kernel.
             return SandboxResult(
                 "",
                 "Shell execution requires the bubblewrap sandbox (Linux container). "
@@ -726,7 +683,6 @@ class SandboxExecutor:
         shell, shell_args = resolve_shell()
 
         if is_windows():
-            # PowerShell: pass command as arg, no script file
             cmd = [shell] + shell_args + [command]
         else:
             script = self.workspace / f"script_{uuid.uuid4().hex[:6]}.sh"
@@ -748,7 +704,6 @@ class SandboxExecutor:
         result.command = command
         return result
 
-    # ── Background execution ──────────────────────────────────
 
     async def exec_background(self, cmd: list[str], yield_ms: int) -> SandboxResult:
         """Start a process, wait yield_ms, then return with session ID for monitoring."""
@@ -756,9 +711,6 @@ class SandboxExecutor:
         session = ProcessSession(id=sess_id, command=" ".join(cmd), cwd=str(self.workspace))
 
         actual_cmd = self.build_cmd(cmd)
-        # Strict tier at every sandbox spawn site regardless of session default:
-        # sandbox Bash is the highest-threat context (can execute LLM-generated
-        # commands) and must never see AWS/GCP/Azure/OIDC creds via env.
         spawn_env = subprocess_env(mode="strict", spawn_site="sandbox_background").env
         try:
             proc = await asyncio.create_subprocess_exec(
@@ -776,20 +728,16 @@ class SandboxExecutor:
         session.process = proc
         self.sessions[sess_id] = session
 
-        # Register cleanup callback so this session is killed on shutdown
         async def cleanup_session() -> None:
             if not session.exited and session.process and session.process.returncode is None:
                 kill_process_tree(session.process)
 
         session.unregister_cleanup = register_cleanup(f"session-{sess_id}", cleanup_session)
 
-        # Start output readers (tracked for cancellation)
         session.reader_task = asyncio.create_task(self.read_output(session, proc))
 
-        # Wait for yield_ms or process exit
         try:
             await asyncio.wait_for(self.wait_exit(session, proc), timeout=yield_ms / 1000)
-            # Process exited within yield window
             stdout, stderr = session.drain_pending()
             return SandboxResult(
                 stdout=session.aggregated[:DEFAULT_MAX_OUTPUT],
@@ -798,10 +746,6 @@ class SandboxExecutor:
                 session_id=sess_id,
             )
         except asyncio.TimeoutError:
-            # Race guard: wait_exit may have completed between the timeout
-            # firing and us reaching this branch.  If the session already
-            # exited, return the real exit result instead of a fake
-            # "backgrounded" result that points to a finished session.
             if session.exited:
                 stdout, stderr = session.drain_pending()
                 return SandboxResult(
@@ -810,13 +754,10 @@ class SandboxExecutor:
                     exit_code=session.exit_code or 0,
                     session_id=sess_id,
                 )
-            # Process still running — background it
             session.backgrounded = True
-            # Unregister from cleanup so backgrounded sessions survive agent exit
             if session.unregister_cleanup:
                 session.unregister_cleanup()
                 session.unregister_cleanup = None
-            # Start the per-executor watchdog on first backgrounded session
             if bg_watchdog_enabled() and (self.watchdog_task is None or self.watchdog_task.done()):
                 self.watchdog_task = asyncio.create_task(self.background_watchdog_loop())
             return SandboxResult(
@@ -860,13 +801,11 @@ class SandboxExecutor:
         session.exit_code = code
         session.exited = True
         session.teardown_resources()
-        # Move to finished
         self.sessions.pop(session.id, None)
         if session.finished_at is None:
             session.finished_at = time.monotonic()
         self.finished[session.id] = session
 
-    # ── PTY execution ─────────────────────────────────────────
 
     async def exec_pty(self, cmd: list[str], timeout: int) -> SandboxResult:
         """Execute with a pseudo-terminal (Linux only, falls back to regular subprocess)."""
@@ -905,9 +844,7 @@ class SandboxExecutor:
                             output.append(data.decode("utf-8", errors="replace"))
                         except OSError:
                             break
-                    # Check if process exited
                     if proc.returncode is not None:
-                        # Drain remaining
                         while True:
                             r, _, _ = select.select([master_fd], [], [], 0.05)
                             if not r:
@@ -943,7 +880,6 @@ class SandboxExecutor:
         except ImportError:
             return await self.exec(cmd, timeout)
 
-    # ── Process monitoring ────────────────────────────────────
 
     def process_list(self) -> list[dict[str, Any]]:
         """List all running and recently finished processes."""
@@ -961,7 +897,6 @@ class SandboxExecutor:
         if session is None:
             return {"error": f"Session {session_id} not found"}
 
-        # Check if process actually exited but session hasn't been updated yet
         proc = session.process
         if proc and proc.returncode is not None and not session.exited:
             session.exit_code = proc.returncode
@@ -981,10 +916,8 @@ class SandboxExecutor:
                 "stderr": stderr,
             }
 
-        # Wait for output or exit
         deadline = time.monotonic() + (timeout_ms / 1000)
         while time.monotonic() < deadline:
-            # Re-check process exit
             if proc and proc.returncode is not None:
                 session.exit_code = proc.returncode
                 session.exited = True
@@ -1180,7 +1113,6 @@ class SandboxExecutor:
                         session.finished_at = time.monotonic()
                     self.finished[session.id] = session
 
-    # ── Filesystem bridge ─────────────────────────────────────
 
     async def read_file(self, path: str) -> SandboxResult:
         full = self.resolve_path(path)
@@ -1288,7 +1220,7 @@ class SandboxExecutor:
         matches = []
         target = full if full.is_file() else self.workspace
         files = [target] if target.is_file() else sorted(target.rglob("*"))
-        deadline = time.monotonic() + 5.0  # 5-second wall-clock limit
+        deadline = time.monotonic() + 5.0
 
         for f in files:
             if time.monotonic() > deadline:
@@ -1313,7 +1245,6 @@ class SandboxExecutor:
 
         return SandboxResult("\n".join(matches) if matches else "No matches", "", 0)
 
-    # ── Workspace management ──────────────────────────────────
 
     def cleanup(self) -> None:
         """Kill all processes, close fds, remove workspace, revoke permissions."""
@@ -1341,11 +1272,9 @@ class SandboxExecutor:
             shutil.rmtree(self.workspace_dir, ignore_errors=True)
             self.workspace_dir = None
 
-    # ── Internal helpers ──────────────────────────────────────
 
     def resolve_path(self, path: str) -> Path | None:
         ws = self.workspace
-        # Handle absolute paths within workspace
         if path.startswith("/workspace/"):
             path = path[len("/workspace/") :]
         full = (ws / path).resolve()
@@ -1356,9 +1285,6 @@ class SandboxExecutor:
     def build_cmd(self, cmd: list[str], allow_network: bool = False) -> list[str]:
         """Wrap command with bubblewrap + seccomp + Landlock + proxy if available."""
         if not self.use_bwrap:
-            # Fail-closed defense-in-depth: every code-execution entry point
-            # (run_bash/run_python) already refuses without bwrap, so reaching
-            # here unsandboxed is a bug. Never return an unwrapped command.
             raise RuntimeError(
                 "sandbox unavailable: refusing to build an unsandboxed command "
                 "(bubblewrap required)"
@@ -1367,10 +1293,8 @@ class SandboxExecutor:
         net = allow_network and self.task_network_approved
         extra_env: dict[str, str] = {}
 
-        # When proxy is active, sandbox needs localhost access (no --unshare-net).
-        # The proxy is the network gatekeeper instead of namespace isolation.
         if self.proxy is not None:
-            net = True  # allow network so sandbox can reach proxy on localhost
+            net = True
             proxy_url = f"http://127.0.0.1:{self.proxy.port}"
             extra_env.update(
                 {
@@ -1382,8 +1306,6 @@ class SandboxExecutor:
                 }
             )
 
-        # Try seccomp: write BPF to workspace, open inheritable fd for bwrap.
-        # The FD must survive subprocess exec — see seccomp_fd docstring.
         seccomp_fd = None
         seccomp_disabled = self.policy and not self.policy.seccomp_enabled
         if not seccomp_disabled:
@@ -1394,7 +1316,6 @@ class SandboxExecutor:
                 if bpf:
                     bpf_path = write_bpf_file(bpf, str(self.workspace))
                     if bpf_path:
-                        # Close any stale fd from a previous build_cmd call.
                         if self.seccomp_fd is not None:
                             try:
                                 os.close(self.seccomp_fd)
@@ -1414,7 +1335,6 @@ class SandboxExecutor:
             extra_env=extra_env if extra_env else None,
         )
 
-        # Remap paths from host workspace to /workspace
         sandbox_cmd = []
         for part in cmd:
             if str(self.workspace) in part:
@@ -1422,13 +1342,6 @@ class SandboxExecutor:
             else:
                 sandbox_cmd.append(part)
 
-        # Try Landlock: wrap command with Landlock enforcement script.
-        # The profile's workspace path must be the path the wrapper sees
-        # *inside* the bwrap mount namespace ("/workspace"), not the host
-        # tempdir — otherwise os.open() in the wrapper hits ENOENT and the
-        # workspace rule is silently dropped, causing Landlock to deny
-        # script execution. landlock_bwrap_integration still needs the host
-        # path so it can write the wrapper file there before bwrap binds it.
         landlock_disabled = self.policy and not self.policy.landlock_enabled
         if not landlock_disabled:
             try:
@@ -1494,9 +1407,6 @@ class SandboxExecutor:
             )
 
 
-# ── Isolated subprocess runner ──
-
-
 async def run_isolated(
     source_code: str,
     wrapper_code: str,
@@ -1532,7 +1442,6 @@ async def run_isolated(
         use_bwrap = is_linux() and has_bwrap()
         seccomp_fd: int | None = None
         if use_bwrap:
-            # Try seccomp: open inheritable fd for bwrap (must survive exec).
             try:
                 from src.sandbox.seccomp import build_bpf_for_sandbox, write_bpf_file
 

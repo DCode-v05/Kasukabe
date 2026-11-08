@@ -144,18 +144,12 @@ def test_where_a_turn_record_sits_is_recorded(tmp_path) -> None:
 def test_an_unknown_fact_is_null_not_a_guess(tmp_path) -> None:
     """"Unknown" and "the default" are different answers, and a manifest
     that confuses them is worse than no manifest."""
-    # A genesis file that is not there. (The config's DEFAULT genesis
-    # path is a real file and is correctly hashed - an earlier draft of
-    # this test assumed otherwise and was simply wrong about the code.)
     manifest = _manifest(tmp_path, genesis_path=tmp_path / "not-here.json")
     assert manifest["genesis_sha256"] is None
     assert manifest["engine_commit"] is None, (
         "no engine repo was given, and a hash invented for one would be "
         "worse than admitting the run cannot say which engine it used"
     )
-
-
-# ── it reaches the trace, from the runner ──────────────────────────────
 
 
 def test_the_table_exists(tmp_path) -> None:
@@ -221,5 +215,5 @@ async def test_a_manifest_failure_does_not_stop_the_run(tmp_path, monkeypatch) -
     import world.run_manifest as rm
 
     monkeypatch.setattr(rm, "build_manifest", lambda **kw: (_ for _ in ()).throw(RuntimeError("no")))
-    await runner.attach_persistence()      # must not raise
+    await runner.attach_persistence()
     assert runner.world_state is not None

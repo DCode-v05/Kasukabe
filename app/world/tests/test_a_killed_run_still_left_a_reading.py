@@ -110,7 +110,7 @@ async def test_a_failed_reading_does_not_stop_the_tick(booted, monkeypatch) -> N
     monkeypatch.setattr(rg, "capture_final_reading", boom)
     runner, _ = booted
 
-    await runner.capture_reading_if_due(144)      # must not raise
+    await runner.capture_reading_if_due(144)
 
 
 @pytest.mark.asyncio

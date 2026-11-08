@@ -42,22 +42,10 @@ from world.tools.models import WagePromise
 from world.wiring import PACKAGE_DIR, WorldConfig, build_world_server
 from world.tests.map_assets import needs_the_map
 
-# TOOL-27. This module needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped, and red for environment hides real regressions inside the
-# noise - which is how TOOL-09 stayed invisible for a whole cycle.
 pytestmark = needs_the_map
 
-# A small town, so a test that has to reach a day boundary boots in
-# tenths of a second. The economy under test is per-household and
-# per-head; ten residents exercise every branch two hundred and fifty
-# would.
 SMALL_GENESIS = PACKAGE_DIR / "genesis_10.json"
 
-# A real government rate. The genesis policy is 0 bps (ECON-01), at
-# which `charge_daily_head_tax` correctly moves nothing - so a test that
-# left the rate alone would pass whether or not the tax ran at all.
 TEST_TAX_RATE_BPS = 300
 
 
@@ -92,8 +80,6 @@ async def test_the_day_boundary_charges_every_household_its_upkeep() -> None:
             "ECON-08: a whole game-day passed on the world.main root and "
             "nobody paid for food, shelter or heat"
         )
-        # The town's whole bill, derived from upkeep.py's own per-head
-        # total rather than retyped, so a re-rate moves this with it.
         assert sum(t.amount for t in upkeep) == len(alive) * UPKEEP_TOTAL_SIM_PER_DAY
         assert any(
             server.world.ledger.sim_balance(agent_id) < balance

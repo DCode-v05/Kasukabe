@@ -55,10 +55,6 @@ SURFACE = ENGINE / "sim" / "tool_surface.py"
 BOOT = ENGINE / "sim" / "pinned_boot.py"
 THREAD = ENGINE / "engine_core" / "thread.py"
 
-# Read as text, not imported: the engine has its own virtualenv, and
-# test_config_keys_are_not_dead.py reads pinned_boot.py the same way for
-# the same reason.
-
 
 def surface_names(constant: str) -> set[str]:
     """The literal string set assigned to a module constant."""

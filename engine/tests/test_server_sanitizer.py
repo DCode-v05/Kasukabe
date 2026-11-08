@@ -44,17 +44,12 @@ class TestScrubText:
         assert "src.raven" not in result
 
     def test_substring_mid_word_replaced(self):
-        # Substring match is not word-boundary aware — intentional so that
-        # path fragments embedded in stack traces are still caught.
         text = "prefix_src.herald_suffix"
         result = scrub_text(text)
         assert "src.herald" not in result
         assert REDACTION_MARKER in result
 
     def test_case_sensitive(self):
-        # Only exact lowercase matches are scrubbed. Error messages from
-        # provider SDKs sometimes uppercase module names; those are rare
-        # and we accept the tradeoff for simplicity.
         assert scrub_text("SRC.HERALD") == "SRC.HERALD"
 
     def test_idempotent(self):
@@ -70,10 +65,6 @@ class TestScrubText:
         )
         result = scrub_text(trace)
         assert "src.herald" not in result
-        # The literal path "/app/src/herald/..." isn't scrubbed — only the
-        # dotted module form is. That's OK because A9 also scrubs via file
-        # path patterns at the exception-handler layer; this module is one
-        # of several defenses.
 
 
 class TestScrubMapping:
@@ -188,6 +179,4 @@ class TestForbiddenConstants:
         assert "src.raven" in FORBIDDEN_SUBSTRINGS
 
     def test_redaction_marker_not_forbidden(self):
-        # The marker itself must not contain any forbidden substring,
-        # otherwise scrub_text would be non-terminating on paranoid retries.
         assert not contains_forbidden(REDACTION_MARKER)

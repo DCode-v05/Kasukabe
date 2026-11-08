@@ -23,12 +23,6 @@ from world.tools.state import WorldState
 def require_recipe(recipe_id: str, tool: ProductionTool) -> Recipe:
     recipe = RECIPES.get(recipe_id)
     if recipe is None or recipe.tool is not tool:
-        # The ids THIS tool accepts. A bare "no recipe 'potato_soup'" tells
-        # an agent its guess was wrong and leaves it nothing better to guess
-        # next, so the next turn goes on another invention; the list is the
-        # correction. Scoped to the tool that was called, because that is
-        # the question actually being asked - `cook` has no business
-        # advertising what the sawmill makes.
         raise RecipeNotFoundError(
             recipe_id,
             [rid for rid, r in RECIPES.items() if r.tool is tool],
@@ -39,11 +33,6 @@ def require_recipe(recipe_id: str, tool: ProductionTool) -> Recipe:
 def run_recipe(world: WorldState, agent: AgentLifeRecord, recipe: Recipe, batches: int) -> ToolOutcome:
     total_input = recipe.input_qty * batches
     total_output = recipe.output_qty * batches
-    # Debit-then-credit, in that order: an insufficient-input raise here
-    # happens before anything is produced, so a failed craft never
-    # conjures output from nothing (Inventory.debit already enforces
-    # this at the single-call level; this only matters because craft
-    # does a debit and a credit in the same handler).
     world.inventory.debit(agent.agent_id, recipe.input_item, total_input)
     world.inventory.credit(agent.agent_id, recipe.output_item, total_output)
 
@@ -93,7 +82,6 @@ def cook_location_gate(world: WorldState, params: CookParams) -> str:
     return require_recipe(params.recipe_id, ProductionTool.COOK).required_location
 
 
-
 def _recipe_menu(tool: ProductionTool) -> str:
     """Every recipe this verb accepts, as `input->output @place`.
 
@@ -113,10 +101,6 @@ def _recipe_menu(tool: ProductionTool) -> str:
     for recipe in RECIPES.values():
         if recipe.tool is tool:
             by_place.setdefault(recipe.required_location, []).append(recipe.recipe_id)
-    # Grouped by workshop rather than listed flat: the id already carries
-    # the arrow ("craft:wheat->flour"), so repeating input and output per
-    # row doubled the length for nothing, and where a recipe works is the
-    # fact the resident is missing.
     return "; ".join(
         f"at the {place}: {', '.join(sorted(ids))}"
         for place, ids in sorted(by_place.items())

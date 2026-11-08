@@ -54,11 +54,6 @@ class RecordingGateway:
     these tests never need a real converse()/converse_stream()."""
 
 
-# BEDROCK_MODELS, not MODEL_ALLOWLIST: lanes here are (model x region) and an
-# OpenAI model has no region and no inference profile, so it contributes one
-# lane built on a different path (broker/lanes.py). Counting it in the Bedrock
-# arithmetic would make every expectation below wrong by exactly that lane.
-
 def build_pool(
     rpm_per_lane: int = 100,
     circuit_threshold: int = 3,
@@ -79,9 +74,6 @@ def build_pool(
         sleep=fake_sleep_noop,
     )
     return pool, clock
-
-
-# ── classify_purpose ─────────────────────────────────────────────────
 
 
 @pytest.mark.parametrize(
@@ -111,12 +103,7 @@ def test_classify_purpose_defaults_to_cognition(purpose: str) -> None:
 
 
 def test_classify_purpose_requires_a_true_prefix_not_any_substring() -> None:
-    # "not_a_dream_probe" contains "dream_probe" but does not START with
-    # it - classify_purpose is documented as prefix matching.
     assert classify_purpose("not_a_dream_probe") is CallClass.COGNITION
-
-
-# ── lane_id / build_lane_pool ────────────────────────────────────────
 
 
 def test_lane_id_format() -> None:
@@ -156,10 +143,7 @@ def test_gateway_factory_is_called_exactly_once_per_lane() -> None:
 
     every_lane = len(BEDROCK_MODELS) * len(BEDROCK_LANE_REGIONS)
     assert len(calls) == every_lane
-    assert len(set(calls)) == every_lane  # every (model, region) pair distinct
-
-
-# ── LanePool.select: routing policy ─────────────────────────────────
+    assert len(set(calls)) == every_lane
 
 
 def test_cognition_prefers_a_kimi_lane_when_every_lane_is_fresh() -> None:
@@ -178,9 +162,6 @@ def test_background_only_ever_selects_deepseek_even_when_kimi_is_fully_free() ->
 def test_cognition_overflows_to_deepseek_once_every_kimi_lane_is_saturated() -> None:
     pool, _ = build_pool(rpm_per_lane=1)
 
-    # Drain all three Kimi lanes' single token, exactly as
-    # broker/service.py's prepare_call does (select(), THEN consume via
-    # the bucket - select() itself never consumes, see the next test).
     for _ in range(3):
         lane = pool.select(CallClass.COGNITION)
         assert lane.model == KIMI_MODEL_ID
@@ -205,7 +186,7 @@ def test_rotated_round_robins_across_calls_regardless_of_which_lane_dispatches()
     fourth = pool.select(CallClass.COGNITION)
 
     assert {first.region, second.region, third.region} == set(BEDROCK_LANE_REGIONS)
-    assert fourth.region == first.region  # cursor wrapped after all 3 Kimi lanes
+    assert fourth.region == first.region
 
 
 def test_select_raises_when_every_lane_for_the_call_class_is_circuit_open() -> None:
@@ -221,7 +202,7 @@ def test_select_raises_when_every_lane_for_the_call_class_is_circuit_open() -> N
     pool, _ = build_pool(circuit_threshold=1)
     for model in MODEL_PREFERENCE_ORDER[CallClass.BACKGROUND]:
         for lane in pool.lanes_by_model[model]:
-            lane.circuit.record_throttle()  # threshold=1 -> open on first
+            lane.circuit.record_throttle()
 
     with pytest.raises(UpstreamOverloadedError):
         pool.select(CallClass.BACKGROUND)
@@ -267,9 +248,6 @@ def test_pool_status_lists_every_lane_with_circuit_state() -> None:
     assert {row["lane_id"] for row in rows} == {lane.id for lane in pool.all_lanes()}
 
 
-# ── CircuitBreaker state machine ────────────────────────────────────
-
-
 def test_circuit_starts_closed_and_freely_reservable() -> None:
     breaker = CircuitBreaker(threshold=3, cooldown_s=30.0)
     assert breaker.is_open() is False
@@ -280,7 +258,7 @@ def test_circuit_opens_after_threshold_consecutive_throttles() -> None:
     breaker = CircuitBreaker(threshold=3, cooldown_s=30.0)
     breaker.record_throttle()
     breaker.record_throttle()
-    assert breaker.is_open() is False  # not yet at threshold
+    assert breaker.is_open() is False
     breaker.record_throttle()
     assert breaker.is_open() is True
     assert breaker.trip_count == 1
@@ -293,7 +271,7 @@ def test_a_success_between_throttles_resets_the_consecutive_count() -> None:
     breaker.record_success()
     breaker.record_throttle()
     breaker.record_throttle()
-    assert breaker.is_open() is False  # only 2 consecutive since the reset
+    assert breaker.is_open() is False
 
 
 def test_open_circuit_refuses_reservations_until_cooldown_elapses() -> None:
@@ -306,7 +284,7 @@ def test_open_circuit_refuses_reservations_until_cooldown_elapses() -> None:
     assert breaker.try_reserve() is False
 
     clock.advance(0.2)
-    assert breaker.try_reserve() is True  # half-open trial now allowed
+    assert breaker.try_reserve() is True
 
 
 def test_half_open_trial_is_granted_exactly_once() -> None:
@@ -316,7 +294,7 @@ def test_half_open_trial_is_granted_exactly_once() -> None:
     clock.advance(30.0)
 
     assert breaker.try_reserve() is True
-    assert breaker.try_reserve() is False  # a second concurrent claim is refused
+    assert breaker.try_reserve() is False
 
 
 def test_half_open_trial_success_closes_the_circuit() -> None:
@@ -343,11 +321,6 @@ def test_half_open_trial_throttle_reopens_the_circuit_without_a_second_trip() ->
     breaker.record_throttle()
 
     assert breaker.is_open() is True
-    # trip_count counts CLOSED -> OPEN transitions (opened_at was None
-    # right before the increment); this circuit was already open the
-    # whole time (opened_at never cleared, no record_success happened),
-    # so the half-open trial's failure just refreshes the cooldown clock,
-    # it does not count as a second trip.
     assert breaker.trip_count == 1
 
 
@@ -355,7 +328,7 @@ def test_release_unused_reservation_is_a_no_op_on_a_closed_circuit() -> None:
     breaker = CircuitBreaker(threshold=3, cooldown_s=30.0)
     assert breaker.try_reserve() is True
     breaker.release_unused_reservation()
-    assert breaker.try_reserve() is True  # still freely reservable
+    assert breaker.try_reserve() is True
 
 
 def test_release_unused_reservation_frees_an_unclaimed_half_open_trial() -> None:
@@ -366,7 +339,7 @@ def test_release_unused_reservation_frees_an_unclaimed_half_open_trial() -> None
 
     assert breaker.try_reserve() is True
     breaker.release_unused_reservation()
-    assert breaker.try_reserve() is True  # trial slot is claimable again
+    assert breaker.try_reserve() is True
 
 
 def test_other_failure_releases_the_trial_without_extending_the_cooldown() -> None:
@@ -378,8 +351,8 @@ def test_other_failure_releases_the_trial_without_extending_the_cooldown() -> No
 
     breaker.record_other_failure()
 
-    assert breaker.consecutive_failures == 1  # unchanged by the unrelated failure
-    assert breaker.try_reserve() is True  # cooldown was not extended
+    assert breaker.consecutive_failures == 1
+    assert breaker.try_reserve() is True
 
 
 def test_status_reports_open_then_half_open_as_the_clock_advances() -> None:

@@ -215,7 +215,6 @@ def build_recipe_table() -> dict[str, Recipe]:
     return table
 
 
-# The one canonical table every craft()/cook() call looks up against.
 RECIPES: dict[str, Recipe] = build_recipe_table()
 
 

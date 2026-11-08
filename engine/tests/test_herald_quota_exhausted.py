@@ -73,7 +73,6 @@ def test_other_429_codes_pass_through_untouched():
             "error": {"code": "PROVIDER_RATE_LIMITED", "message": "upstream busy"},
         }
     )
-    # Should return without raising
     maybe_raise_quota_exhausted(exc)
 
 
@@ -84,7 +83,6 @@ def test_429_with_retry_after_passes_through():
         {"error": {"code": "PROVIDER_RATE_LIMITED", "message": "upstream busy"}},
         headers={"retry-after": "12"},
     )
-    # Should return without raising — stays a transient CitadelAPIError.
     maybe_raise_quota_exhausted(exc)
 
 
@@ -109,8 +107,6 @@ def test_non_429_exception_passes_through():
         body={"error": {"code": "QUOTA_EXCEEDED"}},
         headers={},
     )
-    # Even a 503 with QUOTA_EXCEEDED in body shouldn't trip the helper —
-    # quota is by definition a 429 contract.
     maybe_raise_quota_exhausted(exc)
 
 
@@ -141,9 +137,6 @@ def test_quota_exhausted_maps_to_429_engine_error():
     body = err.to_dict()
     assert body["error"]["code"] == "quota_exhausted"
     assert body["error"]["details"]["max_tokens"] == 500
-
-
-# ── Metered budget: 402 + BUDGET_EXCEEDED → CitadelBudgetExhausted ─────
 
 
 def test_budget_exceeded_body_raises_typed_error():
@@ -178,7 +171,6 @@ def test_other_402_codes_pass_through_untouched():
             "error": {"code": "PAYMENT_REQUIRED", "message": "card declined"},
         }
     )
-    # Should return without raising
     maybe_raise_budget_exhausted(exc)
 
 
@@ -199,8 +191,6 @@ def test_non_402_exception_passes_through_budget_helper():
         body={"error": {"code": "BUDGET_EXCEEDED"}},
         headers={},
     )
-    # Even a 503 with BUDGET_EXCEEDED in body shouldn't trip the helper —
-    # budget is by definition a 402 contract.
     maybe_raise_budget_exhausted(exc)
 
 

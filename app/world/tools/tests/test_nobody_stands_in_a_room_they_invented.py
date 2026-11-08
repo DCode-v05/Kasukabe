@@ -40,23 +40,13 @@ from world.tools.state import WorldState
 from .conftest import spawn_agent
 from world.tools.tests.conftest import needs_the_map
 
-# TOOL-27. Every test here needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped - and red for environment hides real regressions inside the
-# noise, which is how TOOL-09 stayed invisible.
 pytestmark = needs_the_map
-
-
-# ── folding what a resident actually typed ────────────────────────────
 
 
 @pytest.mark.parametrize(
     "invented, expected",
     [
-        # The exact string Delia walked into, from the run.
         ("loc_shop_willows", "The Willows Market and Pharmacy"),
-        # The same mistake in the spellings agents have used before.
         ("willows_shop", "The Willows Market and Pharmacy"),
         ("the willows shop", "The Willows Market and Pharmacy"),
         ("hobbs", "Hobbs Cafe"),
@@ -92,9 +82,6 @@ def test_folding_never_swallows_a_real_place_into_a_longer_one(
     assert canonical_destination(world, "Oak Hill College") == "Oak Hill College"
     assert canonical_destination(world, "forest") == "forest"
     assert canonical_destination(world, "mill") == "mill"
-
-
-# ── a shop is a place you can find ────────────────────────────────────
 
 
 @pytest.mark.asyncio

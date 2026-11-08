@@ -27,7 +27,6 @@ text = "\n".join(lines)
 RESIDENTS, TICKS, SPEND = 50, 194, 100.40
 DAYS = TICKS / 144
 
-# ── turns ────────────────────────────────────────────────────────────
 ACT = re.compile(r"^>\s*\*\*action\*\* `world:(\w+)`\s*(.*)$")
 RES = re.compile(r"^>\s*↳\s*(.*)$")
 INP = re.compile(r"^>\s*\*\*input\*\*\s*—?\s*(.*)$")
@@ -61,7 +60,6 @@ print(f"TURNS {len(turns)}  ACTS {len(acts)}")
 print(f"G6 (any tool call)          {100*any_call/len(turns):.1f}%")
 print(f"G6 (a successful world act) {100*world_effect/len(turns):.1f}%")
 
-# ── settlements ──────────────────────────────────────────────────────
 done = collections.Counter(a["verb"] for a in acts if ok(a))
 tried = collections.Counter(a["verb"] for a in acts)
 settle = done["buy"] + done["sell"] + done["trade"]
@@ -69,7 +67,6 @@ print(f"\nES4 settlements: buy {done['buy']}/{tried['buy']}, sell {done['sell']}
       f"trade {done['trade']}/{tried['trade']} = {settle} ({settle/DAYS:.0f} per game-day)")
 print(f"C-D meals: eat ok {done['eat']} of {tried['eat']} = {done['eat']/(RESIDENTS*DAYS):.2f} per resident-day")
 
-# who settled (N1): the actor of each successful buy/sell/trade, plus the named counterparty
 party = collections.Counter()
 for t in turns:
     pass
@@ -87,16 +84,13 @@ if deals_by:
     gini = sum((2*i - k - 1) * v for i, v in enumerate(vals, 1)) / (k * tot)
     print(f"N1 counterparties: {k} distinct; busiest {top} in {n}/{settle} ({100*n/settle:.0f}%); Gini {gini:.2f}")
 
-# food in perceptions (N3)
 no_food = sum(1 for t in turns if re.search(r"no food|nothing you could give, eat|have not eaten", t["input"], re.I))
 print(f"N3 perceptions saying no food: {no_food}/{len(turns)} ({100*no_food/len(turns):.0f}%)")
 
-# verbs called vs registered (X8)
 called = set(tried)
 print(f"\nX8 distinct verbs called live: {len(called)}")
 print("   " + ", ".join(f"{v} {tried[v]}" for v in sorted(called, key=lambda v: -tried[v])))
 
-# refusals (X10) and recovery
 refusals = collections.Counter()
 for a in acts:
     m = ERRK.search(a["res"] or "")
@@ -107,18 +101,15 @@ for a in acts:
 print(f"\nX10 refusals total {sum(refusals.values())}; top:")
 for why, n in refusals.most_common(5): print(f"   x{n:3} {why}")
 
-# calls per turn (X7)
 per = [len(t["acts"]) for t in turns if t["acts"]]
 print(f"\nX7 calls per acting turn: median {statistics.median(per):.0f} mean {statistics.mean(per):.2f} p90 {sorted(per)[int(.9*len(per))]}")
 
-# goals (N16)
 goals = [re.search(r'"(?:text|goal)"\s*:\s*"([^"]{3,160})"', a["params"] or "") for a in acts if a["verb"] == "set_goal"]
 goals = [g.group(1).strip().lower() for g in goals if g]
 if goals:
     g, n = collections.Counter(goals).most_common(1)[0]
     print(f"\nN16 set_goal: {len(goals)} calls, {len(set(goals))} distinct; most common x{n}: {g[:70]!r}")
 
-# ── the conversation ─────────────────────────────────────────────────
 s = next(i for i,l in enumerate(lines) if l.startswith("## The conversation"))
 e = next(i for i,l in enumerate(lines) if l.startswith("## What the town could not do"))
 conv = lines[s:e]
@@ -139,7 +130,6 @@ print(f"\nCONVERSATION {len(utts)} utterances, {len(threads)} threads")
 print(f"G2 threads with 4+ utterances: {sum(1 for t in threads if len(t['rows']) >= 4)}")
 print(f"G3 threads with 3+ speakers: {sum(1 for n in speakers if n >= 3)}; largest {max(speakers)}")
 
-# G1 reply rate: an addressed line answered later in the thread by the addressee, to the speaker
 addressed = answered = 0
 for t in threads:
     rows = t["rows"]
@@ -150,47 +140,39 @@ for t in threads:
             answered += 1
 print(f"G1 reply rate: {answered}/{addressed} addressed lines answered by the addressee ({100*answered/addressed:.0f}%)")
 
-# Q10 group vs private
 group_utts = sum(len(t["rows"]) for t, n in zip(threads, speakers) if n >= 3)
 print(f"Q10 utterances in 3+ speaker threads: {group_utts}/{len(utts)} ({100*group_utts/len(utts):.0f}%)")
 
-# N19 non-English
 non_en = [r for r in utts if re.search(r"[Ѐ-ӿ؀-ۿऀ-ॿ぀-ヿ一-鿿가-힯]", r["text"])]
 print(f"N19 utterances with non-Latin script: {len(non_en)}")
 for r in non_en[:2]: print(f"   {r['who']}: {r['text'][:100]}")
 
-# N20 speech by place and pair
 by_place = collections.Counter()
 for t in threads: by_place[t["place"]] += len(t["rows"])
 pairs = collections.Counter(tuple(sorted((r["who"], r["to"]))) for r in utts if r["to"])
 print(f"N20 top places: " + "; ".join(f"{p} {n}" for p, n in by_place.most_common(3)))
 print(f"    top pairs: " + "; ".join(f"{a} ↔ {b} {n}" for (a, b), n in pairs.most_common(3)))
 
-# X18 does anybody say no
 NO = re.compile(r"\b(no[,.!]|won't|will not|not selling|can't sell|i refuse|not for that|too (high|much|low)|"
                 r"not interested|i'll pass|no deal|not going to|can't do that|cannot do that)\b", re.I)
 nos = [r for r in utts if NO.search(r["text"])]
 print(f"\nX18 utterances with refusal language: {len(nos)} ({100*len(nos)/len(utts):.1f}%)")
 for r in nos[:3]: print(f"   {r['who']}: {r['text'][:120]}")
 
-# Q13 / X19 altruism near dormancy
 aid = [r for r in utts if re.search(r"dormant|energy (is )?(going )?low|stay conscious", r["text"], re.I)]
 gifts = done["give"] + done["transfer"]
 print(f"\nQ13 utterances about running out of energy: {len(aid)}; gifts that went through (give/transfer): {gifts}")
 
-# Q16 price discovery - from the Prices section
 ps = next((i for i,l in enumerate(lines) if l.startswith("## Prices")), None)
 if ps is not None:
     print("\nQ16 prices section (first lines):")
     for l in lines[ps+1:ps+8]:
         if l.strip(): print("   " + l[:150])
 
-# Q17 revival and energy purchases
 print(f"\nQ17 buy_energy ok {done['buy_energy']}/{tried['buy_energy']}; revive ok {done['revive']}/{tried['revive']}")
 for a in acts:
     if a["verb"] == "revive":
         print(f"   revive {a['params'][:60]} -> {a['res'][:110]}")
 
-# costs
 print(f"\nQ24 cost per agent-day (as run, dormancy included): ${SPEND/(RESIDENTS*DAYS):.2f}")
 print(f"X3  run cost ${SPEND:.2f}")

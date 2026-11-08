@@ -161,21 +161,6 @@ async def marry(
     )
 
 
-# --- coming of age (The 250 section 26) ------------------------------------
-# "At 18 (MINOR_AGE_LIMIT_YEARS), a former minor crosses into the working-age
-# population. Mechanically, this is the point where the parent-billing
-# relationship for their own thinking should end... What they do next is not
-# scripted."
-#
-# aging.py already does the arithmetic half of that transition - it caps the
-# age at 18, clears the life record's sponsor_parent_id and fires
-# agent.aged_to_adult. What it could not do is the half that has consequences:
-# the ledger account kept its is_minor flag (so the parent went on paying for
-# the new adult's thinking indefinitely), and the household was left exactly
-# as it was, because nothing existed to change it. This section is that
-# missing half.
-
-
 class ComingOfAgeChoice(str, Enum):
     """The three futures section 26 names, and no others.
 
@@ -205,11 +190,7 @@ class ComingOfAgeError(ValueError):
 class ComingOfAgeOutcome(BaseModel):
     agent: AgentLifeRecord
     choice: ComingOfAgeChoice
-    # The household the new adult grew up in, as it stands afterwards: the
-    # same object when they stayed, one member shorter when they left, and
-    # None when they had no childhood household on file.
     childhood_household: Household | None
-    # Where they live now. Same as childhood_household for STAY_AND_CONTRIBUTE.
     household: Household
     dissolved_household_id: str | None = None
     partner: AgentLifeRecord | None = None
@@ -278,9 +259,6 @@ async def come_of_age(
     if reasons:
         raise ComingOfAgeError(reasons)
 
-    # The wallet half of the transition, before anything else changes. From
-    # here the new adult funds their own cognition, the same as any other
-    # working-age agent (section 26).
     await guardianship.end_parent_billing(agent.agent_id)
     adult = agent.model_copy(update={"sponsor_parent_id": None})
 
@@ -295,9 +273,6 @@ async def come_of_age(
     )
 
     if choice is ComingOfAgeChoice.STAY_AND_CONTRIBUTE:
-        # Éamon's early start in section 12, formalized: the household
-        # membership does not change, but the agent is now a contributor to
-        # the shared bill instead of a line on it.
         if childhood_household is None:
             raise ComingOfAgeError([f"{agent.agent_id} has no household to stay in"])
         stayed = childhood_household
@@ -322,7 +297,7 @@ async def come_of_age(
         )
 
     if choice is ComingOfAgeChoice.MOVE_OUT_ALONE:
-        assert new_household_id is not None  # guarded above
+        assert new_household_id is not None
         left = leave_household(childhood_household, agent.agent_id)
         own = Household(
             household_id=new_household_id,
@@ -351,12 +326,8 @@ async def come_of_age(
             ],
         )
 
-    # PAIR_OFF
     assert partner is not None and new_household_id is not None and economy is not None
     left = leave_household(childhood_household, agent.agent_id)
-    # The leaver is no longer a member of the childhood household by the time
-    # marry() merges anything, so a stale membership cannot follow them into
-    # the new one.
     marriage = await marry(
         adult.model_copy(update={"household_id": None}),
         partner,

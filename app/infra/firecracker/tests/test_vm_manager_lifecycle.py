@@ -80,7 +80,6 @@ async def test_boot_three_snapshot_restore_verify_state(tmp_path: Path) -> None:
     manager = make_manager(tmp_path)
     specs = [make_spec(i) for i in range(3)]
 
-    # --- boot 3 microVMs ---
     statuses = [await manager.start(spec) for spec in specs]
     assert all(s.state == UnitState.RUNNING for s in statuses)
 
@@ -92,7 +91,6 @@ async def test_boot_three_snapshot_restore_verify_state(tmp_path: Path) -> None:
     for spec in specs:
         assert await manager.health(spec.unit_id) is True
 
-    # --- give each unit distinct, verifiable guest content ---
     resources_by_unit = {spec.unit_id: manager.require_unit(spec.unit_id).resources for spec in specs}
     pre_snapshot_state = {}
     for spec in specs:
@@ -100,7 +98,6 @@ async def test_boot_three_snapshot_restore_verify_state(tmp_path: Path) -> None:
         pre_snapshot_state[spec.unit_id] = content
         await set_guest_state(resources_by_unit[spec.unit_id].api_socket_path, content)
 
-    # --- snapshot every unit at the same world tick ---
     handles = {}
     for spec in specs:
         handle = await manager.snapshot(spec.unit_id, tick=42)
@@ -109,12 +106,10 @@ async def test_boot_three_snapshot_restore_verify_state(tmp_path: Path) -> None:
         assert handle.unit_id == spec.unit_id
         assert handle.memfile_uri is not None
 
-    # snapshot must leave the unit running again, not paused
     for spec in specs:
         status = await manager.status(spec.unit_id)
         assert status.state == UnitState.RUNNING
 
-    # --- mutate guest state AFTER the snapshot, to prove restore reverts it ---
     for spec in specs:
         await set_guest_state(
             resources_by_unit[spec.unit_id].api_socket_path,
@@ -123,13 +118,11 @@ async def test_boot_three_snapshot_restore_verify_state(tmp_path: Path) -> None:
         mutated = await get_guest_state(resources_by_unit[spec.unit_id].api_socket_path)
         assert mutated["processed_ticks"] == 999999
 
-    # --- restore every unit from its tick-42 snapshot ---
     for spec in specs:
         status = await manager.restore(spec.unit_id, handles[spec.unit_id])
         assert status.state == UnitState.RUNNING
         assert "restored from tick 42" in status.detail
 
-    # --- verify state: restored guest content matches pre-snapshot, not the mutation ---
     for spec in specs:
         restored_resources = manager.require_unit(spec.unit_id).resources
         restored_state = await get_guest_state(restored_resources.api_socket_path)
@@ -138,7 +131,6 @@ async def test_boot_three_snapshot_restore_verify_state(tmp_path: Path) -> None:
             f"got {restored_state}, expected {pre_snapshot_state[spec.unit_id]}"
         )
 
-    # --- clean teardown of all 3 ---
     await manager.shutdown_all()
     final = await manager.list()
     assert all(s.state == UnitState.STOPPED for s in final)
@@ -190,9 +182,6 @@ async def test_health_detects_a_unit_that_died_out_from_under_the_manager(tmp_pa
     await manager.start(spec)
     assert await manager.health(spec.unit_id) is True
 
-    # Simulate the microVM process crashing without going through
-    # manager.stop() - the fake handle's terminate() stands in for the
-    # firecracker process dying (kill -9, host OOM, etc.).
     rt = manager.require_unit(spec.unit_id)
     await rt.handle.terminate()
 

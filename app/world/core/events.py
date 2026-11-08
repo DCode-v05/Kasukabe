@@ -36,10 +36,6 @@ from pydantic import BaseModel, Field, field_validator
 
 logger = logging.getLogger(__name__)
 
-# Domains from app/CONVENTIONS.md's "Event naming scheme" table. Kept as
-# the single source of truth here; EventBus.subscribe() and WorldEvent's
-# type validator both check against it so a typo'd domain fails loudly
-# instead of silently creating an unsubscribable event stream.
 KNOWN_DOMAINS = frozenset(
     {
         "world",
@@ -133,24 +129,6 @@ class EventBus:
     politics event can all interrupt an agent's schedule).
     """
 
-    # CORE-09. 2,000 events is not a policy, it is a number.
-    #
-    # This ring is not a debugging convenience - it is the DELIVERY
-    # MECHANISM for speech. `PerceptionSystem.build_perception` reads
-    # `recent()` to work out what was said to a resident and never
-    # delivered (with no age limit) and what is still unanswered. Anything
-    # that falls off the back of the deque was, as far as the town is
-    # concerned, never said.
-    #
-    # And walking floods it: `MovementSystem.advance` emits one
-    # `agent.moved` PER TILE CROSSED, up to forty per resident per tick. At
-    # twenty residents that is 800 events a tick from walking alone, so the
-    # whole 2,000 turns over in under three ticks and a remark from four
-    # ticks ago is gone before its addressee is next due - which is every
-    # third tick.
-    #
-    # Sized off the population instead, with the old value as the floor so
-    # a small fixture behaves exactly as before.
     DEFAULT_BUFFER = 2000
 
     def __init__(self, buffer_size: int = DEFAULT_BUFFER) -> None:

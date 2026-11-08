@@ -38,18 +38,8 @@ ELSEWHERE = "Kasukabe Farmland"
 async def _resident(world: WorldState, agent_id: str = "n01", *, at: str = STORE) -> None:
     await spawn_agent(world, agent_id, at)
     world.agent_names[agent_id] = "Bram Holloway"
-    # A treasury with dollars in it, which is what genesis builds: the
-    # $1,000 starts there and the exchange moves it out. The test fixture
-    # opens accounts at zero, and a treasury with no dollars cannot sell
-    # anybody any thinking - a true refusal, and not the one under test.
     from world.ledger.core import TREASURY_ACCOUNT_ID
 
-    # Exactly the hundred thousand cents the invariant demands: whatever
-    # the wallets already hold, the treasury holds the rest. Setting a
-    # round 88,000 beside empty wallets halts the ledger for violating the
-    # $1,000 invariant - correctly, and it is the invariant this tool must
-    # not break, so the fixture has to satisfy it before the test means
-    # anything.
     from world.ledger.money import CENTS_PER_USD  # noqa: F401
 
     wallets = sum(
@@ -72,7 +62,6 @@ async def test_a_resident_can_turn_sim_into_thinking(world: WorldState, registry
     assert world.ledger.usd_balance("n01") > before_usd, (
         "the resident paid and got no thinking for it"
     )
-    # Handed back in energy, the unit a resident reads everywhere else.
     assert outcome.result["energy_bought"] == energy_units(20_000 // SIM_PER_USD_CENT)
 
 
@@ -137,9 +126,6 @@ async def test_the_thousand_dollars_survives_the_exchange(
     """The invariant the whole economy is checked against: USD moves
     between the treasury and a wallet and is never created."""
     await _resident(world)
-    # 25,000 of the 50,000 held: the most one purchase may spend under
-    # ENERGY_PURCHASE_MAX_SHARE_PERCENT. 30,000 is now refused, which is
-    # the ceiling working, not the invariant.
     await registry.execute(world, "n01", "buy_energy", {"sim_amount": 25_000})
     await world.ledger.enforce_invariant(world.tick())
 
@@ -152,8 +138,6 @@ async def test_the_result_tells_the_resident_what_it_can_now_afford(
     walk across town for it. What it buys is turns of thinking."""
     await _resident(world)
     outcome = await registry.execute(world, "n01", "buy_energy", {"sim_amount": 20_000})
-    # Energy, not cents - which is this docstring's own point made further:
-    # a resident deciding whether to walk across town reads energy.
     assert "energy_bought" in outcome.result
     assert "energy_now" in outcome.result
     assert outcome.result["energy_now"] >= outcome.result["energy_bought"]
@@ -164,12 +148,6 @@ async def test_buying_energy_is_priced(world: WorldState, registry) -> None:
     from world.ledger.action_costs import SCHEDULE_TABLE
 
     assert "buy_energy" in SCHEDULE_TABLE
-
-
-# ── the spec's own three tests, by its own names ──────────────────────
-#
-# docs/kasukabetoolspec.md A1 names three. Written here against the rows
-# of its table rather than against what the code happens to do.
 
 
 @pytest.mark.asyncio
@@ -210,9 +188,6 @@ async def test_ledger_invariant_survives_an_energy_purchase(
     world: WorldState, registry
 ) -> None:
     await _resident(world)
-    # 25,000 of the 50,000 held: the most one purchase may spend under
-    # ENERGY_PURCHASE_MAX_SHARE_PERCENT. 30,000 is now refused, which is
-    # the ceiling working, not the invariant.
     await registry.execute(world, "n01", "buy_energy", {"sim_amount": 25_000})
     await world.ledger.enforce_invariant(world.tick())
 
@@ -231,8 +206,6 @@ async def test_the_purchase_emits_the_event_the_spec_names(
     payload = next(e.payload for e in outcome.events if e.type == "economy.energy.bought")
     assert payload["agent_id"] == "n01"
     assert payload["sim_amount"] == 20_000
-    # Derived from the rate: 20,000 sim buys twice the credit it did
-    # before the 2026-09-04 re-rating, which is the whole point of it.
     assert payload["usd_cents"] == 20_000 // SIM_PER_USD_CENT
     assert payload["usd_balance_after"] >= 200
 

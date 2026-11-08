@@ -31,7 +31,7 @@ def _a_live_home(root: Path) -> sqlite3.Connection:
     brain.execute("create table memories (text)")
     brain.execute("insert into memories values ('Hendrik paid 5000 sim to wake my brother')")
     brain.commit()
-    return brain            # left OPEN, as a running engine holds it
+    return brain
 
 
 def test_a_running_home_is_snapshotted_whole(tmp_path) -> None:

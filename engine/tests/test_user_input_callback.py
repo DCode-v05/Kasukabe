@@ -54,7 +54,6 @@ class TestAwaitBlockInputPermission:
                 if coord.pending_inputs:
                     break
             block_id, (fut, fmt, tid) = next(iter(coord.pending_inputs.items()))
-            # resume_block resolves the future with feedback + the answer.
             await coord.resume_block(
                 "thr_perm",
                 block_id,
@@ -67,7 +66,6 @@ class TestAwaitBlockInputPermission:
         assert isinstance(reply, dict)
         assert reply["response"] == "allow"
         assert reply["feedback"] == "sure, go ahead"
-        # Emitted event carries permission metadata
         assert len(captured) == 1
         ev = captured[0]
         assert isinstance(ev, CraftRequest)

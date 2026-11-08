@@ -57,10 +57,6 @@ from src.herald.types import StopReason, StreamEvent
 
 logger = logging.getLogger("kasukabe.sim.a_turn_that_tried_to_act")
 
-# Structural shapes only. A resident writing "I will use world_move to get
-# to the bakery" is prose and must not count; a resident emitting
-# `functions.world_move:0 {...}` is a tool call in the wrong clothes.
-# Every pattern needs a delimiter or a bracket, never a bare verb.
 CALL_SHAPED = (
     re.compile(r"<\|[a-z_]*(?:tool|function)_call[a-z_]*\|>", re.I),
     re.compile(r"</?(?:tool_call|function_call|invoke|tool_use)\b", re.I),
@@ -94,17 +90,9 @@ def notice_a_turn_that_tried_to_act(adapter: Any) -> Any:
 class _TriedToActAdapter:
     def __init__(self, inner: Any) -> None:
         self._inner = inner
-        # Turns that ended `tool_use` and produced no call at all. A
-        # provider that omits `content_block_start` for a tool block makes
-        # every one of its turns this.
         self.turns_claiming_tools_that_sent_none = 0
-        # Turns that produced no call and wrote something call-shaped.
         self.turns_that_wrote_a_call_as_text = 0
-        # Turns whose `tool_use` stop reason was a contradiction and
-        # was rewritten to the truth.
         self.stop_reasons_corrected = 0
-        # The markup spellings seen, so the next `kimi_tool_calls.py` can
-        # be written against evidence rather than a guess.
         self.spellings_seen: dict[str, int] = {}
 
     def __getattr__(self, item: str) -> Any:
@@ -126,18 +114,6 @@ class _TriedToActAdapter:
             reason = getattr(event, "stop_reason", None)
             if reason is not None:
                 stop = reason
-                # THE RECORD MUST NOT LIE. `tool_use` with no tool call is
-                # not a stop reason, it is a contradiction: herald discarded
-                # a block whose `content_block_start` never arrived, and the
-                # turn is about to tell the trace it used tools it never
-                # delivered. Every reader downstream - the acting-turn rate,
-                # the silent-turn report, `run_checklist`'s scoring - takes
-                # that at face value.
-                #
-                # The turn still ends exactly as it did: `thread.py` breaks
-                # on `stop_reason != TOOL_USE or not turn_tool_calls`, and
-                # the second clause was already true. Only the reason
-                # written down changes, from a claim to the truth.
                 if reason is StopReason.TOOL_USE and calls == 0:
                     self.stop_reasons_corrected += 1
                     event = StreamEvent(

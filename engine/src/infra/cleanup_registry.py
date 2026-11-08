@@ -36,7 +36,7 @@ def register_cleanup(name: str, fn: CleanupFn) -> Callable[[], None]:
         try:
             cleanup_fns.remove(entry)
         except ValueError:
-            pass  # already removed
+            pass
 
     return unregister
 

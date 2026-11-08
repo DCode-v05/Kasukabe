@@ -69,10 +69,6 @@ class RealFirecrackerProcessHandle:
             self._proc.kill()
             await self._proc.wait()
         finally:
-            # Firecracker unlinks its own socket on clean exit but not
-            # after a kill -9; a stale socket file blocks the next
-            # start() for this unit_id with EADDRINUSE, so clear it here
-            # unconditionally rather than special-casing the kill path.
             try:
                 os.unlink(self.api_socket_path)
             except FileNotFoundError:
@@ -95,19 +91,12 @@ class RealFirecrackerProcessLauncher:
         self, unit_id: str, api_socket_path: str, run_dir: Path
     ) -> RealFirecrackerProcessHandle:
         run_dir.mkdir(parents=True, exist_ok=True)
-        # Stale socket from a prior crash blocks bind(); Firecracker
-        # itself refuses to start against an existing path.
         try:
             os.unlink(api_socket_path)
         except FileNotFoundError:
             pass
 
         if self.use_jailer:
-            # jailer re-execs firecracker inside a chroot under a cgroup
-            # it creates from --cgroup-version/--resource-limit args
-            # (RUNBOOK.md has the full genesis-run invocation); the
-            # bare-firecracker path below is what every non-jailer boot
-            # (including every test) actually runs.
             args = [
                 str(self.jailer_binary),
                 "--id",
@@ -159,7 +148,7 @@ def build_fake_firecracker_app() -> FastAPI:
 
     app = FastAPI()
     state: dict[str, Any] = {
-        "phase": "uninitialized",  # uninitialized -> configured -> running -> paused
+        "phase": "uninitialized",
         "boot_source": None,
         "drives": {},
         "network_interfaces": {},
@@ -247,9 +236,6 @@ def build_fake_firecracker_app() -> FastAPI:
 
     @app.put("/snapshot/create")
     async def put_snapshot_create(req: Request) -> dict[str, Any]:
-        # Real Firecracker requires Paused for snapshot/create; enforcing
-        # it here is what catches a vm_manager.py regression that snapshots
-        # a still-running unit.
         require_phase("paused")
         body = await req.json()
         snapshot_path = Path(body["snapshot_path"])
@@ -267,10 +253,6 @@ def build_fake_firecracker_app() -> FastAPI:
                 }
             )
         )
-        # The mem_file is where real Firecracker puts the actual guest
-        # memory pages; here it carries the fake's stand-in for "what the
-        # engine process inside the guest currently holds in memory" so
-        # the restore path has real content to prove it moved.
         mem_file_path.write_text(json.dumps(state["guest_state"]))
         return {}
 
@@ -290,7 +272,6 @@ def build_fake_firecracker_app() -> FastAPI:
         state["phase"] = "running" if body.get("resume_vm", True) else "paused"
         return {}
 
-    # --- test-only guest-state injection, not part of the Firecracker API ---
 
     @app.post("/_test/guest-state")
     async def test_set_guest_state(req: Request) -> dict[str, Any]:

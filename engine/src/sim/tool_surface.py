@@ -47,49 +47,15 @@ from typing import Any
 
 logger = logging.getLogger("kasukabe.sim.tool_surface")
 
-# Engine built-ins that describe something Kasukabe does not have. Each
-# entry is quoted from its own served description, so the reason a name is
-# on this list is checkable rather than remembered.
 NOT_A_RESIDENTS_TOOL: frozenset[str] = frozenset(
     {
-        # "Ask the user a question and wait for their answer." There is no
-        # user. A resident that waits is a resident that starves, and
-        # default_sim_ask_user_callback exists only to stop that hanging.
         "ask_user",
-        # "expand your operational scope beyond the current goals" - a
-        # resident has no goals but its own, and nobody to widen them.
         "request_replan",
-        # "request user approval, or request asset connections"
         "gap_resolution",
-        # "Report progress on a mission goal ... from your mission brief"
         "report_checkpoint",
-        # "what content is available in the task's content store" - there
-        # is no task and no store.
         "list_content",
         "search_content",
-        # "Some external tools are loaded as lightweight stubs" - the
-        # town's registry is served whole; there is nothing deferred.
         "tool_search",
-        # "Use when the USER asks to create, save, or build a skill/
-        # workflow. Gather requirements via ASK_USER first." Both halves
-        # are impossible here: there is no user, and `ask_user` is the
-        # first name on this list.
-        #
-        # Unlike the seven above, this one is not served today -
-        # `thread.py:1823` registers it only when `data_dir` is set and
-        # `pinned_boot.py` passes none. It is listed because that is
-        # exactly one keyword argument away, and ENG-06 ("no engine skill
-        # artifact has ever been produced or could be loaded") reads like
-        # an invitation to add it. It would be the wrong fix twice over:
-        # the town ALREADY has skill authoring - `skillify`, which files a
-        # SkillDefinition the world can price, discount, teach, revise and
-        # put before a council - and `create_skill` writes a folder on the
-        # engine's own disk that no part of Kasukabe reads. Two authoring
-        # verbs, one of them inert, is worse than one.
-        #
-        # Removing this name is therefore a decision, not a tidy-up.
-        # tests/test_sim_the_assistants_skill_authoring_stays_off.py fails
-        # the moment it is taken out.
         "create_skill",
     }
 )

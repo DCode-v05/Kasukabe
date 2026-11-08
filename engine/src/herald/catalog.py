@@ -22,9 +22,6 @@ from typing import Any
 from src.herald.defaults import MODEL_DEFAULTS
 
 
-# ── Model definitions ───────────────────────────────────────────────
-
-
 @dataclass(frozen=True)
 class ModelCost:
     input_per_1m: float
@@ -81,9 +78,6 @@ def list_models(provider: str | None = None) -> list[ModelDef]:
     return models
 
 
-# ── Tiers ───────────────────────────────────────────────────────────
-
-
 class ModelTier(str, Enum):
     HEAVY = "heavy"
     STANDARD = "standard"
@@ -91,8 +85,6 @@ class ModelTier(str, Enum):
     REASONING = "reasoning"
 
 
-# Derived from the herald launch block - edit src/herald/defaults.py, not
-# this mapping, when re-modeling an engine version.
 TIER_DEFAULTS: dict[ModelTier, str] = {
     ModelTier.HEAVY: MODEL_DEFAULTS.planner,
     ModelTier.STANDARD: MODEL_DEFAULTS.primary,
@@ -100,7 +92,6 @@ TIER_DEFAULTS: dict[ModelTier, str] = {
     ModelTier.REASONING: MODEL_DEFAULTS.reasoning,
 }
 
-# Maps tier → settings field name that can override the default
 TIER_SETTINGS_FIELD: dict[ModelTier, str] = {
     ModelTier.LIGHT: "light_model",
     ModelTier.HEAVY: "planner_model",
@@ -135,11 +126,6 @@ def resolve_model_for_tier(tier: ModelTier, settings: Any = None) -> ModelDef:
         if field:
             override = getattr(settings, field, "")
             if override:
-                # Overlay-aware: an override that citadel knows (even if it
-                # was never in any static data) is honored. Boot-time model
-                # validation already vetted it; an id the catalog cannot
-                # resolve right now falls through to tier resolution below
-                # rather than being silently dropped forever.
                 model = overlay_lookup(override)
                 if model is not None:
                     return model
@@ -158,9 +144,6 @@ def resolve_model_for_tier(tier: ModelTier, settings: Any = None) -> ModelDef:
         candidates.sort(key=cost_sort_key)
         return candidates[0]
 
-    # Empty catalog (pre-first-sync): still hand back the tier's default id
-    # so adapters can be built; citadel is the authority on whether the id
-    # actually serves. Conservative metadata, unknown cost.
     model_id = TIER_DEFAULTS[tier]
     return ModelDef(
         id=model_id,
@@ -183,9 +166,6 @@ def get_tier_for_model(model_id: str) -> ModelTier | None:
         return ModelTier(model.tier)
     except ValueError:
         return None
-
-
-# ── Cost estimation ─────────────────────────────────────────────────
 
 
 def estimate_cost(

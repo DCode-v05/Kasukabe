@@ -53,9 +53,6 @@ from typing import Any
 from world.evals.record import provenance, record_metric
 from world.tools.program import PROGRAM_MAX_CALLS
 
-# A hand-made call buys one act. This is the number P1 is measured
-# against, and it is a constant rather than a computed baseline because
-# it is arithmetic, not an observation: one decision, one dispatch.
 ACTS_PER_HAND_CALL = 1.0
 
 
@@ -63,11 +60,6 @@ def _rows(conn: sqlite3.Connection, sql: str, args: tuple = ()) -> list[tuple]:
     try:
         return list(conn.execute(sql, args))
     except sqlite3.Error:
-        # A run recorded before PROG-01 has no such column, and saying so
-        # is the honest answer. Returning [] and printing "0 programs"
-        # would report a feature as unused when what happened is that the
-        # run predates it - the same confusion "a gate that has never been
-        # sampled is not a gate that failed" exists to name.
         return []
 
 
@@ -113,7 +105,6 @@ def read(conn: sqlite3.Connection) -> Programs:
     )
     for program_id, agent_id, total in grouped:
         out.programs += 1
-        # The wrapper is step 0 and is the decision, not an act.
         acts = max(int(total) - 1, 0)
         out.acts += acts
         out.per_program.append(acts)
@@ -132,12 +123,6 @@ def read(conn: sqlite3.Connection) -> Programs:
         if reason:
             out.stopped_early[reason] = out.stopped_early.get(reason, 0) + 1
 
-    # Read from the filing event rather than re-parsed out of the stored
-    # composition. `world/tools/program.py:has_control_flow` decides what
-    # counts, `toolify` stamps it at filing, and this reads the stamp -
-    # so there is one answer to "is this a program" rather than two that
-    # can drift. Re-deciding it here is the shape that put `business_id`
-    # in the price table's reader and `holder_id` in the world's payload.
     for (payload,) in _rows(
         conn, "select payload from events where type = 'agent.tool.invented'"
     ):
@@ -157,11 +142,6 @@ def read(conn: sqlite3.Connection) -> Programs:
     ):
         if agent_id in out.residents:
             out.sim_of_program_writers.append(int(sim or 0))
-            # The audit's own sentence, made checkable: a resident that
-            # cannot act after a program is the failure the ceiling is
-            # for. Dormancy is the USD wallet rather than this one, so
-            # both are read - a resident at zero sim has been emptied
-            # whichever wallet ran out first.
             if int(sim or 0) <= 0 or int(dormant or 0):
                 out.broke_someone.append(agent_id)
         else:
@@ -222,12 +202,6 @@ def main(path: str, db_out: str | None = None) -> int:
 
     biggest = max(found.per_program) if found.per_program else 0
     print(f"\n{'REPORTED, NOT BARRED':<44}{'VALUE'}")
-    # "undefined", not "0.00", when nobody ran one. A ratio with no
-    # denominator printed as zero reads as "programs bought nothing",
-    # which is the opposite of what happened, and it would sit in the
-    # table two lines under prose saying the number is undefined - the
-    # same disagreement between the words and the figure that this file
-    # exists downstream of.
     headline = (
         f"{found.acts_per_decision:.2f}" if found.programs else "undefined"
     )

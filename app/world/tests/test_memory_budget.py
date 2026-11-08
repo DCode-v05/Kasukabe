@@ -9,12 +9,12 @@ import world.memory_budget as mb
 
 
 def test_a_run_that_fits_is_allowed():
-    v = mb.check(4, mb_per_engine=10)          # 40 MB, trivially affordable
+    v = mb.check(4, mb_per_engine=10)
     assert v.fits is True
 
 
 def test_a_run_that_does_not_fit_is_refused():
-    v = mb.check(100_000, mb_per_engine=1000)  # 100 TB
+    v = mb.check(100_000, mb_per_engine=1000)
     assert v.fits is False
 
 
@@ -50,7 +50,7 @@ def test_both_backend_costs_are_measured_figures():
     interpreter and imports are paid again every time), 2.81 MB for one
     namespaced into a shared process. Both constants carry headroom over what
     was observed; neither may drop below it."""
-    assert mb.MB_PER_ENGINE_PROCESS >= 48  # measured from a running town
+    assert mb.MB_PER_ENGINE_PROCESS >= 48
     assert mb.MB_PER_ENGINE_NAMESPACE >= 3
 
 
@@ -83,15 +83,6 @@ def test_at_least_one_engine_is_always_affordable():
     v = mb.check(1, mb_per_engine=10 ** 9)
     assert v.affordable >= 1
 
-
-# ── the constant cannot be right everywhere ─────────────────────────────
-#
-# The same code measures ~550 MB per engine under load on Linux (/proc
-# VmRSS, in a container) and 39 MB on macOS (ps RSS, 30 engines at game-day
-# 4). Not a disagreement about the engine - about page sharing between
-# thirty children of one parent. Budget for Linux and preflight refuses a
-# run macOS handles in 1.2 GB; budget for macOS and it exhausts a Linux box
-# in hour three. So the check measures, and the constant is the fallback.
 
 def test_a_measured_figure_overrides_the_constant():
     from world.memory_budget import MB_PER_ENGINE_PROCESS, check
@@ -134,7 +125,7 @@ def test_the_measurement_counts_engines_not_every_python():
 
     seen, mean = memory_budget.engines_from_ps_output(fake)
     assert seen == 2, "the uvicorn process and the grep must not be counted"
-    assert mean == 45  # (51200 + 40960) / 2 / 1024
+    assert mean == 45
 
 
 def test_ps_output_with_no_engines_in_it_is_not_a_measurement():

@@ -80,7 +80,6 @@ async def test_move_out_alone_forms_a_single_person_household(guardianship):
     assert outcome.household.member_ids == ["kid"]
     assert outcome.household.formed_at_hours == AT.total_hours
     assert outcome.agent.household_id == "hh-kid"
-    # and the family they left is one member shorter, not untouched
     assert outcome.childhood_household is not None
     assert set(outcome.childhood_household.member_ids) == {"mum", "dad"}
     formed = [e for e in outcome.events if e.type == "agent.household.formed"]
@@ -112,7 +111,6 @@ async def test_pair_off_marries_and_charges_the_temple(guardianship, economy):
     assert set(outcome.household.member_ids) == {"kid", "neighbour-kid"}
     assert economy.sim_balances["kid"] == 0
     assert outcome.marriage_record is not None
-    # the childhood household lost them, and nothing followed them across
     assert outcome.childhood_household is not None
     assert "kid" not in outcome.childhood_household.member_ids
     formed = [e for e in outcome.events if e.type == "agent.household.formed"]
@@ -131,7 +129,6 @@ async def test_a_minor_cannot_come_of_age(guardianship):
             new_household_id="hh-kid",
         )
     assert "under the 18-year threshold" in str(exc.value)
-    # nothing was billed, because validation runs before the port call
     assert guardianship.ended == []
 
 
@@ -167,6 +164,5 @@ def test_leave_household_is_total():
     assert leave_household(None, "kid") is None
     emptied = leave_household(family("kid"), "kid")
     assert emptied is not None and emptied.member_ids == []
-    # leaving a household you were never in is a no-op, not an error
     intact = leave_household(family("mum", "dad"), "kid")
     assert intact is not None and intact.member_ids == ["mum", "dad"]

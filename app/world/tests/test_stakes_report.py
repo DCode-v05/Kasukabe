@@ -26,22 +26,13 @@ def ev(type_: str, tick: int = 0, **payload):
     return {"type": type_, "tick": tick, "payload": payload}
 
 
-# ── the task label (section 4) ────────────────────────────────────────
-
-
 def test_the_label_follows_the_specs_own_order():
-    # 1. A continuing action wins over everything.
     assert task_label(["say"], continuing_tool="harvest") == "harvest"
-    # 2. Then an intention naming a tool.
     assert task_label(["say"], intention_tool="sell") == "sell"
-    # 3. Then the first labour or trade tool called.
     assert task_label(["look_around", "say", "harvest", "buy"]) == "harvest"
     assert task_label(["look_around", "buy"]) == "buy"
-    # 4. Then talk, when nothing but speech happened.
     assert task_label(["say", "start_conversation"]) == "talk"
-    # 5. Then look.
     assert task_label(["look_around", "find_people"]) == "look"
-    # 6. Then idle.
     assert task_label([]) == "idle"
 
 
@@ -60,9 +51,6 @@ def test_the_label_is_never_a_model_output():
     source = inspect.getsource(task_label)
     for smell in ("generate", "adapter", "llm", "prompt"):
         assert smell not in source.lower()
-
-
-# ── prices (E1 to E3) ─────────────────────────────────────────────────
 
 
 def test_the_first_posted_price_is_a_tick_not_a_fixture():
@@ -119,9 +107,6 @@ def test_a_town_that_traded_nothing_has_no_share_rather_than_zero():
     assert prices([]).posted_share is None
 
 
-# ── stakes (S2 to S4) ─────────────────────────────────────────────────
-
-
 def test_energy_purchases_are_counted_by_resident_not_by_call():
     """S2 asks how many RESIDENTS reach buy_energy by day 3. One resident
     buying four times is one resident."""
@@ -161,9 +146,6 @@ def test_dormancies_are_counted_and_named():
     assert report.dormant_agents == {"n03", "n14"}
 
 
-# ── wages (S6, S7) ────────────────────────────────────────────────────
-
-
 def test_the_wage_gap_is_promised_against_paid():
     """S6. Charness & Dufwenberg 2006: a bare promise raises follow-through
     to a majority, which is what this number is placed beside."""
@@ -198,9 +180,6 @@ def test_the_worst_overdue_day_per_employee_is_kept():
     assert report.overdue_days_by_employee == {"n14": 4}
 
 
-# ── time (T2 to T4) ───────────────────────────────────────────────────
-
-
 def test_wake_reasons_are_grouped():
     """T3. Which interruption actually ends a resident's working day is a
     fact about the town, not about the verb."""
@@ -233,9 +212,6 @@ def test_a_town_that_set_no_intentions_has_no_ratio():
     assert time_spent([]).fulfilled_share is None
 
 
-# ── diffusion (C4) ────────────────────────────────────────────────────
-
-
 def test_the_widest_reach_counts_hands_not_events():
     """The roadmap's T5 gate is "a tool held by three residents". Before
     conveyance existed this was 1 by construction rather than as a finding
@@ -257,9 +233,6 @@ def test_the_widest_reach_counts_hands_not_events():
 
 def test_a_town_that_conveyed_nothing_reaches_nobody():
     assert diffusion([]).widest_reach == 0
-
-
-# ── learning (C1) ─────────────────────────────────────────────────────
 
 
 def test_a_pair_with_too_few_turns_is_not_compared():
@@ -301,9 +274,6 @@ def test_a_pair_that_got_dearer_is_compared_and_not_counted():
     fell, compared = learning(calls).falling_pairs()
 
     assert (fell, compared) == (0, 1)
-
-
-# ── the label, joined from the trace rather than written at call time ──
 
 
 def test_a_call_is_labelled_from_the_turn_it_belonged_to():
@@ -361,9 +331,6 @@ def test_labelling_never_drops_or_reorders_a_call():
 
     assert len(labelled) == 20
     assert [row["input_tokens"] for row in labelled] == list(range(20))
-
-
-# ── C4 was blind to the only diffusion this project has ever had ──────
 
 
 def test_a_skill_taught_is_diffusion() -> None:

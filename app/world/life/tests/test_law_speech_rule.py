@@ -73,26 +73,6 @@ def test_the_law_does_not_tell_anyone_what_to_say() -> None:
         assert strategy not in rules
 
 
-# The cap is a budget, not a number. It exists to force the question
-# "is this worth the tokens" every time somebody wants to add a rule -
-# and the answer has to be measured, not asserted.
-#
-# Raised 9 -> 11 on 2026-09-09 for LIFE-01 and LIFE-02. The measurement:
-#
-#   9 rules   2,844 chars  ~711 tokens
-#  11 rules   3,454 chars  ~863 tokens
-#   added       610 chars  ~152 tokens
-#
-# 152 tokens x 3,741 turns (run deni-a6f9eb4-5h) = 568,632 tokens, which
-# at kimi-k2.5's $0.36/1M input is **$0.20 across a whole five-hour
-# run** - 0.7% of that run's $27.78, and that is the WORST case with no
-# prompt-cache hit at all (see ENG-27 on why cache hits cannot be
-# assumed).
-#
-# What the 0.7% buys: the nine rules it joins are every one of them a
-# cost or a death, so a resident learned exactly how it dies and nothing
-# about what the town contains. 89% of that run's turns ended with no
-# act. Worth twenty cents to find out whether that is why.
 MAX_LAW_RULES = 11
 
 

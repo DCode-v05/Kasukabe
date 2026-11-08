@@ -50,7 +50,6 @@ def test_exactly_27_types():
 
 
 def test_gate_buckets_partition_cleanly():
-    # No type appears in two telemetry buckets, and ALWAYS is disjoint from them.
     assert ALWAYS.isdisjoint(TELEMETRY_TRACE)
     assert ALWAYS.isdisjoint(TELEMETRY_FULL)
     assert TELEMETRY_TRACE.isdisjoint(TELEMETRY_FULL)
@@ -77,14 +76,12 @@ def test_text_folds_to_text_block_with_thread_from_thread_id():
     assert b.type == "text"
     assert b.thread_id == "thread-9"
     assert b.payload["text"] == "hello"
-    assert "thread_id" not in b.payload  # relifted into the envelope
+    assert "thread_id" not in b.payload
 
 
 def test_tool_phases_share_one_id():
     s = BlockSerializer("r1")
     call = s.fold(ToolExecution(thread_id="t", tool_name="bash", source="platform", phase="call"))
-    # ToolExecution carries no tool_use_id field today → falls back to turn id;
-    # both phases still collapse to the same tool block id for one turn.
     result = s.fold(
         ToolExecution(thread_id="t", tool_name="bash", source="platform", phase="result")
     )
@@ -96,7 +93,7 @@ def test_tool_use_summary_folds_to_tool_phase_summary():
     s = BlockSerializer("r1")
     b = s.fold(ToolUseSummary(thread_id="t", summary="ran tests", tool_use_ids=["tu_1", "tu_2"]))
     assert b.type == "tool"
-    assert b.id == "tool:tu_1"  # keyed on first tool_use_id
+    assert b.id == "tool:tu_1"
 
 
 def test_craft_request_folds_to_craft():
@@ -121,10 +118,10 @@ def test_craft_authored_folds_to_craft_with_minted_id_and_axes():
         )
     )
     assert b.type == "craft"
-    assert b.thread_id == "thread-9"  # thread_id relifted into the envelope
-    assert b.id == "craft:thread-9:1"  # parser-minted per-craft id is kept
+    assert b.thread_id == "thread-9"
+    assert b.id == "craft:thread-9:1"
     assert b.payload["surface"] == "panel" and b.payload["format"] == "react"
-    assert b.payload["wait"] is False  # read by fan_block to gate awaiting
+    assert b.payload["wait"] is False
     assert "thread_id" not in b.payload
 
 
@@ -181,7 +178,6 @@ def test_compaction_kind_discriminator_keeps_distinct_ids():
         "microcompact",
         "cb_skip",
     }
-    # distinct kinds → distinct ids → one never overwrites another in a turn
     assert len({a.id, b.id, c.id}) == 3
 
 
@@ -203,7 +199,7 @@ def test_file_phase_discriminator():
     assert ok.type == bad.type == "file"
     assert ok.payload["phase"] == "restored"
     assert bad.payload["phase"] == "failed"
-    assert ok.id == bad.id == "file:/a"  # same path → same block
+    assert ok.id == bad.id == "file:/a"
 
 
 def test_trace_audit_folds():
@@ -264,7 +260,6 @@ def test_trace_audit_folds():
 
 def test_dropped_events_do_not_cross_the_wire():
     s = BlockSerializer("r1")
-    # IncrementalFlush is internal-only (LC bookkeeping) — never crosses the wire.
     assert s.fold(IncrementalFlush(thread_id="t", slice_number=1, entries_flushed=1)) is None
 
 

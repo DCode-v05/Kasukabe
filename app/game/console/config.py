@@ -74,11 +74,6 @@ def read_env_file(env_path: Path | None = None) -> dict[str, str]:
 
 @dataclass
 class ConsoleSettings:
-    # -- Auth (DESIGN.md section 8: "Admin API must be auth-gated (single
-    # operator token)") - the same token gates this app's own /api/*
-    # routes AND is forwarded to world's admin API, see auth.py. Falls
-    # back to a fresh random token per process when OPERATOR_TOKEN is
-    # unset - see module docstring.
     operator_token: str = field(default_factory=lambda: secrets.token_urlsafe(32))
     operator_token_was_generated: bool = False
     """True only when OPERATOR_TOKEN was absent from the environment and
@@ -86,13 +81,9 @@ class ConsoleSettings:
     warning with the generated token in that case, so it is discoverable
     without grepping source. Never itself read for auth decisions."""
 
-    # -- World admin API (world_client.py's WorldAdminClient target -
-    # see README.md's "Open integration point" for the exact contract
-    # this base URL is expected to serve under /admin).
     world_base_url: str = "http://localhost:8100"
     world_http_timeout_s: float = 10.0
 
-    # -- This service's own bind address (`make run-console`).
     host: str = "0.0.0.0"
     port: int = 8300
 

@@ -55,8 +55,6 @@ def _service(**overrides):
     return service
 
 
-# -- the default: nothing changes ----------------------------------------
-
 def test_off_by_default() -> None:
     """Every run to date was made with no reasoning requested. A default
     that changed that would make run 24 incomparable with run 23 for a
@@ -68,8 +66,6 @@ def test_with_the_knob_off_nothing_is_injected() -> None:
     service = _service()
     assert service.thinking_for(_Req(), "auto:agent_turn") is None
 
-
-# -- the knob on ----------------------------------------------------------
 
 def test_with_the_knob_on_a_turn_asks_for_reasoning() -> None:
     service = _service(request_reasoning=True)
@@ -90,8 +86,6 @@ def test_the_budget_is_configurable() -> None:
     assert service.thinking_for(_Req(), "auto:agent_turn")["budget_tokens"] == 512
 
 
-# -- the caller always wins ----------------------------------------------
-
 def test_an_explicit_request_is_not_overruled() -> None:
     """A client that asked for a specific budget is not given the
     operator's."""
@@ -108,8 +102,6 @@ def test_an_explicit_disable_is_not_quietly_re_enabled() -> None:
     disabled = {"type": "disabled"}
     assert service.thinking_for(_Req({"thinking": disabled}), "auto:agent_turn") == disabled
 
-
-# -- it reaches the wire --------------------------------------------------
 
 def test_what_is_injected_survives_translation() -> None:
     """The knob is worth nothing if `reasoning_config_from_thinking` drops
@@ -149,8 +141,6 @@ def test_the_dispatch_path_calls_it() -> None:
         "does nothing whatever it is set to"
     )
 
-
-# -- the environment variable the review names ---------------------------
 
 def test_the_env_var_is_the_one_the_review_names() -> None:
     settings, errors = BrokerSettings.build_from_env(

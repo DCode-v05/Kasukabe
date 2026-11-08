@@ -43,11 +43,6 @@ import statistics
 from dataclasses import dataclass, field
 from typing import Any, Callable, Iterable, Sequence
 
-# Age bands, matching section 2.1's own structure rather than inventing a
-# second set of cutoffs: minor / working-age / elderly are the three the
-# town's own mechanics already treat differently (schooling, wages,
-# pensions), so they are the bands an outcome difference has to be read
-# against.
 AGE_BANDS: tuple[tuple[str, float, float], ...] = (
     ("minor", 0.0, 18.0),
     ("young adult", 18.0, 30.0),
@@ -56,16 +51,9 @@ AGE_BANDS: tuple[tuple[str, float, float], ...] = (
     ("elderly", 70.0, 999.0),
 )
 
-# Slices the town's OWN RULES are expected to separate. A disparity here is
-# the design working, not a finding - see the module docstring.
 MECHANICALLY_EXPECTED = frozenset({"age_band", "is_dependent", "household_shape"})
 
-# How far apart two slices' outcomes have to be before it is worth a human
-# looking. Expressed as a ratio of the richer slice to the poorer, so it is
-# scale-free: 1.5 means "half as much again".
 DISPARITY_THRESHOLD = 1.5
-# Below this many members a slice's mean is noise. The papers' own bias
-# checks rest on large samples; a slice of two is not evidence of anything.
 MIN_SLICE_SIZE = 5
 
 
@@ -116,7 +104,6 @@ class Person:
     alive: bool = True
     is_dependent: bool = False
     household_shape: str = "unknown"
-    # Anything else worth slicing on later without changing this class.
     extra: dict[str, Any] = field(default_factory=dict)
 
     def slice_value(self, dimension: str, all_balances: Sequence[int]) -> str:
@@ -242,9 +229,6 @@ def bias_report(
             continue
         best = max(usable, key=lambda s: s.mean_balance)
         worst = min(usable, key=lambda s: s.mean_balance)
-        # A worst-mean of zero would divide by zero; treat it as the largest
-        # disparity there is rather than skipping the row, because "one
-        # slice has nothing" is precisely the finding worth surfacing.
         ratio = (
             float("inf") if worst.mean_balance <= 0
             else round(best.mean_balance / worst.mean_balance, 3)

@@ -54,13 +54,6 @@ from world.map.tiled_json import (
     set_layer,
 )
 
-# Matches world.core.events.EventBus.emit(event_type, tick, payload)'s
-# exact signature (event_type: str, tick: int, payload: dict[str, Any])
-# -> None, so `MapService(..., event_sink=event_bus.emit)` wires in with
-# no adapter, the same seam ledger/core.py's narrower EventSink uses for
-# its own LedgerEvent. Kept as a bare Callable here (not importing
-# WorldEvent) so this package has no import-time dependency on
-# world.core - see module docstring.
 EventSink = Callable[[str, int, dict[str, Any]], Awaitable[None]]
 
 
@@ -160,30 +153,17 @@ class MapService:
         resource zones already minted - the one call a world process
         makes at startup to get a ready-to-use map service.
         """
-        # GROW-21: the same builder `build_kasukabe_genesis_map` uses.
-        #
-        # These eleven lines used to be a step-for-step copy of it, so
-        # "load, mint, join, build, classify" lived in two places and a fix
-        # to one would silently leave the other behind. The corridor step is
-        # the one that already mattered: without it the Ville map and the
-        # genesis strip are 17 disconnected walkable regions, and 107 `move`
-        # calls in one run answered "no walkable route".
         from world.map.genesis import build_kasukabe_genesis_parts
 
         tiled, blocks, world, zone_ids = build_kasukabe_genesis_parts(
             ville_dir, strip_depth=strip_depth
         )
-        # `tiled` and `blocks` are kept, not discarded: `expand_land` needs
-        # every id minted so far to keep growing the SAME map (see this
-        # class's own docstring), which is the one thing this caller wants
-        # that `build_kasukabe_genesis_map` throws away.
         return cls(world, tiled, blocks, event_sink=event_sink), zone_ids
 
     async def emit(self, event_type: str, tick: int, payload: dict[str, Any]) -> None:
         if self.event_sink is not None:
             await self.event_sink(event_type, tick, payload)
 
-    # -- land growth --------------------------------------------------------
 
     async def expand_land(
         self,
@@ -214,17 +194,6 @@ class MapService:
             new_sector_name=new_sector_name,
             arena_names=arena_names,
         )
-        # GROW-13: join the new strip to the town before adopting it.
-        #
-        # `approve_land_petition` carves a sector into the Tiled JSON and
-        # stops. `open_walkable_corridors` had only ever run at genesis, so
-        # every strip the town grew was an island - and that function was
-        # written precisely because a map of disconnected regions is a town
-        # whose residents cannot reach their own workplaces.
-        #
-        # Cut into the TILES before the map is rebuilt, because
-        # `build_world_map_from_tiled` is what turns tiles into the graph
-        # `move` paths over. Rebuilt only when something was actually cut.
         opened = open_walkable_corridors(tiled)
         if opened:
             world = build_world_map_from_tiled(tiled, blocks)
@@ -239,7 +208,6 @@ class MapService:
         await self.emit("world.land.expanded", tick, expansion.model_dump(mode="json"))
         return expansion
 
-    # -- buildings --------------------------------------------------------
 
     async def stamp_building(
         self,
@@ -328,12 +296,6 @@ class MapService:
                 "owner": owner,
                 "purpose": purpose,
                 "tiles": len(footprint),
-                # UI-33. `tiles` is a COUNT, and a count cannot be drawn.
-                # The review's conclusion - whichever of its three options
-                # is taken - is that "`world.building.*` events must carry
-                # {rect, sector_name, kind, status}", because a viewer that
-                # learns a building exists and not WHERE has learned
-                # nothing it can put on a map.
                 "rect": rect,
                 "kind": purpose,
                 "status": "mapped",
@@ -341,7 +303,6 @@ class MapService:
         )
         return sector_id
 
-    # -- plots ----------------------------------------------------------------
 
     async def claim_plot(self, plot: Plot, tick: int) -> None:
         self.plots.register(plot)
@@ -361,7 +322,6 @@ class MapService:
         await self.emit("world.plot.released", tick, {"plot_id": plot_id})
         return plot
 
-    # -- Checkpointable (world/core/checkpoint.py's structural protocol) ------
 
     def snapshot(self) -> dict[str, Any]:
         """Everything needed to reconstruct this service exactly:

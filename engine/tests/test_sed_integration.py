@@ -90,10 +90,8 @@ class TestSedValidatorEndToEnd:
             assert perm.sed_edit_info.file_path == "edit.txt"
             assert perm.sed_edit_info.pattern == "foo"
             assert perm.sed_edit_info.flags == "g"
-            # Now actually run the edit through the sandbox executor.
             result = await ex.run_bash("sed -i 's/foo/bar/g' edit.txt")
             assert result.ok is True, f"executor failed: {result.stderr}"
-            # Read the file back and verify the physical change.
             after = await ex.read_file("edit.txt")
             assert after.ok is True
             assert "bar one" in after.stdout

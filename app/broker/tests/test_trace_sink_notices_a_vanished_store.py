@@ -44,8 +44,6 @@ from pathlib import Path
 
 import pytest
 
-# The set-up step, not the assertion, is what Windows refuses. See the
-# module docstring: the incident is impossible there.
 needs_unlink_of_an_open_file = pytest.mark.skipif(
     sys.platform == "win32",
     reason=(
@@ -54,9 +52,6 @@ needs_unlink_of_an_open_file = pytest.mark.skipif(
     ),
 )
 
-# After the skip marker deliberately: on Windows these modules open a
-# SQLite file this test then tries to unlink, so the import itself is part
-# of what the marker above is skipping.
 from broker.trace import BatchWriter, SqliteTraceSink  # noqa: E402
 from supabase.config import SupabaseConfig  # noqa: E402
 from supabase.sqlite_client import SqliteClient  # noqa: E402
@@ -138,7 +133,7 @@ async def test_a_store_replaced_by_a_different_file_is_also_caught(
     await sink.write_batch([_call(1)])
 
     path.unlink()
-    replacement = SqliteClient(SupabaseConfig(sqlite_path=str(path)))  # recreates it
+    replacement = SqliteClient(SupabaseConfig(sqlite_path=str(path)))
     assert path.exists()
 
     with pytest.raises(Exception):

@@ -49,7 +49,6 @@ async def test_pause_routes_awaiting_then_resume_continues(monkeypatch):
 
     tid = "thr_await"
 
-    # Stream 1: the initial turn's stream, bound to the thread, craft gate on.
     q1: asyncio.Queue = asyncio.Queue()
     server.active_streams[object()] = server.StreamReg(
         queue=q1,
@@ -57,7 +56,6 @@ async def test_pause_routes_awaiting_then_resume_continues(monkeypatch):
         gates=Gates(craft=True),
     )
 
-    # The turn: emit a text block, then park on a waiting craft.
     current_thread_id_var.set(tid)
     await emitter.emit(TextDelta(thread_id=tid, text="working"))
     pause = asyncio.create_task(
@@ -69,8 +67,6 @@ async def test_pause_routes_awaiting_then_resume_continues(monkeypatch):
             }
         )
     )
-    # await_block_input registers the waiter THEN emits the craft; wait until
-    # the await-sentinel has reached this stream (proves the full pause path).
     drained = []
     for _ in range(20):
         await asyncio.sleep(0)
@@ -81,15 +77,11 @@ async def test_pause_routes_awaiting_then_resume_continues(monkeypatch):
     assert coord.pending_inputs, "turn must be parked with a registered waiter"
     block_id = next(iter(coord.pending_inputs))
 
-    # Stream 1 saw: text, the craft block, then the AWAIT_SENTINEL → it would
-    # flush done.status="awaiting" and close (that logic is in stream; here we
-    # assert the sentinel was enqueued and the turn is still parked).
     assert any(isinstance(x, str) and '"type": "text"' in x for x in drained)
     assert any(isinstance(x, str) and '"type": "craft"' in x for x in drained)
     assert any(isinstance(x, tuple) and x[0] == server.AWAIT_SENTINEL for x in drained)
     assert not pause.done(), "turn must stay parked, not orphaned/cancelled"
 
-    # Stream 2: the block_input's NEW stream for the same thread.
     q2: asyncio.Queue = asyncio.Queue()
     server.active_streams[object()] = server.StreamReg(
         queue=q2,
@@ -97,14 +89,12 @@ async def test_pause_routes_awaiting_then_resume_continues(monkeypatch):
         gates=Gates(craft=True),
     )
 
-    # Resume lock-free; the parked turn wakes with the answer.
     owner, resumed = await coord.resume_block(tid, block_id, value="yes", text="")
     assert owner == tid
     assert resumed is True
     reply = await pause
     assert reply == "yes"
 
-    # The turn's continuation completes — its terminal done routes to stream 2.
     server.fan_block(make_done_block("rid2", {"status": "completed"}, tid))
     got = []
     while not q2.empty():
@@ -114,7 +104,6 @@ async def test_pause_routes_awaiting_then_resume_continues(monkeypatch):
     assert blks[-1]["payload"]["status"] == "completed"
     assert blks[-1]["thread_id"] == tid
 
-    # Cleanup so the global doesn't leak into other tests.
     server.active_streams.clear()
 
 
@@ -139,6 +128,6 @@ async def test_block_only_routes_to_its_own_thread(monkeypatch):
     while not qb.empty():
         b_items.append(qb.get_nowait())
     assert any('"type": "text"' in x for x in a_items if isinstance(x, str))
-    assert b_items == []  # thread B's stream saw nothing
+    assert b_items == []
 
     server.active_streams.clear()

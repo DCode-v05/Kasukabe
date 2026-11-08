@@ -27,36 +27,18 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Mapping, Sequence
 
-# ── P1: the machinery of an assistant, in a resident's turn ───────────
-#
-# Each pattern is quoted from something that actually appeared, or from
-# the engine surface it would come from, so a reader can check why a name
-# is on this list rather than take it on trust.
 ORCHESTRATION_PATTERNS: tuple[tuple[str, str], ...] = (
-    # The reminder measured in 61 of 240 sampled rows.
     (r"\brequest_plan\b", "the request_plan reminder"),
     (r"\brequest_replan\b", "request_replan, called four times across three runs"),
-    # Sub-agent charters: the fan-out this sim structurally forbids.
     (r"\bsub[- ]?agent\b", "a sub-agent"),
     (r"\bspawn_sub_agent\b", "spawn_sub_agent"),
     (r"\bmission brief\b", "a mission brief"),
     (r"\breport_checkpoint\b", "report_checkpoint"),
-    # A town has residents, not NPCs. The word appearing at all means the
-    # resident has been told, or has decided, that somebody here is not a
-    # person.
     (r"\bNPC\b", "the word NPC"),
-    # Orchestration JSON in the prose: a turn that emits a plan object
-    # rather than doing something.
     (r'"tool_calls"\s*:', "a tool_calls JSON block"),
     (r'"subtasks"\s*:', "a subtasks JSON block"),
 )
 
-# ── P2: the resident calling itself the wrong kind of thing ───────────
-#
-# FIRST PERSON only. "The user asked me" is the leak; "Marta asked the
-# grocer for a user manual" is a sentence about the world. The old draft
-# of this matched the bare words and would have flagged any resident who
-# said "engine" about a mill.
 FIRST_PERSON_LEAKS: tuple[tuple[str, str], ...] = (
     (r"\b(?:I|I'm|I am|my|me)\b[^.!?]{0,40}\b(?:the )?user\b", "calls somebody 'the user'"),
     (r"\bthe user\b[^.!?]{0,40}\b(?:asked|told|wants|said) me\b", "takes an order from 'the user'"),
@@ -103,8 +85,6 @@ def _hits(text: str, patterns: Sequence[tuple[str, str]]) -> list[tuple[str, str
     for pattern, why in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
-            # The sentence around it, so the report shows the leak in
-            # context rather than the regex that caught it.
             start = max(0, match.start() - 60)
             found.append((why, text[start:match.end() + 60].replace("\n", " ").strip()))
     return found
@@ -128,8 +108,6 @@ def scan_turns(turns: Iterable[Mapping[str, Any]]) -> CharacterReport:
             report.first_person.append({**where, "why": why, "quote": quote})
     return report
 
-
-# ── P3: asked your name, do you say it ────────────────────────────────
 
 NAME_QUESTION = re.compile(
     r"(?:what(?:'s| is) your name|who are you|what do (?:they|people) call you|"

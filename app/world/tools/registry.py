@@ -110,17 +110,9 @@ class ActorRequirements:
     require_not_dormant: bool = True
     require_government_seat: bool = False
     required_license_types: frozenset[str] = frozenset()
-    # Part D. Set on `move` and nothing else: an arrest that leaves the
-    # accused free to walk out is a word, not an arrest. Everything else a
-    # confined resident can still do - above all `say`, because pleading,
-    # arguing and being argued with is the whole of what a cell is for.
     require_not_confined: bool = False
 
 
-# A location gate is either a fixed location_id, `None` (no gate - callable
-# from anywhere), or a resolver that computes the required location_id
-# from the tool's own validated params (e.g. craft's required arena
-# depends on which recipe was requested; buy's depends on which business).
 LocationResolver = Callable[[WorldState, BaseModel], "str | None"]
 LocationGate = str | LocationResolver | None
 
@@ -155,15 +147,7 @@ class ToolSpec:
     namespace: ToolNamespace = ToolNamespace.PUBLIC
     location_gate: LocationGate = None
     actor_requirements: ActorRequirements = field(default_factory=ActorRequirements)
-    # For BUSINESS tools: the business_id whose owner/employees may call
-    # it. For ORGANIZATION tools: the org_id whose members may call it.
-    # Unused (None) for PUBLIC/GOVERNMENT.
     owner_id: str | None = None
-    # True for the ~20 built-in tools bootstrap.py registers before
-    # define_tool exists; False for anything define_tool later registers.
-    # This is exactly the whitelist meta.py's define_tool validates
-    # composition steps against (DESIGN.md: "compositions of existing
-    # primitives ONLY") - see ToolRegistry.primitive_names.
     is_primitive: bool = True
 
 
@@ -175,19 +159,6 @@ class ToolResult:
     events: list[WorldEvent]
 
 
-# CORE-22. One JSON schema per params model, for the life of the process.
-#
-# `tool_registry_rows` called `spec.params_model.model_json_schema()` for
-# every tool on every request. With KASUKABE_LOCAL_TOOL_SCHEMAS on (the
-# default) each engine re-GETs the registry every tick with `force=True`,
-# so at 250 residents on a 0.3 cadence that is ~83 requests a tick, each
-# rebuilding ~82 pydantic schemas: about 6,800 schema builds per tick, on
-# the world event loop, to produce bytes that are identical every time.
-#
-# A params model is a class defined at import; its JSON schema cannot
-# change while the process runs. Keyed on the class itself so an invented
-# tool (`toolify` builds a fresh model per definition) gets its own entry
-# and is not confused with another tool of the same name.
 _SCHEMA_CACHE: "dict[type, dict[str, Any]]" = {}
 
 
@@ -218,17 +189,9 @@ def json_schema_for(params_model: type) -> "dict[str, Any]":
     if cached is None:
         cached = _without_class_docstrings(params_model.model_json_schema())
         _SCHEMA_CACHE[params_model] = cached
-    # Copied on the way out: callers hand these dicts to FastAPI and to
-    # the engine, and one mutation of a shared dict would poison every
-    # later reader. The copy is shallow because a JSON schema is a tree of
-    # plain data that nothing here edits in place.
     return dict(cached)
 
 
-# Tools a resident is OFFERED only while it is in a conversation. The
-# operator's rule, 2026-09-21: "the buy tool will only be enabled after the
-# participants of the buy process exist in a conversation - single or group
-# conversations are equally applicable."
 CONVERSATION_ENABLED_TOOLS = frozenset({"buy"})
 
 
@@ -251,10 +214,6 @@ def _offered_now(spec: "ToolSpec", world: WorldState, agent_id: str) -> bool:
     return bool(world.conversation_partners(agent_id))
 
 
-# How a place that depends on the call is written as data. A tool whose
-# location gate is a FUNCTION (the place is wherever the thing you name is)
-# cannot be put into JSON as-is, and a refusal carrying one crashed the route
-# into "Internal Server Error" (50-resident run, `do_in_order`).
 WHEREVER_IT_IS = "wherever the thing you name is"
 
 
@@ -322,32 +281,6 @@ def tool_registry_rows(
 
     here = world.location_of(for_agent_id)
 
-    # ENG-03. A budget, not just a gate.
-    #
-    # "Usable here" alone reduced almost nothing: most tools carry no fixed
-    # location gate, so they are usable everywhere and every one of the 82
-    # came back with a full schema - measured, 59,310 chars against 50,389,
-    # a 16% saving and ZERO index lines. Meanwhile the schemas are two
-    # thirds of every turn's input bill (run 23: 15-20K input per turn, of
-    # which ~14K is this payload).
-    #
-    # So the rule is now "the tools that matter HERE, up to a budget", in
-    # this order:
-    #
-    #   1. tools gated to this exact place - the reason to be standing here;
-    #   2. the verbs a resident always needs (ALWAYS_IN_FULL below);
-    #   3. whatever else fits, stably ordered so the payload is identical
-    #      for two residents in the same place - which keeps the prompt
-    #      prefix cacheable.
-    #
-    # Everything else is a one-line index entry, and `describe_primitives`
-    # already exists so a resident can read a verb in full before using it.
-    #
-    # TOOL-07: the ACL runs FIRST, so a confidential tool is not merely
-    # reduced to an index line - it is absent. An index row still carries
-    # the name and the place, which is the whole of the existence the
-    # DESIGN rule protects; and filtering before the ranking also spends
-    # the budget on verbs this resident can actually call.
     specs = [
         spec
         for spec in registry.tools.values()
@@ -365,8 +298,6 @@ def tool_registry_rows(
         ),
     )
     in_full = {spec.name for spec in ranked[:FULL_SCHEMA_BUDGET]}
-    # FULL_ONCE_AUTHORING: outside the budget either way - in full for an
-    # author, one line for everybody else, whatever else is in the room.
     authored = has_authored(world, for_agent_id)
     for name in FULL_ONCE_AUTHORING:
         if authored:
@@ -389,28 +320,8 @@ def tool_registry_rows(
     return rows
 
 
-# How many tools come back with a full schema. The review's target is
-# "<= ~20 full schemas per (location, role, seat)" and <= 4K tokens of
-# tools; 24 leaves room for the always-on verbs plus a well-equipped
-# location without reaching the old bill.
 FULL_SCHEMA_BUDGET = int(os.environ.get("KASUKABE_FULL_SCHEMA_BUDGET", "24"))
 
-# The verbs a resident needs wherever it is standing. Reducing any of these
-# to an index line costs a turn: the resident has to spend a call on
-# `describe_primitives` before it can do the obvious thing.
-# TRADE-04: three of these named no tool at all - `check_wallet`,
-# `check_inventory` and `sleep`. They cost nothing (the ranking only ever
-# sees registered specs, so a name with no spec simply never appears),
-# but they told every reader that a resident can ask for its wallet and
-# go to sleep on demand, and it cannot: money and holdings are in the
-# perception every turn, and sleeping is the clock's business, not a
-# verb's. A list of verbs that includes verbs the town does not have is
-# how the next person writes a prompt promising them.
-# `do_in_order` for the reason `toolify` is here, and more so: a program is
-# nothing BUT its step shape. Served as an index line it read "Run a short
-# program now, in one call ... Needs: steps." with an 85-byte schema and no
-# `when`, `repeat` or `bind` - the resident could see programs existed and
-# not how to write one (test_one_call_runs_a_program_now.py).
 ALWAYS_IN_FULL = frozenset({
     "look_around", "move", "say", "start_conversation",
     "eat", "rest",
@@ -419,23 +330,6 @@ ALWAYS_IN_FULL = frozenset({
     "describe_primitives", "skillify", "do_in_order",
 })
 
-# X8, operator decision 2026-09-21: `toolify` is a ONE-LINE entry until the
-# resident has authored something.
-#
-# It was in ALWAYS_IN_FULL for the reason `do_in_order` still is: a program
-# is nothing but its step shape. Measured against the 50-resident run, that
-# cost about 911 input tokens on every resident call - a third of what the
-# never-called verbs cost to carry - for a verb with 0 calls in every run
-# since 25. Cutting it would cut the town's only route to a tool that
-# outlives the turn (T3), so it stays, shrunk:
-#
-#   * the line keeps what a resident needs to decide - that it makes a
-#     reusable tool, and that it is free (the price TOOL-06 made honest);
-#   * the step shape is `do_in_order`'s exactly, and that is served in full,
-#     so the line says so instead of repeating 2,000 characters;
-#   * `describe_primitives` gives the whole description on request;
-#   * a resident who has already authored a skill or a tool - who has shown
-#     it writes procedures - gets `toolify` in full again, from its next turn.
 FULL_ONCE_AUTHORING = frozenset({"toolify"})
 
 INDEX_NOTES: dict[str, str] = {
@@ -456,12 +350,6 @@ def has_authored(world: WorldState, agent_id: str) -> bool:
         skill.author_agent_id == agent_id for skill in world.skill_definitions.values()
     )
 
-# What the rest of the full-schema budget is spent on, in order, before the
-# alphabet decides. Runs 25-28b called these; the alphabet had been spending
-# the budget on `arrest`, `admit_to_org`, `ask_for_a_child`, `auction_land`,
-# `build_structure` and `come_of_age` while `trade`, `transfer` and `give`
-# reached a farmhand as one line (run 28's complete trace analysis). Ordered
-# by how often a failed or missing call of each held a transaction up.
 COMMON_VERBS: tuple[str, ...] = (
     "trade", "buy", "sell", "post_price", "transfer", "give",
     "stock_shelf", "take_from_shelf", "draw_from_till", "deposit_to_till",
@@ -519,10 +407,6 @@ def _index_row(
     recovery path. What is dropped is the parameter schema and the body of
     the description - about 90% of the bytes and none of the discovery.
     """
-    # TOOL-24: the name the MAP uses, not the gate's own constant. A
-    # resident told "only at government_complex" cannot find that string
-    # in `list_places`, which says "Kasukabe Government Complex" - and a
-    # name plus `move` is the entire recovery path an index row offers.
     where = (
         display_place(spec.location_gate)
         if isinstance(spec.location_gate, str)
@@ -530,29 +414,6 @@ def _index_row(
     )
     first_sentence = spec.description.split(".", 1)[0].strip()
 
-    # TRADE-02. An index row for a tool the resident CAN call from here
-    # used to declare `properties: {}` - that is, "this tool takes no
-    # parameters" - which is false, and the model believed it.
-    #
-    # Run `deni-a6f9eb4-5h`, every one of these from a different
-    # resident: `take_from_shelf({})` five times, `harvest({})` twenty
-    # of thirty-eight, `mine({})` nine of twenty-one,
-    # `describe_place({})` twenty-three of thirty-two, plus
-    # `post_price({})`, `stock_shelf({})`, `give({})`,
-    # `draw_from_till({})`. The model was not being lazy. It was told
-    # the tool took nothing, called it correctly against that schema,
-    # got "Field required", and then guessed names out of English -
-    # which is where `business_id`, `to` and `price_sim` come from.
-    #
-    # 47 of that run's 57 index rows were tools usable exactly where the
-    # resident stood. They were reduced for BUDGET, not for distance.
-    #
-    # So a row for a tool that can be called here carries its REQUIRED
-    # parameter names, types only, no descriptions - about 280 tokens a
-    # turn across the whole payload, against a budget ENG-03 cut from
-    # 14K to 7.6K. A tool gated somewhere else keeps the empty schema:
-    # the resident cannot call it from here whatever it passes, and
-    # `move` plus a name is the whole recovery path.
     schema: dict[str, Any] = {"type": "object", "properties": {}}
     needs = ""
     if usable_here:
@@ -577,16 +438,8 @@ def _index_row(
     )
     return {
         "name": spec.name,
-        # The `Needs:` clause is not redundant with the schema below it:
-        # a model builds arguments from the schema, but `describe_
-        # primitives` renders this DESCRIPTION, and that listing is where
-        # a resident goes when a call has just been refused. No
-        # "read it in full" suffix - 42 rows x 40 chars for a sentence
-        # every resident already knows is 1,700 characters a turn.
         "description": f"{first_sentence}.{INDEX_NOTES.get(spec.name, '')}{needs}{reach}",
         "input_schema": schema,
-        # So a reader of the payload can tell a reduced row from a real
-        # one without diffing it against the full registry.
         "elsewhere": True,
     }
 
@@ -599,16 +452,8 @@ class ToolRegistry:
 
     def __init__(self) -> None:
         self.tools: dict[str, ToolSpec] = {}
-        # Frozen once, right after every built-in primitive is registered
-        # (bootstrap.py) and never touched again - see ToolSpec.is_primitive.
         self.primitive_names: frozenset[str] = frozenset()
         self.lock = asyncio.Lock()
-        # Part B: bumped on every registration, so an engine can tell whether
-        # its cached tool list is stale without refetching the whole thing.
-        # Kept HERE rather than on WorldState because register() is the single
-        # choke point every invented tool passes through - define_tool,
-        # define_business_tool and define_organization_tool all call it - and
-        # a counter that cannot be reached any other way cannot be forgotten.
         self.version: int = 0
 
     def register(self, spec: ToolSpec) -> None:
@@ -664,17 +509,6 @@ class ToolRegistry:
         rebind under that lock.
         """
         if spec.namespace is ToolNamespace.PUBLIC:
-            # C1: an INVENTED public tool is still somebody's. Its owner,
-            # anyone taught their own copy, and anyone holding a current
-            # licence may call it; nobody else may.
-            #
-            # Before this, an approved invention was callable by the whole
-            # town, so `license_tool` would have granted a right everybody
-            # already had and C4 - "a tool held by three residents" - could
-            # not have a meaningful numerator. The patent stays a public
-            # DISCLOSURE (DESIGN.md section 2); what it protects is the
-            # right to use, which is what this checks. Built-in primitives
-            # are not in `custom_tools`, so this never touches them.
             if not spec.is_primitive and spec.name in world.custom_tools:
                 return world.may_call_tool(spec.name, actor_id, world.tick())
             return True
@@ -706,12 +540,6 @@ class ToolRegistry:
         from world.ledger.action_costs import DEFAULT_SCHEDULE, ActionCostCategory
         from world.life.upkeep import HungerState, effective_work_capacity
 
-        # DEFAULT_SCHEDULE, not `world.action_costs`. Whether harvesting is
-        # LABOUR is a fact about the tool, not about a particular world's
-        # pricing object - and `world.action_costs` is only promised to
-        # satisfy `ActionCostScheduleLike`, which requires `quote` and
-        # nothing else. Reaching for `rule_for` on it broke two legitimate
-        # test doubles that implement exactly the protocol they declare.
         rule = DEFAULT_SCHEDULE.rule_for(tool_name)
         if rule.category is not ActionCostCategory.LABOUR:
             return
@@ -730,10 +558,6 @@ class ToolRegistry:
             why = "you are ill"
         else:
             why = "you have not eaten"
-        # ActorRequirementError, the same error every other "you are not
-        # in a state to do this" gate raises (age, licence, dormancy). It
-        # aggregates reasons and the registry already restores the
-        # snapshot around it, so a refusal costs nothing.
         raise ActorRequirementError(
             tool_name,
             [f"{why} - your body would not do it. Rest, eat, or get treatment."],
@@ -817,9 +641,6 @@ class ToolRegistry:
         from world.tools import param_repair
 
         repaired, renamed = param_repair.repair(spec.name, raw_params)
-        # After the synonyms are folded, so `to: "Tova"` resolves exactly like
-        # `to_agent_id: "Tova"`. Runs 28 and 28b addressed people by number
-        # because a person parameter took only an id - see world/tools/names.py.
         if world is not None and actor_id is not None:
             from world.tools import names
 
@@ -827,26 +648,12 @@ class ToolRegistry:
                 world, actor_id, spec.name, spec.params_model.model_fields, repaired
             )
 
-        # Validation FIRST, the stray-parameter check second.
-        #
-        # Ordering, not taste. Several tools diagnose a wrong SHAPE in
-        # their own validator and answer with something far better than
-        # a parameter list - `skillify` handed the wrong step shape says
-        # "these are toolify's steps, not mine". Checking strays first
-        # would replace every one of those with a worse message.
-        #
-        # A call that validates cleanly and still carries a stray is the
-        # dangerous one, and that is exactly what falls through to here.
         try:
             model = spec.params_model.model_validate(repaired)
         except ValidationError as exc:
             messages = [f"{'.'.join(str(p) for p in err['loc'])}: {err['msg']}" for err in exc.errors()]
             known = sorted(spec.params_model.model_fields)
             if known:
-                # The commonest refusal in run deni-a6f9eb4-5h was
-                # "Field required" with no statement of what the fields
-                # ARE. A resident that has to guess spends a call per
-                # guess; `take_from_shelf` took three.
                 messages.append(f"{spec.name} takes: {', '.join(known)}.")
             raise ToolValidationError(spec.name, messages) from exc
 
@@ -863,9 +670,6 @@ class ToolRegistry:
                 ],
             )
         if renamed:
-            # Told, not silently corrected. A resident whose word was
-            # changed for it should learn the town's word, or it will
-            # spend a call on the same synonym every time.
             self._last_param_notes = renamed
         return model
 
@@ -877,12 +681,6 @@ class ToolRegistry:
         try:
             return spec.location_gate(world, params)
         except ValueError as exc:
-            # A dynamic gate resolver (e.g. harvest's crop -> farmland
-            # strip) can reject params.py's own already-validated field as
-            # semantically wrong (a crop name pydantic accepts as a str
-            # but that isn't one of the 10 real varieties). Surfacing that
-            # as ToolValidationError keeps every registry-raised failure a
-            # ToolError subclass - see this module's docstring.
             raise ToolValidationError(spec.name, [str(exc)]) from exc
 
     def check_location_gate(self, spec: ToolSpec, world: WorldState, actor_id: str, params: BaseModel) -> None:
@@ -890,14 +688,6 @@ class ToolRegistry:
         if required is None:
             return
         actual = world.location_of(actor_id)
-        # Not `actual != required`. The map names the sector an agent walks
-        # to ("Kasukabe Government Complex"); the charter names the place a
-        # tool gates on ("government_complex"). A raw string comparison left
-        # four residents standing in the town hall unable to vote, petition
-        # or register a business. See world/tools/place_aliases.py.
-        # `satisfies_gate_in`, not `satisfies_gate`: a business's premises
-        # also satisfies the workshops that business provides, and only the
-        # world knows which those are (TOOL-02).
         if not satisfies_gate_in(world, actual, required):
             raise LocationGateError(
                 spec.name, required, actual, places_that_satisfy(world, required)
@@ -941,14 +731,6 @@ class ToolRegistry:
 
         spec = self.tools.get(tool_name)
         if spec is None or not await self.is_visible(spec, world, actor_id):
-            # Deliberately the same error whether the tool does not exist
-            # or exists but is invisible to this actor - see
-            # ToolNotFoundError's docstring.
-            #
-            # The near miss is drawn ONLY from what this actor can already
-            # see, so it confirms nothing hidden: a seat-holder who typed
-            # `set_tax_rates` is pointed at `set_tax_rate`, and somebody
-            # with no seat is pointed at neither, exactly as before.
             visible = [
                 name for name, candidate in self.tools.items()
                 if self.visible_to(candidate, world, actor_id)
@@ -961,64 +743,11 @@ class ToolRegistry:
 
         agent = world.require_agent(actor_id)
 
-        # ── Part A: acting costs sim currency ────────────────────────────
-        #
-        # BEFORE the handler, because a refusal must be a no-op: charge()
-        # raises ActionUnaffordableError while the world is still untouched,
-        # rather than letting an agent harvest a field and only then discover
-        # it could not pay for the swing. The error is left to propagate the
-        # way ToolValidationError above already does - execute() restores the
-        # snapshot, and the agent sees a real constraint rather than a crash.
-        #
-        # Charged here rather than in execute() so that a composite tool pays
-        # for each primitive step it dispatches, not once for the wrapper.
-        # Bundling steps into an invented tool is meant to save an agent
-        # THINKING, not labour.
         from world.tools.primitives.movement import resolve_move_distance
 
-        # ── ECON-06: illness and hunger reach the work ──────────────────
-        #
-        # `health.work_capacity`, `effective_work_capacity`,
-        # `WORK_CAPACITY_BY_AILMENT` and
-        # `HUNGER_MILD_WORK_CAPACITY_MULTIPLIER` were all written, all
-        # tested, and read by NOTHING outside upkeep.py. DESIGN section 5
-        # says "sickness cuts work capacity"; a terminal patient harvested
-        # at full rate until the day it died, and treatment (ECON-12) had
-        # no economic reason to exist.
-        #
-        # BEFORE the charge, not after. The Part A comment below states the
-        # rule this follows: a refusal must be a no-op. Refusing after the
-        # charge would take a sick resident's money and give it nothing,
-        # which is a worse answer than the silence it replaces.
-        #
-        # Probabilistic, per the finding, rather than scaling the yield:
-        # every LABOUR tool returns a different shape and the registry has
-        # no business reaching into a handler's result. At capacity 0.5 a
-        # swing lands half the time, and the resident is TOLD which is
-        # which, so "I am too ill to work" becomes something it can read
-        # about itself rather than a number that quietly moved.
         self.refuse_if_too_weak(world, actor_id, tool_name)
 
         proficiency = action_costs.proficiency_for(world, actor_id, tool_name)
-        # A4: `buy`/`sell` no longer carry a price, so the 1% transaction
-        # cost has to be resolved off the price board here - the same
-        # caller-resolves-what-the-module-cannot-see arrangement
-        # `proficiency_for` already uses. Without it every trade in the
-        # town falls to the value_bps rule's 2-sim floor and a
-        # ten-thousand-sim purchase costs the same to transact as a loaf.
-        # TRADE-04. The same question, asked twice in one turn, is not
-        # charged twice.
-        #
-        # 199 of run `deni-a6f9eb4-5h`'s 1,224 calls - one in six - were
-        # an exact repeat of a call the same resident had already made on
-        # the same tick. Between two of a resident's own calls nothing
-        # but that resident can change the town, so a repeated READ
-        # cannot have a new answer. It gets the answer anyway, plus the
-        # sentence it was missing, and pays nothing.
-        #
-        # Reads only. A repeated `harvest` gets two harvests and a
-        # repeated `say` is a resident repeating itself - both real, both
-        # left alone. See `world/tools/repeated_calls.py`.
         from world.tools import repeated_calls
 
         if repeated_calls.already_answered_this_tick(
@@ -1034,29 +763,6 @@ class ToolRegistry:
             )
             return ToolOutcome(result=result, events=outcome.events)
 
-        # TOOL-06, the fallback fee. An invented tool's own name has no
-        # SCHEDULE_TABLE row, so `rule_for` fell to DEFAULT_RULE and took
-        # 5 sim for the wrapper on top of every step the composite then
-        # paid for itself - flatly contradicting `toolify`'s own
-        # description, "Each step still costs what it always did".
-        #
-        # Skipped here rather than given a zero row in the table, because
-        # the table is static and invented tools are not: a town can name
-        # a new one at any tick, and a row per invention would have to be
-        # written by whoever registers it and would go stale the moment
-        # the tool was renamed or its patent lapsed.
-        #
-        # `charge = None` is a shape the rest of this method already
-        # handles - it is what an unpriced tool has always produced - so
-        # nothing below needs to know.
-        # TRADE-06. A journey of zero tiles is free.
-        #
-        # `move` was the most repeated verb in run `deni-a6f9eb4-5h` - 64
-        # exact repeats - and a resident asking to go where it already
-        # stands was charged, told `walked: true`, and given no reason to
-        # stop asking. Priced here rather than folded before the handler:
-        # the handler still runs and still publishes `agent.moved`, which
-        # is how perception and the map learn where the resident is.
         free = tool_name in world.custom_tools or (
             repeated_calls.costs_nothing_because_it_does_nothing(
                 world, actor_id, tool_name, raw_params
@@ -1070,24 +776,7 @@ class ToolRegistry:
                 actor_id,
                 skill_proficiency=proficiency,
                 trade_value_sim=action_costs.posted_trade_value(world, tool_name, params),
-                # GROW-23: resolved HERE because action_costs is pure and
-                # cannot read an inventory - the same reason distance and
-                # trade value are resolved here. A field the caller never
-                # fills is a discount nobody can ever earn.
                 holds_a_tool=world.inventory.quantity(actor_id, wear.TOOL_ITEM) > 0,
-                # ECON-18: the one ActionActor field nobody filled.
-                #
-                # `extract_quantity` returns this for "move", so leaving it
-                # at 0 multiplied the per_unit_cost=2 rule by nothing and
-                # every move in town fell to the 1-sim min_cost: a step
-                # across the room and a walk across Kasukabe cost the same,
-                # and distance stopped being a reason to live near work.
-                #
-                # UNITS: ticks, not tiles, despite the field's name. A
-                # street stride is 40 tiles/tick and the map is 140 wide,
-                # so raw tiles would bill a cross-town walk ~300 sim. Ticks
-                # are also exactly what the `move` result quotes back as
-                # `estimated_ticks` - billed the figure you were shown.
                 distance_tiles=(
                     resolve_move_distance(world, actor_id, params)
                     if tool_name == "move"
@@ -1097,90 +786,31 @@ class ToolRegistry:
             world.tick(),
         )
 
-        # The charge is reversed if the handler raises. execute() restores
-        # OWNED_STATE_FIELDS on an exception, but the ledger is NOT in that
-        # snapshot - it is a sibling system - so without this a failed action
-        # would be rolled back and paid for at the same time, and the actor
-        # would be poorer for something the world says never happened.
-        # See action_costs.refund_action() for why a reversing move.
-        # TOOL-06: remembered so a COMPOSITE that fails three steps later
-        # can give back what its earlier steps paid. See
-        # `WorldState.charges_this_call`.
         if charge is not None:
             world.charges_this_call.append((tool_name, actor_id, charge.amount))
 
         try:
             outcome = await spec.handler(world, agent, params)
         except Exception as exc:
-            # A tool that BREAKS must leave a mark on the run's own account of
-            # itself. `record_refusal` files only what it can classify - a
-            # location gate, an age rule, an affordability check - so a handler
-            # raising anything else vanished: refunded, re-raised, and absent
-            # from "What the town could not do".
-            #
-            # That is how a run came to report "0 vote(s)" beside thirteen
-            # location refusals while 1,233 ballots were in fact being rejected
-            # by a TypeError in `cast_vote`. The report named the wrong cause
-            # and a reader had no way to tell.
-            #
-            # Filed under `broken:` so it reads as what it is - the tool at
-            # fault, not the resident - and sorts apart from the refusals that
-            # are the town working as designed.
             record_broken_tool(world, actor_id, tool_name, exc)
             if charge is not None:
                 await action_costs.refund_action(
                     world.ledger, tool_name, actor_id, charge.amount, world.tick()
                 )
-                # Refunded here, so `execute` must not refund it again.
-                # Popped by identity of the entry rather than by index:
-                # a handler that itself called `dispatch` will have
-                # appended after us.
                 entry = (tool_name, actor_id, charge.amount)
                 if entry in world.charges_this_call:
                     world.charges_this_call.remove(entry)
             raise
 
-        # GROW-23: manual work wears a tool out.
-        #
-        # After the handler, so only a COMPLETED act counts - the same rule
-        # the proficiency below follows, for the same reason: an action
-        # that raised did not happen, and should neither teach you
-        # anything nor break your chisel.
-        #
-        # This is what gives `iron_tool` a consumer. Before it, the only
-        # made item the town had any use for was food; "tool wear" was a
-        # sim fee with no item behind it, so the artisanry proficiency
-        # residents built up converted into nothing anybody needed.
-        # No log line: this module deliberately has no logger, and adding
-        # one for this would be the tail wagging the dog. The wear is
-        # observable without it - `world.tool_wear` carries the count and
-        # the inventory carries the consequence.
         if wear.wears_a_tool(tool_name):
             wear.wear_one_use(world, actor_id, tool_name)
 
-        # ── Part A: and doing it is how you get better at it ─────────────
-        #
-        # After the handler, so only a completed act counts.
-        #
-        # BUILT-IN TRADES ONLY. An authored skill does NOT earn a repetition
-        # from a tool call, even one its own steps name - it earns one by
-        # being walked end to end (see advance_skill_workflows below). That
-        # asymmetry is deliberate and load-bearing: it is what makes a junk
-        # skill worth nothing. A skill that names forty tools would otherwise
-        # collect forty repetitions from work the agent was doing anyway.
         builtin = action_costs.SKILL_FOR_TOOL.get(tool_name)
         if builtin:
             level = world.bump_skill_repetition(actor_id, builtin)
             if world.last_practice_moved_the_level:
                 outcome.events.append(_practice_event(world, actor_id, builtin, level))
 
-        # ── B2: and it may be the thing you set out to do ────────────────
-        #
-        # Here rather than in the handler, because the intention names a
-        # TOOL and any tool can be the one named. A resident that set out
-        # to sell the wheat stops being told to sell the wheat the moment
-        # the wheat is sold - which is the difference between a purpose and
-        # a line of furniture in the prompt.
         fulfilled = world.fulfil_intention(actor_id, tool_name)
         if fulfilled is not None:
             outcome.events.append(
@@ -1197,49 +827,18 @@ class ToolRegistry:
                 )
             )
 
-        # ── ENG-24: and it may be progress on something larger ───────────
-        #
-        # Here for the same reason `fulfil_intention` is here: a goal's
-        # `done_when` names a TOOL, and any tool can be the one named.
-        # Progress arrives from the act, never from the resident saying
-        # so - `update_goal` exists for the part a resident does know
-        # better, but a goal can complete without ever being touched.
         from world.tools.goal_lifecycle import credit_tool_success
 
         outcome.events.extend(credit_tool_success(world, actor_id, tool_name, outcome.result))
 
-        # ── Part B: and it may be a step in a procedure ──────────────────
         for finished in world.advance_skill_workflows(actor_id, "tool", tool_name, world.tick()):
             outcome.events.append(
                 _practice_event(world, actor_id, finished, world.skills[actor_id][finished])
             )
 
-        # Appended to the OUTCOME, not published here. execute() publishes
-        # after the whole call has proven it succeeded, and routing these the
-        # same way means a practice row can never outlive a rolled-back call -
-        # the mistake the action charge and the refusal log each made once.
 
-        # Trimmed to a ring: over a multi-hour run this list is appended to on
-        # every successful call by every agent, and an uncapped one is what
-        # ends a long run on a small machine. The archive is the trace store;
-        # this is the live tail.
         if len(world.tool_invocations) >= MAX_TOOL_INVOCATIONS_KEPT:
             del world.tool_invocations[: len(world.tool_invocations) - MAX_TOOL_INVOCATIONS_KEPT + 1]
-        # PROG-01. Say which decision this call belonged to.
-        #
-        # Two ways a call can be part of a program, and they are read in
-        # this order because only one of them can be true at a time:
-        #
-        #   * `world.program_stack` is non-empty - we are INSIDE a step
-        #     that `world/tools/program.py` is running, and it pushed the
-        #     frame before dispatching us;
-        #   * the handler that just returned named a program in its own
-        #     result - we ARE the wrapper, and by now the runtime has
-        #     popped its last frame, so the stack cannot tell us.
-        #
-        # The wrapper is step 0. That is what makes "one model call bought
-        # how many acts" a subtraction (rows in the program, minus the
-        # wrapper) rather than a join against anything else.
         program_id: str | None = None
         program_step: int | None = None
         if world.program_stack:
@@ -1275,30 +874,13 @@ class ToolRegistry:
         """
         async with self.lock:
             snapshot = world.snapshot()
-            # TOOL-06: this call's charge ledger starts empty. Cleared
-            # here rather than at the end, because an execute that raised
-            # somewhere unexpected would otherwise leave entries behind
-            # for the next call to refund.
             world.charges_this_call.clear()
-            # PROG-01, same reason and the same line: a frame left behind
-            # by a call that raised somewhere unexpected would file the
-            # NEXT resident's calls under a program that has already
-            # ended. Cleared going in, not coming out.
             world.program_stack.clear()
             world.program_budget = None
             try:
                 outcome = await self.dispatch(world, actor_id, tool_name, raw_params)
             except Exception as exc:
                 world.restore(snapshot)
-                # TOOL-06. AFTER the restore, like the refusal below.
-                #
-                # The inventory rolls back and the ledger does not - it is
-                # a sibling system, not part of OWNED_STATE_FIELDS - so
-                # every step this call paid for has to be given back by
-                # hand. `dispatch` already refunded the step that raised
-                # and removed it from this list; what is left is the
-                # steps that SUCCEEDED inside a call that then failed,
-                # and which the restore has just unmade.
                 for step_name, payer, amount in reversed(world.charges_this_call):
                     await action_costs.refund_action(
                         world.ledger, step_name, payer, amount, world.tick()
@@ -1306,21 +888,7 @@ class ToolRegistry:
                 world.charges_this_call.clear()
                 world.program_stack.clear()
                 world.program_budget = None
-                # AFTER the restore, never before. A refusal exists only
-                # because this call failed, and the restore above is what runs
-                # on exactly that path - recording it inside the transaction
-                # would roll the record back along with everything else, so
-                # the log would be empty precisely when it had something to
-                # say. (`tool_refusals` is kept out of OWNED_STATE_FIELDS for
-                # the same reason; see its comment in state.py.)
                 record_refusal(world, actor_id, tool_name, exc)
-                # ENG-24. The refusal log is a thing the REPORT reads; a
-                # belief is a thing the RESIDENT reads. Without the
-                # second, the same wall is walked into every tick and
-                # the log just counts how many times. Written after the
-                # restore, exactly as the refusal is, and published
-                # before the re-raise because nothing downstream of the
-                # raise will get the chance.
                 for belief_event in beliefs_from_refusal(world, actor_id, tool_name, exc):
                     await world.event_bus.publish(belief_event)
                 raise
@@ -1373,32 +941,15 @@ def unmet_requirement_for(exc: BaseException) -> tuple[str, str] | None:
     mistakes into the gaps view would bury the real gaps under typos.
     """
     if isinstance(exc, ToolNotFoundError):
-        # The most direct statement of a gap there is: an agent reached for a
-        # verb the town does not have. This is the row that becomes a prompt
-        # to invent one.
-        # ToolNotFoundError stores `.name`, not `.tool_name`.
         return f"no-such-tool:{exc.name}", f"nothing in the town does {exc.name!r}"
     if isinstance(exc, LocationGateError):
         return f"location:{exc.required}", f"must be at {exc.required}, was at {exc.actual}"
     if isinstance(exc, ActorRequirementError):
-        # Several requirements can fail at once; each becomes its own row, but
-        # the key is the sorted join so the same combination groups together.
         reasons = "; ".join(sorted(exc.reasons)) if getattr(exc, "reasons", None) else "unmet"
         return f"actor:{reasons}", reasons
     if isinstance(exc, ActionUnaffordableError):
         return "funds", f"could not afford {exc.tool_name}"
 
-    # TOOL-08/TOOL-12: a `CharterError` is not a `ToolError`, so every
-    # refusal raised inside an election, a petition, an organisation or the
-    # patent office fell straight through this function and was recorded
-    # nowhere. The town's own instruments could not see that its civic
-    # surface was refusing anybody - run 23's "what the town could not do"
-    # table showed 10 refusals for a run with about 70 corrections.
-    #
-    # Mapped onto the SAME keys the tool-side errors use where the gap is
-    # the same gap: a resident refused for standing in the wrong place is
-    # one row whether the registry or the charter said so, or the two halves
-    # of one problem group apart and neither looks like a problem.
     if isinstance(exc, NotAtRequiredLocation):
         return f"location:{exc.required}", f"must be at {exc.required}, was at {exc.actual}"
     if isinstance(exc, NotSittingGovernment):
@@ -1406,9 +957,6 @@ def unmet_requirement_for(exc: BaseException) -> tuple[str, str] | None:
     if isinstance(exc, NotEligibleToVote):
         return f"actor:{exc.reason}", f"{exc.agent_id} is not eligible: {exc.reason}"
     if isinstance(exc, CharterError):
-        # Everything else the charter can say. Keyed on the class rather
-        # than the message so a term limit and a closed ballot stay apart
-        # while two of either group together.
         return f"charter:{type(exc).__name__}", str(exc)
     return None
 
@@ -1478,10 +1026,6 @@ def beliefs_from_refusal(
     if classified is None:
         return []
     _requirement, detail = classified
-    # `note_refusal_belief` swallows its own failures and logs them with
-    # its own logger; this module deliberately has none (see the tool-wear
-    # comment above), and a bare `except` here would be the one kind of
-    # silence the project does not allow.
     from world.tools.goal_lifecycle import note_refusal_belief
 
     return note_refusal_belief(

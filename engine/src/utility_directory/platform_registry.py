@@ -25,7 +25,6 @@ class PlatformRegistry:
         self.db = db
         self.catalog = catalog
 
-    # --- Platform Agents (from catalog, in-memory) ---
 
     def get_agent(self, name: str, version: str | None = None) -> dict[str, Any] | None:
         """Get a platform agent by name from the catalog.
@@ -61,7 +60,6 @@ class PlatformRegistry:
         results.sort(key=lambda a: a.get("name", ""))
         return results
 
-    # --- Platform Skills (from catalog, in-memory) ---
 
     def get_skill(self, name: str, version: str | None = None) -> dict[str, Any] | None:
         """Get a platform skill by name from the catalog."""
@@ -71,7 +69,6 @@ class PlatformRegistry:
         """Get the latest (only) version of a platform skill."""
         return self.catalog.get_skill(name)
 
-    # --- Platform Tools (from catalog, in-memory) ---
 
     def get_tool(self, name: str, version: str | None = None) -> dict[str, Any] | None:
         """Get a platform tool by name from the catalog."""
@@ -87,7 +84,6 @@ class PlatformRegistry:
         tools.sort(key=lambda t: t.get("name", ""))
         return tools
 
-    # --- User Agents (from SQLite) ---
 
     async def get_user_agent(self, name: str) -> dict[str, Any] | None:
         """Get a user agent record from SQLite."""
@@ -147,7 +143,6 @@ class PlatformRegistry:
             results.append(d)
         return results
 
-    # --- User Skills (from SQLite) ---
 
     async def get_user_skill(self, name: str) -> dict[str, Any] | None:
         """Get a user skill record from SQLite."""
@@ -169,7 +164,6 @@ class PlatformRegistry:
                 result[col] = json.loads(result[col])
         return result
 
-    # --- User Tools (from SQLite) ---
 
     async def get_user_tool(self, name: str) -> dict[str, Any] | None:
         """Get a user tool config record from SQLite."""

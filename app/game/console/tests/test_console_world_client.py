@@ -143,7 +143,7 @@ async def test_population_dials_round_trip(world_client) -> None:
         PopulationDialsUpdate(death_hazard_multiplier=0.0)
     )
     assert after.death_hazard_multiplier == 0.0
-    assert after.target_band_min == 250  # untouched fields survive
+    assert after.target_band_min == 250
 
 
 @pytest.mark.asyncio

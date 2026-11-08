@@ -42,7 +42,6 @@ AREA = "verb-reach"
 ORPHANS = "verbs-not-in-the-registry"
 COVERAGE = "corpus-coverage"
 
-# Statuses the session log uses for a call that actually changed the world.
 SUCCEEDED = {"success", "ok", "succeeded"}
 
 
@@ -52,12 +51,6 @@ class Reach:
 
     calls: int = 0
     successes: int = 0
-    #: Calls whose row carries no outcome at all. Not failures. The
-    #: platform seam writes `{"tool": ..., "params": ...}` with no
-    #: `status` field for the verbs the engine serves directly, so a
-    #: silent row means the corpus never recorded what happened - which
-    #: is a different fact from "it was refused", and the instrument is
-    #: not allowed to spend one as the other.
     unknown: int = 0
     seen_in: set[str] = field(default_factory=set)
 
@@ -115,9 +108,6 @@ def reach_from_databases() -> dict[str, Reach]:
             if not tool:
                 continue
             r = found[bare_tool_name(str(tool))]
-            # The table records dispatches, which only exist after the
-            # charge and the handler; it has no failure column, so these
-            # count as calls AND successes.
             r.calls += int(n)
             r.successes += int(n)
             r.seen_in.add(db.name)
@@ -184,18 +174,6 @@ def judge(
                 )
             )
         elif r.successes == 0:
-            # UNPROVEN, not FAILED, and the distinction cost a false
-            # finding to learn. `pay_tax` reads 10 calls / 0 successes,
-            # which looked like a broken verb. It is not: five of the ten
-            # were answered "you owe no head tax" - the town refusing
-            # correctly - and four more were called with NO arguments at
-            # all. A verb that refuses correctly has held its contract.
-            #
-            # What the row does prove is that the town spent paid calls
-            # and got nothing back, every time it tried. That is worth
-            # surfacing loudly and is not, by itself, evidence of a defect.
-            # Deciding which it is needs a human reading the refusals, so
-            # the instrument declines to score it.
             rows.append(
                 Verdict(
                     AREA,
@@ -216,28 +194,15 @@ def judge(
                 )
             )
 
-    # A verb the corpus used that the registry does not serve is a
-    # different finding and belongs in a different column: either a rename
-    # that orphaned the recorded history, or a tool the resident reaches
-    # through some other surface (the seam registers `search_memory`,
-    # `recall_memories` and `recall_session_log` straight onto the thread).
-    # Filing these as "never called" would be exactly backwards.
     for name in sorted(set(found) - set(inventory)):
         r = found[name]
         seen = f"in {', '.join(sorted(r.seen_in)[:3])}"
-        # Ask the engine's registry before recording an absence. These three
-        # are not orphans: `pinned_boot` builds and registers them onto the
-        # same registry the world:* verbs reach the model through, so a
-        # resident calling one is calling a verb that exists and answers.
         engine_side = served_engine_side(name)
         if engine_side is not None:
             served, why = engine_side
             if not served:
                 rows.append(Verdict(ORPHANS, name, f"called {r.calls} times; {why}", FAILED, seen))
             elif r.successes:
-                # Judged by the same rule as any other verb: it ran, and the
-                # world answered. The only difference is which registry
-                # served it.
                 rows.append(
                     Verdict(
                         ORPHANS, name,

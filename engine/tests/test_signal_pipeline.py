@@ -254,7 +254,7 @@ class TestWMFlush:
 
         items = await wm.read("task-1")
         stored = await signal_store.flush_wm("task-1", items, status="completed")
-        assert stored >= 2  # tool_call + tool_result + outcome signal
+        assert stored >= 2
 
         pending = await signal_store.pull_unprocessed()
         types = [s["type"] for s in pending]

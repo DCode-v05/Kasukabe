@@ -47,19 +47,12 @@ class LifeStage(str, Enum):
     """
 
     CHILD = "child"
-    # Of age, with no work and no trade of their own yet.
     UNSETTLED = "unsettled"
-    # Working: has an occupation, a workplace, or wages coming in.
     WORKING = "working"
-    # Runs something: owns a business, or holds a government seat.
     ESTABLISHED = "established"
-    # Past the retirement age the charter currently sets.
     ELDER = "elder"
 
 
-# What the world says about a stage, in the second person, as a fact.
-# No advice: "you are of working age and have no trade" is a statement
-# about the resident's situation, not a suggestion to find one.
 STAGE_DESCRIPTION: dict[LifeStage, str] = {
     LifeStage.CHILD: "You are a child. Your household is billed for you.",
     LifeStage.UNSETTLED: "You are of working age with no trade of your own.",

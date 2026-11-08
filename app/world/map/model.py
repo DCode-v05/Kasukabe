@@ -110,11 +110,6 @@ class ResourceKind(str, enum.Enum):
     FOREST = "forest"
 
 
-# DESIGN.md section 1: "farmland (10 crop varieties), ore outcrops (5
-# metals), forest (timber, common)". These are genesis config data, kept
-# here (not genesis.py) because they describe the resource taxonomy
-# itself, which expansion.py also needs when it carves the zones - a
-# dependency genesis.py already has on this module anyway.
 CROP_VARIETIES: tuple[str, ...] = (
     "wheat",
     "rice",
@@ -289,7 +284,6 @@ class WorldMap:
     spawning_locations: dict[int, SpawningLocation] = field(default_factory=dict)
     sector_id_by_name: dict[str, int] = field(default_factory=dict)
 
-    # -- bounds and walkability ------------------------------------------
 
     def in_bounds_xy(self, x: int, y: int) -> bool:
         return 0 <= x < self.width and 0 <= y < self.height
@@ -311,7 +305,6 @@ class WorldMap:
         docstring) - there is no Sector object to carry that flag on."""
         return self.is_walkable(coord) and self.sector_grid[coord.y][coord.x] == 0
 
-    # -- lookups at a tile -------------------------------------------------
 
     def sector_at(self, coord: TileCoord) -> Sector | None:
         if not self.in_bounds(coord):
@@ -349,7 +342,6 @@ class WorldMap:
             label=spawn.label if spawn else None,
         )
 
-    # -- named-location lookups --------------------------------------------
 
     def find_sector(self, name: str) -> Sector | None:
         sector_id = self.sector_id_by_name.get(name.strip())
@@ -387,7 +379,6 @@ class WorldMap:
                 )
         return hits
 
-    # -- entry points for pathfinding targets -------------------------------
 
     def entry_point(self, sector_name: str, arena_name: str | None = None) -> TileCoord | None:
         """A walkable tile to path toward for "go to <sector>[, <arena>]".
@@ -536,11 +527,6 @@ def build_world_map(
     for aid, (_wname, sname, aname) in arena_names.items():
         sid = sector_id_by_name.get(sname)
         if sid is None:
-            # An arena whose parent sector id is not in this build's
-            # sector_names table. Legitimate for a partial/synthetic map
-            # in a test; the arena is still recorded, just orphaned
-            # (sector_id left at -1, findable by id but not reachable
-            # from any Sector.arena_ids or WorldMap.find_arena).
             sid = -1
         arenas[aid] = Arena(id=aid, sector_id=sid, name=aname, tiles=frozenset(arena_tiles.get(aid, ())))
         if sid != -1:

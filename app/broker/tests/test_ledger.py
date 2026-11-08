@@ -72,7 +72,7 @@ async def test_debit_for_a_minor_reduces_the_parents_balance() -> None:
     assert result.payer_agent_id == "parent-1"
     assert result.balance_cents_after == 750
     assert ledger.accounts["parent-1"].balance_cents == 750
-    assert ledger.accounts["child-1"].balance_cents == 0  # the minor's own balance is untouched
+    assert ledger.accounts["child-1"].balance_cents == 0
 
 
 @pytest.mark.asyncio
@@ -96,7 +96,7 @@ async def test_debit_enforces_a_non_negative_balance_floor() -> None:
     with pytest.raises(InsufficientFundsError):
         await ledger.debit("agent-1", 500, purpose="tick", metadata={})
 
-    assert ledger.accounts["agent-1"].balance_cents == 10  # untouched, not partially applied
+    assert ledger.accounts["agent-1"].balance_cents == 10
 
 
 @pytest.mark.asyncio
@@ -122,9 +122,6 @@ async def test_multiple_children_of_the_same_parent_share_one_lock() -> None:
     await ledger.debit("child-b", 200, purpose="tick", metadata={})
 
     assert ledger.accounts["parent-1"].balance_cents == 700
-
-
-# ── HttpLedgerClient: wire contract, no real network ────────────────────
 
 
 def make_http_ledger_client(handler) -> HttpLedgerClient:
@@ -211,14 +208,6 @@ async def test_http_ledger_debit_402_raises_insufficient_funds() -> None:
     with pytest.raises(InsufficientFundsError):
         await client.debit("agent-1", 500, purpose="tick", metadata={})
     await client.close()
-
-
-# -- opt-in provisioning for MOCK_MODE local bring-up ------------------
-#
-# Found by booting real engines against a mock broker: every inference call
-# returned 404 "agent 'a0001' is not known to the ledger", each engine
-# turned that into a 500 from its own /tick, and a full 10-agent game day
-# produced no agent activity whatsoever.
 
 
 def test_provisioning_is_off_by_default() -> None:

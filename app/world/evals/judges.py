@@ -37,7 +37,6 @@ BROKER = os.environ.get("BROKER_BASE_URL", "http://127.0.0.1:8200")
 MODEL = os.environ.get("EVAL_MODEL", "moonshotai.kimi-k2.5")
 JUDGE_AGENT_ID = os.environ.get("EVAL_JUDGE_AGENT_ID", "government:treasury")
 
-# ── 3.2 persona adherence ─────────────────────────────────────────────
 
 PERSONA_VERDICTS = ("in character", "generic", "out of character")
 
@@ -59,7 +58,6 @@ finding: text that breaks nothing and could be anyone.
 Judge only what is in front of you. Do not reward length, politeness, or \
 how well the turn went."""
 
-# ── 3.3 energy awareness ──────────────────────────────────────────────
 
 ENERGY_VERDICTS = ("reasoned about energy", "mentioned", "ignored")
 
@@ -108,9 +106,6 @@ def _ask(system: str, user: str, verdicts: tuple[str, ...]) -> str:
         with urllib.request.urlopen(request, timeout=60) as response:
             payload = json.load(response)
     except (urllib.error.URLError, OSError, ValueError):
-        # Almost always the broker not running, or running with no world
-        # behind it so it cannot check a wallet. Both worth naming rather
-        # than counting silently.
         return "error"
     text = " ".join(
         block.get("text", "")

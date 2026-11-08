@@ -11,9 +11,6 @@ from typing import Callable
 
 from src.sandbox.command_classifier import split_compound
 
-# Each lambda: (exit_code, stdout, stderr) -> (is_error, semantic_message | None)
-# is_error=False means this exit code is expected/non-error.
-# semantic_message provides context for the model when output is empty.
 CommandSemantic = Callable[[int, str, str], tuple[bool, str | None]]
 
 
@@ -37,12 +34,10 @@ COMMAND_SEMANTICS: dict[str, CommandSemantic] = {
 def default_semantic(code: int, out: str, err: str) -> tuple[bool, str | None]:
     if code == 0:
         return (False, None)
-    # Only provide a message when stderr doesn't already explain the failure
     msg = f"Command failed with exit code {code}" if not err else None
     return (True, msg)
 
 
-# Prefixes stripped when extracting the base command name
 STRIP_PREFIXES = {"sudo", "command", "env", "nice", "nohup", "time", "strace"}
 
 
@@ -57,19 +52,16 @@ def extract_base_command(command: str) -> str:
         return ""
     last = segments[-1].strip()
 
-    # Strip env var assignments (FOO=bar grep ...)
     words = last.split()
     while words and "=" in words[0] and not words[0].startswith("-"):
         words.pop(0)
 
-    # Strip common prefixes like sudo, env, command
     while words and words[0] in STRIP_PREFIXES:
         words.pop(0)
 
     if not words:
         return ""
 
-    # Extract basename (handle /usr/bin/grep -> grep)
     return Path(words[0]).name
 
 

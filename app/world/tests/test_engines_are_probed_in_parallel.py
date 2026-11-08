@@ -27,7 +27,7 @@ from world.run_genesis import GenesisRunner, GenesisRunnerConfig
 @pytest.mark.asyncio
 async def test_the_probes_overlap(tmp_path, monkeypatch):
     runner = GenesisRunner(GenesisRunnerConfig(
-        mock_mode=False,                 # mock mode returns before probing
+        mock_mode=False,
         checkpoint_dir=tmp_path / "checkpoints",
         world_mode="embedded",
         world_port=0,
@@ -55,7 +55,7 @@ async def test_the_probes_overlap(tmp_path, monkeypatch):
             in_flight += 1
             peak = max(peak, in_flight)
             try:
-                await asyncio.sleep(0.01)   # stand in for a slow engine
+                await asyncio.sleep(0.01)
                 return FakeResponse()
             finally:
                 in_flight -= 1

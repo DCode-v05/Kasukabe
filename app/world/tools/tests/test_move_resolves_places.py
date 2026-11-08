@@ -23,11 +23,6 @@ from world.tools.bootstrap import build_world
 from world.tools.primitives.movement import canonical_destination
 from world.tools.tests.conftest import needs_the_map
 
-# TOOL-27. Every test here needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped - and red for environment hides real regressions inside the
-# noise, which is how TOOL-09 stayed invisible.
 pytestmark = needs_the_map
 
 
@@ -94,15 +89,6 @@ async def test_an_empty_destination_is_left_untouched(world):
     assert canonical_destination(world, "") == ""
 
 
-# ── the fold, after three attempts at refusing instead ──────────────────
-#
-# Refusing an unrecognised destination broke something legitimate every
-# time: temple/mill/farmland:wheat (gated tool locations with no map
-# sector), grocery-shop (a business naming its own premises), then square
-# and park. The town's vocabulary is larger than this module can enumerate.
-# Folding is safe in a way refusing is not - the result is always a place
-# that already exists, and a miss changes nothing.
-
 @pytest.mark.asyncio
 async def test_a_shorter_spelling_folds_onto_the_real_shop(world):
     """'willows_market_pharmacy' and 'The Willows Market and Pharmacy' were
@@ -154,9 +140,6 @@ async def test_something_unlike_any_place_is_left_alone(world):
     assert canonical_destination(world, "the moon") == "the moon"
 
 
-# ── a family:variant name whose variant does not exist ──────────────────
-
-
 @pytest.mark.asyncio
 async def test_an_invented_crop_strip_folds_to_the_farmland_sector(world):
     """"farmland:general" is shaped exactly like the real "farmland:wheat",
@@ -204,9 +187,6 @@ async def test_a_real_home_still_resolves(world):
     if households:
         real = f"home:{households[0]}"
         assert canonical_destination(world, real) == real
-
-
-# ── a resource site named after its resource ────────────────────────────
 
 
 @pytest.mark.asyncio

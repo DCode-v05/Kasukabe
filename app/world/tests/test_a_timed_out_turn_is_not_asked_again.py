@@ -82,11 +82,6 @@ def test_the_timeout_handler_actually_sets_the_block() -> None:
     source = (
         __import__("pathlib").Path(__file__).resolve().parents[1] / "run_genesis.py"
     ).read_text(encoding="utf-8")
-    # Anchored on the handler's own log line, not on the first
-    # `except asyncio.TimeoutError:` in the file - there are several, and
-    # the first belongs to something else entirely. Getting that wrong is
-    # how a test ends up reading a region that cannot contain what it is
-    # looking for and reporting it as a defect.
     marker = 'self.timed_out_ticks += 1'
     handler = source[source.index(marker):]
     handler = handler[: handler.index(chr(10) + "            finally:")]

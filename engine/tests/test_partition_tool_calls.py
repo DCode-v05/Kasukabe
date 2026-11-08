@@ -29,9 +29,6 @@ from src.utility_directory.tool_runtime import (
 )
 
 
-# ── Fixtures ─────────────────────────────────────────────────────────
-
-
 async def noop_handler(_: dict) -> str:
     return ""
 
@@ -68,15 +65,9 @@ def make_tc(id: str, name: str = "tool", **input_kw: object) -> ToolCall:
     return ToolCall(id=id, name=name, input=dict(input_kw))
 
 
-# ── Empty input ───────────────────────────────────────────────────────
-
-
 def test_empty_returns_empty_list():
     reg = make_registry()
     assert partition_tool_calls([], reg) == []
-
-
-# ── Single call ───────────────────────────────────────────────────────
 
 
 def test_single_safe_call_is_one_batch():
@@ -95,9 +86,6 @@ def test_single_unsafe_call_is_one_batch():
     assert [c.id for c in batches[0].calls] == ["1"]
 
 
-# ── All safe → one merged batch ───────────────────────────────────────
-
-
 def test_all_safe_merges_into_one_batch():
     reg = make_registry(t=make_tool("t", concurrency_safe=True))
     calls = [make_tc("1", "t"), make_tc("2", "t"), make_tc("3", "t")]
@@ -105,9 +93,6 @@ def test_all_safe_merges_into_one_batch():
     assert len(batches) == 1
     assert batches[0].is_concurrency_safe is True
     assert [c.id for c in batches[0].calls] == ["1", "2", "3"]
-
-
-# ── All unsafe → N serial batches ────────────────────────────────────
 
 
 def test_all_unsafe_each_in_own_batch():
@@ -119,9 +104,6 @@ def test_all_unsafe_each_in_own_batch():
         assert batch.is_concurrency_safe is False
         assert len(batch.calls) == 1
         assert batch.calls[0].id == str(i + 1)
-
-
-# ── Mixed: consecutive safe groups, unsafe splits ────────────────────
 
 
 def test_safe_then_unsafe_produces_two_batches():
@@ -177,11 +159,11 @@ def test_complex_pattern_safe_safe_unsafe_safe_unsafe_unsafe():
     )
     calls = [
         make_tc("1", "r"),
-        make_tc("2", "r"),  # → batch 0: concurrent [1,2]
-        make_tc("3", "w"),  # → batch 1: serial    [3]
-        make_tc("4", "r"),  # → batch 2: concurrent [4]
+        make_tc("2", "r"),
+        make_tc("3", "w"),
+        make_tc("4", "r"),
         make_tc("5", "w"),
-        make_tc("6", "w"),  # → batch 3,4: serial   [5], [6]
+        make_tc("6", "w"),
     ]
     batches = partition_tool_calls(calls, reg)
     assert len(batches) == 5
@@ -192,12 +174,9 @@ def test_complex_pattern_safe_safe_unsafe_safe_unsafe_unsafe():
     assert batches[4] == ToolBatch(is_concurrency_safe=False, calls=[calls[5]])
 
 
-# ── Unknown tool name → non-safe ─────────────────────────────────────
-
-
 def test_unknown_tool_name_treated_as_unsafe():
     """A tool name not in the registry must produce a non-safe batch."""
-    reg = make_registry()  # empty registry
+    reg = make_registry()
     batches = partition_tool_calls([make_tc("1", "nonexistent")], reg)
     assert len(batches) == 1
     assert batches[0].is_concurrency_safe is False
@@ -212,9 +191,6 @@ def test_unknown_tool_does_not_merge_with_adjacent_safe():
     assert batches[0].is_concurrency_safe is True
     assert batches[1].is_concurrency_safe is False
     assert batches[2].is_concurrency_safe is True
-
-
-# ── Exception in is_concurrency_safe → non-safe ───────────────────────
 
 
 def test_exception_in_is_concurrency_safe_treated_as_unsafe():
@@ -236,12 +212,8 @@ def test_exception_in_is_concurrency_safe_does_not_propagate():
         raise ValueError("bad")
 
     reg = make_registry(t=make_tool("t", concurrency_safe_fn=boom))
-    # Must not raise
     result = partition_tool_calls([make_tc("1", "t")], reg)
     assert result[0].is_concurrency_safe is False
-
-
-# ── is_concurrency_safe receives actual tool input ────────────────────
 
 
 def test_is_concurrency_safe_receives_correct_input():
@@ -275,12 +247,9 @@ def test_is_concurrency_safe_per_call_variance():
     ]
     batches = partition_tool_calls(calls, reg)
     assert len(batches) == 3
-    assert batches[0].is_concurrency_safe is True  # read
-    assert batches[1].is_concurrency_safe is False  # write (breaks run)
-    assert batches[2].is_concurrency_safe is True  # read
-
-
-# ── ToolBatch structure ───────────────────────────────────────────────
+    assert batches[0].is_concurrency_safe is True
+    assert batches[1].is_concurrency_safe is False
+    assert batches[2].is_concurrency_safe is True
 
 
 def test_tool_batch_is_dataclass_with_expected_fields():
@@ -295,9 +264,6 @@ def test_tool_batch_equality():
     a = ToolBatch(is_concurrency_safe=True, calls=[tc])
     b = ToolBatch(is_concurrency_safe=True, calls=[tc])
     assert a == b
-
-
-# ── Input validation gate (Gap 5) ──────────────────────────────────
 
 
 def test_missing_required_field_treated_as_unsafe():
@@ -316,7 +282,6 @@ def test_missing_required_field_treated_as_unsafe():
             is_concurrency_safe=lambda _: True,
         )
     )
-    # Missing required "file_path"
     batches = partition_tool_calls([make_tc("1", "t")], reg)
     assert len(batches) == 1
     assert batches[0].is_concurrency_safe is False
@@ -357,9 +322,6 @@ def test_no_required_field_in_schema_always_passes_validation():
     assert batches[0].is_concurrency_safe is True
 
 
-# ── is_destructive field (Gap 4) ────────────────────────────────────
-
-
 def test_is_destructive_defaults_to_false():
     tool = make_tool("t")
     assert tool.is_destructive({}) is False
@@ -375,9 +337,6 @@ def test_is_destructive_custom():
     )
     assert tool.is_destructive({"force": True}) is True
     assert tool.is_destructive({"force": False}) is False
-
-
-# ── context_modifier_fn field (Gap 6) ──────────────────────────────
 
 
 def test_context_modifier_fn_defaults_to_none():

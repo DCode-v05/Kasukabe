@@ -70,10 +70,6 @@ from typing import Any
 
 logger = logging.getLogger("kasukabe.sim.resident_learning_prompts")
 
-# Every prompt below says "you" to the resident and never "the user",
-# because the thing being remembered is the rememberer's own life. The
-# original's second-person-about-a-third-party framing is the whole
-# defect.
 
 EPISODE_ENCODING_SYSTEM = (
     "You write the memory of one person living in the town of Kasukabe.\n\n"
@@ -123,14 +119,6 @@ KNOWLEDGE_ENCODING_SYSTEM = (
     "people, places, items and amounts exactly as the signals name them - "
     "an agent id, a sim price, a location like business:b_mill. Never "
     "refer to internal record ids.\n\n"
-    # 1.0 is not a strength of belief to the pipeline, it is a CATEGORY:
-    # `learning_centre/pipeline.py` reads `confidence >= 1.0` as
-    # `is_user_stated` and stores the row as a stated fact, exempt from the
-    # 0.8 cap. This prompt's first draft gave 1.0 to "something stated
-    # plainly to you, or a refusal the world gave you" - which is nearly
-    # everything a resident experiences - and run 26 stored every row as
-    # `user_stated` at 1.0, including "world:find_people with query
-    # 'resident who tax collector official election' was attempted".
     "Confidence rules. 1.0 is rare: it files the entry as a stated fact for "
     "good, so reserve it.\n"
     "- 1.0 only for a figure or rule said to you word for word: a price "
@@ -204,10 +192,6 @@ CONSOLIDATION_SYSTEM = (
     'If nothing: {"cross_patterns": [], "soul_updates": [], "contradictions": []}'
 )
 
-# The four names this module rebinds, and nothing else. Named as data so
-# `install()` cannot drift from what the tests check, and so a fifth
-# prompt appearing upstream is visible as a gap rather than silently
-# unhandled.
 PROMPT_NAMES = (
     "EPISODE_ENCODING_SYSTEM",
     "KNOWLEDGE_ENCODING_SYSTEM",
@@ -238,9 +222,6 @@ def install(pipeline_module: Any | None = None) -> int:
             logger.warning("no resident prompt for %s - leaving the engine's", name)
             continue
         if not hasattr(pipeline_module, name):
-            # Upstream renamed or removed it. Say so loudly: silently
-            # skipping is how a prompt rewrite becomes a no-op that
-            # nobody notices for twenty-three runs.
             logger.error(
                 "learning pipeline has no %s - the resident prompt was NOT "
                 "installed and this batch will encode in the assistant "

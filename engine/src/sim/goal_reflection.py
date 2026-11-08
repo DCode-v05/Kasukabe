@@ -49,14 +49,8 @@ from src.herald.types import Message
 
 logger = logging.getLogger(__name__)
 
-# The reflection may issue at most this many world calls. A resident
-# that woke with nine new goals would have reflected its way into the
-# same noise the goal cap exists to prevent, and each call is money.
 MAX_REVISIONS = 3
 
-# Output cap for the reflection call itself. It returns a short JSON
-# list, not prose; `SIM_MAX_RESPONSE_TOKENS` is 1536 for a turn and this
-# needs a fraction of that.
 MAX_REFLECTION_TOKENS = 400
 
 REFLECTION_SYSTEM = (
@@ -115,8 +109,6 @@ class GoalReflection:
         """
         if not self.due_for(game_day):
             return ReflectionResult(skipped_because="already reflected on this day")
-        # Claimed BEFORE the work, so a second sleep tick for the same
-        # night cannot start a second call while this one is in flight.
         self._last_day = game_day
 
         try:
@@ -126,9 +118,6 @@ class GoalReflection:
             return ReflectionResult(errors=[f"read failed: {exc}"])
 
         if not standing.get("goals") and not standing.get("needs"):
-            # Nothing to revise and nothing pressing. Skipping is not a
-            # failure - it is the reason this costs almost nothing on a
-            # quiet night.
             return ReflectionResult(skipped_because="nothing to reflect on")
 
         try:
@@ -152,8 +141,6 @@ class GoalReflection:
         try:
             return json.loads(raw)
         except ValueError:
-            # The tool returns JSON; anything else is a contract break
-            # worth seeing rather than a shape to guess at.
             raise RuntimeError(f"recall_goals returned non-JSON: {raw[:200]}")
 
     async def _decide(self, standing: dict[str, Any]) -> list[dict[str, Any]]:
@@ -163,8 +150,6 @@ class GoalReflection:
             messages=[Message(role="user", content=f"Your day:\n{summary}")],
             system=[{"type": "text", "text": REFLECTION_SYSTEM}],
             max_output_tokens=MAX_REFLECTION_TOKENS,
-            # Fire-and-forget: this must not seed a cache entry that the
-            # next turn's prefix would then miss against (ENG-27).
             skip_cache_write=True,
         )
         return _parse_revisions(response.text)

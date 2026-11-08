@@ -26,31 +26,16 @@ import httpx
 
 from src.config import Settings
 
-# The SDK sent this version header automatically; citadel may key on it, so we
-# send it explicitly. KEEP this literal — it is a wire string, not a code dep.
 ANTHROPIC_VERSION = "2023-06-01"
 
-# Connection-level retry that the SDK used to provide. Status-code retries (429/
-# 529) stay in the engine's OverloadTracker loop — this only covers transport
-# hiccups (connection reset, etc.).
 TRANSPORT_RETRIES = 2
 
 DEFAULT_TIMEOUT = httpx.Timeout(600.0, connect=10.0)
 
-# Transient-failure retry the engine lost when it dropped the vendor SDK and that
-# httpx's transport-level ``retries`` does NOT cover: read-timeouts, dropped
-# connections, and 5xx responses. citadel is single-shot (it trips a deployment's
-# cooldown and raises — it does not re-pick within a request), so a retry here is
-# what lets its route-to-next failover actually help the live turn. Pure httpx +
-# asyncio backoff — no SDK. 429/529 are deliberately EXCLUDED: the engine's
-# OverloadTracker owns those (overload/cache semantics live in the agent loop).
-TRANSIENT_MAX_RETRIES = 2  # total attempts = 3
+TRANSIENT_MAX_RETRIES = 2
 TRANSIENT_BACKOFF_BASE_S = 0.25
 TRANSIENT_BACKOFF_MAX_S = 8.0
 
-# httpx transient failures worth retrying: all timeouts, all network errors, and
-# a server-side protocol drop. LocalProtocolError (a malformed request WE built)
-# is intentionally excluded — a retry would just rebuild the same bad request.
 RETRYABLE_HTTPX: tuple[type[Exception], ...] = (
     httpx.TimeoutException,
     httpx.NetworkError,
@@ -125,8 +110,6 @@ class CitadelClient:
             )
         headers: dict[str, str] = {
             "Authorization": f"Bearer {settings.cdt_key}",
-            # Citadel authenticates via the bearer token; the SDK also sent
-            # x-api-key by default, so keep it for parity / belt-and-suspenders.
             "x-api-key": settings.cdt_key,
             "anthropic-version": ANTHROPIC_VERSION,
             "content-type": "application/json",
@@ -168,7 +151,7 @@ class CitadelClient:
                     continue
                 raise error_from_response(resp)
             return resp.json()
-        raise RuntimeError("post_messages retry loop exhausted")  # defensive; unreachable
+        raise RuntimeError("post_messages retry loop exhausted")
 
     async def stream_messages(
         self,
@@ -182,9 +165,6 @@ class CitadelClient:
         …). Raises CitadelAPIError on a non-2xx status (error body read first).
         """
         stream_body = {**body, "stream": True}
-        # Retry transient failures and pre-stream 5xx ONLY before the first event
-        # is yielded. Once the model has emitted output, replaying the request
-        # would duplicate it — so a mid-stream drop bubbles instead.
         for attempt in range(TRANSIENT_MAX_RETRIES + 1):
             yielded = False
             retry = False
@@ -200,7 +180,7 @@ class CitadelClient:
                             is_retryable_status(resp.status_code)
                             and attempt < TRANSIENT_MAX_RETRIES
                         ):
-                            retry = True  # status known before any event → safe
+                            retry = True
                         else:
                             raw = await resp.aread()
                             raise error_from_bytes(resp.status_code, raw, dict(resp.headers))
@@ -211,12 +191,12 @@ class CitadelClient:
                         return
             except RETRYABLE_HTTPX:
                 if yielded or attempt >= TRANSIENT_MAX_RETRIES:
-                    raise  # mid-stream (would double-emit) or out of attempts
+                    raise
                 retry = True
             if retry:
                 await asyncio.sleep(transient_backoff(attempt))
                 continue
-        raise RuntimeError("stream_messages retry loop exhausted")  # defensive
+        raise RuntimeError("stream_messages retry loop exhausted")
 
 
 async def iter_sse(resp: httpx.Response) -> AsyncIterator[dict]:
@@ -236,7 +216,6 @@ async def iter_sse(resp: httpx.Response) -> AsyncIterator[dict]:
         try:
             yield json.loads(payload)
         except json.JSONDecodeError:
-            # Skip malformed frames rather than crash the turn.
             continue
 
 

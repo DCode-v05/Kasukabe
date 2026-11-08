@@ -45,9 +45,6 @@ from typing import Any
 
 DEFAULT_WORLD = "http://127.0.0.1:8100"
 DEFAULT_DB = "data/kasukabe.db"
-# Consecutive lines by overlapping people in one place, within this many ticks,
-# are one exchange. Not `conversation_id`: `say` mints a fresh id per
-# utterance, so every reply would be its own thread of one.
 THREAD_GAP_TICKS = 6
 
 
@@ -110,9 +107,6 @@ def elections_section(db: str, names: "Mapping[str, str] | None" = None) -> list
         return []
     try:
         if names is None:
-            # Read here rather than take it from the caller: this section is
-            # the only place that needs it, and a resident id alone makes the
-            # table unreadable.
             try:
                 names = {
                     str(i): n
@@ -132,14 +126,6 @@ def elections_section(db: str, names: "Mapping[str, str] | None" = None) -> list
             stood.setdefault(d.get("election_id", ""), {})[d.get("agent_id", "")] = (
                 d.get("because") or ""
             )
-        # Keyed by election_id, LAST write wins. A run that is stopped and
-        # resumed replays the ticks between the checkpoint and where it left
-        # off, so one election tallies once per resume - and the section
-        # printed the same ballot five times, three of them before any
-        # candidate had declared, as "0 stood. 0 vote(s) cast."
-        #
-        # The last tally is the right one to keep: it is the one whose
-        # candidate list is complete.
         by_id: dict[str, dict] = {}
         for payload, in conn.execute(
             "select payload from events where type = 'politics.election.tallied' order by id"
@@ -211,16 +197,13 @@ def api_calls(db: str, limit: int = 400) -> list[tuple]:
             (limit,),
         ).fetchall()
     except sqlite3.Error as exc:
-        # Loud. A bare `return []` here hid a SQL syntax error (`1e9.0`) for
-        # an entire run: the API-call sections simply did not appear, and an
-        # absent section reads as "nothing happened" rather than "this broke".
         print(f"run_report: api_calls query failed: {exc}", file=sys.stderr, flush=True)
         return []
     finally:
         conn.close()
 
 
-NL = chr(10)  # a blank line after a markdown heading
+NL = chr(10)
 
 
 def _blocks(body: str | None) -> list[dict]:
@@ -264,11 +247,6 @@ def _prompt_of(body: str | None) -> str:
     if not messages:
         return ""
     last = messages[-1]
-    # A message that is a bare string rather than {"role", "content"} is
-    # legal in the wire format and appears in real traces. Reading `.get`
-    # off it killed the whole report - one odd row costing every figure in
-    # the document, which is the wrong trade for a reader who wants the
-    # other nine hundred.
     if isinstance(last, str):
         return last.strip()
     if not isinstance(last, dict):
@@ -328,10 +306,6 @@ def sessions_by_engine(db: str, per_agent: int = 12) -> dict[str, list[tuple]]:
         return {}
     try:
         rows = conn.execute(
-            # Raw epoch, formatted by ist() like every other stamp in this
-            # report. SQLite's 'localtime' is the machine's zone in 24-hour
-            # form, so this one table would have disagreed with the rest of
-            # the document about both the timezone and the clock.
             "select agent_id, created_at, purpose, "
             "request_body, response_body, stop_reason, input_tokens, output_tokens, "
             "round(cost_nano_dollars/1e9, 6), success, coalesce(error_type,'') "
@@ -409,11 +383,6 @@ def spend(db: str) -> dict[str, Any]:
             "select count(*), coalesce(sum(success),0), "
             "coalesce(sum(cost_nano_dollars),0) from llm_calls"
         ).fetchone()
-        # Run 26 read "Dispatch success 96.6%" and "broker-internal x 26":
-        # every one of the 26 was SpendCapExceededError - the governor
-        # refusing calls at the cap, which is the run ending as designed and
-        # not a link breaking. Counted apart, and left out of the success
-        # rate, so the figure says what it claims to.
         try:
             refused_by_cap = conn.execute(
                 "select count(*) from llm_calls where success=0 "
@@ -424,7 +393,7 @@ def spend(db: str) -> dict[str, Any]:
                 "where success=0 and coalesce(error_type,'') != 'SpendCapExceededError' "
                 "group by 1 order by 2 desc"
             ).fetchall()
-        except sqlite3.OperationalError:  # a store from before error_type
+        except sqlite3.OperationalError:
             refused_by_cap = 0
             fails = conn.execute(
                 "select coalesce(failed_at,'untagged'), count(*) from llm_calls "
@@ -464,17 +433,12 @@ def tool_call_counts(home_root: str) -> dict[str, int]:
                 record = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            # Session logs are appended to and never cleared, so without this
-            # every tally is the sum of every run this machine has done:
-            # run 24 read 1,211 tool calls where the run itself made 82.
             if not belongs_to_this_run(record):
                 continue
             for action in record.get("actions") or []:
                 tool = action.get("tool")
                 if not tool:
                     continue
-                # Engines see them namespaced ("world:say"); the registry
-                # and this report name them bare.
                 bare = str(tool).split(":", 1)[-1]
                 counts[bare] = counts.get(bare, 0) + 1
     return counts
@@ -504,25 +468,10 @@ def gated_tool_names() -> set[str]:
         _world, registry = asyncio.run(build_world(genesis_tick=0, seed=1))
     except Exception:  # noqa: BLE001
         return set()
-    # spec.location_gate directly: ToolSpec declares the field, and a
-    # three-argument getattr would answer None - "nothing is gated" - if it
-    # were ever renamed, which is the exact failure this whole gate map was
-    # written to fix.
     return {
         name for name, spec in registry.tools.items()
         if spec.location_gate is not None
     }
-
-
-# ── evaluation spec section 6: the sections the new economy needs ─────
-#
-# A measure with no surface is a measure nobody reads - the same defect as
-# a mechanism with no call site. The town has posted prices, wages, energy
-# purchases and dormancy now, and a reader of the report could not tell.
-#
-# Every section names the table its figures came from, per section 6's
-# last line: a number with no provenance cannot be checked, and this
-# project has published two that turned out to be wrong.
 
 
 def prices_section(rows: list[dict]) -> list[str]:
@@ -536,13 +485,6 @@ def prices_section(rows: list[dict]) -> list[str]:
     out = ["## Prices\n"]
     if not rows:
         out.append(
-            # TOOL-16 / CORE-03. This read the price event under the
-            # `business.` domain while `post_price` emits it under
-            # `economy.` (commerce.py), so "Nobody posted a price" was
-            # printed over twelve real posts. The dead name is not spelled
-            # out here on purpose: `test_the_stakes_sections_can_be_non_
-            # empty` greps this whole file for it, and a guard that cannot
-            # tell a comment from a query is the right guard to keep.
             "**Nobody posted a price.** Read from `events` "
             "(`economy.price.posted`); every run before this one produced "
             "the same zero, which is why `buy` and `sell` had nothing to "
@@ -551,19 +493,6 @@ def prices_section(rows: list[dict]) -> list[str]:
         return out
     first = min(int(r.get("tick", 0)) for r in rows)
     out.append(f"**First posted price at tick {first}.** From `events`.\n")
-    # The column names are `post_price`'s own, checked against the payload
-    # it emits (world/tools/primitives/commerce.py), not guessed from what
-    # a price table "should" have. This read `business_id` and `price_sim`
-    # - neither of which `economy.price.posted` has ever carried - so run
-    # 25 printed `None | None` over eleven real posts while the tick
-    # column, read from the row rather than the payload, was right. That
-    # is EVAL-01's shape one layer in: the domain had already been fixed
-    # once (see the comment above), and nobody then checked the fields.
-    #
-    # `holder_kind` matters as much as `holder_id`: a price posted by a
-    # PERSON standing in the street is a resident trading on their own
-    # account, and folding that into a "Shop" column loses the distinction
-    # between a shop's price list and a resident hawking planks.
     out.append("| Tick | Posted by | Holder | Item | Ask (sim) | Bid (sim) |")
     out.append("|--:|---|---|---|--:|--:|")
     for row in sorted(rows, key=lambda r: (r.get("tick", 0), str(r.get("holder_id")))):
@@ -599,10 +528,6 @@ def stakes_section(
         out.append(f"**Head tax charged:** {len(head_tax)} time(s), "
                    f"{sum(int(r.get('amount', 0)) for r in head_tax)} sim total. "
                    "From `transactions`.\n")
-        # A debt is not a payment, and the two must not share a number.
-        # This line used to BE the head tax figure - read off the arrears
-        # event - so a day where everybody paid reported as a day where
-        # nobody did.
         arrears = head_tax_arrears or []
         if arrears:
             out.append(
@@ -630,9 +555,6 @@ def stakes_section(
         )
 
     if dormancies:
-        # With a heading, because the 50-agent report printed 37 rows of
-        # residents and ticks directly under the energy-purchase paragraph
-        # with nothing saying what the table was.
         out.append(
             f"**{len(dormancies)} resident(s) went dormant** - they ran out of "
             f"thinking money and stopped taking turns. From `health.agent.dormant`.\n")
@@ -813,7 +735,7 @@ def threads(rows: list[dict]) -> list[dict]:
         close = last and (u["tick"] - last["last_tick"]) <= THREAD_GAP_TICKS
         same_place = last and last["place"] == u.get("location_id")
         if last and last.get("conversation_id"):
-            overlaps = False  # never fold an unthreaded line into a real thread
+            overlaps = False
         if overlaps and close and same_place:
             last["lines"].append(u)
             last["last_tick"] = u["tick"]
@@ -828,14 +750,6 @@ def threads(rows: list[dict]) -> list[dict]:
     return out
 
 
-# ── time, as the reader keeps it ────────────────────────────────────────
-#
-# Every timestamp in this report is IST, 12-hour, with the date. A run that
-# spans midnight, read the next morning against a UTC 24-hour stamp, is a
-# document nobody can line up against their own memory of the evening.
-#
-# Fixed offset rather than a tz database lookup: IST has no daylight saving
-# and never has had, so +05:30 is exact and needs no zoneinfo package.
 IST = timezone(timedelta(hours=5, minutes=30), "IST")
 
 
@@ -847,9 +761,6 @@ def ist(epoch: float | int | str | None, with_date: bool = True) -> str:
         dt = datetime.fromtimestamp(float(epoch), IST)
     except (TypeError, ValueError, OSError):
         return "—"
-    # %-I (no zero-pad) is a glibc extension and not portable. Build the
-    # hour by hand instead of stripping a zero out of the formatted string,
-    # which is the kind of trick that works until a date starts with one.
     hour = dt.hour % 12 or 12
     clock = f"{hour}:{dt:%M:%S} {dt:%p} IST"
     return f"{dt:%d %b %Y}, {clock}" if with_date else clock
@@ -872,26 +783,6 @@ def _flat(value: Any, limit: int) -> str:
     return (text[:limit] + "…") if len(text) > limit else (text or "—")
 
 
-# ── sessions, per engine ────────────────────────────────────────────────
-#
-# Each engine writes one JSON line per tick it thinks, into its own
-# SEPTEMBER_HOME. The shape is exactly what a reader needs to follow one
-# agent's reasoning:
-#
-#   input       what the world told it (time, who is present, what happened)
-#   reasoning   what the model thought, in its own words
-#   actions     every tool it called, with parameters and the result
-#   done_status model id, turn count, tool-call count, exit reason
-#
-# The trace store knows what each CALL cost; only this knows what the agent
-# was thinking when it made it. Nothing read these files until now.
-
-# How many sessions per engine the transcripts carry.
-#
-# Was 6, which threw away everything an engine did before the last few
-# minutes - so the report showed the present and no history at all, which is
-# precisely backwards for a document meant to be read after the run. The full
-# log stays on disk either way; this is how much of it the document carries.
 SESSIONS_PER_ENGINE = int(os.environ.get("KASUKABE_REPORT_SESSIONS", "400"))
 
 
@@ -914,20 +805,14 @@ def sessions(home_root: str, per_agent: int = SESSIONS_PER_ENGINE) -> dict[str, 
         rows: list[dict[str, Any]] = []
         if log.is_file():
             try:
-                # The tail only. A five-hour run writes thousands of these
-                # and the report shows the recent ones; the file itself is
-                # the archive and stays on disk.
                 lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
             except OSError:
                 lines = []
-            # Scoped to THIS run: the file holds every run this machine has
-            # done, and `turns` and `tool_calls` below are summed straight
-            # off it. Unscoped, run 24 read three days of turns as one.
             for line in lines:
                 try:
                     record = json.loads(line)
                 except json.JSONDecodeError:
-                    continue  # a torn last line while the engine is writing
+                    continue
                 if belongs_to_this_run(record):
                     rows.append(record)
 
@@ -947,12 +832,6 @@ def sessions(home_root: str, per_agent: int = SESSIONS_PER_ENGINE) -> dict[str, 
     return out
 
 
-# ── one document per run ────────────────────────────────────────────────
-#
-# A single rolling record cannot answer "what did run 3 do differently from
-# run 2" - each refresh overwrites the last, and a fresh start silently
-# erases the run before it. Every fresh start now claims its own numbered
-# document and keeps it.
 RUN_DOC_DIR = Path(__file__).resolve().parents[2] / "docs" / "runs"
 RUN_DOC_PATTERN = "run-{n}-report.md"
 
@@ -1007,9 +886,6 @@ def run_started_at(world: str) -> str | None:
     for key in ("run_id", "started_at", "boot_id"):
         if state.get(key):
             return str(state[key])
-    # A world too old to report one. Every refresh then lands on a new
-    # document, which is noisy but never WRONG - two documents for one run
-    # beats one document silently overwritten by the next run.
     return None
 
 
@@ -1148,9 +1024,6 @@ def diffusion_section(events: list[dict]) -> list[str]:
 
     report = diffusion(events)
     lines = ["## Diffusion\n"]
-    # Including skills TAUGHT. The 50-agent run printed the sentence below
-    # over a lesson that had happened and been recorded - see
-    # `stakes_report.DiffusionReport.skill_teachings`.
     if not report.anything_moved:
         lines.append(
             "Nothing anybody invented reached anybody else. No licence, no "
@@ -1211,10 +1084,6 @@ def programs_section(invocations: list[dict]) -> list[str]:
         if not program_id:
             continue
         entry = programs.setdefault(
-            # `agent_id`, which is what `/world/tool_invocations`
-            # actually serves. The record's own attribute is `actor_id`
-            # and reaching for that name here is precisely how the price
-            # table came to render `None` over real posts.
             program_id, {"rows": 0, "actor": row.get("agent_id"), "tool": None}
         )
         entry["rows"] += 1
@@ -1386,15 +1255,6 @@ def learning_section(calls: list[dict]) -> list[str]:
     return out
 
 
-# When this run started, as a unix timestamp. Session logs under
-# SEPTEMBER_HOME are APPENDED to and never cleared, so one file holds every
-# run that machine has ever done - n02's held 59 turns across three days
-# when this was found, of which 15 belonged to the run being reported.
-#
-# Every tally read from a session log was therefore the sum of all runs
-# since the directory was last wiped: run 24 reported 1,211 tool calls
-# across 34 verbs where the run itself made 82 across 14. The trace-store
-# figures were always right; these were not.
 RUN_STARTED_AT: float = 0.0
 HOME_ROOT: str = ""
 
@@ -1432,9 +1292,6 @@ def _trace_manifest(path: str) -> dict[str, Any]:
         parsed = json.loads(env) if env else {}
     except ValueError:
         parsed = {}
-    # Asked for separately, because a trace written before the column
-    # existed answers [] to the whole query otherwise - and that would cost
-    # every older run its run_id to buy a field it never had.
     where = _trace_rows(path, "select checkpoint_dir from run_manifest "
                               "where run_id = ? limit 1", run_id)
     return {"run_id": run_id, "started_at": started_at, "env": parsed,
@@ -1541,11 +1398,6 @@ def durable_view(path: str) -> dict[str, Any]:
         except ValueError:
             body = {}
         steps = body.get("steps") or []
-        # Holders are READ, not assumed. `[agent_id]` - the author, alone -
-        # was a guess, and in the 50-agent run a wrong one: `Quick Harvest`
-        # was taught to a second resident who walked it 16 times, and the
-        # report said "held by 1" two sections above its own evidence.
-        # Every agent with a row for this task_type holds it.
         holders = [a for (a,) in _trace_rows(
             path, "select distinct agent_id from skills where task_type = ?", task)]
         skills.append({
@@ -1616,7 +1468,6 @@ def _run_started_at(args) -> float:
             started = json.loads(path.read_text())["started_at"]
             return datetime.datetime.fromisoformat(started).timestamp()
         except Exception:  # noqa: BLE001 - no manifest is not a failure,
-            # it just means the report cannot scope itself and says so.
             continue
     print("run_report: no run manifest - session-log tallies will include "
           "EVERY run in this SEPTEMBER_HOME, not just this one",
@@ -1747,11 +1598,6 @@ def scenario_section(events_db: str) -> list[str]:
 
 
 def build(world: str, db: str, world_db: str | None = None) -> str:
-    # EVAL-01's sibling. `llm_calls` live in the BROKER's store; `events`,
-    # `utterances` and `transactions` live in the WORLD's. They are two
-    # files and this generator treated them as one - which is why run 24
-    # reported "Nobody posted a price" over two real posts and a completed
-    # sale.
     events_db = world_db or db
     state = get(world, "/world/state") or {}
     talk = get(world, "/world/utterances?limit=5000") or {}
@@ -1760,29 +1606,14 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
     refusals = get(world, "/world/refusals") or {}
     justice = get(world, "/world/justice")
     money = spend(db)
-    # /agents, not /agent-viewer/agents. The viewer router is not mounted on
-    # a genesis-embedded world, so the richer route 404s and the resident
-    # table - thirty rows, the thing the report exists to show - silently
-    # became the sentence "The world reported no roster."
     roster = get(world, "/agents") or get(world, "/agent-viewer/agents?limit=500") or []
     calls = api_calls(db)
     turn_detail = sessions_by_engine(db)
     pulse = calls_per_minute(db)
     preflight = get(world, "/world/preflight")
-    # EVAL-03: the (agent_id, tick) -> tools join that gives every model call
-    # a task_label. Live, because tool_invocations is an in-memory ring with
-    # no table behind it - see the endpoint's docstring for that limit.
-    #
-    # Then, once the world has stopped, the trace's own `tool_invocations`
-    # table (EVAL-25) - see `invocations_for_labelling`.
     invocations = invocations_for_labelling(
         (get(world, "/world/tool_invocations") or {}).get("invocations") or [], db
     )
-    # When the world has stopped answering, the trace store still holds the
-    # cast, the tool calls, the speech, the skills and the invented tools.
-    # Run 26's final write printed "Residents -", "Nothing was authored" and
-    # "Nobody spoke" about six residents who had written three skills, one
-    # tool and 37 utterances - every one of them sitting in the trace.
     world_up = bool(state)
     durable = {} if world_up else durable_view(events_db)
     if durable:
@@ -1790,11 +1621,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
         authored = {**durable["authored"], **{k: v for k, v in authored.items() if v}}
         if not talk.get("utterances"):
             talk = {"utterances": durable["utterances"]}
-    # And the reading the run took of itself on the way down, which holds the
-    # three things no table does: who lived here, what the world refused, and
-    # which tools it was serving. The trace is preferred for anything it
-    # holds - it is the whole run, where this is one moment - so this fills
-    # gaps rather than overwriting.
     reading = {} if world_up else final_reading(events_db)
     if reading:
         state = {**(state or {}), **(reading.get("state") or {})}
@@ -1805,9 +1631,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
         authored = {**authored, **{k: v for k, v in (reading.get("authored") or {}).items() if v}}
         if not talk.get("utterances"):
             talk = reading.get("utterances") or talk
-    # Was anybody in a position to answer? `{}` from a stopped world and `{}`
-    # from a world that refused nothing are the same value and not the same
-    # fact, and the report has printed the first as the second.
     refusals_known = world_up or reading.get("refusals") is not None
     if not world_up:
         refusals = reading.get("refusals") or {}
@@ -1826,9 +1649,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
 
     run_id = state.get("run_id") or ""
     add("# Kasukabe run report\n")
-    # How a reporter restarted mid-run finds its way back to this run's own
-    # document instead of opening a new one. Stays on the first line of the
-    # generated half, where run_doc_for() reads it.
     add(f"<!-- run-started: {run_id} -->\n")
     if world_up:
         add(f"*Generated {now}. Every figure is read from the running world.*\n")
@@ -1845,39 +1665,20 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
         add(f"*Run id `{run_id}` — this document belongs to one boot of the "
             f"world and is refreshed in place until that run ends.*\n")
 
-    # ── the checklist ─────────────────────────────────────────────────
-    # docs/GOALS.md's standing rule: a run report OPENS with which boxes the
-    # run ticked. Scored from the trace, one query per item, so the answer is
-    # not a reading of this report's own prose (world/run_checklist.py).
     from world.run_checklist import checklist_section
 
     for line in checklist_section(events_db, {"justice": justice, "agents": roster}):
         add(line)
 
-    # ── what this run was set up to be ────────────────────────────────
-    # A scenario (world/scenario.py) decides which cast, which tick the
-    # world starts on and what is already true when it does. Two reports
-    # whose runs began in different situations are not comparable, so the
-    # situation goes next to the score rather than in a file beside it.
     for line in scenario_section(events_db):
         add(line)
 
-    # ── the run ───────────────────────────────────────────────────────
     add("## The run\n")
     add("| | |")
     add("|---|---|")
     add(f"| Residents | **{state.get('population', '—')}** |")
     add(f"| Alive / dormant / dead | {state.get('alive','—')} / {state.get('dormant','—')} / {state.get('dead','—')} |")
     add(f"| Tick reached | **{state.get('tick','—')}** (game day {state.get('game_day','—')}) |")
-    # A zero here has two completely different meanings and only one of
-    # them is good news. Run 16 spent $4.01 and reported "$0.00 · 0
-    # calls" because the broker had been left running across a delete of
-    # the store and was writing into an unlinked inode - the query was
-    # right, the table was empty, and the report read as a cheap run.
-    # The rest of that same database showed 46 utterances and 352
-    # memories, which cannot happen without inference. So: an empty call
-    # table beside a town that spoke is a missing measurement, and it is
-    # printed as one.
     lost_instrumentation = money and not money["calls"] and town_was_busy(db)
     if lost_instrumentation:
         add("| Model calls | **not recorded** |")
@@ -1887,35 +1688,12 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
         refused_by_cap = money.get("cap_refusals", 0)
         dispatched = money["calls"] - refused_by_cap
         pct = (100.0 * money["ok"] / dispatched) if dispatched else 0.0
-        # "Bedrock calls" was written when Bedrock was the only place a call
-        # could go. It is now a claim, and on this run a false one: 5,419
-        # calls served by gpt-6-luna through OpenAI, reported as Bedrock's.
-        # A reader checking whether ONLY_MODEL held would have read the table
-        # and concluded it had not.
-        #
-        # So the row names what actually served, read from the trace rather
-        # than assumed - one model named outright, several summarised, and
-        # the neutral word when the trace cannot say.
         add(f"| {_served_by(db)} | **{money['calls']:,}** |")
         add(f"| Dispatch success | **{pct:.1f}%** |")
         if refused_by_cap:
             add(f"| Refused by the spend cap | {refused_by_cap:,} — the governor "
                 "ending the run, not a broken link |")
         add(f"| Spend | **${money['usd']:.2f}** |")
-    # What share of turns actually touched the world.
-    #
-    # "Dispatch success 100.0%" is true of the calls that WERE made and
-    # silent about the turns that made none. Run 19: Ainsley Holloway and
-    # Tobias Holloway each took twelve turns and called nothing, 387 calls
-    # ended without a tool call at $1.95 - 48% of the run - and the
-    # headline still read 100%.
-    # From this run's own tool calls against this run's own cast, read from
-    # the trace. Run 26 printed "0 of 23 (0%)" and named n01-n20 - run 25's
-    # cast - plus three homes older still, because the engine homes were
-    # found by an environment variable the reporter had not been given and a
-    # default that pointed at another run's folder. Six residents had made
-    # 452 tool calls. Session logs stay the fallback for a store with no
-    # tool_invocations table.
     acting = residents_who_acted(events_db)
     if acting is None:
         engine_turns = [
@@ -1954,7 +1732,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
             add(f"- `{hop}` × {n}")
         add("")
 
-    # ── what the town invented ────────────────────────────────────────
     skills = authored.get("skills") or []
     tools = authored.get("tools") or []
     add("## What the town invented\n")
@@ -1987,7 +1764,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
                     f"{' · **standing order**' if s.get('governmental') else ''}"
                     f" · version {s.get('version', 1)}\n")
 
-    # ── learning by doing ─────────────────────────────────────────────
     prof = {k: v for k, v in (authored.get("proficiency") or {}).items() if v}
     reps = authored.get("repetitions") or {}
     add("## Learning by doing\n")
@@ -2006,23 +1782,17 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
                     f"{(reps.get(agent_id) or {}).get(skill, 0)} |")
         add("")
 
-    # ── the conversation ──────────────────────────────────────────────
     rows = talk.get("utterances") or []
     add("## The conversation\n")
     if not rows:
         add("Nobody spoke.\n")
     else:
         ex = threads(rows)
-        # Says what threads() actually does. It was changed to group by the
-        # world's own conversation_id and this sentence was not, so the
-        # report described a method it had stopped using - the reader's only
-        # account of how these exchanges were assembled, and it was wrong.
         threaded = sum(1 for t in ex if t.get("conversation_id"))
         add(f"**{len(rows)} utterances in {len(ex)} exchanges.** Grouped by the "
             f"conversation id the world assigned when the words were spoken "
             f"({threaded} of {len(ex)}); anything the world could not thread falls "
             "back to place and participants.\n")
-        # A2A: what each exchange settled, and why remarks were made.
         settled = settled_by_conversation(events_db)
         with_deal = sum(1 for t in ex if settled.get(str(t.get("conversation_id") or "")))
         said_why = sum(1 for u in rows if u.get("intent"))
@@ -2040,19 +1810,11 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
                 f" · {turns} turn{'' if turns == 1 else 's'}"
                 f"{'' if turns > 1 else ' (no reply)'}\n")
             for i, u in enumerate(t["lines"]):
-                # A line whose speaker is the previous line's listener IS
-                # the answer to it. Marked, because otherwise an exchange
-                # reads as two people talking past each other and "what did
-                # they say back" cannot be answered from the page.
                 prev = t["lines"][i - 1] if i else None
                 is_reply = bool(
                     prev and prev.get("listener_agent_id")
                     and prev["listener_agent_id"] == u.get("speaker_agent_id")
                 )
-                # Tick AND wall clock. A tick locates the line inside the
-                # simulation; the timestamp locates it inside the run, which
-                # is what you need to line a conversation up against the API
-                # calls that produced it.
                 stamp = u.get("said_at") or u.get("created_at")
                 when = f"t{u.get('tick')}"
                 if stamp:
@@ -2070,7 +1832,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
                     f"{who(d['seller'])} → {who(d['buyer'])}, {d['quantity']} {d['item']} "
                     f"for {d['total_sim']} sim" for d in deals) + ".\n")
 
-    # ── what the town could not do ────────────────────────────────────
     ref = refusals.get("refusals") or []
     add("## What the town could not do\n")
     if not refusals_known:
@@ -2096,13 +1857,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
                 f"{', '.join(sorted(b['tools'])) or '—'} |")
         add("")
 
-    # ── and what nobody reached for at all ────────────────────────────
-    #
-    # The table above counts REFUSALS, so it can only show what somebody
-    # tried. Run 19 listed one row - a single sawmill gate - while the
-    # transcript had residents unable to sell planks, find a buyer or buy
-    # food, because none of them ever called the tool that does it. A run
-    # where nobody tries anything scores clean.
     registry_view = get(world, "/tools/registry")
     if isinstance(registry_view, list):
         registry_tools = registry_view
@@ -2129,11 +1883,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
                 "tried it - and no refusal table can show it.\n")
             add(", ".join(f"`{t['name']}`" for t in never) + "\n")
 
-    # ── evaluation spec section 6 ─────────────────────────────────────
-    #
-    # Read from the trace only, and wired here rather than left as
-    # functions nobody calls - which is the failure this project keeps
-    # finding and would be an especially poor one in the reporting code.
     def _events(kind: str) -> list[dict]:
         try:
             conn = sqlite3.connect(f"file:{events_db}?mode=ro", uri=True)
@@ -2149,10 +1898,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
                 record = json.loads(payload) if isinstance(payload, str) else payload
             except (ValueError, TypeError):
                 continue
-            # A payload that parses to a string, a list or a number is not
-            # an event body this section can read. Skipped rather than
-            # crashed: one odd row must not cost the whole report, which is
-            # exactly what it did the first time this ran on live data.
             if not isinstance(record, dict):
                 continue
             record.setdefault("tick", tick)
@@ -2210,9 +1955,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
                 continue
             if not isinstance(record, dict):
                 continue
-            # The readers key off `type`, which lives in the column rather
-            # than the payload - the shape `stakes_report` documents is
-            # {"type", "tick", "payload"}, so hand it that.
             out.append({"type": kind, "tick": tick, "payload": record})
         return out
 
@@ -2253,37 +1995,10 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
                     r[want] = r[have]
         return records
 
-    # EVAL-01: these names are not chosen, they are READ OFF the emitters.
-    # Five of the six were wrong when this was written, so the sections
-    # reported "Nobody posted a price" over twelve real posts. The names
-    # below were each confirmed against a `type="..."` in world/ ; the
-    # test alongside this file re-confirms them so a rename cannot make
-    # this section quietly false again.
     for line in prices_section(_events("economy.price.posted")):
         add(line)
     for line in stakes_section(
-        # Upkeep emits NO event - it moves money as a transaction only.
-        # Reading it out of transactions is the honest source; an empty
-        # list here would have been a silent zero.
         upkeep=_transactions("daily_upkeep"),
-        # ECON-01 again, and this time the zero was on the TAX line.
-        #
-        # This read `economy.head_tax_debt.accrued`, which
-        # `charge_daily_head_tax` publishes only for a head that could NOT
-        # pay. It is the arrears signal, not the charged signal - so the
-        # report printed "Head tax charged: 0 time(s), 0 sim total"
-        # exactly when the tax had worked perfectly. The 50-resident run
-        # of 2026-09-16 is the case in point: the runner logged "day 1:
-        # head tax charged for 22 household(s) at 300 bps", the ledger
-        # held 50 `tax` rows totalling 1,500 sim all stamped tick 144, and
-        # the report said nobody had paid for existing. A reader would
-        # have drawn the opposite conclusion from the truth, about the one
-        # rung the whole programme was waiting on.
-        #
-        # Read from `transactions` like upkeep beside it, which is the
-        # honest source for money that MOVED. Arrears keep their own line
-        # below, off the event, because a debt is a different fact from a
-        # payment and folding them into one number is how this went wrong.
         head_tax=_transactions("tax"),
         head_tax_arrears=_norm(_events("economy.head_tax_debt.accrued"),
                                amount="amount_sim", agent_id="debtor_agent_id"),
@@ -2297,36 +2012,20 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
         paid=_events("business.wage.paid"),
     ):
         add(line)
-    # EVAL-05: the two readers that had no caller. `time_spent` and
-    # `diffusion` were written for the evaluation spec's Time and
-    # Diffusion sections and `grep time_spent|diffusion run_report.py`
-    # returned nothing, so neither section has appeared in a single report
-    # this project has produced - and T4 and T5 have never been read off a
-    # run.
-    #
-    # Given the whole event stream rather than one type each: both readers
-    # select the types they need, and passing them a pre-filtered list
-    # would put the type names in two places.
     for line in time_section(_all_events()):
         add(line)
     for line in diffusion_section(_all_events()):
         add(line)
     for line in learning_section(_labelled_calls(db, invocations)):
         add(line)
-    # PROG-03. The acts-per-decision figure, in the document a person
-    # opens rather than only behind `python -m world.evals programs`.
     for line in programs_section(invocations):
         add(line)
-    # INFRA-19: what the housekeeping the resident did not ask for cost
-    # the resident. An open design question stops being theoretical once
-    # somebody can see the number.
     for line in housekeeping_section(_classified_calls(db)):
         add(line)
 
     for line in elections_section(db):
         add(line)
 
-    # ── the town's state ──────────────────────────────────────────────
     if vitals:
         add("## The town itself\n")
         h = vitals.get("health") or {}
@@ -2347,7 +2046,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
     for line in justice_section(justice):
         add(line)
 
-    # ── every resident ────────────────────────────────────────────────
     add("## Every resident\n")
     people = roster if isinstance(roster, list) else (roster.get("agents") or [])
     if not people:
@@ -2367,13 +2065,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
                 f"{p.get('usd_wallet_cents', '—')} | {skills or '—'} |")
         add("")
 
-    # ── every engine's own sessions ───────────────────────────────────
-    # A checklist, one line per engine, because the first question about a
-    # thirty-engine run is "did all thirty actually think" - and a table of
-    # calls sorted by time cannot answer it. A ticked box is an engine that
-    # made at least one successful call; an unticked one is an engine that
-    # booted and never spoke, which is the failure mode that used to show up
-    # as a healthy-looking run with silent statues in it.
     if turn_detail:
         add("## Every turn, in detail" + NL)
         live = sum(1 for turns in turn_detail.values() if any(t[9] for t in turns))
@@ -2399,9 +2090,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
             add("  |--:|---|---|---|---|---|--:|--:|")
             for i, (ts, purpose, prompt, said, tools, stop, tin, tout, cost, ok, err) in enumerate(turns, 1):
                 when = ist(ts)
-                # An unreadable body is shown as such: bodies are capped at
-                # 64 KB, so a hole here is the cap doing its job and worth
-                # seeing, not a row to quietly drop.
                 shown_in = _cell(prompt, 90) or ("*(body truncated at the 64 KB cap)*" if not ok else "—")
                 shown_out = _cell(said, 110) or "—"
                 result = stop if ok else f"**{err or 'failed'}**"
@@ -2409,7 +2097,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
                     f"{result} | {tin}/{tout} | ${cost:.6f} |")
             add("")
 
-    # ── the run's pulse ───────────────────────────────────────────────
     if pulse:
         add("## API calls, minute by minute\n")
         add("Newest first. This is every request the town made to think.\n")
@@ -2419,7 +2106,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
             add(f"| {ist(minute)} | {n} | {ok or 0} | ${usd or 0:.4f} |")
         add("")
 
-    # ── individual calls ──────────────────────────────────────────────
     if calls:
         add("### The most recent calls\n")
         add("| Time | Agent | Purpose | In | Out | Cost | ms | Result |")
@@ -2430,7 +2116,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
                 f"${cost:.6f} | {ms} | {result} |")
         add("")
 
-    # ── sessions, per engine ──────────────────────────────────────────
     home_root = engine_home_root()
     sess = sessions(home_root)
     add("## Sessions, per engine\n")
@@ -2449,9 +2134,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
                 f"{'✓' if v['log_exists'] else '**missing**'} |")
         add("")
 
-        # The transcripts. One agent at a time, newest last, in the shape the
-        # brief asked for: input, then model (reasoning + output), then the
-        # tool calls that came out of it.
         add("### Transcripts\n")
         add("`input` is what the world told the agent · `reasoning` is what "
             "it thought · `said` is what the town heard · `actions` are the "
@@ -2480,14 +2162,7 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
                     f"exit `{st.get('exit_reason', '—')}`\n")
                 add(f"> **input** — {_flat(r.get('input'), 500)}\n")
                 reasoning = (r.get("reasoning") or "").strip()
-                # An empty reasoning field is reported, not hidden. A model
-                # that acted without saying why is a real observation about
-                # this run, and blanking the line would disguise it.
                 add(f"> **reasoning** — {_flat(reasoning, 700) if reasoning else '*(none)*'}\n")
-                # What the town HEARD, as against what the agent thought.
-                # Reasoning is optional; text output happens on every turn
-                # that is not a bare tool call, and it went unrecorded in
-                # every run before this one.
                 said = (r.get("output") or "").strip()
                 add(f"> **said** — {_flat(said, 700) if said else '*(nothing — tool calls only)*'}\n")
                 acts = r.get("actions") or []
@@ -2502,11 +2177,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
                         add(f"> ↳ {_flat(a.get('result'), 300)}\n")
             add("")
 
-    # ── the instrument itself ─────────────────────────────────────────
-    #
-    # Not the town: the machinery watching it. A report that says the town is
-    # quiet, when in fact the observatory is down and the session logs stopped
-    # an hour ago, is worse than no report - it reads as evidence of calm.
     add("## The instrument\n")
     add("| Part | State | Detail |")
     add("|---|:-:|---|")
@@ -2546,20 +2216,12 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
     add(f"| Engines | {'✓' if eng.get('alive') == eng.get('expected') and eng.get('alive') else '✗'} | "
         f"{eng.get('alive','—')}/{eng.get('expected','—')} alive"
         + (f" · down: {', '.join(d['agent_id'] for d in down)}" if down else "") + " |")
-    # A turn the runner gave up on has already paid for its calls and
-    # produced nothing. 126 of 367 turns ended that way on one run, against
-    # a 30s limit and a 5.8s mean call - a resident that looked around,
-    # walked, harvested and spoke ran out of time by arithmetic.
     timed_out = eng.get("timed_out_ticks")
     if timed_out is not None:
         add(f"| Turns abandoned | {'✓' if not timed_out else '!'} | "
             f"{timed_out} turn(s) hit the {eng.get('tick_timeout_s','?')}s dispatch "
             f"limit and were discarded after paying for their calls |")
 
-    # A question nobody could ask is not a failed check. The 50-agent run's
-    # report marked `skillify` MISSING in a run where three residents used
-    # it: the world had stopped, `/tools/registry` answered nothing, and the
-    # empty set was printed as a finding.
     if served_tools is None:
         add("| Authoring tools | — | not recorded: the world had stopped when this "
             "was written and no final reading was taken |")
@@ -2573,7 +2235,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
             f"{'all authoring tools reachable' if not missing else 'MISSING ' + ', '.join(missing)} |")
     add("")
 
-    # ── preflight, as it stood ────────────────────────────────────────
     if preflight and preflight.get("checks"):
         add("## Preflight at last check\n")
         add(f"**{preflight.get('passed')}/{preflight.get('total')} passed** — "
@@ -2586,13 +2247,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
         add("")
 
     add("---\n")
-    # CORE-03: this footer said the trace store "does not carry the
-    # conversation" because "the world's event bus is not bound to it in a
-    # genesis run". It is bound, and has been - `utterances`, `skills`,
-    # `tools_registry`, `tool_invocations` and `events` all fill during a
-    # run. The advice was right for the wrong reason, which is worse than
-    # being wrong: a reader following it never wondered whether the trace
-    # was worth reading.
     add("*Written by `world/run_report.py`, mixing LIVE world reads with the "
         "trace store. Generate it before stopping the run: once the world stops, "
         "live rows fall back to the trace, and refusals and who is alive, dormant "
@@ -2601,13 +2255,6 @@ def build(world: str, db: str, world_db: str | None = None) -> str:
     return "\n".join(L) + "\n"
 
 
-# One record, not two.
-#
-# There were two documents describing the same run - a hand-written findings
-# file and a generated one - and a reader had no way to know which was current.
-# The generated half now lives inside the findings file, below this marker.
-# Everything above it is preserved across every rewrite, so the analysis a
-# person wrote survives a reporter that runs every ninety seconds.
 LIVE_MARKER = "<!-- LIVE REPORT BELOW - REGENERATED EVERY REFRESH, DO NOT EDIT -->"
 
 
@@ -2679,7 +2326,7 @@ def run_is_over(world: str, db: str) -> bool:
     """
     state = get(world, "/world/state")
     if state is None:
-        return True  # the world stopped answering
+        return True
 
     cap = os.environ.get("SPEND_CAP_USD")
     if not cap:
@@ -2713,20 +2360,8 @@ def main(argv: list[str]) -> int:
                           "Read from the run manifest when not given; run 26's "
                           "report guessed a default folder and reported run 25's "
                           "cast."))
-    # Anchored to the repository, not to the shell's cwd.
-    #
-    # "docs/TEST_RUN.md" is a relative path with two plausible meanings, and
-    # run from app/ it silently created a SECOND record at app/docs/ - which
-    # is the exact thing this file was just consolidated to prevent. The
-    # module sits at app/world/run_report.py, so the repo root is two up.
-    # Default: one numbered document per fresh start, under docs/runs/.
-    # -o still pins a specific file when you want one.
     ap.add_argument("-o", "--out", default=None,
                     help="write to this file instead of docs/runs/run-N-report.md")
-    # 90 seconds: the brief asks for a refresh every one to two minutes, and
-    # the report costs one world call plus a handful of indexed queries over
-    # the tail of the trace store - cheap enough to sit in the middle of that
-    # window rather than at the slow end of it.
     ap.add_argument("--watch", type=int, metavar="SECONDS", nargs="?", const=300,
                     help="rewrite on an interval so a long run cannot lose its "
                          "history (bare --watch means every 5 minutes)")
@@ -2751,13 +2386,6 @@ def main(argv: list[str]) -> int:
             world_answers=(lambda: world_answers(args.world)) if live_only else None,
         )
 
-    # The first write is inside the same guard as the rest.
-    #
-    # `once()` used to run bare, so a reporter started before the broker had
-    # created the trace table died on `no such table: llm_calls` - and the
-    # run then had no written record at all, silently, for its whole length.
-    # A reporter must not die is a promise that has to hold on the first
-    # attempt too.
     try:
         once(live_only=bool(args.watch))
     except Exception as exc:  # noqa: BLE001
@@ -2769,13 +2397,6 @@ def main(argv: list[str]) -> int:
             time.sleep(args.watch)
             try:
                 once(live_only=True)
-                # The run ends when the governor trips on the spend cap, and
-                # the last scheduled refresh before that lands up to five
-                # minutes early - so the document would freeze just short of
-                # the end and never record how the run actually finished.
-                # One final write, then stop: there is nothing further to
-                # watch, and a reporter left spinning against a dead world
-                # just rewrites the same page forever.
                 if run_is_over(args.world, args.db):
                     if world_answers(args.world):
                         print("spend cap reached — writing the final report", flush=True)
@@ -2788,10 +2409,6 @@ def main(argv: list[str]) -> int:
                         )
                     return 0
             except Exception as exc:  # noqa: BLE001 - a reporter must not die
-                # A reporter that dies takes the run's only written record
-                # with it, and it dies for exactly the reasons a long run
-                # produces: the world restarting, the trace store locked
-                # mid-checkpoint. Both are transient; neither is fatal.
                 print(f"report failed, will retry: {exc}", file=sys.stderr, flush=True)
     return 0
 

@@ -1,19 +1,3 @@
-/* Kasukabe — the group chat panel.
- *
- * Talk is a tail of every remark the town made. This is the other thing a
- * reader wants: the conversations themselves, each with the people who are
- * IN it — round the table, addressed by name, listening — not only the ones
- * who have produced text.
- *
- * That distinction is the whole reason /world/conversations exists. Until
- * the world kept a roster, a conversation was inferred after the fact from
- * "who spoke in this room recently", so a resident standing there being
- * talked about was in no conversation at all, and two pairs talking in one
- * market were a single thread with each answer under the other's question.
- *
- * Reads /api/town/conversations on the same beat as talk.js. Renders into
- * #groupChatBody, which shell.js lifts into the left drawer as its own tab.
- */
 (function () {
   'use strict';
 
@@ -26,8 +10,6 @@
     });
   }
 
-  /* UI-24: UTC, not 'Asia/Kolkata'. See talk.js's copy of this function
-   * for why - one transcript must read the same for every reader. */
   function istTime(secs) {
     if (!secs) return '';
     try {
@@ -43,10 +25,6 @@
     return String(place).replace(/^home:/, '').replace(/^business:/, '').replace(/_/g, ' ');
   }
 
-  /* Every participant, named. Never "and 3 others": the count of people in
-   * a conversation is the fact the panel exists to show, and a group of
-   * five collapsing into "Rosalind and 4 others" hides exactly the thing
-   * that makes it a group chat. */
   function roster(people) {
     if (!people || !people.length) return '';
     return '<div class="gc-roster">' + people.map(function (p) {
@@ -81,8 +59,6 @@
       : '';
     var lines = (c.lines || []).map(lineHtml).join('');
     if (!lines) {
-      /* A convened conversation with nobody speaking yet is a real state,
-       * and saying so beats an empty card that looks like a bug. */
       lines = '<div class="gc-quiet">Called, and nobody has spoken yet.</div>';
     }
     return '<div class="gc-card' + (isGroup ? ' is-group' : '') + '">' +

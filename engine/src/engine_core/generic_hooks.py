@@ -77,11 +77,6 @@ from typing import Any, Awaitable, Callable, Generic, Protocol, TypeVar, cast
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Result types
-# ---------------------------------------------------------------------------
-
-
 @dataclass
 class GenericHookResult:
     """One generic hook's verdict on a lifecycle event.
@@ -94,10 +89,6 @@ class GenericHookResult:
     prevent_continuation: bool = False
     blocking_error: str | None = None
     updated_payload: dict[str, Any] | None = None
-    # "allow" | "deny" | None. Only meaningful for PermissionRequest, where a
-    # hook stands in for a human. The generic shape could express "block" but
-    # never "permit", so a policy hook could only ever refuse - which made it
-    # useless as an alternative to opening the whole run to bypass mode.
     permission_decision: str | None = None
 
 
@@ -110,8 +101,6 @@ class AggregatedGenericResult:
     blocking_errors: list[str] = field(default_factory=list)
     updated_payload: dict[str, Any] | None = None
     hook_outcomes: list[dict] = field(default_factory=list)
-    # A single "deny" from any hook wins over any number of "allow"s: the
-    # cautious answer is never overridden by a permissive one.
     permission_decision: str | None = None
 
 
@@ -119,21 +108,11 @@ InputT = TypeVar("InputT")
 InputT_contra = TypeVar("InputT_contra", contravariant=True)
 
 
-# ---------------------------------------------------------------------------
-# Protocol
-# ---------------------------------------------------------------------------
-
-
 class GenericHook(Protocol[InputT_contra]):
     """A generic lifecycle hook callable."""
 
     async def execute(self, input: InputT_contra) -> GenericHookResult:  # noqa: A002
         ...
-
-
-# ---------------------------------------------------------------------------
-# Registry
-# ---------------------------------------------------------------------------
 
 
 @dataclass
@@ -245,8 +224,6 @@ class GenericHookRegistry(Generic[InputT]):
                 decision = (res.permission_decision or "").strip().lower()
                 if decision in ("allow", "deny"):
                     entry["permission_decision"] = decision
-                    # Deny is sticky: once any hook has refused, a later
-                    # permissive hook cannot talk the decision back up.
                     if decision == "deny" or agg.permission_decision is None:
                         agg.permission_decision = decision
                     if decision == "deny":
@@ -254,11 +231,6 @@ class GenericHookRegistry(Generic[InputT]):
             agg.hook_outcomes.append(entry)
 
         return agg
-
-
-# ---------------------------------------------------------------------------
-# Hook implementations
-# ---------------------------------------------------------------------------
 
 
 class CallableGenericHook(Generic[InputT]):
@@ -317,9 +289,6 @@ class CommandGenericHook(Generic[InputT]):
             payload_obj = {"value": repr(input)}
 
         if self.event_name and isinstance(payload_obj, dict):
-            # Authoritative: hook's bound event name overrides any
-            # dataclass default. Avoids drift when input types reuse
-            # each other's defaults.
             payload_obj["hook_event_name"] = self.event_name
 
         payload = json.dumps(payload_obj).encode("utf-8")
@@ -397,11 +366,6 @@ class HttpGenericHook(Generic[InputT]):
             )
             return GenericHookResult()
         return result_from_dict(data)
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 
 def result_from_dict(data: Any) -> GenericHookResult:

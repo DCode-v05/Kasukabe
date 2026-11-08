@@ -47,30 +47,13 @@ from broker.config import DEEPSEEK_MODEL_ID, KIMI_MODEL_ID
 from broker.errors import InvalidRequestError
 from broker.tokens import estimate_tokens
 
-# Context windows, per the models' own error messages rather than their
-# marketing. DeepSeek's is quoted verbatim from the ValidationException
-# above; Kimi's from its own.
-#
-# Deliberately NOT the engine's SIM_CONTEXT_WINDOW (40,000). That number is
-# a client-side COMPACTION BUDGET - it decides when the engine summarises a
-# conversation, and it is set well below the real window on purpose. This
-# table is about what the provider will actually refuse.
 CONTEXT_WINDOW_TOKENS: dict[str, int] = {
     KIMI_MODEL_ID: 262_144,
     DEEPSEEK_MODEL_ID: 163_840,
 }
 
-# Below this, a clamp is not a shorter answer, it is a truncated one - and
-# a truncated answer costs the same to produce as a whole one and cannot be
-# used. 256 is roughly a sentence of reasoning plus one tool call.
 MIN_USABLE_OUTPUT_TOKENS = 256
 
-# The estimator is ~4 characters per token and is not a tokenizer for
-# either of these models (see tokens.py). Reserve a margin so a request
-# that estimates as just fitting is not refused by Bedrock anyway - and,
-# more importantly, so this module never refuses a request that WOULD have
-# been served. Refusing a healthy call is the one failure mode here that is
-# worse than the round trip.
 ESTIMATE_MARGIN_TOKENS = 2_000
 
 
@@ -85,8 +68,6 @@ def prompt_tokens(body: dict[str, Any]) -> int:
     try:
         return estimate_tokens(json.dumps(body, default=str))
     except (TypeError, ValueError):
-        # A body that will not serialise is somebody else's error to
-        # report. No opinion is the safe answer.
         return 0
 
 
@@ -116,10 +97,6 @@ def fit_to_context_window(
 
     room = budget - prompt
     if room < MIN_USABLE_OUTPUT_TOKENS:
-        # Nothing can save it. Say so with the numbers, because the
-        # alternative - a Bedrock ValidationException recorded as an
-        # upstream error - has been read as "Bedrock was unhappy" in every
-        # report this project has written.
         raise InvalidRequestError(
             f"prompt is ~{prompt:,} tokens against a {window:,}-token window on "
             f"{serving_model}, leaving {room:,} for a reply. Nothing was sent. "

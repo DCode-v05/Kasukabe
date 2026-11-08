@@ -45,15 +45,8 @@ from world.ledger.money import SIM_PER_USD, SIM_PER_USD_CENT
 from world.tools.place_aliases import display_place
 from world.tests.map_assets import needs_the_map
 
-# TOOL-27. This module needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped, and red for environment hides real regressions inside the
-# noise - which is how TOOL-09 stayed invisible for a whole cycle.
 pytestmark = needs_the_map
 
-
-# ── ECON-27 ─────────────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
 async def test_buy_energy_quotes_the_real_rate(world, registry) -> None:
@@ -111,12 +104,8 @@ async def test_the_cent_figure_matches_the_constant(world, registry) -> None:
     from world.ledger.money import SIM_PER_ENERGY_UNIT
 
     description = registry.tools["buy_energy"].description
-    # The unit a resident reads is energy now, not cents; the per-unit figure
-    # still has to be the constant's, never a number typed beside it.
     assert f"{SIM_PER_ENERGY_UNIT} sim buys 1 energy" in description
 
-
-# ── TOOL-24 ─────────────────────────────────────────────────────────────
 
 def test_a_gate_is_named_the_way_the_map_names_it() -> None:
     from world.charter.models import LOCATION_GOVERNMENT_COMPLEX

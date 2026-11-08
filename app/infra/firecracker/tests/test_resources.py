@@ -59,7 +59,6 @@ def test_distinct_units_get_distinct_resources(tmp_path: Path) -> None:
 
 def test_vsock_cid_collision_between_live_units_raises(tmp_path: Path) -> None:
     settings = FirecrackerSettings(run_dir=tmp_path / "run", network_cidr="10.200.0.0/16")
-    # A pool this small forces every unit_id onto CID slot 0.
     pool = ResourcePool(settings, cid_pool_size=1)
 
     pool.allocate("agent-a")
@@ -68,8 +67,6 @@ def test_vsock_cid_collision_between_live_units_raises(tmp_path: Path) -> None:
 
 
 def test_guest_ip_collision_between_live_units_raises(tmp_path: Path) -> None:
-    # /30 has exactly one usable guest address after reserving network,
-    # broadcast, and the bridge's own .1 address.
     settings = FirecrackerSettings(run_dir=tmp_path / "run", network_cidr="10.200.0.0/30")
     pool = ResourcePool(settings, cid_pool_size=100_000)
 

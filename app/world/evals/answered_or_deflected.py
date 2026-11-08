@@ -67,24 +67,8 @@ from world.evals.behavioural import names, selections, utterances
 BROKER = os.environ.get("BROKER_BASE_URL", "http://127.0.0.1:8200")
 MODEL = os.environ.get("EVAL_JUDGE_MODEL", "moonshotai.kimi-k2.5")
 
-# The town treasury, and NOT a resident.
-#
-# A resident's wallet is their life here: it buys their thinking, and when
-# it empties they go dormant and then die. Spending it on our measurement
-# would literally starve somebody to find out how they talk. The first
-# draft used a bare "eval-judge" id, which the world's ledger does not
-# know - every call came back UnknownAgentError, the same defect that once
-# cost a whole run 1,242 consecutive 404s.
-#
-# `government:treasury` is a real account the ledger holds and no resident
-# lives on, so judging is billed to the town rather than to a person, and
-# the $1000 invariant still balances.
 JUDGE_AGENT_ID = os.environ.get("EVAL_JUDGE_AGENT_ID", "government:treasury")
 
-# How far ahead of the question to look for the reply. The scheduler wakes
-# each resident every three ticks, so an answer lands 3-6 ticks later;
-# twelve is the conversation window, which is the world's own definition
-# of how long an exchange stays one exchange.
 REPLY_WINDOW_TICKS = 12
 
 VERDICTS = ("answered", "deflected", "silent")
@@ -125,10 +109,6 @@ def ask(question: str, reply: str) -> str:
             "content-type": "application/json",
             "x-api-key": JUDGE_AGENT_ID,
             "anthropic-version": "2023-06-01",
-            # Tagged so the spend report can tell judging from thinking.
-            # Untagged, it would land in the cognition lane and be billed
-            # as a resident's own turn - the RC-5 defect, reintroduced by
-            # a tool built to measure it.
             "X-Kasukabe-Purpose": "eval.judge",
         },
     )
@@ -136,11 +116,6 @@ def ask(question: str, reply: str) -> str:
         with urllib.request.urlopen(request, timeout=60) as response:
             payload = json.load(response)
     except (urllib.error.URLError, OSError, ValueError):
-        # Almost always one of two things, and both are worth naming
-        # rather than counting silently: the broker is not running, or it
-        # is running without a world behind it, in which case it cannot
-        # check a wallet and answers "internal error: All connection
-        # attempts failed" to every call.
         return "error"
     text = " ".join(
         block.get("text", "")

@@ -48,9 +48,6 @@ def make_executor(
     )
 
 
-# ── Registration ─────────────────────────────────────────
-
-
 def test_register_and_unregister():
     src = InterruptSource()
     ex = make_executor()
@@ -72,9 +69,6 @@ def test_reset_for_tests_drops_singleton():
     reset_for_tests()
     b = get_interrupt_source()
     assert a is not b
-
-
-# ── Trigger fan-out ──────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -108,7 +102,6 @@ async def test_trigger_leaves_block_tools_alone():
     src.trigger("test")
 
     results = [r async for r in ex.results()]
-    # BLOCK tool ran to completion, not error
     assert len(results) == 1
     assert results[0].content == "done"
 
@@ -137,11 +130,7 @@ async def test_trigger_isolates_executor_errors():
     await asyncio.sleep(0.02)
 
     count = src.trigger("isolated")
-    # Good one cancelled successfully; broken one caught.
     assert count == 1
-
-
-# ── Install / uninstall ──────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -159,8 +148,6 @@ async def test_install_is_idempotent():
 def test_install_noop_when_no_running_loop():
     """Outside any running loop, install must return False and not raise."""
     src = InterruptSource()
-    # Called from sync test context — no running loop — install should
-    # fail gracefully and leave the source uninstalled.
     ok = src.install()
     assert ok is False
     assert src.installed is False
@@ -186,13 +173,8 @@ def test_install_noop_in_worker_thread():
     t = threading.Thread(target=worker)
     t.start()
     t.join()
-    # Either returns False (expected) or True on platforms where it works;
-    # critically, it must not raise and the test thread must finish cleanly.
     assert "ok" in result
     assert isinstance(result["ok"], bool)
-
-
-# ── End-to-end: trigger drains a real executor ───────────
 
 
 @pytest.mark.asyncio
@@ -204,7 +186,7 @@ async def test_end_to_end_trigger_then_drain():
     ex.add_tool(make_call("t2", "c"))
     await asyncio.sleep(0.02)
     cancelled = src.trigger("e2e")
-    assert cancelled == 1  # one executor, not one per tool
+    assert cancelled == 1
     results = [r async for r in ex.results()]
     assert len(results) == 2
     assert all(r.is_error for r in results)

@@ -42,12 +42,7 @@ from world.tools.place_aliases import place_for_charter
 
 from .conftest import spawn_agent
 
-# What the map draws, what `move` walks you to, and what `look_around`
-# reports - none of which is the string the charter compares against.
 COMPLEX_SECTOR = "Kasukabe Government Complex"
-
-
-# ── the three that were missed, one test each ─────────────────────────
 
 
 @pytest.mark.asyncio
@@ -55,7 +50,6 @@ async def test_a_resident_at_the_complex_can_stand_for_election(world, registry)
     """The one run 25 caught. `vote` was fixed; this was not."""
     await spawn_agent(world, "n01", COMPLEX_SECTOR, age_years=40.0, household_id="h1")
 
-    # Scheduled at this tick, so candidacy is open at this tick.
     election = await world.charter.elections.schedule_election(world.tick())
     await world.charter.elections.advance_phase(election.election_id, world.tick())
 
@@ -106,12 +100,6 @@ async def test_issuing_a_builder_licence_is_refused_for_the_seat_not_the_place(
     assert "government_complex" not in str(raised.value)
 
 
-# ── the sweep, which is the actual guard ──────────────────────────────
-
-
-# Every module that defines tool handlers. Derived from the registry's own
-# import list rather than a hand-kept tuple, for the same reason this file
-# exists: a hand-kept list of places to look is what let three sites hide.
 def _handler_modules() -> list[Path]:
     root = Path(registry_module.__file__).parent
     return sorted(
@@ -149,7 +137,6 @@ class _RawPlaceIntoCharter(ast.NodeVisitor):
         charter_args: list[tuple[str, int]] = []
 
         for sub in ast.walk(node):
-            # `here = world.location_of(agent.agent_id) or ""`
             if isinstance(sub, ast.Assign):
                 for call in ast.walk(sub.value):
                     if (
@@ -161,7 +148,6 @@ class _RawPlaceIntoCharter(ast.NodeVisitor):
                             if isinstance(target, ast.Name):
                                 raw_names.add(target.id)
 
-            # `await world.charter.elections.declare_candidacy(..., here)`
             if isinstance(sub, ast.Call) and _is_charter_call(sub.func):
                 for arg in [*sub.args, *(kw.value for kw in sub.keywords)]:
                     if isinstance(arg, ast.Name):

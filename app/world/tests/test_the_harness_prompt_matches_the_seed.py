@@ -89,8 +89,6 @@ def test_the_roster_names_real_residents(seed: str) -> None:
         f"{roster[:200]}"
     )
 
-    # And each id that IS there is somebody's, not floating. A roster of
-    # "(n06), farmer" would pass the check above and name nobody.
     labelled = re.findall(r"([A-Z][A-Za-z'-]+)\s+\((n\d{2})\)", roster)
     assert len(labelled) == len(re.findall(r"\bn\d{2}\b", roster)), (
         f"EVAL-06: an id in the roster has no name in front of it: {roster[:200]}"
@@ -130,9 +128,6 @@ def test_it_has_the_same_number_of_parts_as_the_real_seed(seed: str) -> None:
         f"EVAL-06: the resident's seed now has {len(parts)} parts and this "
         f"test knows about 3 - check the harness composes all of them: {parts}"
     )
-
-
-# ── the brief that says who you are ────────────────────────────────────
 
 
 def test_the_brief_uses_a_name_not_a_unit_id() -> None:

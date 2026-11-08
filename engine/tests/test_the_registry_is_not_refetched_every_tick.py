@@ -182,7 +182,6 @@ async def test_a_tool_the_town_invented_still_arrives(tmp_path, monkeypatch, bro
         await tick(engine, broker)
         assert f"{WORLD_TOOL_NAME_PREFIX}bake" not in engine.tools.tools
 
-        # Somebody in town invents `bake`.
         world.rows.append(dict(BAKE))
         world.version = 2
         await tick(engine, broker)
@@ -212,7 +211,6 @@ async def test_a_resident_that_walks_gets_the_redescribed_schema(tmp_path, monke
     try:
         await tick(engine, broker)
 
-        # Same registry, same version; the resident moved to the outcrop.
         world.rows[0]["description"] = "Mine ore. Requires: ore_grade, depth_m."
         await tick(engine, broker)
 

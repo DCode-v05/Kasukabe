@@ -19,8 +19,6 @@ from __future__ import annotations
 
 from world.ledger.action_costs import DEFAULT_SCHEDULE, ActionCostCategory
 
-# Rules 4 and 5. Speech and observation are the two ways a turn can be
-# real work to a person and no work at all to the ledger.
 SPEECH_TOOLS = frozenset({"say", "start_conversation", "convene"})
 OBSERVATION_TOOLS = frozenset({
     "look_around", "list_places", "describe_place", "describe_person",
@@ -28,8 +26,6 @@ OBSERVATION_TOOLS = frozenset({
     "recall_memories", "recall_session_log", "search_memory", "check_debts",
     "move", "rest",
 })
-# Rule 3's categories, from the cost schedule rather than a second list
-# that could drift from it.
 WORK_CATEGORIES = frozenset({ActionCostCategory.LABOUR, ActionCostCategory.TRADE})
 
 
@@ -54,9 +50,6 @@ def label_for_turn(
     if intention_tool:
         return intention_tool
 
-    # FIRST work tool, not last. A turn that harvests and then sells is a
-    # harvesting turn that ended in a sale; grouping it under `sell` would
-    # hide the work C1 is trying to see get cheaper.
     for tool in tools_called:
         if is_work(tool):
             return tool
@@ -65,13 +58,6 @@ def label_for_turn(
         return "idle"
     if all(tool in SPEECH_TOOLS for tool in tools_called):
         return "talk"
-    # EVAL-04: observation ONLY, per the spec's rule 5 - "`look` if it
-    # called only observation tools". This used to admit SPEECH_TOOLS as
-    # well, which made a turn of `["look_around", "say"]` a `look` here and
-    # an `idle` in stakes_report's copy. Deduplicating the two forced the
-    # question of which was right, and the spec answers it: a turn that
-    # both looked and spoke is neither rule 4 nor rule 5, so it falls
-    # through to rule 6.
     if all(tool in OBSERVATION_TOOLS for tool in tools_called):
         return "look"
     return "idle"

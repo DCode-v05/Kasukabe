@@ -264,16 +264,6 @@ def test_the_system_prompt_is_byte_identical_to_persona_dot_txt() -> None:
     assert harness
 
 
-# ── TOOL-31: the harness can put a resident in front of its own library ──
-#
-# Every authoring scenario until now began with a resident that had never
-# written anything, because the harness had no way to say otherwise. That
-# is the easy half of the question. The hard half - the one the operator
-# asked for - is whether a resident that ALREADY wrote a tool reaches for
-# the verb again to build on it, and whether it uses the projection rather
-# than reading a log. Neither was expressible.
-
-
 def test_a_scenario_can_give_a_resident_tools_it_already_wrote() -> None:
     from world.evals.verb_reach import Scenario, load_scenarios
 
@@ -369,9 +359,6 @@ async def test_a_scenario_can_show_the_hint_a_live_resident_would_have_read() ->
     assert authoring_hint_text("'harvest' then 'craft'", 4) in text
 
 
-# ── EVAL-07: an L1 score that is not written down is not a measurement ──
-
-
 def test_a_scorecard_can_be_recorded(tmp_path) -> None:
     """The one L1 run this project has ever done is prose in a run report:
     "21 of 37 scenarios pass", five samples, no rows anywhere. So "was this
@@ -400,6 +387,4 @@ def test_a_scorecard_can_be_recorded(tmp_path) -> None:
     name, value, payload = rows[0]
     assert "toolify/canonical" in name
     assert value == pytest.approx(0.6)
-    # The sample size above all: a reach with no n behind it is a number two
-    # runs cannot be compared on.
     assert '"samples": 20' in payload and '"kind": "positive"' in payload

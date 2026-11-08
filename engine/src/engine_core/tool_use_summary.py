@@ -25,7 +25,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Feature gate — set FEATURE_TOOL_USE_SUMMARY=false to disable entirely.
 ENABLED = os.environ.get("FEATURE_TOOL_USE_SUMMARY", "true").lower() != "false"
 
 SYSTEM_PROMPT = (
@@ -103,7 +102,6 @@ async def generate_tool_use_summary(
     try:
         from src.herald.types import Message, SystemPromptBlock
 
-        # Build a concise representation of what tools did
         parts: list[str] = []
         for t in tools:
             input_str = truncate_json(t.input)
@@ -118,8 +116,6 @@ async def generate_tool_use_summary(
 
         user_content = f"{context_prefix}Tools completed:\n\n{tool_block}\n\nLabel:"
 
-        # System prompt with global cache scope so the stable prefix is shared
-        # across calls without reconstructing — mirrors enablePromptCaching in ref.
         system = [
             SystemPromptBlock(
                 text=SYSTEM_PROMPT,

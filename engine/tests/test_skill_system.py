@@ -94,9 +94,7 @@ class TestLayeredResolution:
             data_dir = Path(tmp)
             create_user_skill(data_dir, {"name": "summarizer", "description": "Custom"})
             catalog = load_catalog(CATALOG_DIR, user_data_dir=str(data_dir))
-            # User version shadows
             assert catalog.get_skill("summarizer")["description"] == "Custom"
-            # But 10 skills total (9 platform + 1 user replacing 1 platform)
             assert len(catalog.skills) == 10
 
     def test_loads_core_catalog(self):
@@ -120,7 +118,6 @@ class TestIntentMatching:
     def test_no_match_returns_empty(self):
         catalog = load_catalog(CATALOG_DIR)
         matches = catalog.match_skills("quantum entanglement physics simulation")
-        # May or may not match — but should not crash
         assert isinstance(matches, list)
 
     def test_returns_top_k(self):
@@ -160,7 +157,6 @@ class TestSkillCRUD:
             content = (data_dir / "skills" / "my-skill" / "SKILL.md").read_text()
             assert "New prompt" in content
             assert "Old" not in content
-            # Description survives an update that only touches the prompt.
             assert "V1" in content
 
     def test_delete_skill(self):
@@ -199,7 +195,6 @@ class TestLCSkillEvolution:
         )
         await db.commit()
 
-        # Simulate incrementing
         await db.execute(
             "UPDATE user_skills SET occurrence_count = occurrence_count + 1 WHERE name = ?",
             ("summarizer",),
@@ -239,7 +234,6 @@ class TestLCSkillEvolution:
         """Fork should trigger when: 10+ uses AND 3+ corrections AND ratio > 20%."""
         import uuid
 
-        # 15 uses, 4 corrections = 26.7% → should fork
         await db.execute(
             "INSERT INTO user_skills (id, name, source, occurrence_count, correction_count) VALUES (?, ?, 'platform', 15, 4)",
             (str(uuid.uuid4()), "summarizer"),

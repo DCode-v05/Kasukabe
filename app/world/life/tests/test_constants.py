@@ -40,9 +40,6 @@ def test_exchange_sim_per_usd_cent_is_imported_from_money_not_redeclared() -> No
     ever be true or the import itself would already have failed.
     """
     assert EXCHANGE_SIM_PER_USD_CENT is SIM_PER_USD_CENT
-    # The value moves with the rate (100 at 10,000:1, 50 at 5,000:1). What
-    # must never change is that there is only ONE of it - so assert the
-    # identity above and derive the value here rather than re-pinning it.
     assert EXCHANGE_SIM_PER_USD_CENT == SIM_PER_USD // 100
 
 

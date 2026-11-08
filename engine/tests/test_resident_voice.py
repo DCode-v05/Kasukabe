@@ -142,20 +142,6 @@ def test_the_wrapper_is_actually_installed_on_the_boot_path() -> None:
     )
 
 
-# ── B3: a turn in which nothing happened is not worth a model call ────
-#
-# NOT the spec's wording. B3's companion settings say "the post-turn
-# summariser run on compaction only", and that is refused on purpose: the
-# string this call produces is written straight into the LearningSignal
-# store as type="event", so it IS the stream the learning centre
-# consolidates. Running it on compaction only would cut the town's signal
-# production about tenfold and leave the waking-interval batch with
-# nothing to work on.
-#
-# The same money comes from where it costs nothing instead. Run 19: 387 of
-# 810 calls ended with no tool call at all.
-
-
 def test_a_turn_that_called_no_tool_does_not_pay_for_a_summary() -> None:
     adapter = _Adapter()
     wrapped = speak_as_resident(adapter, agent_name="Tobias Holloway")
@@ -167,8 +153,6 @@ def test_a_turn_that_called_no_tool_does_not_pay_for_a_summary() -> None:
     ]))
 
     assert adapter.seen == [], "an idle turn still paid for a summariser call"
-    # The signal is still written - a turn where a resident stood and
-    # thought is a fact about the resident.
     assert "Tobias Holloway took no action this turn." in summary
     assert "copper" in summary
     assert wrapped.skipped == 1
@@ -183,7 +167,6 @@ def test_a_turn_that_called_a_tool_still_gets_a_real_summary() -> None:
     asyncio.run(wrapped.generate([
         _Message("user", "You are at the quarry."),
         _Message("assistant", "Mining."),
-        # thread.py builds a tool RESULT as role=user with a LIST content.
         _Message("user", [{"type": "tool_result", "content": "3 copper"}]),
         _Message("user", FROZEN_SUMMARY_PROMPT),
     ]))
@@ -200,10 +183,8 @@ def test_only_this_turns_tool_calls_count() -> None:
     wrapped = speak_as_resident(adapter, agent_name="Tobias Holloway")
 
     asyncio.run(wrapped.generate([
-        # Yesterday: a turn that did something.
         _Message("user", "You are at the quarry."),
         _Message("user", [{"type": "tool_result", "content": "3 copper"}]),
-        # Today: a turn that did not.
         _Message("user", "You are at the quarry. Nobody else is here."),
         _Message("assistant", "Still thinking."),
         _Message("user", FROZEN_SUMMARY_PROMPT),

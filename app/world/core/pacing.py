@@ -86,7 +86,7 @@ class PacingController:
             if self.config.continuous_interval_s > 0:
                 await asyncio.sleep(self.config.continuous_interval_s)
             else:
-                await asyncio.sleep(0)  # yield control even at max speed
+                await asyncio.sleep(0)
 
     async def run_burst(self, num_ticks: int) -> list[Any]:
         """Runs up to num_ticks ticks back to back, stopping early if

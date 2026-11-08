@@ -76,8 +76,6 @@ async def test_the_drain_fires_with_a_whole_tick_of_headroom(tmp_path):
     drained_at: list[int] = []
 
     class Gateway:
-        # The drain reserve now covers what the drain itself spends,
-        # one call per engine - so a fake needs a roster.
         ports_by_agent = {"n01": 9100}
 
         async def drain_learning(self):
@@ -132,8 +130,6 @@ def test_the_continuous_loop_drains_and_measures(tmp_path):
     )
 
 
-# ── the reserve must fund the drain itself (run 24) ──────────────────────
-
 def test_the_reserve_covers_what_the_drain_will_spend(tmp_path):
     """Run 24: the drain fired at exactly the right moment and still
     consolidated 0 of 20.
@@ -145,7 +141,6 @@ def test_the_reserve_covers_what_the_drain_will_spend(tmp_path):
     """
     runner = _runner(tmp_path)
 
-    # Twenty residents to drain.
     runner.world_state = type("W", (), {"agents": {f"n{i:02d}": None for i in range(20)}})()
     reserve = runner.drain_reserve_cents()
     needed = 20 * runner.DRAIN_COST_PER_RESIDENT_CENTS

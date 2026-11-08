@@ -41,16 +41,6 @@ async def test_a_resident_is_served_far_fewer_full_schemas(world_and_registry):
         f"{FULL_SCHEMA_BUDGET}; the schemas are two thirds of every turn's "
         "input bill (ENG-03)"
     )
-    # TOOL-07 narrowed "every verb" to "every verb this resident may call".
-    # The anonymous payload still lists all 88, fifteen of which are
-    # GOVERNMENT-namespace tools a farmhand may neither call nor, per
-    # DESIGN.md section 2, know the existence of; those are now absent
-    # rather than reduced, so the two lengths are no longer equal. What the
-    # index-line rule must still never do is drop a verb the resident could
-    # have used - which is what this asserts.
-    # And `buy` is offered only while the resident is in a conversation
-    # (operator's rule, 2026-09-21), so a farmhand talking to nobody is not
-    # handed it - by design, not by the index-line rule dropping a verb.
     from world.tools.registry import CONVERSATION_ENABLED_TOOLS
 
     talking = bool(world.conversation_partners("n01"))

@@ -20,10 +20,10 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
-RESUME_STATE_TTL_ACTIVE = 10800  # 3 hours
-RESUME_STATE_TTL_INPUT = 259200  # 72 hours
-CONTENT_MAX_CHARS = 200_000  # max chars per persisted content entry
-CONTENT_MAX_PER_SESSION = 100  # max persisted entries per task/session
+RESUME_STATE_TTL_ACTIVE = 10800
+RESUME_STATE_TTL_INPUT = 259200
+CONTENT_MAX_CHARS = 200_000
+CONTENT_MAX_PER_SESSION = 100
 
 
 class ResumeState(BaseModel):
@@ -66,11 +66,6 @@ class ResumeStateManager:
             return
         try:
             state.updated_at = datetime.now(timezone.utc).isoformat()
-            # SQLite-comparable format (UTC, space separator, no offset): the
-            # expiry filters compare against datetime('now') as strings, and
-            # Python's isoformat ('T' + offset) always sorts above it within
-            # the same day - which silently deferred every expiry to the next
-            # date boundary.
             expires = (datetime.now(timezone.utc) + timedelta(seconds=ttl)).strftime(
                 "%Y-%m-%d %H:%M:%S"
             )
@@ -133,7 +128,6 @@ class ResumeStateManager:
         except Exception as e:
             logger.warning("resume_state cleanup failed: %s", e)
 
-    # ── Content Store ─────────────────────────────────────
 
     async def store_content(
         self,
@@ -147,11 +141,9 @@ class ResumeStateManager:
         if self.db is None:
             return
 
-        # Safeguard: cap content size
         if len(content) > CONTENT_MAX_CHARS:
             content = content[:CONTENT_MAX_CHARS] + "\n\n[Content truncated at storage limit]"
 
-        # Safeguard: cap entries per session
         try:
             rows = await self.db.fetch(
                 "SELECT COUNT(*) as cnt FROM resume_state WHERE charter_id LIKE ? AND ttl_type = 'content'",
@@ -165,7 +157,7 @@ class ResumeStateManager:
                 )
                 return
         except Exception:
-            pass  # Proceed with store attempt even if count check fails
+            pass
 
         entry = json.dumps(
             {
@@ -180,12 +172,10 @@ class ResumeStateManager:
             },
             ensure_ascii=False,
         )
-        # Tool results use conversation-length TTL so they outlive compaction
         from src.engine_core.conversation_store import CONVERSATION_TTL_SECONDS
         from src.engine_core.context_engineering import SOURCE_TOOL_RESULT
 
         ttl = CONVERSATION_TTL_SECONDS if source == SOURCE_TOOL_RESULT else RESUME_STATE_TTL_ACTIVE
-        # Same SQLite-comparable format as write_checkpoint (see note there).
         expires = (datetime.now(timezone.utc) + timedelta(seconds=ttl)).strftime(
             "%Y-%m-%d %H:%M:%S"
         )
@@ -261,11 +251,6 @@ class ResumeStateManager:
         entries_to_search: list[dict] = []
         try:
             if content_id:
-                # Same expiry scope as list_content / get_content. Without it
-                # search_content reported matches from TTL-expired entries that
-                # get_content would then refuse to return - the same call chain
-                # saying an entry both does and does not exist - and those
-                # matches consumed the max_results budget, crowding out live ones.
                 row = await self.db.fetchrow(
                     "SELECT state_json FROM resume_state WHERE charter_id = ?"
                     " AND expires_at > datetime('now')",
@@ -312,9 +297,6 @@ class ResumeStateManager:
                     }
                 )
                 total += len(matches)
-            # searched_entries is reported here too. The caller in thread.py
-            # sums it with .get(key, 0), so omitting it silently contributed 0
-            # and a response listing N count rows claimed zero entries searched.
             return {
                 "counts": counts,
                 "total_matches": total,
@@ -369,14 +351,6 @@ class ResumeStateManager:
                 break
 
         key_name = "sections" if output_mode == "sections" else "matches"
-        # total_matches is the number of items returned, kept under this name for
-        # wire compatibility with thread.py, which sums it across this store and
-        # the ingestion store into a single returned-count total; it is not an
-        # uncapped count of everything that matched. What distinguishes a capped
-        # result from a complete one is truncated together with returned_matches.
-        # searched_entries reports searched - the entries actually opened - not
-        # len(entries_to_search), because the outer loop breaks as soon as the
-        # max_results cap is hit.
         return {
             key_name: all_matches,
             "total_matches": len(all_matches),

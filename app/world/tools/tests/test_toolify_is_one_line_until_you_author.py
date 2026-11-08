@@ -42,11 +42,11 @@ async def test_the_line_keeps_what_a_resident_needs_to_decide(world, registry):
 
     text = _row(registry, world, "n01", "toolify")["description"]
 
-    assert "new tool" in text                      # what it makes
-    assert "the wrapper itself is free" in text     # what it costs
-    assert "do_in_order" in text                    # where the step shape is
-    assert "describe_primitives" in text            # where the rest is
-    assert "Needs: " in text and "steps" in text    # it can still be called
+    assert "new tool" in text
+    assert "the wrapper itself is free" in text
+    assert "do_in_order" in text
+    assert "describe_primitives" in text
+    assert "Needs: " in text and "steps" in text
 
 
 @pytest.mark.asyncio

@@ -35,9 +35,6 @@ from src.engine_core.prompt_cache_break_detection import (
 )
 
 
-# ── Fixtures ───────────────────────────────────────────────────────
-
-
 @pytest.fixture
 def mgr():
     """ConsciousnessManager without DB dependencies — sections-only testing."""
@@ -50,9 +47,6 @@ def reset_cache_detection():
     reset_pending_deletions()
     yield
     reset_pending_deletions()
-
-
-# ── Section registration and resolution ────────────────────────────
 
 
 class TestSectionRegistration:
@@ -75,9 +69,6 @@ class TestSectionRegistration:
         result = mgr.resolve_sections()
         assert result[0][0] == "z"
         assert result[1][0] == "a"
-
-
-# ── Memoization ────────────────────────────────────────────────────
 
 
 class TestSectionMemoization:
@@ -153,9 +144,6 @@ class TestSectionMemoization:
         assert call_count == 2
 
 
-# ── Boundary and cache scopes ─────────────────────────────────────
-
-
 class TestBoundaryAndScopes:
     def test_stable_before_boundary_gets_global_scope(self, mgr):
         mgr.register_section("identity", SectionStability.STABLE, lambda: "I am the agent")
@@ -198,8 +186,6 @@ class TestBoundaryAndScopes:
         assert blocks[0].ttl is None
 
     def test_global_cache_ttl_is_configurable(self):
-        # The global prefix TTL is configurable (settings.global_cache_ttl);
-        # "5m" pays the cheaper 1.25x cache-write for short one-off contexts.
         mgr = ConsciousnessManager(global_cache_ttl="5m")
         mgr.register_section("identity", SectionStability.STABLE, lambda: "I am the agent")
         mgr.register_section("__boundary__", SectionStability.STABLE, lambda: DYNAMIC_BOUNDARY)
@@ -211,7 +197,6 @@ class TestBoundaryAndScopes:
         assert blocks[1].ttl is None
 
     def test_global_cache_ttl_defaults_to_1h(self):
-        # Default preserves prior behavior: global prefix written at 1h.
         mgr = ConsciousnessManager()
         mgr.register_section("identity", SectionStability.STABLE, lambda: "I am the agent")
         mgr.register_section("__boundary__", SectionStability.STABLE, lambda: DYNAMIC_BOUNDARY)
@@ -243,9 +228,6 @@ class TestBoundaryAndScopes:
         assert blocks[3].cache_scope is None
 
 
-# ── Section content hashes ─────────────────────────────────────────
-
-
 class TestSectionHashes:
     def test_hashes_match_content(self, mgr):
         mgr.register_section("a", SectionStability.STABLE, lambda: "hello")
@@ -262,9 +244,6 @@ class TestSectionHashes:
         hashes = mgr.section_content_hashes()
         expected = hashlib.sha256(b"").hexdigest()
         assert hashes["a"] == expected
-
-
-# ── Anthropic provider formatting ─────────────────────────────────
 
 
 class TestAnthropicFormatting:
@@ -291,7 +270,7 @@ class TestAnthropicFormatting:
         system_param = kwargs["system"]
         assert len(system_param) == 2
         assert system_param[0]["text"] == "stable"
-        assert "cache_control" not in system_param[0]  # earlier blocks: no breakpoint
+        assert "cache_control" not in system_param[0]
         assert system_param[1]["text"] == "dynamic"
         assert system_param[1]["cache_control"] == {"type": "ephemeral", "ttl": "1h"}
 
@@ -320,7 +299,6 @@ class TestAnthropicFormatting:
             system=blocks,
             tools=None,
         )
-        # Breakpoint is the LAST cached system block.
         assert kwargs["system"][-1]["cache_control"] == {"type": "ephemeral", "ttl": "5m"}
 
         default = Provider(
@@ -369,7 +347,7 @@ class TestAnthropicFormatting:
             tools=None,
         )
         sys_cc = sum(1 for b in kwargs["system"] if "cache_control" in b)
-        assert sys_cc == 1  # exactly one, on the last block
+        assert sys_cc == 1
 
     def test_empty_blocks_skipped_in_system_param(self):
         from src.herald.provider import Provider
@@ -388,9 +366,6 @@ class TestAnthropicFormatting:
             tools=None,
         )
         assert len(kwargs["system"]) == 1
-
-
-# ── Message-level cache markers ───────────────────────────────────
 
 
 class TestMessageCacheMarkers:
@@ -446,9 +421,6 @@ class TestMessageCacheMarkers:
         assert messages[0]["content"][0]["text"] == "plain string"
 
 
-# ── Tool schema session cache ─────────────────────────────────────
-
-
 class TestToolSchemaCache:
     def test_tool_cache_reuses_on_same_tools(self):
         from src.herald.provider import Provider
@@ -476,9 +448,6 @@ class TestToolSchemaCache:
         assert provider.cached_tool_names == frozenset(["foo"])
         provider.get_cached_tools(tools2)
         assert provider.cached_tool_names == frozenset(["baz"])
-
-
-# ── Beta header latching ──────────────────────────────────────────
 
 
 class TestBetaHeaderLatching:
@@ -520,9 +489,6 @@ class TestBetaHeaderLatching:
         apply_thinking(kwargs, False, provider)
         assert provider.latched_thinking is False
         assert "thinking" not in kwargs
-
-
-# ── Cache break detection ─────────────────────────────────────────
 
 
 class TestCacheBreakDetection:
@@ -611,9 +577,6 @@ class TestCacheBreakDetection:
         assert "foo" in result.changed_tools
 
 
-# ── False-positive suppression ────────────────────────────────────
-
-
 class TestFalsePositiveSuppression:
     def test_notify_and_consume(self):
         notify_cache_deletion("main")
@@ -638,9 +601,6 @@ class TestFalsePositiveSuppression:
         notify_cache_deletion("main")
         assert not is_cache_deletion_pending("subagent:1")
         assert is_cache_deletion_pending("main")
-
-
-# ── OpenAI / Gemini flatten ───────────────────────────────────────
 
 
 class TestProviderFlatten:
@@ -669,9 +629,6 @@ class TestProviderFlatten:
         assert flatten_system_blocks(blocks) == "hello\n\nworld"
 
 
-# ── SystemPromptBlock type ────────────────────────────────────────
-
-
 class TestSystemPromptBlock:
     def test_frozen(self):
         block = SystemPromptBlock(text="hello", cache_scope="global", ttl="1h")
@@ -687,9 +644,6 @@ class TestSystemPromptBlock:
         a = SystemPromptBlock(text="hello", cache_scope="global", ttl="1h")
         b = SystemPromptBlock(text="hello", cache_scope="global", ttl="1h")
         assert a == b
-
-
-# ── Integration: ConsciousnessManager end-to-end ──────────────────
 
 
 class TestBetaLatchCompactReset:

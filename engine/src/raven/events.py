@@ -52,14 +52,8 @@ class RouteDecisionEvent:
     tier: str = ""
     reason: str = ""
     alternatives: list[str] = field(default_factory=list)
-    # Detected task type (coding/reasoning/agentic/writing/vision/simple/
-    # general/"") and the provider of the chosen model — together they make the
-    # post-hoc provider mix and task distribution queryable (anti-monoculture
-    # observability).
     task_type: str = ""
     provider: str = ""
-    # False when Herald was bypassed (explicit per-request model override).
-    # True for normal router-chosen decisions.
     routing_active: bool = True
     timestamp: float = field(default_factory=time.time)
 
@@ -123,7 +117,6 @@ Event = Union[
     UntypedEvent,
 ]
 
-# Maps kind string → dataclass type for deserialization
 KIND_MAP: dict[str, type] = {
     "token_usage": TokenUsageEvent,
     "tool_call": ToolCallEvent,

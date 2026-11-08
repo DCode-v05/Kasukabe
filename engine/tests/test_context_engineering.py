@@ -449,7 +449,6 @@ class TestRepairToolUseResultPairingExtended:
         result_ids = [b.tool_use_id for b in user_msg.content if isinstance(b, ToolResultBlock)]
         assert "t2" in result_ids
         assert "t1" in result_ids
-        # t2 synthetic should come before t1 existing
         assert result_ids.index("t2") < result_ids.index("t1")
 
     def test_empty_content_gets_placeholder_not_dropped(self):
@@ -572,9 +571,6 @@ class TestGenerateTombstoneResults:
         ]
         tombstones = generate_tombstone_results(msgs, "[Model fallback: a -> b]")
         assert tombstones[0].content[0].content == "[Model fallback: a -> b]"
-
-
-# ── Tool result persistence tests ─────────────────────────────────
 
 
 class TestCapToolResultWithContentId:
@@ -702,9 +698,6 @@ class TestGuardToolResultsWithPersistence:
         assert result[0].content[0].content == "[trimmed]"
 
 
-# ── Snip pre-pass tests ─────────────────────────────────────────────
-
-
 def tool_pair(tool_use_id: str, tool_name: str, tool_input: dict, result_content: str):
     """Helper: return (assistant_msg, user_msg) for a tool call/result pair."""
     return (
@@ -738,15 +731,12 @@ class TestSnipPrepass:
         a2, u2 = tool_pair("t2", "file_read", {"file_path": "/a.py"}, "new content")
         msgs = [a1, u1, a2, u2]
         result = snip_prepass(msgs)
-        # First read should be snipped
         r1 = [b for b in result[1].content if isinstance(b, ToolResultBlock)][0]
         assert "[trimmed]" in r1.content or "[Tool result compacted" in r1.content
-        # Second read should be preserved
         r2 = [b for b in result[3].content if isinstance(b, ToolResultBlock)][0]
         assert r2.content == "new content"
 
     def test_superseded_read_snipped(self):
-        # read → write → read  ⇒  first read snipped
         a1, u1 = tool_pair("t1", "file_read", {"file_path": "/a.py"}, "original")
         a_write = Message(
             role="assistant",
@@ -764,10 +754,9 @@ class TestSnipPrepass:
         msgs = [a1, u1, a_write, u_write, a2, u2]
         result = snip_prepass(msgs)
         r1 = [b for b in result[1].content if isinstance(b, ToolResultBlock)][0]
-        assert r1.content != "original"  # should be snipped
+        assert r1.content != "original"
 
     def test_search_then_read_snips_search(self):
-        # grep finds /a.py and /b.py, both are subsequently read
         a_grep, u_grep = tool_pair(
             "tg",
             "grep",
@@ -779,10 +768,9 @@ class TestSnipPrepass:
         msgs = [a_grep, u_grep, a1, u1, a2, u2]
         result = snip_prepass(msgs)
         rg = [b for b in result[1].content if isinstance(b, ToolResultBlock)][0]
-        assert rg.content != "/src/a.py:1:foo\n/src/b.py:3:foo"  # should be snipped
+        assert rg.content != "/src/a.py:1:foo\n/src/b.py:3:foo"
 
     def test_search_partial_read_not_snipped(self):
-        # grep finds /a.py and /b.py, only /a.py is read → grep NOT snipped
         a_grep, u_grep = tool_pair(
             "tg",
             "grep",
@@ -793,31 +781,24 @@ class TestSnipPrepass:
         msgs = [a_grep, u_grep, a1, u1]
         result = snip_prepass(msgs)
         rg = [b for b in result[1].content if isinstance(b, ToolResultBlock)][0]
-        assert "foo" in rg.content  # original content preserved
+        assert "foo" in rg.content
 
     def test_stale_reads_oldest_half(self):
-        # Build a conversation with >= PRESERVE_RECENT messages
         msgs = []
-        # Old read in first half
         a1, u1 = tool_pair("t_old", "file_read", {"file_path": "/old.py"}, "old data")
         msgs.extend([a1, u1])
-        # Pad to get past PRESERVE_RECENT threshold
         for i in range(PRESERVE_RECENT + 2):
             msgs.append(Message(role="user" if i % 2 == 0 else "assistant", content=f"filler {i}"))
-        # Recent read in second half
         a2, u2 = tool_pair("t_new", "file_read", {"file_path": "/new.py"}, "new data")
         msgs.extend([a2, u2])
 
         result = snip_prepass(msgs)
-        # Old read should be snipped (it's in first half)
         r_old = [b for b in result[1].content if isinstance(b, ToolResultBlock)][0]
         assert r_old.content != "old data"
-        # New read should be preserved
         r_new = [b for b in result[-1].content if isinstance(b, ToolResultBlock)][0]
         assert r_new.content == "new data"
 
     def test_non_snippable_tools_preserved(self):
-        # ask_user results should never be snipped, even if old
         msgs = []
         a1, u1 = tool_pair("t_ask", "ask_user", {}, "user response")
         msgs.extend([a1, u1])
@@ -828,13 +809,12 @@ class TestSnipPrepass:
         assert r.content == "user response"
 
     def test_already_compacted_skipped(self):
-        # Already-compacted results should not be double-snipped
         a1, u1 = tool_pair("t1", "file_read", {"file_path": "/a.py"}, "[trimmed]")
         a2, u2 = tool_pair("t2", "file_read", {"file_path": "/a.py"}, "new content")
         msgs = [a1, u1, a2, u2]
         result = snip_prepass(msgs)
         r1 = [b for b in result[1].content if isinstance(b, ToolResultBlock)][0]
-        assert r1.content == "[trimmed]"  # unchanged
+        assert r1.content == "[trimmed]"
 
     def test_content_id_preserved(self):
         persisted = "data\n\n[Result truncated. Persisted as tr_abc12345 — use search_content.]"
@@ -851,19 +831,15 @@ class TestSnipPrepass:
         msgs = [a1, u1, a2, u2]
         original_content = msgs[1].content[0].content
         snip_prepass(msgs)
-        # Original messages should be unchanged
         assert msgs[1].content[0].content == original_content
 
     def test_short_conversation_no_stale(self):
-        # With fewer than PRESERVE_RECENT messages, stale strategy shouldn't fire
         a1, u1 = tool_pair("t1", "file_read", {"file_path": "/a.py"}, "content")
         msgs = [a1, u1]
         result = snip_prepass(msgs)
-        # No snipping should occur (only 2 messages, below PRESERVE_RECENT)
         assert result is msgs
 
     def test_search_then_read_ignores_reads_before_search(self):
-        # A file read BEFORE the grep should not satisfy the "subsequently read" check
         a1, u1 = tool_pair("t1", "file_read", {"file_path": "/src/a.py"}, "early")
         a_grep, u_grep = tool_pair(
             "tg",
@@ -874,10 +850,9 @@ class TestSnipPrepass:
         msgs = [a1, u1, a_grep, u_grep]
         result = snip_prepass(msgs)
         rg = [b for b in result[3].content if isinstance(b, ToolResultBlock)][0]
-        assert "foo" in rg.content  # grep NOT snipped
+        assert "foo" in rg.content
 
     def test_search_then_read_with_re_read_after(self):
-        # Read before AND after search — the after-read should satisfy the check
         a1, u1 = tool_pair("t1", "file_read", {"file_path": "/src/a.py"}, "early")
         a_grep, u_grep = tool_pair(
             "tg",
@@ -889,7 +864,7 @@ class TestSnipPrepass:
         msgs = [a1, u1, a_grep, u_grep, a2, u2]
         result = snip_prepass(msgs)
         rg = [b for b in result[3].content if isinstance(b, ToolResultBlock)][0]
-        assert rg.content != "/src/a.py:1:foo"  # grep IS snipped
+        assert rg.content != "/src/a.py:1:foo"
 
 
 class TestCapTurnToolResults:
@@ -1235,13 +1210,6 @@ class TestCompactPrompt:
         assert COMPACT_PROMPT.rstrip().endswith("you will fail the task.")
 
 
-# ── List-content ToolResultBlock compatibility ────────────────────
-# These tests cover the post-tool injection pipeline's new content
-# shape: ToolResultBlock.content can be str (legacy) or
-# list[ContentBlock] (composed). All the cap/snip/gut/guard helpers
-# must handle both shapes without regression.
-
-
 class TestBlockContentTextHelper:
     """The block_content_text helper is a private utility but worth
     testing directly because every cap/snip/gut/guard path routes
@@ -1324,13 +1292,9 @@ class TestCapTurnToolResultsListContent:
             context_window=200_000,
             tool_names={"t1": "file_read"},
         )
-        # Under budget — block returned unchanged
         assert out[0] is block
 
     def test_list_content_over_budget_collapses_to_string(self):
-        # Make a list-content block big enough to trip the per-turn cap.
-        # PER_TURN_TOOL_RESULTS_CAP = 0.25 of 200K = 50K tokens budget.
-        # estimate_tokens_dense = chars/2 * 1.2, so 100K chars = ~60K tokens.
         big_text = "x" * 100_000
         block = ToolResultBlock(
             tool_use_id="t1",
@@ -1342,14 +1306,10 @@ class TestCapTurnToolResultsListContent:
             tool_names={"t1": "file_read"},
         )
         assert out[0] is not block
-        # Trimming collapses list back to a string with the
-        # "trimmed" marker.
         assert isinstance(out[0].content, str)
         assert "[Aggregate tool result budget exceeded" in out[0].content
 
     def test_mixed_str_and_list_blocks(self):
-        # Two blocks: one str, one list. Both can be tracked and
-        # potentially trimmed independently.
         big_text = "x" * 100_000
         b1 = ToolResultBlock(tool_use_id="t1", content=big_text)
         b2 = ToolResultBlock(
@@ -1361,7 +1321,6 @@ class TestCapTurnToolResultsListContent:
             context_window=200_000,
             tool_names={"t1": "file_read", "t2": "file_read"},
         )
-        # Both should be trimmed (combined size > budget)
         assert "[Aggregate tool result budget exceeded" in (
             out[0].content if isinstance(out[0].content, str) else ""
         )
@@ -1381,14 +1340,12 @@ class TestGutToolResultsListContent:
         assert isinstance(gutted.content, list)
         new_block = gutted.content[0]
         assert isinstance(new_block, ToolResultBlock)
-        # Gutted form is the legacy stub string
         assert isinstance(new_block.content, str)
         assert "[trimmed]" in new_block.content or "compacted" in new_block.content.lower()
 
 
 class TestGuardToolResultsListContent:
     def test_guard_handles_list_content_in_budget(self):
-        # Mixed legacy + list blocks, all under budget — no changes.
         m1 = Message(
             role="user",
             content=[
@@ -1400,12 +1357,9 @@ class TestGuardToolResultsListContent:
             ],
         )
         out = guard_tool_results([m1], context_window=200_000)
-        # Under budget — same messages back
         assert out == [m1]
 
     def test_guard_compacts_list_content_over_budget(self):
-        # Make list-content tool results big enough to trip guard
-        # (50% of 200K = 100K token budget).
         big_text = "x" * 250_000
         m1 = Message(
             role="user",
@@ -1417,7 +1371,6 @@ class TestGuardToolResultsListContent:
             ],
         )
         out = guard_tool_results([m1], context_window=200_000)
-        # Block was compacted to a stub
         new_block = out[0].content[0]
         assert isinstance(new_block, ToolResultBlock)
         assert isinstance(new_block.content, str)
@@ -1437,7 +1390,6 @@ class TestEstimateMessagesTokensListContent:
                 ),
             ],
         )
-        # ~1000 chars / 2 * 1.2 ≈ 600 tokens (dense estimation)
         tokens = estimate_messages_tokens([msg])
         assert 400 <= tokens <= 800
 
@@ -1460,7 +1412,6 @@ class TestEstimateMessagesTokensListContent:
                 ),
             ],
         )
-        # Same text content, same token count.
         assert estimate_messages_tokens([msg_str]) == estimate_messages_tokens([msg_list])
 
 
@@ -1531,10 +1482,6 @@ class TestPtlRetryFeatureFlag:
         async def capture(evt):
             events.append(evt)
 
-        # context_window too small for messages — pre-check will fire.
-        # adapter=None is fine: the pre-check runs before any LLM call.
-        # If retries exhaust, the function returns ("", recent) — which is
-        # the expected fallback. The point is that retry events ARE emitted.
         summary, recent = await summarize_old_messages(
             msgs,
             adapter=None,
@@ -1589,8 +1536,6 @@ class TestPtlRetryTelemetry:
         from src.engine_core.context_engineering import summarize_old_messages
         from src.engine_core.events import CompactionPtlFailedEvent
 
-        # 50 rounds, huge messages — even after dropping 20% three times,
-        # can't fit into 500 tokens.
         msgs = make_bulky_messages(rounds=50, chars_per_msg=8000)
 
         events = []

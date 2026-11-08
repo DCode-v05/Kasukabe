@@ -91,41 +91,9 @@ from world.ledger.errors import InsufficientFundsError
 from world.ledger.models import Currency, LedgerEvent, Transaction, TransactionReason
 from world.ledger.money import TREASURY_ACCOUNT_ID
 
-# ── ASSUMPTION: the basic head tax's rate-to-amount conversion ──────────
-# DESIGN.md section 3 pins the MECHANISM ("a per-capita levy debited
-# every game-day ... counted per head") and pins WHERE the rate comes
-# from (GovernmentPolicy.tax_rate_bps, the one tax lever
-# GovernmentActions.set_tax_rate() exposes, amendable "like any other"
-# policy, world/charter/genesis.py: "no tax ... at the start" is exactly
-# tax_rate_bps=0), but gives no sim-currency NUMBER. tax_rate_bps is
-# validated as a 0..10_000 (0%..100%) rate, not a flat sim amount
-# (GovernmentPolicy.check_invariants: "must be within 0..10000
-# (0%..100%)"), so it has to be a rate AGAINST something, and this module
-# owns no other candidate base (it does not know a head's wage or
-# balance, and DESIGN.md is explicit the levy is owed "regardless of
-# whether anyone did anything," i.e. independent of either). HEAD_TAX_
-# BASE_SIM is that something: the flat sim amount one head owes per
-# game-day at a 100% (tax_rate_bps=10_000) rate. sim_per_head =
-# HEAD_TAX_BASE_SIM * tax_rate_bps // BPS_DENOMINATOR, so a realistic
-# single-digit-percent government rate charges a few tens of sim per
-# head per day: the same order of magnitude as world/life/constants.py's
-# PHARMACY_SHORT_TREATMENT_COST_SIM (500), comfortably below its
-# TEMPLE_WEDDING_FEE_SIM (1,000) and GENESIS_AGENT_STARTING_SIM_BALANCE
-# (5,000). A real daily bill, not a rounding error, not a one-day
-# bankruptcy either. Whoever tunes game balance alongside upkeep.py
-# should treat this as the first number to revisit, exactly per
-# life/constants.py's own ASSUMPTION convention.
 HEAD_TAX_BASE_SIM = 1_000
 BPS_DENOMINATOR = 10_000
 
-# DESIGN.md section 3: unpaid tax is "a matter for the complaints desk
-# and the courts," a government matter, not one agent complaining about
-# another. world.crime.models.ComplaintRecord.complainant_agent_id is a
-# bare str with no registry check behind it (see that model's own
-# docstring: "can name the wrong person, or no one at all"), so the
-# well-known treasury account id doubles as a stable, self-describing
-# "the government filed this" complainant without needing a dedicated
-# tax-collector agent to exist.
 DEFAULT_TAX_COMPLAINANT_ID = TREASURY_ACCOUNT_ID
 
 
@@ -347,7 +315,6 @@ class HeadTaxDebtStore:
         async with self.lock:
             return {agent_id: amount for agent_id, amount in self.balances.items() if amount > 0}
 
-    # -- checkpoint round-trip (world.core.checkpoint.Checkpointable) ----
 
     def snapshot(self) -> dict[str, Any]:
         return {

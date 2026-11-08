@@ -33,8 +33,6 @@ from src.herald.types import SystemPromptBlock, Usage
 logger = logging.getLogger(__name__)
 
 
-# ── Pending deletion tracking (producer side) ─────────────────────
-
 pending_deletions: set[str] = set()
 
 
@@ -77,9 +75,6 @@ def reset_pending_deletions() -> None:
     pending_deletions.clear()
 
 
-# ── Prompt state snapshot ─────────────────────────────────────────
-
-
 @dataclass
 class PromptState:
     """Snapshot of prompt content hashes taken before an API call.
@@ -98,11 +93,11 @@ class PromptState:
 
 
 class CacheBreakType:
-    CLIENT_CONTENT = "client_content"  # system prompt content changed
-    CLIENT_SCOPE = "client_scope"  # scope/TTL changed without content change
-    CLIENT_TOOLS = "client_tools"  # tool schemas changed
-    SERVER_TTL = "server_ttl"  # cache expired server-side (TTL)
-    EXPECTED = "expected"  # announced mutation (compaction/microcompact)
+    CLIENT_CONTENT = "client_content"
+    CLIENT_SCOPE = "client_scope"
+    CLIENT_TOOLS = "client_tools"
+    SERVER_TTL = "server_ttl"
+    EXPECTED = "expected"
     UNKNOWN = "unknown"
 
 
@@ -125,7 +120,6 @@ def record_prompt_state(
     Call this before every LLM request. The returned PromptState is
     passed to check_response_for_cache_break() after the response.
     """
-    # System content hash WITH cache_control metadata
     with_parts: list[str] = []
     without_parts: list[str] = []
     for block in system_blocks or []:
@@ -135,7 +129,6 @@ def record_prompt_state(
     h_with = hashlib.sha256("|".join(with_parts).encode()).hexdigest()
     h_without = hashlib.sha256("|".join(without_parts).encode()).hexdigest()
 
-    # Per-tool schema hash — pinpoints which tool changed on break
     tool_hashes: dict[str, str] = {}
     for t in tools or []:
         name = getattr(t, "name", "") or ""
@@ -171,11 +164,9 @@ def check_response_for_cache_break(
     cache_read = usage.cache_read_input_tokens
     prev_read = state.prev_cache_read_tokens
 
-    # No previous reading or cache read is healthy — no break
     if prev_read == 0 or cache_read >= prev_read * 0.5:
         return None
 
-    # Cache read dropped significantly — classify the break
     if consume_pending_cache_deletion(source):
         return CacheBreakResult(
             break_type=CacheBreakType.EXPECTED,
@@ -183,7 +174,6 @@ def check_response_for_cache_break(
             f"(expected: client-side mutation announced)",
         )
 
-    # Check for content changes
     if prev_state is not None:
         if state.system_hash_without_cache != prev_state.system_hash_without_cache:
             return CacheBreakResult(
@@ -199,7 +189,6 @@ def check_response_for_cache_break(
                 details="cache scope/TTL changed without content change",
             )
 
-        # Check per-tool changes
         changed_tools: list[str] = []
         all_names = set(state.tool_hashes) | set(prev_state.tool_hashes)
         for name in all_names:
@@ -212,7 +201,6 @@ def check_response_for_cache_break(
                 changed_tools=changed_tools,
             )
 
-    # No client-side change detected — likely server TTL expiry
     return CacheBreakResult(
         break_type=CacheBreakType.SERVER_TTL,
         details=f"cache_read dropped {prev_read} → {cache_read} "

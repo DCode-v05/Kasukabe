@@ -30,8 +30,6 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_INTERVAL_S = 15.0
 
-# Literal directive appended to the summarization prompt so the model knows
-# to stop chasing the original task and just produce a terse status line.
 SUMMARIZE_DIRECTIVE = (
     "Summarize the current progress of this background worker in ONE sentence. "
     "No preamble, no suggestions, no lists. Just the sentence. "
@@ -50,9 +48,6 @@ def is_summarization_enabled() -> bool:
 class SummarizerConfig:
     interval_s: float = DEFAULT_INTERVAL_S
     enable: bool = False
-    # Hard ceiling on how many summarization calls can fire for one agent.
-    # Prevents a runaway watchdog from draining the budget if the agent loop
-    # is stuck and never calls cancel().
     max_calls: int = 10
 
 
@@ -89,17 +84,14 @@ class AgentSummarizer:
         self.messages: list[LLMMessage] = []
         self.turn: int = 0
         self.calls_fired = 0
-        # Last turn we actually fired for — blocks firing twice on the same
-        # conversation snapshot (e.g. agent stalled in a long tool call).
         self.last_fired_turn: int = -1
 
-    # ── lifecycle ─────────────────────────────────────────────────
 
     def start(self) -> None:
         if not self.config.enable:
             return
         if self.task is not None:
-            return  # Already running.
+            return
         self.task = asyncio.create_task(self.loop())
 
     async def stop(self) -> None:
@@ -121,7 +113,6 @@ class AgentSummarizer:
         self.messages = list(messages)
         self.turn = turn
 
-    # ── internals ─────────────────────────────────────────────────
 
     async def loop(self) -> None:
         """Drive the summarization cadence until stop() or max_calls hit."""
@@ -131,7 +122,7 @@ class AgentSummarizer:
                     self.stop_event.wait(),
                     timeout=self.config.interval_s,
                 )
-                return  # stop() fired.
+                return
             except asyncio.TimeoutError:
                 pass
             if self.calls_fired >= self.config.max_calls:
@@ -144,7 +135,6 @@ class AgentSummarizer:
             if not self.messages:
                 continue
             if self.turn == self.last_fired_turn:
-                # No turn advance since last fire — skip duplicate summary.
                 continue
             self.last_fired_turn = self.turn
             await self.fire()

@@ -125,9 +125,6 @@ async def test_an_unknown_resident_is_not_reported_as_an_outage(world) -> None:
     assert not isinstance(caught.value, LedgerHaltedError)
 
 
-# ── halted is not the same as down ─────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_halted_ledger_says_it_halted(world) -> None:
     runner, app = world

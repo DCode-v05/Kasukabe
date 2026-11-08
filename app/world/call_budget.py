@@ -31,52 +31,11 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-# B3's own floor and ceiling, verbatim from the spec: "at least 2, at most
-# 12".
-#
-# The floor is 2 and not 1 because one call is a turn that can think or
-# act but not both: the model answers, sees a tool result, and has nothing
-# left to say about it. A resident that can never respond to what its own
-# action returned is not bounded, it is mute.
-#
-# The ceiling was 12 on the reasoning that the largest turn worth having is
-# a short chain of related acts - walk, look, speak, trade - and that the
-# fifty-call turns which prompted this were not that.
-#
-# It is 6 from 2026-09-18, because the 50-resident run finally measured
-# what those turns are made of: 1,957 turns, 9,488 tool calls, a mean of
-# 4.85 and a median of 3. A turn where nothing is refused is three actions.
-# The long ones are not rich turns - they are turns that could not get the
-# first thing to work: 19% of turns hit a refusal, and those average 6.73
-# calls against 4.42 for the rest.
-#
-# At 6 the median turn is untouched, 24% of turns are cut short, and 19% of
-# every call the run makes is not made at all. 5 would take 26% and cut
-# 31%; 12 took 2.5%, which is to say it was not a ceiling. A resident doing
-# ten things in ten game-minutes is not having a full morning.
 MIN_CALLS_PER_TICK = 2
 MAX_CALLS_PER_TICK = 6
 
-# The fraction of what is left in the wallet that one tick may consume.
-#
-# A twentieth, so a resident with a full morning of runway can still have
-# a big turn when it wants one, and a resident down to its last few cents
-# gets two calls rather than twelve and lasts twenty more ticks instead of
-# two. This is the whole mechanism: the budget tightens as the wallet
-# empties, which is what makes `buy_energy` a decision rather than a
-# curiosity.
-DEFAULT_WALLET_FRACTION_BPS = 500  # 5%
+DEFAULT_WALLET_FRACTION_BPS = 500
 
-# What one model call costs, in USD cents, for the purpose of this
-# division only. NOT a billing figure - the broker's own metering is what
-# actually debits the wallet (ledger.burn_for_inference). This is the
-# planning number the budget is derived from, and it is deliberately a
-# measured average rather than a per-call estimate: a budget that had to
-# predict the size of a call before making it would need the call.
-#
-# Measured across run 19 and run 20: about 19,400 input tokens and 291
-# output at Kimi's flex prices ($0.36/$1.80 per million) is roughly
-# $0.0070 + $0.0005, call it three quarters of a cent.
 CENTS_PER_CALL = 0.75
 
 
@@ -87,8 +46,6 @@ def _env_int(name: str, default: int) -> int:
     try:
         return int(raw)
     except ValueError:
-        # A typo must not silently remove the bound. Everything this module
-        # exists for is the bound.
         return default
 
 

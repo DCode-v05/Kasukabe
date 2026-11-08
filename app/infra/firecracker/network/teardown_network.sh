@@ -1,11 +1,4 @@
 #!/usr/bin/env bash
-# Reverses bridge_setup.sh: removes every fctap* device still attached to
-# the bridge (a genesis run that ended uncleanly can leave some - VMManager
-# normally removes its own via tap_provisioner.py's remove_tap() inside
-# stop()/shutdown_all(), this is the backstop for when it didn't get the
-# chance to) and the bridge itself.
-#
-# Usage (as root, on the m5.metal host): network/teardown_network.sh
 
 set -euo pipefail
 

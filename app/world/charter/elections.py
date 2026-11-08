@@ -167,12 +167,6 @@ class ElectionEngine:
         target = compute_phase_for_tick(election, now_tick)
         if target == election.phase or election.phase == ElectionPhase.TALLIED:
             return election
-        # compute_phase_for_tick is monotonic in now_tick and phases are
-        # totally ordered by declaration order in the enum's members, so
-        # "target != current" here always means "moved forward" - callers
-        # never pass a now_tick smaller than a prior call in normal use,
-        # and if they did, holding the later, already-persisted phase
-        # (not stepping backward) is the safe behavior.
         election.phase = target
         await self.store.put_election(election)
         await self.event_sink(
@@ -217,16 +211,7 @@ class ElectionEngine:
                 {
                     "election_id": election_id,
                     "agent_id": agent_id,
-                    # What they stand for. The engine has accepted `because`
-                    # since candidacy was wired and never written it down, so
-                    # a run could say who stood and never what for - and a
-                    # campaign that leaves no record is indistinguishable
-                    # from a name on a list.
                     "because": because,
-                    # GOV-04/GOV-20: the candidate, and nobody else. This
-                    # is the interrupt list `core/perception.py:52` reads;
-                    # it was once `sorted(world.agents)` and one candidacy
-                    # woke the entire town at about $0.006 a turn.
                     "involved_agent_ids": [agent_id],
                 },
             )
@@ -266,22 +251,8 @@ class ElectionEngine:
                 {
                     "election_id": election_id,
                     "voter_agent_id": voter_agent_id,
-                    # WHY, not who. The reason a town votes as it does is the
-                    # thing an election run exists to observe, and it was
-                    # nowhere: a ballot is a voter and a candidate and no
-                    # sentence. The candidate stays out of this payload for
-                    # the reason below; the store has it, so a report written
-                    # after the tally can join the two when secrecy no longer
-                    # costs anything.
                     "because": because,
                 },
-                # Deliberately omits candidate_agent_id from the broadcast
-                # payload: DESIGN.md doesn't call for a public running
-                # count, and "one agent, one vote, cast in person" reads
-                # as a secret ballot by default. The full ballot is still
-                # in the store (and will be in Supabase once wired) for
-                # the immutable causal record DESIGN.md section 2
-                # promises, just not fanned out on the live event feed.
             )
         )
         return election
@@ -291,9 +262,6 @@ class ElectionEngine:
         if election.phase == ElectionPhase.TALLIED:
             return election
         if election.phase != ElectionPhase.VOTING_OPEN:
-            # Auto-catch-up: a tick-driven world calls tally() once the
-            # voting window has closed without necessarily having called
-            # advance_phase on every intermediate tick first.
             election = await self.advance_phase(election_id, now_tick)
         if election.phase != ElectionPhase.VOTING_OPEN:
             raise ElectionPhaseError(

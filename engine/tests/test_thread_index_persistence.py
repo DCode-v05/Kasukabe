@@ -48,7 +48,6 @@ async def test_thread_index_survives_restart(fresh_db):
     )
     await pool.close()
 
-    # Re-open — fresh process semantics
     pool2 = SqlitePool(db_path)
     await pool2.connect()
     try:

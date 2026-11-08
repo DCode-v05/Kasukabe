@@ -44,9 +44,6 @@ import os
 from world.resource_log import ResourceSampler, sample_process
 
 
-# -- Reading one process ----------------------------------------------
-
-
 def test_sampling_this_very_process_returns_real_numbers() -> None:
     """Against the interpreter running the test, so the numbers cannot be
     a fixture agreeing with itself."""
@@ -65,9 +62,6 @@ def test_a_process_that_is_not_there_reads_as_nothing() -> None:
 def test_a_nonsense_pid_does_not_raise() -> None:
     for pid in (0, -1, None):
         assert sample_process(pid) is None
-
-
-# -- The log ----------------------------------------------------------
 
 
 def test_a_sample_is_one_json_line_per_agent(tmp_path) -> None:
@@ -124,14 +118,11 @@ def test_the_roster_can_change_between_samples(tmp_path) -> None:
     assert len(rows) == 3
 
 
-# -- It must never take the run down ----------------------------------
-
-
 def test_an_unwritable_path_does_not_raise(tmp_path) -> None:
     """The numbers are the least important thing in the process. A
     sampler that raises has cost the run it was measuring."""
     sampler = ResourceSampler(tmp_path / "no" / "such" / "dir" / "r.jsonl", {"n01": os.getpid()})
-    sampler.sample(tick=1)  # must not raise
+    sampler.sample(tick=1)
 
 
 def test_a_broken_roster_does_not_raise(tmp_path) -> None:
@@ -148,9 +139,6 @@ def test_sampling_is_cheap_enough_to_run_every_tick(tmp_path) -> None:
     started = time.perf_counter()
     sampler.sample(tick=1)
     assert time.perf_counter() - started < 2.0
-
-
-# -- The summary a human reads ----------------------------------------
 
 
 def test_the_summary_names_the_most_expensive_resident(tmp_path) -> None:
@@ -213,9 +201,6 @@ def test_a_corrupt_line_is_skipped_not_fatal(tmp_path) -> None:
     assert summarise(path)["engines"] == 1
 
 
-# -- Wired to the live run, not only to its own test -------------------
-
-
 def test_the_runner_takes_a_resource_log_flag() -> None:
     """Gate 1 of Build Spec v2 section 1. A sampler the tick loop never
     reaches passes every unit test above and records nothing."""
@@ -265,26 +250,7 @@ def test_sampling_a_run_with_no_sampler_is_a_no_op() -> None:
 
     runner = GenesisRunner.__new__(GenesisRunner)
     runner.resources = None
-    runner.sample_resources(1)  # must not raise
-
-
-# -- An agent costs its whole process TREE ----------------------------
-#
-# MEASURED on the fifty-agent run, and the first draft of this module got
-# it wrong. `python -m src.sim.sim_main` spawns a CHILD that does the
-# work: for fifty agents there are a hundred matching processes, the one
-# the supervisor holds weighing about 4.4 MB and its child about 79 MB.
-#
-# So the first resource log read:
-#
-#     {"agent_id": "n01", "rss_mb": 4.4, ...}
-#
-# which is the launcher, not the resident. Every per-agent number was
-# eighteen times too small, and the total would have said fifty engines
-# cost 220 MB when they cost about 4 GB. A measurement that confident and
-# that wrong is worse than none.
-#
-# What an agent costs is what its whole tree costs.
+    runner.sample_resources(1)
 
 
 def test_a_process_tree_sums_its_children(tmp_path) -> None:
@@ -301,7 +267,7 @@ def test_a_process_tree_sums_its_children(tmp_path) -> None:
     try:
         import time as _time
 
-        _time.sleep(3)  # let it allocate
+        _time.sleep(3)
         alone = sample_process(os.getpid())
         tree = sample_tree(os.getpid())
         assert alone is not None and tree is not None

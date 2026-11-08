@@ -74,7 +74,6 @@ async def test_it_is_written_at_boot_not_at_shutdown(tmp_path):
     exists when it is needed."""
     runner = _runner(tmp_path)
     await runner.boot()
-    # No ticks have run, no shutdown has happened.
     assert runner.run_manifest_path.exists()
 
 

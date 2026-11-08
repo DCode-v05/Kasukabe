@@ -64,9 +64,7 @@ class SessionStats:
     errors: int = 0
     user_active_seconds: float = 0.0
     engine_active_seconds: float = 0.0
-    # ISO-8601 wall-clock of the last recorded user input (empty = never)
     last_user_input_at: str = ""
-    # ISO-8601 of when the idle/away period started (empty = not idle/away)
     away_since: str = ""
 
 
@@ -128,17 +126,14 @@ class ActivityManager:
 
     instance: ActivityManager | None = None
 
-    # Seconds — max gap between two user inputs that still counts as "user active".
-    # Gaps larger than this mean the user walked away between keystrokes and
-    # the interval should not be counted toward user_active_seconds.
     USER_ACTIVITY_WINDOW_S: float = 5.0
 
     def __init__(
         self,
         emitter: EventEmitter | None = None,
-        idle_timeout_s: float = 300.0,  # 5 minutes
-        away_timeout_s: float = 1800.0,  # 30 minutes
-        disconnect_timeout_s: float = 3600.0,  # 1 hour
+        idle_timeout_s: float = 300.0,
+        away_timeout_s: float = 1800.0,
+        disconnect_timeout_s: float = 3600.0,
         poll_interval_s: float = 30.0,
         get_now: Callable[[], float] | None = None,
     ) -> None:
@@ -154,21 +149,14 @@ class ActivityManager:
         self.session_start: float = self.get_now()
         self.state_entered_at: float = self.get_now()
 
-        # Accumulated stats since last reset (reset on reconnect)
         self.tool_calls_since_active: int = 0
         self.errors_since_active: int = 0
-        # seconds the engine was running tools (sum of tool durations)
         self.engine_active_s: float = 0.0
-        # seconds the user was actively engaging (bursty input within USER window)
         self.user_active_s: float = 0.0
-        # operation_id → start time (tracked while tool is running)
         self.tool_start_times: dict[str, float] = {}
 
         self.bg_task: asyncio.Task | None = None
 
-    # ------------------------------------------------------------------
-    # Lifecycle
-    # ------------------------------------------------------------------
 
     @classmethod
     def get_instance(cls) -> ActivityManager:
@@ -212,9 +200,6 @@ class ActivityManager:
         self.bg_task = None
         logger.info("ActivityManager stopped")
 
-    # ------------------------------------------------------------------
-    # Activity recording (called by server.py and thread.py)
-    # ------------------------------------------------------------------
 
     def record_user_activity(self) -> ReconnectSummary | None:
         """Record a user interaction (e.g. incoming execute request).
@@ -235,9 +220,6 @@ class ActivityManager:
         self.last_user_input_at = now
 
         if prev_state in (ActivityState.AWAY, ActivityState.DISCONNECTED):
-            # Snapshot BEFORE reset so the async emit_transition task sees
-            # the real away-period numbers instead of the zeros left by
-            # reset_stats.
             snapshot = self.snapshot_stats()
             summary = ReconnectSummary(
                 previous_state=prev_state,
@@ -276,9 +258,6 @@ class ActivityManager:
         """Mark session as disconnected (called on engine shutdown)."""
         self.transition(ActivityState.DISCONNECTED, self.get_now())
 
-    # ------------------------------------------------------------------
-    # Inspection
-    # ------------------------------------------------------------------
 
     def idle_seconds(self) -> float:
         """Seconds since the last user input."""
@@ -292,9 +271,6 @@ class ActivityManager:
             stats=self.snapshot_stats(),
         )
 
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
 
     def snapshot_stats(self) -> SessionStats:
         now_mono = self.get_now()
@@ -353,7 +329,7 @@ class ActivityManager:
                 loop = asyncio.get_running_loop()
                 loop.create_task(self.emit_transition(old_state, new_state, now, snapshot))
             except RuntimeError:
-                pass  # no running loop (sync context or at shutdown)
+                pass
 
     async def emit_transition(
         self,
@@ -403,7 +379,6 @@ class ActivityManager:
             self.transition(ActivityState.DISCONNECTED, now)
 
 
-# Module-level accessor — mirrors the TypeScript ``activityManager`` export.
 def get_activity_manager() -> ActivityManager:
     """Return the process-wide ActivityManager singleton."""
     return ActivityManager.get_instance()

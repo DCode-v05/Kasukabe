@@ -37,19 +37,14 @@ class SecretRule:
     flags: int = 0
 
 
-# Runtime-assembled Anthropic prefixes — literal substrings never appear
-# in source. Defense-in-depth vs our own scanner and external scanners.
 ANT_PREFIX = "-".join(["sk", "ant", "api"]) + "03-"
 ANT_ADMIN_PREFIX = "-".join(["sk", "ant", "admin"]) + "01-"
 
 
-# Trailing consuming boundary used by many gitleaks rules. Written as a
-# triple-quoted raw string so the embedded quote chars don't need escaping.
 TAIL = r"""(?:[\x60'"\s;]|\\[nr]|$)"""
 
 
 RULES: tuple[SecretRule, ...] = (
-    # ─── Cloud providers ───────────────────────────────────────────
     SecretRule(
         id="aws-access-token",
         label="AWS Access Token",
@@ -79,7 +74,6 @@ RULES: tuple[SecretRule, ...] = (
         label="DigitalOcean Access Token",
         pattern=r"\b(doo_v1_[a-f0-9]{64})" + TAIL,
     ),
-    # ─── AI APIs ───────────────────────────────────────────────────
     SecretRule(
         id="anthropic-api-key",
         label="Anthropic API Key",
@@ -106,7 +100,6 @@ RULES: tuple[SecretRule, ...] = (
         label="HuggingFace Access Token",
         pattern=r"\b(hf_[a-zA-Z]{34})" + TAIL,
     ),
-    # ─── Version control ───────────────────────────────────────────
     SecretRule(
         id="github-pat",
         label="GitHub PAT",
@@ -142,7 +135,6 @@ RULES: tuple[SecretRule, ...] = (
         label="GitLab Deploy Token",
         pattern=r"gldt-[0-9a-zA-Z_\-]{20}",
     ),
-    # ─── Communication ─────────────────────────────────────────────
     SecretRule(
         id="slack-bot-token",
         label="Slack Bot Token",
@@ -169,7 +161,6 @@ RULES: tuple[SecretRule, ...] = (
         label="SendGrid API Token",
         pattern=r"\b(SG\.[a-zA-Z0-9=_\-.]{66})" + TAIL,
     ),
-    # ─── Dev tooling ───────────────────────────────────────────────
     SecretRule(
         id="npm-access-token",
         label="NPM Access Token",
@@ -200,7 +191,6 @@ RULES: tuple[SecretRule, ...] = (
         label="Postman API Token",
         pattern=r"\b(PMAK-[a-fA-F0-9]{24}-[a-fA-F0-9]{34})" + TAIL,
     ),
-    # ─── Observability ─────────────────────────────────────────────
     SecretRule(
         id="grafana-api-key",
         label="Grafana API Key",
@@ -230,7 +220,6 @@ RULES: tuple[SecretRule, ...] = (
             r"[a-zA-Z0-9+/]{10,200}={0,2}_[a-zA-Z0-9+/]{43}"
         ),
     ),
-    # ─── Payment / commerce ────────────────────────────────────────
     SecretRule(
         id="stripe-access-token",
         label="Stripe Access Token",
@@ -246,12 +235,6 @@ RULES: tuple[SecretRule, ...] = (
         label="Shopify Shared Secret",
         pattern=r"shpss_[a-fA-F0-9]{32}",
     ),
-    # ─── Crypto ────────────────────────────────────────────────────
-    # Private key: requires BOTH BEGIN and END markers to carry
-    # "PRIVATE KEY" and at least 64 chars of body between them. Prevents
-    # false positives on docs like "-----BEGIN DOC-----...-----END DOC-----"
-    # that happen to mention "private key" in prose. `re.IGNORECASE`
-    # matches the reference's `i` flag so mixed-case markers work.
     SecretRule(
         id="private-key",
         label="Private Key",

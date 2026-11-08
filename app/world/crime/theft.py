@@ -28,9 +28,6 @@ from world.crime.models import CrimeKind, WitnessEvent
 from world.crime.ports import EconomyPort, LocationPort, require_co_located
 from world.crime.store import CrimeStore
 
-# DESIGN.md section 6, quoted verbatim: "~70% success, ~30% witness
-# memory generated". Unlike most of this package's other numbers, these
-# two are pinned by DESIGN.md itself, not a game-balance placeholder.
 THEFT_SUCCESS_PROBABILITY = 0.70
 THEFT_WITNESS_PROBABILITY = 0.30
 

@@ -27,7 +27,6 @@ from world import run_report, stakes_report
 
 APP = Path(__file__).resolve().parents[2]
 
-# The six readers the evaluation spec asks for.
 READERS = ["prices", "stakes", "wages", "time_spent", "diffusion", "learning"]
 
 
@@ -47,9 +46,6 @@ def test_the_readers_are_all_still_there() -> None:
     away is a test passing over nothing."""
     for reader in READERS:
         assert callable(getattr(stakes_report, reader)), reader
-
-
-# ── the two that were missing ──────────────────────────────────────────
 
 
 def test_time_says_so_when_nobody_committed_to_anything() -> None:
@@ -109,9 +105,6 @@ def test_diffusion_reports_the_widest_reach() -> None:
     assert "**3** pairs of hands" in lines, lines
     assert "T5 asks for three" in lines
     assert "world_press" in lines
-
-
-# ── the wiring, which is the whole finding ─────────────────────────────
 
 
 def test_the_report_actually_calls_them() -> None:

@@ -49,14 +49,10 @@ async def town(tmp_path, monkeypatch):
         mock_mode=True, checkpoint_dir=tmp_path / "checkpoints",
         home_root=str(tmp_path / "homes"), world_mode="embedded", world_port=0,
         budget_cap_cents=40_000,
-        # Genesis is midnight and residents are asleep; a turn needs a town
-        # that is awake.
         start_at_dawn=True,
     ))
     await runner.boot(resume=False)
     runner.build_world_app()
-    # One stocked offer somewhere in town, posted by a resident nobody else
-    # is standing beside - the situation that produced 87 refusals.
     world = runner.world_state
     seller = sorted(world.agents)[0]
     world.price_board[seller] = {"potato": PricePost(item="potato", ask_sim=8)}
@@ -102,7 +98,6 @@ async def test_a_wrong_seller_refusal_names_the_right_one(town) -> None:
     runner, _, seller = town
     world = runner.world_state
     buyer = sorted(world.agents)[1]
-    # Standing beside somebody who sells nothing - the 87 refusals.
     stranger = sorted(world.agents)[2]
     world.locations.place(buyer, world.location_of(stranger))
 
@@ -115,11 +110,6 @@ async def test_a_wrong_seller_refusal_names_the_right_one(town) -> None:
         outcome_error = str(exc) + " " + str(getattr(exc, "hint", "") or "")
 
     assert outcome_error, "buying from someone who sells nothing was not refused"
-    # The property, not the figure. This used to pin "sells potato at 8",
-    # the price THIS test posts - which held only while no genesis shop sold
-    # potato. Now that they open with a price board, the refusal names the
-    # cheapest seller in the town, which is the useful answer and not always
-    # this fixture's.
     assert re.search(r"sells potato at \d+ sim", outcome_error), (
         f"the refusal did not say who does sell it: {outcome_error[:300]}"
     )

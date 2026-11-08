@@ -223,7 +223,6 @@ async def test_a_failed_transfer_is_not_recorded_as_a_paid_wage(runner, monkeypa
     monkeypatch.setattr(runner.ledger, "pay_wage", always_refused)
     await runner.pay_the_town_payroll(timestamp_for(TICKS_PER_DAY))
 
-    # Still owed: the failure did not close the day.
     still_due = await runner.world_state.charter.government.payroll_due(TICKS_PER_DAY)
     assert [line.agent_id for line in still_due] == [who], (
         "a wage that could not be paid was booked as paid anyway"
@@ -269,7 +268,6 @@ async def test_an_empty_treasury_pays_nobody_and_says_so(runner):
     assert runner.ledger.sim_balance(who) == before
     assert runner.payroll_unpayable == 1
     assert runner.payroll_lines_paid == 0
-    # And it is still owed, so the day the treasury has money it is paid.
     still_due = await runner.world_state.charter.government.payroll_due(TICKS_PER_DAY)
     assert [line.agent_id for line in still_due] == [who]
 
@@ -305,7 +303,6 @@ async def test_the_day_boundary_actually_runs_it(runner):
     await _hire(runner, who, salary_sim=140)
     before = runner.ledger.sim_balance(who)
 
-    # The real day-boundary path, not the method directly.
     await runner.run_life_day(timestamp_for(TICKS_PER_DAY)) if hasattr(
         runner, "run_life_day"
     ) else None
@@ -313,9 +310,6 @@ async def test_the_day_boundary_actually_runs_it(runner):
     assert "await self.pay_the_town_payroll(timestamp)" in source, (
         "GOV-08: the payer exists and the day boundary does not call it"
     )
-
-
-# ── GOV-09: the pension levers, which were also dead ─────────────────
 
 
 async def _set_policy(runner, **fields):
@@ -349,13 +343,6 @@ async def test_a_lowered_retirement_age_actually_retires_somebody(runner):
     await _set_policy(runner, pension_eligibility_age=65)
     await runner.pay_the_pensions(timestamp_for(TICKS_PER_DAY))
 
-    # The CHANGE, not the total. Genesis now seeds a wage promise for every
-    # employee it seeds - before, a job earned nothing and the pension loop,
-    # which reads promises, could not see an employee at all. So lowering the
-    # age retires this 66-year-old AND anybody else the cast already employed
-    # who is over it: a0204 at the construction yard is 67. That is the lever
-    # working on more of the town, not a double payment, and asserting an
-    # absolute count here only held while employment paid nothing.
     assert runner.pensions_paid > before, (
         "the town voted retirement down to 65 and nobody retired"
     )
@@ -382,7 +369,6 @@ async def test_a_government_retiree_draws_the_government_rate(runner):
     private = runner.ledger.sim_balance(who) - before
     assert private == 200 * 25 // 100
 
-    # Now give them a government post in their history and pay again.
     await _post(runner, agent_id=who, salary_sim=140)
     before = runner.ledger.sim_balance(who)
     await runner.pay_the_pensions(timestamp_for(TICKS_PER_DAY * 2))

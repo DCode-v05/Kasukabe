@@ -19,10 +19,8 @@ import json
 import pathlib
 import subprocess
 
-# Pinned so regeneration is deterministic. Bump deliberately + re-test bwrap.
 DEFAULT_URL = "https://raw.githubusercontent.com/moby/moby/v25.0.5/profiles/seccomp/default.json"
 
-# Syscalls bwrap uses to create its user/mount/pid/net namespaces and bind mounts.
 ALLOW = [
     "clone", "clone3", "unshare", "setns",
     "mount", "umount2", "pivot_root",
@@ -32,7 +30,6 @@ ALLOW = [
 
 
 def main() -> None:
-    # curl uses the system cert store (robust on macOS/Linux/CI, unlike urllib).
     raw = subprocess.run(
         ["curl", "-fsSL", DEFAULT_URL], check=True, capture_output=True,
     ).stdout
@@ -41,8 +38,6 @@ def main() -> None:
     allowset = set(ALLOW)
     out = []
     for sc in profile["syscalls"]:
-        # Drop these names from every existing (conditional/arg-filtered) rule so
-        # exactly one rule governs them — avoids conflicting libseccomp rules.
         names = [n for n in sc.get("names", []) if n not in allowset]
         if not names:
             continue

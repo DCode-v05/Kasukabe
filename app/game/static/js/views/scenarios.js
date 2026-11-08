@@ -1,7 +1,3 @@
-// Scenarios tab: curated feed of the moments that matter, each
-// expandable into its full causal trace. DESIGN.md section 8's
-// "Scenario / special-event viewer" bullet.
-
 import { fetchScenarioTrace, fetchScenarios } from "./api.js";
 import { categoryBadge, debounce, el, escapeHtml, fmtTick, setEmpty, setError, setLoading } from "./dom.js";
 
@@ -10,7 +6,7 @@ const CATEGORIES = [
   "cult", "business", "amendment", "regime", "election",
 ];
 
-let traceCache = {}; // event_id -> trace entries, once fetched
+let traceCache = {};
 let expandedId = null;
 
 export async function loadScenarios() {

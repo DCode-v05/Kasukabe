@@ -104,7 +104,6 @@ def test_spawning_location_at_sp_a(tiny_world: WorldMap) -> None:
 def test_sector_area_counts_every_sector_tile(tiny_world: WorldMap) -> None:
     sector = tiny_world.find_sector("Test House")
     assert sector is not None
-    # 6 interior tiles + 1 door tile = 7.
     assert sector.area == 7
 
 
@@ -183,9 +182,6 @@ def test_nearest_walkable_returns_self_when_already_walkable(tiny_world: WorldMa
 
 
 def test_nearest_walkable_steps_off_a_wall(tiny_world: WorldMap) -> None:
-    # (0, 0) is a wall corner; its only walkable neighbor within a small
-    # radius is (1, 1) two steps away along the interior (BFS explores
-    # (1,0)/(0,1), both walls, before reaching (1,1)).
     result = tiny_world.nearest_walkable(TileCoord(0, 0), max_radius=4)
     assert result is not None
     assert tiny_world.is_walkable(result)

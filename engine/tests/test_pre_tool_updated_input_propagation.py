@@ -105,7 +105,6 @@ async def test_updated_input_reaches_executor_posthook_and_trace(db):
     )
 
     async def rewrite_hook(inp) -> PreToolUseHookResult:
-        # Sanitise/rewrite the tool's argument before it runs.
         return PreToolUseHookResult(updated_input={"value": "rewritten"})
 
     async def record_post(ctx) -> PostToolUseHookResult:
@@ -117,13 +116,10 @@ async def test_updated_input_reaches_executor_posthook_and_trace(db):
 
     await th.execute("use the tool", thread_id="t-updated-input")
 
-    # (a) The tool that actually executed observed the rewritten argument.
     assert observed_by_tool == [{"value": "rewritten"}]
 
-    # (b) The post-tool hook context carried the rewritten input, not the original.
     assert post_seen == [{"value": "rewritten"}]
 
-    # (c) The recorded node trace input matches what executed.
     assert th.current_node_trace is not None
     echo_calls = [tc for tc in th.current_node_trace.tool_calls if tc.tool == "echo"]
     assert len(echo_calls) == 1

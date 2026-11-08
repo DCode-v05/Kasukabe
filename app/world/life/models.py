@@ -125,9 +125,6 @@ class AgentLifeRecord(BaseModel):
     marital_status: MaritalStatus = MaritalStatus.SINGLE
     parent_ids: list[str] = Field(default_factory=list)
     children_ids: list[str] = Field(default_factory=list)
-    # Set only for minors (DESIGN.md section 4: "broker auto-debits the
-    # PARENT'S wallet for a minor's calls"). broker/ reads this field
-    # through world's read API; life/ only sets it at birth.
     sponsor_parent_id: str | None = None
     health: HealthState = Field(default_factory=HealthState)
     dormancy: DormancyState = Field(default_factory=DormancyState)
@@ -234,18 +231,6 @@ class GenesisAgent(BaseModel):
     ablation_arm: AblationArm
     usd_wallet_cents: int
     starting_sim_balance: int
-    # What is in this resident's own larder at dawn on day 0.
-    #
-    # Genesis has always handed out money and never food, so every household
-    # in every run has woken with a full purse and bare shelves and had to
-    # buy its first breakfast from a shop that was also empty. election30
-    # ate mostly raw flour and wheat and managed 0.43 meals per resident-day
-    # against a bar of 1.
-    #
-    # Not a subsidy and not a wage: it is the food a household would
-    # plausibly already have in the house, it runs out, and nobody is fed
-    # twice. Goods are not money, so the $1,000 ledger invariant is
-    # untouched - the same argument `SmallBusiness.opening_stock` makes.
     opening_stock: dict[str, int] = Field(default_factory=dict)
 
     @computed_field  # type: ignore[misc]
@@ -280,35 +265,7 @@ class ConstructionCompany(BaseModel):
     owner_agent_id: str
     hand_agent_ids: list[str]
     starting_sim_balance: int
-    # The materials the yard already owns on day one.
-    #
-    # Same field, same meaning and same loop as `SmallBusiness.opening_stock`
-    # below - the yard simply never got one. election30 is what that costs:
-    # 52 successful fellings of timber and many crafted planks, 0 buildings
-    # raised, because a crew cannot break ground while it is still waiting
-    # for a supply chain that has nobody to buy from. A yard declared to
-    # build is given enough to start building, exactly as a shop declared to
-    # sell bread is given bread.
     opening_stock: dict[str, int] = Field(default_factory=dict)
-    # What this holder's price board says when the doors open, as
-    # `{item: {"ask": sim, "bid": sim}}` - either side may be omitted.
-    #
-    # Stock without a price is the same dead end as no stock. Booting
-    # `genesis_30_town` with shelves full and the board empty, `buy` still
-    # answered "Kasukabe Grocery has not posted a price for bread. Nothing
-    # is for sale here at a fixed price." A shop opens with a price list;
-    # that is most of what being open means.
-    #
-    # The BID side is the half that pays for things. election30's miner was
-    # told three times that "government doesn't buy ore", 52 fellings of
-    # timber found no buyer, and 29 of 30 residents ended poorer than they
-    # started - because every sim a producer earned had to come out of
-    # another resident who was also losing money. A shop that bids for its
-    # own inputs is where a farmer's wheat turns into income.
-    #
-    # Prices are a starting point, not a control: `post_price` overwrites
-    # any of these, and what the town does with them afterwards is the
-    # measurement (evaluation E2, whether the spread across shops narrows).
     opening_prices: dict[str, dict[str, int]] = Field(default_factory=dict)
 
 
@@ -327,44 +284,7 @@ class SmallBusiness(BaseModel):
     owner_agent_id: str
     employee_agent_ids: list[str] = Field(default_factory=list)
     starting_sim_balance: int
-    # What is on the shelves when the doors open.
-    #
-    # Every genesis file has carried `"inventory": null, "stock": null`
-    # since it was written, this model had no field for either, and
-    # pydantic dropped them - two declared keys read by nothing, the same
-    # shape as the compaction knob that was tuned for weeks while
-    # deciding nothing. So every shop in Kasukabe has been empty in every
-    # run ever made, and the residents found out one at a time:
-    #
-    #     world:buy   "b_bakery needs 2 bread, has 0"      x7
-    #     world:trade "you hold 0 bread, not 1"
-    #     world:give  "you hold 0 stale bread, not 1"
-    #
-    # It is not a subsidy. Nobody is given anything - a shop is given the
-    # goods it is declared to sell, which is what makes it the shop
-    # genesis already says it is. Residents still have empty hands, still
-    # earn, still walk to the counter and pay. Goods are not money, so
-    # the $1000 ledger invariant is untouched.
     opening_stock: dict[str, int] = Field(default_factory=dict)
-    # What this holder's price board says when the doors open, as
-    # `{item: {"ask": sim, "bid": sim}}` - either side may be omitted.
-    #
-    # Stock without a price is the same dead end as no stock. Booting
-    # `genesis_30_town` with shelves full and the board empty, `buy` still
-    # answered "Kasukabe Grocery has not posted a price for bread. Nothing
-    # is for sale here at a fixed price." A shop opens with a price list;
-    # that is most of what being open means.
-    #
-    # The BID side is the half that pays for things. election30's miner was
-    # told three times that "government doesn't buy ore", 52 fellings of
-    # timber found no buyer, and 29 of 30 residents ended poorer than they
-    # started - because every sim a producer earned had to come out of
-    # another resident who was also losing money. A shop that bids for its
-    # own inputs is where a farmer's wheat turns into income.
-    #
-    # Prices are a starting point, not a control: `post_price` overwrites
-    # any of these, and what the town does with them afterwards is the
-    # measurement (evaluation E2, whether the spread across shops narrows).
     opening_prices: dict[str, dict[str, int]] = Field(default_factory=dict)
 
 
@@ -394,21 +314,4 @@ class Genesis(BaseModel):
     small_businesses: list[SmallBusiness]
     control_businesses: list[ControlBusiness]
     ablation_summary: AblationSummary
-    # GROW-12. Who holds the government until the first election, if
-    # anyone. `None` is the default and is exactly today's behaviour:
-    # seats vacant, as `charter/genesis.py` describes.
-    #
-    # It exists because no run has ever crossed a first election, so every
-    # seat-gated verb has refused every resident in every run - and
-    # `petition` is the only in-world entry to the land-expansion
-    # pipeline, which therefore has never once been reachable from inside
-    # the town. DESIGN section 1 says "government petitions the
-    # President", so the fix cannot be to let any resident petition; it
-    # has to be that a government exists to do it.
-    #
-    # Optional, and off unless a genesis file names someone, because
-    # seeding a PM nobody elected is a research decision (DESIGN section
-    # 10 measures regime transitions) and not one this field should take
-    # on an operator's behalf. `GovernmentState.caretaker` marks the
-    # result so those metrics can exclude it.
     caretaker_pm_agent_id: str | None = None

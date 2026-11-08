@@ -20,7 +20,6 @@ from pathlib import Path
 
 MIGRATIONS = Path(__file__).resolve().parents[1] / "migrations"
 
-# The count at the freeze, 2026-09-04.
 FROZEN_AT = 22
 
 

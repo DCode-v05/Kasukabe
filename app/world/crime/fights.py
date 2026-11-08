@@ -34,14 +34,9 @@ from world.crime.ports import HealthPort, LocationPort, require_co_located
 from world.crime.store import CrimeStore
 from world.crime.theft import THEFT_WITNESS_PROBABILITY
 
-# Placeholder pending game-balance data (see module docstring): not every
-# fight draws blood.
 FIGHT_INJURY_PROBABILITY = 0.5
 FIGHT_WITNESS_PROBABILITY = THEFT_WITNESS_PROBABILITY
 
-# Ordered rarest-first, same walk-the-cumulative-bands shape as
-# world/life/health.py's INCIDENCE_ROLL_ORDER, so a severe injury isn't
-# crowded out by a common minor one landing on the same draw.
 INJURY_SEVERITY_WEIGHTS: tuple[tuple[InjurySeverity, float], ...] = (
     (InjurySeverity.SEVERE, 0.15),
     (InjurySeverity.MODERATE, 0.35),

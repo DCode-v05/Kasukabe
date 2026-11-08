@@ -102,11 +102,6 @@ from supabase.archiver import build_world_snapshot_archive_key
 
 logger = logging.getLogger(__name__)
 
-# ── default paths ──────────────────────────────────────────────────────
-# app/world/wiring.py -> parents[2] is the kasukabe/ repo root, matching
-# world/map/tests/conftest.py's identical walk-up-parents trick (see that
-# file's own comment) so this resolves the same way on the host checkout
-# and inside the "test" docker-compose service's /smallville mount.
 PACKAGE_DIR = Path(__file__).resolve().parent
 REPO_ROOT = PACKAGE_DIR.parent.parent
 DEFAULT_GENESIS_JSON_PATH = PACKAGE_DIR / "genesis.json"
@@ -120,13 +115,6 @@ DEFAULT_VILLE_DIR = (
     / "the_ville"
 )
 
-# ASSUMPTION (no other module owns per-household or per-business map
-# placement yet - tools/locations.py's own docstring calls resolving a
-# real Tiled sector/arena into a location_id "future integration work"):
-# every agent starts at a slug keyed off their household, every genesis
-# business at a slug keyed off its business_type. Opaque strings, exactly
-# like tools/locations.py's own "mill"/"smithy"/"temple" constants - the
-# tool registry never looks past location_id equality.
 HOME_LOCATION_PREFIX = "home"
 CONSTRUCTION_YARD_LOCATION = "construction_yard"
 
@@ -135,11 +123,6 @@ def home_location(household_id: str) -> str:
     return f"{HOME_LOCATION_PREFIX}:{household_id}"
 
 
-# ── ledger <-> supabase.transactions mapping ───────────────────────────
-# The trace-store schema (supabase/sqlite_schema.sql) constrains tx_type
-# to a fixed vocabulary that predates world.ledger.TransactionReason and
-# is coarser than it; this is the many-to-one map between them. ASSUMPTION
-# where DESIGN.md does not pin a tighter mapping.
 TX_REASON_TO_SCHEMA_TYPE: dict[TransactionReason, str] = {
     TransactionReason.GENESIS: "credit",
     TransactionReason.EXCHANGE: "exchange",
@@ -151,45 +134,11 @@ TX_REASON_TO_SCHEMA_TYPE: dict[TransactionReason, str] = {
     TransactionReason.INFERENCE_BURN: "burn",
     TransactionReason.BLESSING: "credit",
     TransactionReason.TRANSFER: "transfer",
-    # Its own type, not folded into "transfer". A settlement - a price
-    # agreed out loud and then actually paid - is the clearest evidence
-    # there is that talking changed the world, and it cannot be counted
-    # if it looks identical to somebody handing over money for nothing.
     TransactionReason.TRADE: "trade",
-    # Their own types for the same reason TRADE has one. A shop counter is
-    # where most bargains in a town with shops would actually be settled,
-    # and folding them into "transfer" made every one of them invisible.
     TransactionReason.PURCHASE: "purchase",
     TransactionReason.SALE: "sale",
-    # TOOL-03's till movements. Coarsened to "transfer" under protest: the
-    # schema's `tx_type` CHECK is a closed vocabulary with no "till" in it,
-    # and widening it is a trace-schema change in the INFRA lane, not this
-    # one. The LEDGER keeps the distinction (`TransactionReason.TILL`), so
-    # `world.ledger.transactions` can tell a shopkeeper banking the day's
-    # takings from one handing a stranger money for nothing; the trace row
-    # cannot, yet.
-    #
-    # ECON-03 is where this closes - it asks for UPKEEP, ACTION_COST,
-    # REFUND, FEE, DONATION, REVIVAL and ENERGY_EXCHANGE on the same
-    # grounds, so the vocabulary has to be widened once for all of them
-    # rather than seven times.
     TransactionReason.TILL: "transfer",
-    # Straight through: "fine" is already in the schema's tx_type
-    # vocabulary, it simply had no ledger reason pointing at it.
     TransactionReason.FINE: "fine",
-    # ECON-03. Coarsened on purpose, and this time it costs nothing.
-    #
-    # The schema's `tx_type` CHECK is a closed vocabulary and SQLite cannot
-    # ALTER a constraint - widening it would leave every EXISTING database
-    # rejecting the new values, which is the "213 transaction rows dropped
-    # in six ticks" failure `SqliteClient.ensure_schema` documents. So
-    # `tx_type` keeps its coarse grouping.
-    #
-    # Nothing is lost by that, because the fine grain lives in the `reason`
-    # COLUMN beside it, which is free text and is what
-    # `run_report._transactions` actually queries. That is the whole of
-    # ECON-03: the report was asking `where reason = 'daily_upkeep'` and
-    # every upkeep row said `transfer`.
     TransactionReason.UPKEEP: "fee",
     TransactionReason.ACTION_COST: "fee",
     TransactionReason.REFUND: "credit",
@@ -203,10 +152,6 @@ ACCOUNT_KIND_TO_POOL: dict[AccountKind, str] = {
     AccountKind.AGENT: "agent",
     AccountKind.TREASURY: "treasury",
     AccountKind.BURNED: "burned",
-    # AccountKind.BUSINESS deliberately absent: the schema's from_pool/
-    # to_pool enum has no "business" member (DESIGN.md section 3 scopes
-    # USD, not sim, to the three pools the ledger invariant covers), so a
-    # business leg's pool is left null - see account_pool() below.
 }
 
 
@@ -223,14 +168,6 @@ class WorldConfig:
     genesis_tick: int = 0
     scheduler_target_fraction: float = 0.3
     supabase_config: SupabaseConfig | None = None
-
-
-# ── crime/ports.py adapters ─────────────────────────────────────────────
-# crime/ was built standalone against four Protocols (ports.py's own
-# docstring: "built to be tested standalone ... the real implementations
-# are expected to be adapted onto these Protocols once world/'s ... HTTP
-# dispatcher wires every world/ submodule together"). This file is that
-# wiring; nothing else in the repo implements them.
 
 
 class CrimeLedgerAdapter:
@@ -360,9 +297,6 @@ def crime_event_to_world_event(event: dict[str, Any], tick: int) -> WorldEvent:
     return WorldEvent(type=event["type"], tick=tick, payload=dict(event.get("payload", {})))
 
 
-# ── genesis population wiring ───────────────────────────────────────────
-
-
 def load_genesis(path: Path) -> Genesis:
     if not path.exists():
         raise RuntimeError(
@@ -423,9 +357,6 @@ async def apply_genesis_population(
     """
     agent_ids = [agent.agent_id for agent in genesis.agents]
 
-    # 1. USD wallets + treasury, one genesis() call so the $1000
-    # invariant is checked exactly once (see Ledger.genesis()'s own
-    # docstring on why a per-agent check would be wrong here).
     await world.ledger.genesis(
         agent_ids,
         agent_usd_cents=genesis.usd_ledger.agent_wallets_cents // genesis.population,
@@ -433,9 +364,6 @@ async def apply_genesis_population(
         tick=world.tick(),
     )
 
-    # 2. Sim-currency starting balances: minted (not part of the USD
-    # invariant, see ledger/core.py's mint_sim docstring), one call per
-    # agent since genesis() only funds USD.
     for agent in genesis.agents:
         if agent.starting_sim_balance > 0:
             await world.ledger.mint_sim(
@@ -446,43 +374,20 @@ async def apply_genesis_population(
                 memo="genesis sim balance",
             )
 
-    # 3. Households, verbatim - genesis.py already builds these as
-    # world.life.models.Household instances (see genesis.py's own
-    # generate_genesis()), so no conversion is needed.
     for household in genesis.households:
         world.households[household.household_id] = household
 
-    # 4. Life records + scheduler registration + map placement. Ledger
-    # accounts already exist (step 1); trace-store agent rows go in with
-    # employer_business_id left unset (see docstring's circular-FK note -
-    # step 6 patches it once businesses exist).
     for genesis_agent in genesis.agents:
         record = life_record_from_genesis(genesis_agent)
         world.agents[record.agent_id] = record
         location_id = home_location(genesis_agent.household_id)
         tick_engine.register_agent(record.agent_id, location_id)
-        # tick_engine.register_agent() places the agent directly in
-        # TickEngine's own LocationIndex (a separate instance from
-        # world.locations - see this module's docstring on why that is
-        # fine); publish agent.spawned too so world.locations (attached
-        # to the same shared EventBus) and the trace store both observe
-        # it exactly like a live spawn would.
         await world.event_bus.emit(
             "agent.spawned", tick=world.tick(), payload={"agent_id": record.agent_id, "location_id": location_id}
         )
         if trace_store is not None:
             await trace_store.seed_agent(record, genesis_agent, world.tick())
 
-    # 5. Businesses. Each owner's ledger account already exists (step 1)
-    # and now so does its trace-store agents row (step 4), satisfying
-    # both Ledger.open_business() and businesses.owner_agent_id's FK. The
-    # construction company + the three genesis small businesses get real
-    # ledger accounts; the 10 control businesses are deliberately
-    # ownerless (DESIGN.md section 10: "no owning agent") and have no
-    # ledger.open_business counterpart - the schema's
-    # businesses.owner_agent_id is NOT NULL, so they are exposed
-    # read-only via WorldServer.control_businesses instead (see
-    # build_world_server()).
     cc = genesis.construction_company
     world.businesses[cc.business_id] = Business(
         business_id=cc.business_id,
@@ -517,8 +422,6 @@ async def apply_genesis_population(
         if trace_store is not None:
             await trace_store.seed_business(world.businesses[sb.business_id], world.tick())
 
-    # 6. Patch employer_business_id on every agent trace row that has one
-    # (see docstring's circular-FK note) - businesses now exist to point at.
     if trace_store is not None:
         for genesis_agent in genesis.agents:
             if genesis_agent.business_id is not None:
@@ -528,9 +431,6 @@ async def apply_genesis_population(
         "genesis population applied: %d agents, %d households, %d businesses",
         len(genesis.agents), len(genesis.households), 4,
     )
-
-
-# ── trace store (supabase/'s SQLite-WAL client) ─────────────────────────
 
 
 def account_pool(ledger: Ledger, account_id: str) -> str | None:
@@ -548,18 +448,6 @@ def build_transaction_row(
         "tx_type": TX_REASON_TO_SCHEMA_TYPE[transaction.reason],
         "from_agent_id": transaction.from_account if transaction.from_account in known_agent_ids else None,
         "to_agent_id": transaction.to_account if transaction.to_account in known_agent_ids else None,
-        # Which account was NOT an agent, when one of them was not.
-        #
-        # A purchase moves sim from an agent to a BUSINESS, and the two
-        # agent columns above write an id only for a known agent - so the
-        # shop leg was null and the row did not say which shop had been
-        # paid. The settlement query requires both agent columns, so every
-        # purchase and sale was excluded from it outright, and the run
-        # reports read that as "the town does not trade" when it meant "we
-        # cannot see it".
-        #
-        # Not a second agent column: a business is not an agent, and the
-        # pool columns below already went wrong once by conflating them.
         "counterparty_id": (
             transaction.to_account
             if transaction.from_account in known_agent_ids
@@ -606,19 +494,9 @@ class TraceStore:
         self.client = client
         self.archiver = PayloadArchiver(client, bucket="world-snapshots")
         self.known_agent_ids: set[str] = set()
-        # Residents whose row is actually in the database. Distinct from
-        # known_agent_ids only while a seed is in flight, but the
-        # distinction is the whole of the run-16 fix - see seed_agent.
         self.seeded_agent_ids: set[str] = set()
-        # child_id -> parent_id, for kin links whose parent had not been
-        # seeded yet. Drained by link_pending_children_of().
         self.pending_parent_links: dict[str, str] = {}
         self.persisted_transaction_ids: set[str] = set()
-        # Every rejected write, counted. The world-side recorder logged
-        # 125 rejections at WARNING across run 16 and carried on; the
-        # broker's writers have halted dispatch on three consecutive
-        # failures since July ("losing observations must never again be
-        # survivable") and this is the world's half of that guarantee.
         self.writes_attempted = 0
         self.writes_failed = 0
         self.rows_dropped = 0
@@ -626,21 +504,7 @@ class TraceStore:
         self.halt_after_consecutive_failures = 3
         self.last_failure_message: str | None = None
         self.last_failure_type: str | None = None
-        # Remarks that arrived with no thread id and were filed under a
-        # minted one. See record_utterance_if_new.
         self.unthreaded_utterances = 0
-        # supabase.sqlite_client.SqliteClient holds one shared
-        # sqlite3.Connection and wraps every blocking call in
-        # asyncio.to_thread (its own docstring says as much); a
-        # sqlite3.Connection is not safe for concurrent use from more than
-        # one thread at a time, even with check_same_thread=False. Every
-        # write this class makes goes through insert_locked() below so no
-        # two ever run their to_thread body at the same moment - this
-        # matters here specifically because EventBus.publish() fans a
-        # single event out to every matching subscriber concurrently via
-        # asyncio.gather (events.py's own documented behavior), and a
-        # checkpoint write can be in flight (also via to_thread) at the
-        # same time an unrelated request handler is publishing an event.
         self.write_lock = asyncio.Lock()
 
     async def insert_locked(self, table: str, rows: list[dict[str, Any]]) -> None:
@@ -651,7 +515,6 @@ class TraceStore:
         async with self.write_lock:
             await self.client.update(table, filters=filters, values=values)
 
-    # ── what the recorder lost, and whether it may keep going ────────
 
     @property
     def is_halted(self) -> bool:
@@ -718,22 +581,6 @@ class TraceStore:
         parent_ready = parent_id in self.seeded_agent_ids if parent_id else True
         if parent_id and not parent_ready:
             self.pending_parent_links[agent.agent_id] = parent_id
-        # CORE-13. A re-run must not poison the recorder.
-        #
-        # Seeding against a store that already holds this cast raises
-        # `UNIQUE constraint failed: agents.slug`. The caller swallows that
-        # and logs it as benign - "that is a re-run, not a fault", which is
-        # true of the INSERT and false of everything after it: this method
-        # is the ONLY place `known_agent_ids` is filled, so a swallowed
-        # duplicate left the recorder not knowing the resident exists.
-        # Every utterance and transaction naming them for the rest of the
-        # run then wrote NULL agent refs or was dropped outright, and the
-        # report read the hole as silence - the same failure mode run 16
-        # had for a different reason.
-        #
-        # The row IS there; that is what the error means. So an
-        # already-present resident is registered exactly like a
-        # newly-inserted one.
         try:
             await self._insert_the_agent_row(agent, genesis_agent, tick, parent_ready, parent_id)
         except Exception as exc:  # noqa: BLE001 - narrowed by the check below
@@ -782,18 +629,11 @@ class TraceStore:
                     "usd_wallet_cents": genesis_agent.usd_wallet_cents if genesis_agent else 0,
                     "sim_balance": genesis_agent.starting_sim_balance if genesis_agent else 0,
                     "occupation": genesis_agent.occupation if genesis_agent else None,
-                    # Left unset here even when genesis_agent.business_id
-                    # is known - see apply_genesis_population()'s docstring
-                    # on the agents<->businesses circular FK. set_employer()
-                    # patches it in once the business row exists.
                     "employer_business_id": None,
                     "created_tick": tick,
                 }
             ],
         )
-        # Registration happens in `seed_agent` above, AFTER this returns or
-        # after the duplicate is confirmed present - a resident the store
-        # genuinely refused is still not one this class may write about.
 
     async def link_pending_children_of(self, parent_id: str) -> None:
         """Patch in the kin links that were waiting for this row."""
@@ -864,10 +704,6 @@ class TraceStore:
         payload = event.payload
         speaker = payload.get("speaker_agent_id")
         if speaker not in self.known_agent_ids:
-            # Skipping is right - there is no row to hang the foreign key
-            # on. Skipping silently is what turned 13 lost utterances into
-            # a report full of "(no reply)", so it is counted like any
-            # other loss.
             await self.record_write_failure(
                 event.type, RuntimeError(f"speaker {speaker!r} was never seeded")
             )
@@ -875,18 +711,6 @@ class TraceStore:
         listener = payload.get("listener_agent_id")
         if listener is not None and listener not in self.known_agent_ids:
             listener = None
-        # A remark with no thread id is still a remark somebody made.
-        #
-        # `utterances.conversation_id` is NOT NULL, and run 20 lost four of
-        # its 153 utterances to that constraint - found only because the
-        # drop counter added above was there to find them. The words were
-        # real: somebody said them, in a room, and the people there heard
-        # them. Dropping them is wrong in a way that filing them under a
-        # minted id is not.
-        #
-        # Deterministic, from the facts of the remark itself, so a retry
-        # cannot file one sentence under two conversations and invent a
-        # resident who said everything twice.
         conversation_id = payload.get("conversation_id")
         if not conversation_id:
             digest = hashlib.sha1(
@@ -904,15 +728,6 @@ class TraceStore:
                 {
                     "speaker_agent_id": speaker,
                     "listener_agent_id": listener,
-                    # Everyone the remark spoke to, not only the id the
-                    # parameter carried. The world has known this since
-                    # social.everyone_addressed and it stopped at the
-                    # table, so the fix was invisible to every measurement
-                    # read from the store and baseline B2 - "a resident
-                    # named in a remark is told they were addressed" -
-                    # could not be computed at all. Filtered to residents
-                    # the store actually has, for the same foreign-key
-                    # reason listener is.
                     "addressed_agent_ids": [
                         other
                         for other in (payload.get("addressed_agent_ids") or [])
@@ -952,9 +767,6 @@ class TraceStore:
         if agent_id not in self.known_agent_ids:
             return
         memory_type = payload.get("memory_type")
-        # The table's own CHECK allows exactly these three; a dream probe
-        # must never reach here (DESIGN.md section 10) and cannot, but a
-        # malformed type would otherwise fail the whole insert batch.
         if memory_type not in ("observation", "reflection", "plan"):
             return
         importance = int(payload.get("importance", 3))
@@ -995,12 +807,6 @@ class TraceStore:
 
         if event.type == "politics.petition.filed":
             filer = payload.get("filed_by_agent_id") or payload.get("agent_id")
-            # `filed_by_agent_id` is NOT NULL and a real foreign key, so an
-            # unknown filer cannot be softened to NULL the way the nullable
-            # references elsewhere are. Counted as a drop and named, rather
-            # than raised: a petition whose filer the recorder never saw is
-            # a row that cannot be written, and one bad payload must not
-            # end a resident tick.
             if filer not in self.known_agent_ids:
                 await self.record_write_failure(
                     event.type,
@@ -1009,8 +815,6 @@ class TraceStore:
                 return
             await self._write_row("petitions", {
                 "id": str(petition_id),
-                # The schema constrains this to land_expansion /
-                # charter_amendment / other.
                 "petition_type": payload.get("petition_type") or "land_expansion",
                 "filed_by_agent_id": filer,
                 "title": payload.get("title") or "",
@@ -1021,9 +825,6 @@ class TraceStore:
             }, event.type)
             return
 
-        # A decision UPDATES the row the filing wrote rather than adding a
-        # second one: a petition is one thing that changed state, and two
-        # rows would make "how many petitions" unanswerable.
         await self._patch_row("petitions", petition_id, {
             "status": "approved" if event.type.endswith("approved") else "denied",
             "decided_by": payload.get("decided_by"),
@@ -1043,10 +844,6 @@ class TraceStore:
         payload = event.payload
         if event.type == "world.building.construction_started":
             builder = payload.get("builder_agent_id")
-            # `building_type = 'genesis' OR permit_petition_id IS NOT NULL`
-            # is a table CHECK: a freeform building must name the permit it
-            # was raised under. `grant_plot` mints the plot that stands in
-            # for that permit (GOV-07), so the plot id is what satisfies it.
             permit = payload.get("permit_petition_id") or payload.get("plot_id")
             await self._write_row("buildings", {
                 "id": str(payload.get("building_id")),
@@ -1101,8 +898,6 @@ class TraceStore:
                 ),
                 "accused_agent_id": accused if accused in self.known_agent_ids else None,
                 "status": "open",
-                # Recorded for RESEARCH and never returned by a tool - see
-                # CrimeCase write-once ground_truth_perpetrator_id.
                 "ground_truth_guilty": bool(payload.get("ground_truth_perpetrator_id")),
                 "filed_tick": event.tick,
             }, event.type)
@@ -1124,7 +919,6 @@ class TraceStore:
             return
         payload = event.payload
         founder = payload.get("founder_agent_id") or payload.get("agent_id")
-        # Same NOT NULL foreign key as petitions above.
         if founder not in self.known_agent_ids:
             await self.record_write_failure(
                 event.type,
@@ -1137,7 +931,6 @@ class TraceStore:
                 event.type, ValueError("organization registered with no id")
             )
             return
-        # The schema constrains org_type to a closed set.
         org_type = str(payload.get("org_type") or "guild")
         if org_type not in ("party", "cult", "society", "religion", "guild", "other"):
             org_type = "other"
@@ -1192,28 +985,11 @@ class TraceStore:
                 "namespace": record.namespace,
                 "params_hash": _hashlib.sha256(params.encode("utf-8")).hexdigest()[:32],
                 "owner_id": record.owner_id,
-                # PROG-01. Carried through rather than recomputed here:
-                # the runtime is the only thing that knows a program
-                # happened, and a second opinion formed in the writer is
-                # how the price table came to read fields the world does
-                # not emit.
-                #
-                # Read directly, not through a three-argument `getattr`.
-                # `ToolInvocationRecord` declares both fields, so a
-                # default here could only ever answer for a field that
-                # had been RENAMED - silently writing NULL into the
-                # column the whole measure is computed from.
-                # `test_no_silent_defaults` caught this on the way in,
-                # which is the third time that guard has fired on an
-                # agent adding one to a model that declares the field.
                 "program_id": record.program_id,
                 "program_step": record.program_step,
             })
         if not rows:
             return 0
-        # One row at a time through the shared helper, so a single
-        # malformed record is counted and skipped rather than costing the
-        # whole batch - the rule the other four table writers follow.
         written = 0
         for row in rows:
             before = self.rows_dropped
@@ -1329,7 +1105,6 @@ class TraceStore:
             row = {
                 "agent_id": author,
                 "task_type": payload.get("skill_name", ""),
-                # The author has written the procedure, not yet walked it.
                 "proficiency_level": 1,
                 "repetitions_observed": 0,
                 "taught_by_agent_id": None,
@@ -1390,8 +1165,6 @@ class TraceStore:
                 "namespace": "public",
                 "owner_agent_id": agent_id,
                 "composition": json.dumps(payload.get("steps") or [], default=str),
-                # Null, not 0: toolify pays no fee at all, and 0 would read as
-                # "a fee was assessed and came to nothing".
                 "patent_fee_paid_sim": None,
                 "status": "active",
                 "registered_tick": event.tick,
@@ -1490,9 +1263,6 @@ class TraceStore:
         await self.client.close()
 
 
-# ── the composition root itself ─────────────────────────────────────────
-
-
 @dataclass
 class WorldServer:
     """Everything a running Kasukabe world process holds, plus the
@@ -1513,30 +1283,17 @@ class WorldServer:
     population_dials: PopulationDials = field(default_factory=PopulationDials)
     birth_requests: dict[str, BirthRequest] = field(default_factory=dict)
     control_businesses: dict[str, Any] = field(default_factory=dict)
-    # ECON-08: the two pieces of day-boundary economy state that have no
-    # home on WorldState. Hunger is deliberately not a field of
-    # AgentLifeRecord (see that model's own docstring, and upkeep.py's
-    # integration report, which names a caller-held dict keyed by agent_id
-    # as the intended home); the head-tax debt store is its own
-    # checkpointable object (head_tax.py's docstring). GenesisRunner holds
-    # the same pair under the same names.
     hunger_by_agent: dict[str, HungerState] = field(default_factory=dict)
     head_tax_debts: HeadTaxDebtStore = field(default_factory=HeadTaxDebtStore)
     last_day_jobs: life_day_jobs.DayJobsReport | None = None
 
     def __post_init__(self) -> None:
-        # ECON-06: the tools read the same hunger dict this root keeps.
         self.world.hunger_by_agent = self.hunger_by_agent
-        # ECON-14: adopt the world's store. Tool handlers are given
-        # `world` and nothing else, so a store living only on this server
-        # object is a debt no resident can pay - which is precisely what
-        # `repay_head_tax_debt` having no caller meant.
         if self.world.head_tax_debts is not None:
             self.head_tax_debts = self.world.head_tax_debts
         else:
             self.world.head_tax_debts = self.head_tax_debts
 
-    # -- tick loop -------------------------------------------------------
 
     async def bring_of_age(
         self, agent: AgentLifeRecord, total_hours: float
@@ -1588,13 +1345,6 @@ class WorldServer:
 
         now_clock = self.world.game_clock()
 
-        # Running out of thinking has to actually happen, every tick and
-        # not merely at the hour: a resident whose wallet empties at 09:10
-        # must not keep thinking until 10:00 on money it does not have.
-        # burn_inference below catches only the burn that emptied the
-        # wallet; nothing caught a wallet emptied any other way, so
-        # check_dormancy_death - which the hourly block already runs -
-        # could not fire and the revive tool had nobody to wake.
         await life_day_jobs.sweep_zero_wallets(
             self.world,
             self.world.ledger,
@@ -1613,10 +1363,6 @@ class WorldServer:
                 now_clock,
                 elapsed_hours,
                 self.population_dials,
-                # ECON-22: the hook the runner's inline copy of this tick
-                # had and this one did not. Without it `agent.aged_to_adult`
-                # reached nobody, so on this root a minor who crossed
-                # eighteen kept being billed to a parent for ever.
                 on_coming_of_age=self.bring_of_age,
             )
             self.world.agents[agent_id] = updated
@@ -1633,19 +1379,11 @@ class WorldServer:
                 self.world.agents[agent_id] = updated
                 await self.publish_life_events(events, result.tick.tick_index)
 
-            # ECON-08. Living costs money, every day, whether you earned
-            # or not - and so does existing, and a promise that came due
-            # is owed whether or not anyone paid it. Kept behind the same
-            # day-boundary gate as the health roll and run through the
-            # shared module both roots call.
             self.last_day_jobs = await life_day_jobs.run_day_boundary_jobs(
                 self.world.rng,
                 self.world,
                 self.world.ledger,
                 self.head_tax_debts,
-                # Built per day rather than held, so it always reads the
-                # current tick; `world` is the third argument ECON-29
-                # added so a pharmacy fee reaches the pharmacy.
                 LedgerEconomyPort(self.world.ledger, self.world.tick, self.world),
                 self.hunger_by_agent,
                 self.population_dials,
@@ -1659,12 +1397,10 @@ class WorldServer:
     def mark_agent_decided(self, agent_id: str) -> None:
         self.tick_engine.mark_agent_decided(agent_id)
 
-    # -- the law of physics: tool calls -----------------------------------
 
     async def execute_tool(self, actor_id: str, tool_name: str, params: dict[str, Any]) -> ToolResult:
         return await self.registry.execute(self.world, actor_id, tool_name, params)
 
-    # -- ledger reads + the broker-facing burn endpoint ---------------------
 
     def ledger_invariant_status(self) -> dict[str, Any]:
         return {
@@ -1685,9 +1421,6 @@ class WorldServer:
         """
         transaction = await self.world.ledger.burn_for_inference(agent_id, usd_cents, self.world.tick(), memo=memo)
         payer_id = self.world.ledger.resolve_usd_payer(agent_id)
-        # ECON-24: the same named threshold the law block quotes to the
-        # resident and the tick-loop sweep reads, rather than a third
-        # bare zero that could drift away from both.
         if self.world.ledger.usd_balance(payer_id) <= DORMANCY_THRESHOLD_USD_CENTS:
             payer = self.world.agents.get(payer_id)
             if payer is not None and not payer.dormancy.is_dormant:
@@ -1699,7 +1432,6 @@ class WorldServer:
                     await self.event_bus.publish(life_event_to_world_event(life_event, self.world.tick()))
         return transaction
 
-    # -- reads ------------------------------------------------------------
 
     def agent_summary(self, agent_id: str) -> dict[str, Any] | None:
         agent = self.world.agents.get(agent_id)
@@ -1732,7 +1464,6 @@ class WorldServer:
             "population_dials": self.population_dials.model_dump(mode="json"),
         }
 
-    # -- President console (DESIGN.md section 8) -----------------------------
 
     async def president_approve_land_petition(self, petition_id: str, decision_note: str) -> Any:
         return await self.world.charter.land_petitions.approve_petition(
@@ -1748,7 +1479,6 @@ class WorldServer:
     async def president_veto_amendment(self, proposal_id: str, veto_note: str) -> Any:
         return await self.world.charter.amendments.veto_amendment(proposal_id, veto_note, self.world.tick())
 
-    # -- God console: prayers (grant / silent-deny) --------------------------
 
     async def god_grant_prayer(self, request_id: str, sim_amount: int) -> WorldEvent:
         prayer = next((p for p in self.world.prayer_requests if p.request_id == request_id), None)
@@ -1779,7 +1509,6 @@ class WorldServer:
             "religion.prayer.denied", tick=self.world.tick(), payload={"request_id": request_id}
         )
 
-    # -- God console: baby blessing queue (DESIGN.md sections 3, 4, 8) -------
 
     async def submit_birth_request(
         self, household_id: str, parent_ids: list[str], sponsor_parent_id: str
@@ -1834,18 +1563,11 @@ class WorldServer:
             await self.event_bus.publish(life_event_to_world_event(life_event, self.world.tick()))
         return updated
 
-    # -- God console: population dials (DESIGN.md section 5) -----------------
 
     def set_population_dials(self, **updates: Any) -> PopulationDials:
         self.population_dials = self.population_dials.model_copy(update=updates)
         return self.population_dials
 
-    # -- God console: disasters (DESIGN.md section 8) -------------------------
-    # Two disaster kinds get a real numeric effect below (plague, crop
-    # blight); storm and quake are recorded as events only - DESIGN.md
-    # names them but nothing in map/ or tools/ models structural damage
-    # yet, so a numeric effect here would be invented, not wired. That
-    # gap is called out in this task's final report, not hidden.
 
     async def god_disaster_plague(self, affected_fraction: float = 0.15) -> WorldEvent:
         living = [a for a in self.world.agents.values() if a.alive and a.health.current_ailment is None]
@@ -1883,7 +1605,6 @@ class WorldServer:
     async def god_disaster_quake(self) -> WorldEvent:
         return await self.event_bus.emit("world.disaster.quake", tick=self.world.tick(), payload={})
 
-    # -- crime/ reads -------------------------------------------------------
 
     async def crime_metrics(self) -> dict[str, Any]:
         stats = await self.crime.compute_metrics()
@@ -1892,7 +1613,6 @@ class WorldServer:
     def crime_cases(self) -> list[dict[str, Any]]:
         return [case.model_dump(mode="json") for case in self.world.crime_cases]
 
-    # -- shutdown -----------------------------------------------------------
 
     async def close(self) -> None:
         if self.trace_store is not None:
@@ -1906,11 +1626,9 @@ async def build_world_server(config: WorldConfig | None = None) -> WorldServer:
     """
     config = config or WorldConfig()
 
-    # 1. trace store first (agents FK needs seeding before genesis events fire).
     supabase_client = get_client(config.supabase_config)
     trace_store = TraceStore(supabase_client)
 
-    # 2. map (independent of everything below).
     map_service: MapService | None = None
     if config.ville_dir.exists():
         map_service, _zone_ids = MapService.from_kasukabe_genesis(config.ville_dir)
@@ -1926,57 +1644,32 @@ async def build_world_server(config: WorldConfig | None = None) -> WorldServer:
     else:
         logger.warning("Ville assets not found at %s, booting without MapService", config.ville_dir)
 
-    # 3. tools.bootstrap.build_world(): event bus, locations, ledger,
-    # charter (sink-less), tool registry, resource zones - see that
-    # function's own docstring.
-    # GROW-05. `world_map=` was omitted, so tools/bootstrap.py loaded a
-    # SECOND WorldMap off disk for MovementSystem while step 2 above kept
-    # its own. Two maps meant `expand_land` and `stamp_building` grew one of
-    # them and every resident walked the other: expansion succeeded, and
-    # `move`, `list_places` and every location gate refused the new sector.
-    # Invisible because both halves worked perfectly on their own copy.
     world, registry = await build_world(
         genesis_tick=config.genesis_tick,
         seed=config.seed,
         world_map=map_service.world if map_service is not None else None,
     )
 
-    # 4. close the charter event-sink seam build_world() leaves open.
     rewire_charter_event_sink(
         world.charter, lambda event: world.event_bus.publish(charter_event_to_world_event(event, world.tick()))
     )
 
-    # 5. world-core's tick engine, sharing the same EventBus.
     tick_engine = TickEngine(
         event_bus=world.event_bus,
         scheduler_config=SchedulerConfig(target_fraction=config.scheduler_target_fraction),
         checkpoint_sink=trace_store.bind_checkpoint_sink(world.ledger, lambda: len(world.agents)),
         tick_index=config.genesis_tick,
-        # Task "walking": the second of the two composition roots that has to
-        # hand build_world()'s MovementSystem to the tick engine. Without it
-        # `advance()` is never called, routes never step, and `agent.moved`
-        # never carries a tile - see run_genesis.py's matching comment.
         movement_system=world.movement,
     )
     tick_engine.checkpoints.register("world_state", world)
     if map_service is not None:
         tick_engine.checkpoints.register("map", map_service)
 
-    # 6. persistence subscribers, attached BEFORE genesis population so
-    # every genesis-time event and every genesis funding transaction (250
-    # wallets, sim mints, business accounts) lands in the trace store too
-    # - DESIGN.md section 2's "complete causal record" claim starts at
-    # tick 0, not at the first post-genesis mutation. record_event()
-    # defensively nulls out an agent_id it does not recognize yet
-    # (trace_store.known_agent_ids), so there is no FK ordering hazard
-    # even for an agent's own spawn event racing its own seed_agent() row.
     world.event_bus.subscribe("*", trace_store.bind_event_bus(world.ledger))
 
-    # 7. genesis population.
     genesis = load_genesis(config.genesis_json_path)
     await apply_genesis_population(world, tick_engine, genesis, trace_store)
 
-    # 8. crime/, over adapters onto everything already built.
     crime_engine = create_crime_engine(
         economy=CrimeLedgerAdapter(world.ledger),
         health=LifeHealthAdapter(world),

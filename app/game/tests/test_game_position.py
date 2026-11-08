@@ -30,9 +30,6 @@ def test_sprite_key_for_is_always_in_roster() -> None:
 
 
 def test_sprite_key_for_distributes_across_roster() -> None:
-    # 250 agents over 25 sprites should not all collapse onto one or two
-    # sprite keys - a sanity check on the hash's spread, not a claim of
-    # perfect uniformity.
     assigned = {sprite_key_for(f"agent-{i:03d}") for i in range(250)}
     assert len(assigned) > len(SPRITE_ROSTER) // 2
 
@@ -53,8 +50,8 @@ def test_stable_hash_differs_for_different_keys() -> None:
 @pytest.mark.parametrize(
     "tick,expected_alpha_zero",
     [
-        (0, False),  # tick 0 -> minute 0 -> midnight -> full night
-        (12 * 6, True),  # hour 12 -> solar noon -> fully transparent
+        (0, False),
+        (12 * 6, True),
     ],
 )
 def test_day_night_tint_bounds(tick: int, expected_alpha_zero: bool) -> None:
@@ -77,18 +74,17 @@ def test_day_night_tint_rejects_negative_tick() -> None:
 
 
 def test_is_daytime_matches_hour_window() -> None:
-    # tick * 10 minutes; hour = (tick*10 % 1440) // 60
-    day_tick = (DAY_START_HOUR * 60) // 10  # first tick of daytime
-    night_tick = (NIGHT_START_HOUR * 60) // 10  # first tick of night
+    day_tick = (DAY_START_HOUR * 60) // 10
+    night_tick = (NIGHT_START_HOUR * 60) // 10
     assert is_daytime(day_tick) is True
     assert is_daytime(night_tick) is False
-    assert is_daytime(0) is False  # midnight
+    assert is_daytime(0) is False
 
 
 def test_game_day_and_time_advances_correctly() -> None:
     assert game_day_and_time(0) == (0, 0, 0)
     assert game_day_and_time(1) == (0, 0, 10)
-    assert game_day_and_time(144) == (1, 0, 0)  # exactly one game-day later
+    assert game_day_and_time(144) == (1, 0, 0)
 
 
 def test_game_day_and_time_rejects_negative_tick() -> None:

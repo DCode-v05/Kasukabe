@@ -1,16 +1,3 @@
-/* Health, Built, Food and Treasury — from the world, not a model.
- *
- * These four panels used to be a deterministic client-side simulation:
- * `healthSim` invented illnesses and deaths, `BUILD_PROJECTS` listed a
- * plausible build order, `foodSim` grew and ate imaginary crops, and the
- * treasury was projected from the mock clock. All four sat beside figures
- * that were real, and a modelled number next to a real one is read as real.
- *
- * Every figure below comes from /api/town/vitals, which reads world state.
- * Where the world has no answer the panel says so rather than estimating —
- * "nothing built yet" is a finding about the town; an invented build order
- * is a finding about the viewer.
- */
 (function () {
   'use strict';
 
@@ -34,10 +21,6 @@
       esc(value) + '</div><div class="vit-l">' + esc(label) + '</div></div>';
   }
 
-  /* Health: who is well, who is dormant, who has died — the world's own
-   * counts. Dormancy matters more than illness here: it is the one death
-   * path the experiment actually has (a wallet at zero), so it gets its own
-   * figure rather than being folded into "unwell". */
   function healthHtml(d) {
     if (!d || !d.available) return unavailable(d);
     var h = d.health || {};
@@ -56,9 +39,6 @@
         : empty('No health states reported yet.'));
   }
 
-  /* Built: what the town has actually raised. Genesis gives it businesses and
-   * households; buildings are what the residents put up themselves, so zero
-   * is the honest and expected early answer. */
   function builtHtml(d) {
     if (!d || !d.available) return unavailable(d);
     var b = d.built || {};
@@ -88,9 +68,6 @@
     return out;
   }
 
-  /* Food: what the town is actually holding, summed across every inventory.
-   * Not a harvest model — the real stock, which is usually nothing at all
-   * early on, and that is the interesting part. */
   function foodHtml(d) {
     if (!d || !d.available) return unavailable(d);
     var f = d.food || {}, held = f.holdings || {};
@@ -112,7 +89,6 @@
     return out;
   }
 
-  /* Treasury: the ledger's own balance for the government account. */
   function treasuryHtml(d) {
     if (!d || !d.available) return unavailable(d);
     var t = d.treasury || {};
@@ -130,25 +106,12 @@
   function render() {
     var d = state.vitals;
 
-    /* The top bar's Alive / Deceased, from the world.
-     *
-     * These were written by the legacy health render off `healthSim`, which
-     * still holds all 314 build-time residents - so it raced live-cast and put
-     * 314 back over the real 30. That render is now switched off (its target
-     * id is renamed), and these are the world's own figures. */
     if (d && d.available && d.health) {
       var a = document.getElementById('hudAlive');
       var x = document.getElementById('hudDead');
       if (a) a.textContent = d.health.alive;
       if (x) x.textContent = d.health.dead;
 
-      /* Town wealth and treasury, from the ledger.
-       *
-       * The last two mock figures in the UI. `hudWealth` was summed in the
-       * browser from build-time balances and showed **NaN** once the cast
-       * changed under it. `hudTreasury` came from the client-side fiscal
-       * projection and showed **-4,815** - the ledger's treasury was +220 at
-       * the same moment, and a real treasury cannot go negative. */
       var w = document.getElementById('hudWealth');
       var t = document.getElementById('hudTreasury');
       if (w && typeof d.town_wealth_sim === 'number') {

@@ -28,9 +28,6 @@ def make_call(id: str, name: str = "test_tool", **input_kw) -> ToolCall:
     return ToolCall(id=id, name=name, input=dict(input_kw))
 
 
-# ── Race: sibling abort + permission rejection at same time ──
-
-
 @pytest.mark.asyncio
 async def test_sibling_abort_and_permission_rejection_race():
     """Bash error fires sibling abort. Simultaneously, another tool gets
@@ -41,7 +38,6 @@ async def test_sibling_abort_and_permission_rejection_race():
     async def execute(call: ToolCall, ct: CancellationToken) -> ToolResultBlock:
         if call.name == "bash":
             return ToolResultBlock(tool_use_id=call.id, content="Error: fail", is_error=True)
-        # Slow tool — waits for cancellation
         for _ in range(100):
             if ct.cancelled:
                 return ToolResultBlock(tool_use_id=call.id, content="cancelled", is_error=True)
@@ -60,10 +56,9 @@ async def test_sibling_abort_and_permission_rejection_race():
 
     results = [r async for r in executor.results()]
     assert len(results) == 3
-    assert results[0].is_error  # bash errored
-    assert results[1].is_error  # sibling cancelled
-    assert results[2].is_error  # sibling cancelled
-    # Sibling abort should NOT bubble to parent
+    assert results[0].is_error
+    assert results[1].is_error
+    assert results[2].is_error
     assert not parent.cancelled
     assert executor.has_errored
 
@@ -75,7 +70,6 @@ async def test_multiple_bash_errors_only_first_fires():
 
     async def execute(call: ToolCall, ct: CancellationToken) -> ToolResultBlock:
         if call.name == "bash":
-            # Stagger slightly so first bash finishes first
             if call.id == "t2":
                 await asyncio.sleep(0.02)
             return ToolResultBlock(tool_use_id=call.id, content="Error: fail", is_error=True)
@@ -97,16 +91,11 @@ async def test_multiple_bash_errors_only_first_fires():
 
     results = [r async for r in executor.results()]
     assert len(results) == 3
-    # Both bash tools errored
     assert results[0].is_error
     assert results[1].is_error
-    # read_file was cancelled by sibling abort from first bash
     assert results[2].is_error
     assert executor.has_errored
     assert not parent.cancelled
-
-
-# ── Mixed unknown + known + erroring ──
 
 
 @pytest.mark.asyncio
@@ -130,9 +119,9 @@ async def test_unknown_tool_mixed_with_erroring_bash():
         tool_exists_fn=lambda name: name != "ghost",
         parent_cancellation=parent,
     )
-    executor.add_tool(make_call("t1", "ghost"))  # unknown → immediate error
-    executor.add_tool(make_call("t2", "bash", command="fail"))  # error → sibling abort
-    executor.add_tool(make_call("t3", "read_file"))  # cancelled by sibling
+    executor.add_tool(make_call("t1", "ghost"))
+    executor.add_tool(make_call("t2", "bash", command="fail"))
+    executor.add_tool(make_call("t3", "read_file"))
 
     results = [r async for r in executor.results()]
     assert len(results) == 3
@@ -167,9 +156,6 @@ async def test_all_unknown_tools():
     assert call_count == 0
 
 
-# ── Discard interaction with bubble-up ──
-
-
 @pytest.mark.asyncio
 async def test_discard_blocks_bubble_up():
     """discard() sets discarded=True which should prevent bubble-up."""
@@ -191,15 +177,9 @@ async def test_discard_blocks_bubble_up():
     executor.add_tool(make_call("t1"))
 
     await asyncio.sleep(0.01)
-    # Discard first (sets discarded=True), then tool token gets cancelled
-    # with STREAMING_FALLBACK — bubble should NOT fire
     executor.discard()
 
-    # Parent must not be cancelled
     assert not parent.cancelled
-
-
-# ── Permission rejection bubble-up with multiple tools ──
 
 
 @pytest.mark.asyncio
@@ -225,19 +205,13 @@ async def test_permission_rejection_cancels_all_siblings_via_parent():
 
     await asyncio.sleep(0.02)
 
-    # Permission-reject t2
     executor.tracked[1].cancellation_token.cancel("Permission denied")
 
     results = [r async for r in executor.results()]
     assert len(results) == 3
-    # Parent was cancelled by bubble-up
     assert parent.cancelled
     assert parent.reason == "Permission denied"
-    # All tools should have error results (from parent cascade)
     assert all(r.is_error for r in results)
-
-
-# ── Cleanup after various states ──
 
 
 @pytest.mark.asyncio
@@ -266,9 +240,8 @@ async def test_cleanup_after_sibling_abort():
     results = [r async for r in executor.results()]
     assert len(results) == 2
 
-    # cleanup should not raise
     executor.cleanup()
-    executor.cleanup()  # idempotent
+    executor.cleanup()
 
 
 @pytest.mark.asyncio
@@ -301,9 +274,6 @@ async def test_cleanup_after_permission_rejection():
     executor.cleanup()
 
 
-# ── Rapid fire tool additions ──
-
-
 @pytest.mark.asyncio
 async def test_rapid_add_20_tools_with_first_bash_error():
     """Rapidly add 20 tools. First is bash error. Rest should all get cancelled."""
@@ -331,19 +301,16 @@ async def test_rapid_add_20_tools_with_first_bash_error():
 
     results = [r async for r in executor.results()]
     assert len(results) == 20
-    assert results[0].is_error  # bash errored
-    assert all(r.is_error for r in results[1:])  # all siblings cancelled
+    assert results[0].is_error
+    assert all(r.is_error for r in results[1:])
     assert not parent.cancelled
-
-
-# ── Verify error message content ──
 
 
 @pytest.mark.asyncio
 async def test_unknown_tool_error_has_xml_tags():
     """Unknown tool error is wrapped in <tool_use_error> tags."""
     executor = StreamingToolExecutor(
-        execute_fn=lambda c, ct: None,  # never called
+        execute_fn=lambda c, ct: None,
         tool_exists_fn=lambda _: False,
     )
     executor.add_tool(make_call("t1", "magic_tool"))
@@ -374,14 +341,13 @@ async def test_bubble_up_preserves_abort_reason_none():
     executor.add_tool(make_call("t1"))
 
     await asyncio.sleep(0.01)
-    # Cancel with no abort_reason
     executor.tracked[0].cancellation_token.cancel("some reason")
 
     async for _ in executor.results():
         pass
     assert parent.cancelled
     assert parent.reason == "some reason"
-    assert parent.abort_reason is None  # no enum, just raw cancel
+    assert parent.abort_reason is None
 
 
 @pytest.mark.asyncio
@@ -400,15 +366,13 @@ async def test_timeout_does_not_bubble():
         execute_fn=slow_execute,
         parent_cancellation=parent,
     )
-    # CombinedCancellationToken doesn't support timeout_ms from add_tool,
-    # but we can directly cancel the token with TIMEOUT reason
     executor.add_tool(make_call("t1"))
     await asyncio.sleep(0.01)
     executor.tracked[0].cancellation_token.cancel("Timeout", AbortReason.TIMEOUT)
 
     results = [r async for r in executor.results()]
     assert results[0].is_error
-    assert not parent.cancelled  # timeout stays isolated
+    assert not parent.cancelled
 
 
 if __name__ == "__main__":

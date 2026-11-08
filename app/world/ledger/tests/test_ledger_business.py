@@ -24,7 +24,7 @@ async def test_register_business_charges_fee_and_opens_sim_only_account() -> Non
     assert ledger.sim_balance("owner") == 8_500
     assert ledger.sim_balance(TREASURY_ACCOUNT_ID) == 1_500
     assert ledger.sim_balance("bakery") == 0
-    assert ledger.usd_balance("owner") == 200  # untouched, fees are sim-only
+    assert ledger.usd_balance("owner") == 200
 
 
 @pytest.mark.asyncio
@@ -34,7 +34,6 @@ async def test_register_business_rejects_when_owner_cannot_afford_the_fee() -> N
     with pytest.raises(InsufficientFundsError):
         await ledger.register_business("bakery", "owner", fee_sim=1_500, tick=0)
 
-    # A rejected registration must not leave a half-registered business.
     with pytest.raises(AccountNotFoundError):
         ledger.get_account("bakery")
 

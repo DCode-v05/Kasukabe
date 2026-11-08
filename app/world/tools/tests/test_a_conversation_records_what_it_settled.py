@@ -95,7 +95,7 @@ async def test_a_closed_conversation_says_what_it_settled(world, registry):
     await _market(world)
     conversation_id = in_conversation(world, "buyer", "seller")
     await registry.execute(world, "buyer", "buy", {"seller_id": "seller", "item": "potato", "quantity": 2})
-    quiet = in_conversation(world, "buyer")  # a remark to the room that settled nothing
+    quiet = in_conversation(world, "buyer")
 
     closed = world.close_stale_conversations(world.tick() + CONVERSATION_WINDOW_TICKS + 1)
 

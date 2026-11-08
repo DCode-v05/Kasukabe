@@ -40,8 +40,6 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-# -- shared enums -----------------------------------------------------------
-
 
 class DisasterType(str, Enum):
     """DESIGN.md section 8, verbatim: "disaster picker (crop blight,
@@ -89,9 +87,6 @@ so a Literal keeps the JSON schema simple (two allowed strings) without
 pretending this package owns a second definition of the concept."""
 
 
-# -- President: land petitions -----------------------------------------------
-
-
 class LandPetitionView(BaseModel):
     petition_id: str
     filed_by_agent_id: str
@@ -119,9 +114,6 @@ class BuildingSiteView(BaseModel):
     plot_id: str
     started_tick: int
     completion_tick: int
-    # GROW-18's labour. This is what tells an operator whether a site has
-    # STALLED: a deadline that has passed with work outstanding is a crew
-    # that stopped turning up, and a countdown alone cannot show it.
     labour_ticks_required: int = 0
     labour_ticks_done: int = 0
     labour_remaining: int = 0
@@ -182,9 +174,6 @@ class PetitionDecisionView(BaseModel):
     """None on deny; always present on approve."""
 
 
-# -- President: amendments ---------------------------------------------------
-
-
 class AmendmentProposalView(BaseModel):
     proposal_id: str
     field_name: str
@@ -207,9 +196,6 @@ class VetoAmendmentRequest(BaseModel):
     veto_note: str = ""
 
 
-# -- President: address to the nation ----------------------------------------
-
-
 class BroadcastRequest(BaseModel):
     message: str = Field(min_length=1)
 
@@ -218,9 +204,6 @@ class BroadcastView(BaseModel):
     broadcast_id: str
     message: str
     issued_tick: int
-
-
-# -- President: honors -------------------------------------------------------
 
 
 class HonorRequest(BaseModel):
@@ -235,9 +218,6 @@ class HonorView(BaseModel):
     title: str
     citation: str
     granted_tick: int
-
-
-# -- God: prayer feed ---------------------------------------------------------
 
 
 class PrayerView(BaseModel):
@@ -272,9 +252,6 @@ class PrayerDecisionView(BaseModel):
         return self
 
 
-# -- God: baby blessing queue --------------------------------------------------
-
-
 class BirthRequestView(BaseModel):
     """Mirrors world.life.models.BirthRequest."""
 
@@ -297,9 +274,6 @@ class DenyBlessingRequest(BaseModel):
 
 class BirthDecisionView(BaseModel):
     request: BirthRequestView
-
-
-# -- God: disasters -----------------------------------------------------------
 
 
 class DisasterScope(BaseModel):
@@ -334,9 +308,6 @@ class DisasterView(BaseModel):
     triggered_tick: int
 
 
-# -- God: miracles and misfortunes --------------------------------------------
-
-
 class MiracleRequest(BaseModel):
     agent_id: str = Field(min_length=1)
     description: str = Field(min_length=1)
@@ -359,9 +330,6 @@ class MisfortuneView(BaseModel):
     agent_id: str
     description: str
     cast_tick: int
-
-
-# -- God: population dials -----------------------------------------------------
 
 
 class PopulationDialsView(BaseModel):
@@ -400,9 +368,6 @@ class PopulationDialsUpdate(BaseModel):
         return self
 
 
-# -- Spend: live burn tracking ---------------------------------------------
-
-
 class SpendStatusView(BaseModel):
     """DESIGN.md section 8's "show live spend + burn rate prominently".
 
@@ -421,22 +386,12 @@ class SpendStatusView(BaseModel):
     treasury_usd_cents: int = Field(ge=0)
     wallets_usd_cents: int = Field(ge=0)
     budget_total_usd_cents: int = Field(gt=0)
-    # UI-16: this run's spend cap, which is NOT the $1000 ledger pool
-    # above. console.js drew its bar against a hard-coded $400 while real
-    # runs were capped at $1-$10, so the bar read nearly empty on a run
-    # that had finished. None when the world has no governor to ask.
     run_cap_usd_cents: int | None = None
     tick_index: int
     sampled_at: str
 
     @model_validator(mode="after")
     def check_ledger_invariant(self) -> SpendStatusView:
-        # The same $1000 invariant app/CONVENTIONS.md binds every
-        # money-touching module to, re-checked here as a presentation-layer
-        # sanity check (same pattern as PrayerDecisionView.check_consistent
-        # above): a world/ admin API that reports pools not summing to its
-        # own declared total has a bug worth failing loudly on, not
-        # something this console should silently render as if it were fine.
         total = self.burned_usd_cents + self.treasury_usd_cents + self.wallets_usd_cents
         if total != self.budget_total_usd_cents:
             raise ValueError(
@@ -447,18 +402,12 @@ class SpendStatusView(BaseModel):
         return self
 
 
-# -- Alert feed -----------------------------------------------------------------
-
-
 class AlertView(BaseModel):
     alert_id: str
     category: AlertCategory
     summary: str
     raised_tick: int
     payload: dict[str, object] = Field(default_factory=dict)
-
-
-# -- Top-level dials: pause/resume, tick speed, checkpoint ----------------------
 
 
 class SimControlStatus(BaseModel):

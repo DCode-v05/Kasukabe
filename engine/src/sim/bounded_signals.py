@@ -36,9 +36,6 @@ from src.learning_centre.signals import SignalStore
 
 logger = logging.getLogger(__name__)
 
-# The most WM entries one flush may write. A turn that produces more than
-# this is not a turn, it is a loop, and flushing all of it would put the
-# quadratic growth back by another route.
 MAX_ENTRIES_PER_FLUSH = int(os.environ.get("KASUKABE_MAX_SIGNAL_FLUSH", "200"))
 
 
@@ -52,10 +49,7 @@ class WatermarkedSignalStore(SignalStore):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        # thread_id -> the timestamp of the last entry flushed for it.
         self._watermark: dict[str, str] = {}
-        # Counted, so a run can say how much duplication it avoided rather
-        # than leaving it to be inferred from a table size.
         self.entries_skipped = 0
 
     async def flush_wm(self, thread_id: str, wm_items: list, status: str = "completed") -> int:
@@ -63,8 +57,6 @@ class WatermarkedSignalStore(SignalStore):
         if not fresh:
             return 0
         stored = await super().flush_wm(thread_id, fresh, status=status)
-        # Advance only after the write succeeded: a flush that raised must
-        # be retried, not silently skipped on the next turn.
         self._watermark[thread_id] = max(
             (getattr(i, "timestamp", "") or "") for i in fresh
         ) or self._watermark.get(thread_id, "")

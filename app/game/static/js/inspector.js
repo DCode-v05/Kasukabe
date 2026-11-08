@@ -1,14 +1,3 @@
-// Agent inspector side panel (DESIGN.md section 8: "Click any agent ->
-// live conversation, memories, wallet, relationships, trajectory" - this
-// game/'s slice of that is bio, wallets, current action, recent
-// utterances, relationships, matching the task spec exactly; the
-// operator-only memories/trajectory views belong to the President/God
-// console, out of this module's scope).
-//
-// Plain DOM, no framework - `on("agent-selected", ...)` (bus.js) is the
-// only way this module's render() ever runs, fired by town.js when a
-// sprite is clicked.
-
 import { on } from "./bus.js";
 import { fetchAgentDetail } from "./api.js";
 

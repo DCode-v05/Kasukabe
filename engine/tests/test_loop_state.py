@@ -15,9 +15,6 @@ from src.engine_core.token_budget import BudgetTracker
 from src.herald import StopReason
 
 
-# --- StrugglingState.check() ---
-
-
 class TestStrugglingCheck:
     def test_no_struggle_by_default(self):
         s = StrugglingState()
@@ -32,9 +29,7 @@ class TestStrugglingCheck:
 
     def test_turns_without_checkpoint_needs_charter(self):
         s = StrugglingState(turns_since_checkpoint=STRUGGLE_TURNS_NO_CHECKPOINT)
-        # Without charter, checkpoint struggle is not reported
         assert s.check(has_charter=False) is None
-        # With charter, it is
         reason = s.check(has_charter=True)
         assert reason is not None
         assert "turns without checkpoint" in reason
@@ -59,9 +54,6 @@ class TestStrugglingCheck:
             turns_without_text=STRUGGLE_TURNS_NO_TEXT - 1,
         )
         assert s.check(has_charter=True) is None
-
-
-# --- StrugglingState.record_tool_results() ---
 
 
 @dataclass
@@ -114,9 +106,6 @@ class TestStrugglingRecordToolResults:
             results = [FakeToolResult(content="ok")]
             s.record_tool_results(calls, results, had_text=True, had_checkpoint=False)
         assert len(s.recent_tool_sigs) == 12
-
-
-# --- Real ToolResultBlock shape coverage (regression for list-content crash) ---
 
 
 class TestStrugglingRealToolResultBlock:
@@ -191,9 +180,6 @@ class TestStrugglingRealToolResultBlock:
         assert s.consecutive_errors == 0
 
 
-# --- StrugglingState.reset() ---
-
-
 class TestStrugglingReset:
     def test_reset_clears_all(self):
         s = StrugglingState(
@@ -211,11 +197,7 @@ class TestStrugglingReset:
     def test_reset_does_not_clear_struggle_triggered(self):
         s = StrugglingState(struggle_triggered=True)
         s.reset()
-        # struggle_triggered is intentionally NOT reset — it's a one-shot flag
         assert s.struggle_triggered is True
-
-
-# --- StrugglingState serialization ---
 
 
 class TestStrugglingStateSerialization:
@@ -238,9 +220,6 @@ class TestStrugglingStateSerialization:
         s = StrugglingState.from_dict({})
         assert s.consecutive_errors == 0
         assert s.recent_tool_sigs == []
-
-
-# --- LoopState.record_turn_usage() ---
 
 
 @dataclass
@@ -275,9 +254,6 @@ class TestLoopStateRecordTurnUsage:
         assert state.output_tokens == 150
         assert state.cache_read == 230
         assert state.cache_create == 50
-
-
-# --- LoopState serialization round-trip ---
 
 
 class TestLoopStateSerialization:
@@ -325,9 +301,6 @@ class TestLoopStateSerialization:
         assert state.exit_reason == LoopExitReason.COMPLETED
 
 
-# --- LoopState token budget additions ---
-
-
 class TestLoopStateTokenBudget:
     def test_default_budget_fields(self):
         state = LoopState()
@@ -349,7 +322,7 @@ class TestLoopStateTokenBudget:
 
     def test_get_turn_output_tokens_computes_delta(self):
         state = LoopState(output_tokens=0)
-        state.snapshot_turn_budget(500_000)  # snapshot at 0
+        state.snapshot_turn_budget(500_000)
         state.record_turn_usage(FakeUsage(output_tokens=300))
         assert state.get_turn_output_tokens() == 300
         state.record_turn_usage(FakeUsage(output_tokens=200))
@@ -369,9 +342,7 @@ class TestLoopStateTokenBudget:
         state.snapshot_turn_budget(500_000)
         state.record_turn_usage(FakeUsage(output_tokens=50_000))
         assert state.get_turn_output_tokens() == 50_000
-        # Compaction fires; the engine re-snapshots with the same budget
         state.snapshot_turn_budget(state.current_turn_token_budget)
-        # Next turn's delta is measured from the compaction boundary, not 0
         state.record_turn_usage(FakeUsage(output_tokens=10_000))
         assert state.get_turn_output_tokens() == 10_000
 

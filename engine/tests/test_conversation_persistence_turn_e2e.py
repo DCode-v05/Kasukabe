@@ -95,8 +95,6 @@ async def test_a_lost_user_message_fails_the_turn_instead_of_half_writing_it(db)
     """
     store = ConversationStore(db)
     await store.ensure_conversation("t-collide")
-    # Occupy seq=0 with a row load_messages cannot parse. The read skips it, so a
-    # sequence derived from the read would reuse seq=0 and collide.
     await db.execute(
         "INSERT INTO conversation_messages (thread_id, seq, role, content_json)"
         " VALUES (?, ?, ?, ?)",
@@ -106,8 +104,6 @@ async def test_a_lost_user_message_fails_the_turn_instead_of_half_writing_it(db)
 
     th = await make_thread(db, store, "sess-collide")
 
-    # next_seq reads MAX(seq) from the database, so the turn writes at seq 1/2
-    # rather than colliding on the corrupt row.
     await th.execute("hello", thread_id="t-collide")
 
     rows = await db.fetch(
@@ -140,7 +136,6 @@ async def test_write_failure_reaches_the_caller_and_leaves_no_orphan_answer(db):
     with pytest.raises(RuntimeError):
         await th.execute("hello", thread_id="t-fail")
 
-    # The assistant half was never attempted: the pair stayed atomic.
     assert calls == [(0, "user")]
     assert await store.load_messages("t-fail") == []
 
@@ -162,10 +157,9 @@ async def test_unreadable_sequence_fails_the_turn_rather_than_guessing(db):
     with pytest.raises(ConversationPersistenceError):
         await th.execute("hello", thread_id="t-noseq")
 
-    store.db.fetchval = None  # guard against accidental reuse below
+    store.db.fetchval = None
     rows = await db.fetch(
         "SELECT seq FROM conversation_messages WHERE thread_id = ? ORDER BY seq",
         ("t-noseq",),
     )
-    # Nothing was written at a guessed seq on top of the existing rows.
     assert [r["seq"] for r in rows] == [0, 1]

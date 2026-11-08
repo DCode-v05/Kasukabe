@@ -30,9 +30,6 @@ from world.ledger.head_tax import head_tax_sim_per_head
 from world.tests.test_run_genesis import make_runner
 
 
-# ── the rate ──────────────────────────────────────────────────────────
-
-
 def test_the_town_starts_with_a_tax_it_can_actually_charge():
     rate = genesis_tax_rate_bps()
     assert rate > 0, "a town that starts at 0 bps can never charge anybody"
@@ -60,9 +57,6 @@ async def test_a_booted_town_has_a_non_zero_policy(tmp_path: Path) -> None:
     assert policy.tax_rate_bps > 0
 
 
-# ── the gate ──────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_the_day_boundary_moves_real_money(tmp_path: Path) -> None:
     runner = make_runner(tmp_path)
@@ -76,7 +70,6 @@ async def test_the_day_boundary_moves_real_money(tmp_path: Path) -> None:
     record = runner.day_jobs_ran[stamp.game_day]
     assert record["households"] > 0
     assert record["head_tax"] == record["households"]
-    # The figure the old gate never had.
     assert record["head_tax_sim"] > 0
     assert runner.ledger.sim_balance("government:treasury") > treasury_before
 
@@ -92,8 +85,8 @@ async def test_the_gate_halts_a_non_zero_rate_that_moved_nothing(
     stamp = timestamp_for(144)
     runner.day_jobs_ran[stamp.game_day] = {
         "households": 4,
-        "head_tax": 4,            # every household visited
-        "head_tax_sim": 0,        # and not one sim moved
+        "head_tax": 4,
+        "head_tax_sim": 0,
         "head_tax_rate_bps": 300,
     }
 
@@ -118,7 +111,7 @@ async def test_a_town_that_voted_its_tax_away_is_not_a_fault(tmp_path: Path) -> 
         "households": 4,
         "head_tax": 4,
         "head_tax_sim": 0,
-        "head_tax_rate_bps": 0,   # the town voted it to nothing
+        "head_tax_rate_bps": 0,
     }
 
     runner.assert_the_day_was_charged(stamp)

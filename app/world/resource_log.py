@@ -49,8 +49,6 @@ import time
 from pathlib import Path
 from typing import Any
 
-# CPU percent needs two readings to be meaningful - it is a rate, and a
-# single sample of cumulative process time is not one. Kept per pid.
 _LAST_CPU: dict[int, tuple[float, float]] = {}
 
 
@@ -74,8 +72,6 @@ def _windows_reading(pid: int) -> dict[str, float] | None:
         PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_VM_READ, False, pid
     )
     if not handle:
-        # Gone, or not ours to look at. Both are "no reading", and the
-        # caller records the agent as not alive rather than skipping it.
         return None
 
     try:
@@ -144,7 +140,6 @@ def _posix_reading(pid: int) -> dict[str, float] | None:
     if len(parts) < 2 or not parts[0].isdigit():
         return None
 
-    # ps prints elapsed CPU as [[dd-]hh:]mm:ss.
     clock = parts[1].replace("-", ":").split(":")
     try:
         seconds = 0.0
@@ -220,7 +215,6 @@ def children_by_parent() -> dict[int, list[int]]:
                 parts = [p.strip() for p in line.split(",")]
                 if len(parts) < 3 or not parts[-1].isdigit() or not parts[-2].isdigit():
                     continue
-                # csv is Node,ParentProcessId,ProcessId
                 tree.setdefault(int(parts[-2]), []).append(int(parts[-1]))
         else:
             out = subprocess.run(
@@ -276,7 +270,7 @@ def sample_tree(pid: Any, tree: "dict[int, list[int]] | None" = None) -> dict[st
     while queue:
         child = queue.pop()
         if child in seen:
-            continue  # a cycle would hang the sampler; pids get reused
+            continue
         seen.add(child)
         reading = sample_process(child)
         if reading is not None:
@@ -311,7 +305,6 @@ class ResourceSampler:
         """Record every engine's cost right now. Never raises."""
         at = time.time()
         lines = []
-        # Once per sample, not once per agent. See children_by_parent.
         tree = children_by_parent()
         for agent_id, pid in list(self.pids.items()):
             if not agent_id:
@@ -321,17 +314,10 @@ class ResourceSampler:
                 "agent_id": str(agent_id),
                 "tick": tick,
                 "at": at,
-                # A dead engine is RECORDED as dead, not skipped. Silence
-                # and death look identical in a log that omits what it
-                # cannot read, and run 16 lost a resident's whole
-                # existence to exactly that.
                 "alive": reading is not None,
                 "rss_mb": reading["rss_mb"] if reading else 0,
                 "peak_rss_mb": reading["peak_rss_mb"] if reading else 0,
                 "cpu_percent": reading["cpu_percent"] if reading else 0.0,
-                # How many processes this agent's total is made of. A row
-                # reading 1 found only the launcher and is an undercount
-                # saying so, rather than a small engine.
                 "processes": reading["processes"] if reading else 0,
             }
             lines.append(json.dumps(row))
@@ -342,8 +328,6 @@ class ResourceSampler:
             with open(self.path, "a", encoding="utf-8") as handle:
                 handle.write("\n".join(lines) + "\n")
         except OSError:
-            # See the module docstring. The numbers are the least
-            # important thing in the process.
             pass
 
 
@@ -365,8 +349,6 @@ def summarise(path: str | Path) -> dict[str, Any]:
                 try:
                     row = json.loads(line)
                 except ValueError:
-                    # The file is written by a live run that may be
-                    # killed mid-line.
                     continue
                 agent = str(row.get("agent_id") or "")
                 if not agent:
@@ -418,7 +400,6 @@ def main(path: str) -> int:
     print(f"mean peak per engine {mean} MB")
     print(f"whole town at peak   {report['total_peak_rss_mb']} MB")
 
-    # The question the operator actually has, answered from measurement.
     from world.memory_budget import MB_PER_ENGINE_PROCESS, available_mb
 
     free = available_mb()

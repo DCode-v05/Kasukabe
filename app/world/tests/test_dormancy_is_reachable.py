@@ -26,9 +26,6 @@ from world.retrieval_depth import format_heard_event
 NAMES = {"n01": "Nell Holloway", "n03": "Tobias Holloway"}
 
 
-# ── the sweep ─────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_resident_whose_wallet_hits_zero_falls_dormant(tmp_path) -> None:
     from world.tests.test_run_genesis import make_runner
@@ -37,7 +34,6 @@ async def test_a_resident_whose_wallet_hits_zero_falls_dormant(tmp_path) -> None
     await runner.boot(resume=False)
     agent_id = next(iter(runner.world_state.agents))
 
-    # Spend the wallet the way a morning of thinking does.
     runner.ledger.get_account(agent_id).usd_cents = 0
     from world.core.clock import timestamp_for
 
@@ -56,12 +52,6 @@ async def test_a_solvent_resident_is_left_alone(tmp_path) -> None:
     runner = make_runner(tmp_path)
     await runner.boot(resume=False)
     agent_id = next(iter(runner.world_state.agents))
-    # ECON-21: this used to seed ONE CENT and call it solvent. One cent is
-    # not solvent - the broker refuses to dispatch below its ceiling
-    # estimate for a call, which is one to two cents at realistic token
-    # counts - and this test asserted the resident be left alone in
-    # exactly the dead zone the finding is about: unable to think, not
-    # dormant, unrevivable, and still billed daily.
     runner.ledger.get_account(agent_id).usd_cents = DORMANCY_THRESHOLD_USD_CENTS + 1
 
     await runner.mark_the_broke_dormant(timestamp_for(40))
@@ -166,9 +156,6 @@ async def test_a_resident_already_dormant_is_not_re_marked(tmp_path) -> None:
     assert runner.world_state.agents[agent_id].dormancy.dormant_since_hours == since
 
 
-# ── and how it reads ──────────────────────────────────────────────────
-
-
 def test_the_revived_resident_is_told_what_happened_to_it() -> None:
     event = PerceivedEvent(
         type="health.agent.revived",
@@ -187,7 +174,6 @@ def test_the_revived_resident_is_told_what_happened_to_it() -> None:
 
     assert "You were dormant for 41 ticks" in line
     assert "Nell Holloway (n01) paid 10000 sim to wake you" in line
-    # Not a payload dump.
     assert "{" not in line
 
 

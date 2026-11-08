@@ -130,17 +130,6 @@ async def test_a_job_already_written_down_is_not_suggested_again(
     assert world.authoring_hint("n09") is None
 
 
-# ── Run 29: the half of the nudge that had no number in it ───────────────
-#
-# Naming the verbs moved `skillify` from 0% to 4 of 5 and moved `toolify`
-# and `do_in_order` not at all - with the hint and without it, measured
-# three runs running. The asymmetry is not the naming, it is the payoff:
-# `skillify` pays in proficiency, which is already in the perception every
-# turn, and the other two pay in calls not spent, which nothing had ever
-# shown a resident. "Better is cheaper" was a claim about an invisible
-# number.
-
-
 @pytest.mark.asyncio
 async def test_the_nudge_says_what_the_repetition_actually_cost(
     world: WorldState, registry
@@ -155,9 +144,6 @@ async def test_the_nudge_says_what_the_repetition_actually_cost(
         "the resident is told it repeated a job and not what the repetition "
         f"took: {hint!r}"
     )
-    # Read from the constant, not typed here: the ceiling came down from 12
-    # to 6 on 2026-09-18 and a literal in this assertion would have made
-    # the nudge's own arithmetic look like a regression.
     assert f"{MAX_CALLS_PER_TICK} a turn can buy" in hint, (
         "the count has nothing to be measured against"
     )
@@ -213,9 +199,6 @@ async def test_work_bought_by_a_program_is_not_charged_as_a_decision(
         "three decisions; if the program's steps are charged as decisions "
         f"the figure can only ever go up and argues for nothing: {hint!r}"
     )
-
-
-# ── Run 29: two residents wrote the same procedure an hour apart ─────────
 
 
 async def _somebody_else_wrote_it(world: WorldState, *, proficiency: int = 20) -> None:
@@ -334,9 +317,6 @@ async def test_the_same_name_in_two_cases_is_one_name(
     assert "timber felling" not in world.skill_definitions
 
 
-# ── The tripwire this string never had ───────────────────────────────────
-
-
 def test_the_nudge_states_facts_and_never_a_plan() -> None:
     """`soul_seed` and `cost_disclosure` both carry this check over every
     string they can render. The hint did not, and it is read by every
@@ -364,7 +344,5 @@ def test_the_nudge_states_facts_and_never_a_plan() -> None:
         lowered = text.lower()
         leaked = [word for word in STRATEGY_WORDS if word in lowered]
         assert not leaked, f"the nudge tells the resident what to do: {leaked} in {text!r}"
-        # The specific temptation this line invites, and the one the whole
-        # no-coaching rule exists to refuse.
         for plan in ("ask them", "go and", "you could ask", "learn from", "instead of"):
             assert plan not in lowered, f"{plan!r} is a plan, not a fact: {text!r}"

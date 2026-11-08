@@ -200,31 +200,12 @@ from world.ledger.core import Ledger
 from world.ledger.models import Currency, Transaction, TransactionReason
 from world.ledger.money import TREASURY_ACCOUNT_ID
 
-# Basis points denominator for every percentage-shaped rate in this module
-# (trade's value_bps, the skill discount curve) - integer-only, per
-# app/CONVENTIONS.md's money rule, at finer granularity than a raw percent.
 BPS_DENOMINATOR = 10_000
 
-# DESIGN.md section 4: "Skill = cheaper cognition ... Mastery lowers the
-# cost of living." world.skills stores an unbounded int proficiency (no
-# existing cap anywhere in the codebase - see world/tools/primitives/
-# social.py's teach_skill_handler, which never clamps it either), so this
-# module clamps it into its OWN 0-100 discount curve rather than assuming
-# the skill system's real scale - a proficiency of 500 discounts exactly
-# as much as a proficiency of 100, never more.
 SKILL_DISCOUNT_PROFICIENCY_CAP = 100
-# Halves a LABOUR-category cost at max proficiency. A mastered crafter
-# never works for free (the floor below still applies) but pays
-# meaningfully less than a novice for the identical batch.
 SKILL_DISCOUNT_MAX_BPS = 5_000
 
-# Every action-cost Transaction's memo starts with this, so a researcher
-# (or this module's own tests) can pick action-cost rows out of the
-# transaction log and recover which tool caused them without a dedicated
-# TransactionReason - see the module docstring on why this file cannot
-# add one (models.py is not in this task's file-ownership list).
 ACTION_COST_MEMO_PREFIX = "action_cost:"
-# The reversing leg of a charge whose action then raised - see refund_action().
 REFUND_MEMO_PREFIX = "action-refund:"
 
 
@@ -249,40 +230,9 @@ class ActionActor:
     """
 
     actor_id: str
-    # 0-100 after this module's own clamp (see SKILL_DISCOUNT_PROFICIENCY_CAP).
-    # 0 (the default) means "no mastery discount", the always-safe value
-    # when the caller has not resolved which world.skills key applies to
-    # this particular tool call.
     skill_proficiency: int = 0
-    # `move` only: tiles this specific journey covers, resolved by the
-    # caller (world.core.movement.MovementSystem or equivalent) before
-    # charging - MoveParams itself carries no distance field (see
-    # world/tools/primitives/movement.py), only a destination name, so
-    # this module cannot derive it from params alone. 0 (the default)
-    # still charges `move`'s flat per-call minimum, never zero.
     distance_tiles: int = 0
-    # GROW-23: is this resident holding a real tool?
-    #
-    # "Tool wear" was a sim fee with no item behind it, so an `iron_tool`
-    # was a thing the town could make and had no reason to want. Holding
-    # one makes the fee cheaper - an incentive a market can act on, where
-    # refusing bare-handed work outright would just stop the town.
-    #
-    # Resolved by the CALLER, like distance_tiles and trade_value_sim
-    # above and for the same reason: this module is pure and cannot read
-    # an inventory. False is the always-safe default - it charges full
-    # price, which is exactly what happened before this field existed.
     holds_a_tool: bool = False
-    # `buy`/`sell` only, and for exactly the same reason as distance_tiles.
-    #
-    # A4 removed `unit_price_sim` from both tools: the trade now settles at
-    # the seller's POSTED price, so the total is a fact about the price
-    # board rather than about the params, and this module - pure by
-    # construction, no WorldState - cannot see it. Left unresolved, every
-    # trade in the town would fall through the value_bps rule to its 2-sim
-    # floor, and a 10,000-sim purchase would cost the same to transact as a
-    # 30-sim loaf. Resolved by the caller (`posted_trade_value`, below).
-    # None means "not resolved"; 0 is a real answer meaning "nothing moves".
     trade_value_sim: int | None = None
 
 
@@ -307,19 +257,10 @@ class ActionCostRule:
     per_unit_cost: int = 0
     value_bps: int = 0
     min_cost: int = 0
-    # LABOUR rules only, by convention (see SCHEDULE_TABLE) - whether
-    # ActionActor.skill_proficiency discounts this rule's cost at all.
-    # `steal` is the one LABOUR row that opts out: a criminal's growing
-    # expertise is not something this schedule rewards.
     skill_discount: bool = False
     description: str = ""
 
 
-# tool_name -> the params field extract_quantity() reads as "how many
-# physical units did this call do" for a per_unit_cost rule. `move` and
-# `build_structure` are handled specially inside extract_quantity() (a
-# distance and a footprint tile count respectively, neither of which is a
-# single flat params field) and are deliberately absent from this dict.
 QUANTITY_FIELDS: dict[str, str] = {
     "harvest": "quantity",
     "mine": "quantity",
@@ -381,11 +322,6 @@ def extract_trade_value(tool_name: str, params: Mapping[str, Any]) -> int:
     """
     try:
         if tool_name in ("buy", "sell"):
-            # `unit_price_sim` is gone as of A4 - the trade settles at the
-            # POSTED price. A caller that resolved it passes it on the
-            # actor (see ActionActor.trade_value_sim); `total_price_sim` is
-            # accepted too so a logged Transaction's own params can be
-            # re-priced by a researcher years later.
             total = params.get("total_price_sim")
             if total is not None:
                 return max(0, int(total))
@@ -412,10 +348,6 @@ def posted_trade_value(world: Any, tool_name: str, params: Any) -> int | None:
     if tool_name not in ("buy", "sell"):
         return None
     fields = normalize_params(params)
-    # `seller_id` on a buy, `buyer_id` on a sell - one dict, two shapes,
-    # which is exactly what normalize_params exists for. Not getattr with a
-    # default: a renamed field must break loudly here rather than quietly
-    # price every trade in the town at the floor.
     holder_id = fields.get("seller_id") if tool_name == "buy" else fields.get("buyer_id")
     item = fields.get("item")
     if not holder_id or not item:
@@ -429,16 +361,6 @@ def posted_trade_value(world: Any, tool_name: str, params: Any) -> int | None:
     return max(0, int(price) * int(fields.get("quantity", 0)))
 
 
-# ── which skill makes which tool cheaper ──────────────────────────────
-#
-# The map this module's own docstring called "sketched, not provided". Six
-# entries, because exactly six SCHEDULE_TABLE rules carry
-# `skill_discount=True`; a tool absent from here resolves to proficiency 0 and
-# is charged full price, which is the correct default for `move`, `say` and
-# `look_around`.
-#
-# Seeded, not fixed. Once agents author their own skills this is the FLOOR of a
-# lookup that also reads world.skills - see `skills_for_tool`.
 SKILL_FOR_TOOL: dict[str, str] = {
     "harvest": "farming",
     "fell_timber": "forestry",
@@ -446,17 +368,9 @@ SKILL_FOR_TOOL: dict[str, str] = {
     "craft": "artisanry",
     "cook": "cooking",
     "build_structure": "masonry",
-    # GROW-18: the crew's own tick of work builds the same skill the
-    # licensed builder's does. A hand who spends a season on sites and
-    # gains nothing from it is a hand the town has no reason to employ.
     "work_site": "masonry",
 }
 
-# How many successful uses of a discounted tool amount to mastery.
-#
-# From constants already in the tree: TICKS_PER_DAY = 144 and
-# scheduler_target_fraction = 0.3 put an agent at roughly 43 acts per game-day.
-# If its trade tool is one act in three, 60 reps is about four game-days.
 REPS_TO_MASTERY = 60
 
 
@@ -518,10 +432,6 @@ def compute_cost(rule: ActionCostRule, tool_name: str, params: Mapping[str, Any]
     """The one arithmetic path every rule goes through - see
     ActionCostRule's docstring for the formula this implements."""
     quantity = extract_quantity(tool_name, params, actor)
-    # The caller's resolved figure wins when it has one: a posted trade's
-    # total is a fact about the price board, which this module cannot see.
-    # Falling back to params keeps a researcher able to re-price a logged
-    # Transaction with no world to hand.
     value = (
         actor.trade_value_sim
         if actor.trade_value_sim is not None
@@ -530,43 +440,14 @@ def compute_cost(rule: ActionCostRule, tool_name: str, params: Mapping[str, Any]
     raw = rule.base_cost + rule.per_unit_cost * quantity + (value * rule.value_bps) // BPS_DENOMINATOR
     if rule.skill_discount and actor.skill_proficiency > 0:
         raw = apply_skill_discount(raw, actor.skill_proficiency)
-    # GROW-23: a real tool makes the wear cheaper.
-    #
-    # Only on rules that claim to BE tool wear - `skill_discount` is the
-    # flag those rows carry and their descriptions all say "tool wear".
-    # Applying it to `move` or `buy` would be pricing a chisel into a
-    # journey.
-    #
-    # After the skill discount and before the floor, so a master with a
-    # tool still pays `min_cost`: the floor is what stops any action
-    # becoming free, and stacking two discounts through it would let the
-    # best-equipped residents act for nothing.
     if rule.skill_discount and actor.holds_a_tool:
         raw = raw * TOOL_HELD_FEE_BPS // 10_000
     return max(raw, rule.min_cost)
 
 
-# -- the table -------------------------------------------------------------
-#
-# One row per tool name world/tools/bootstrap.py's build_world() registers
-# (33 today, across movement/resources/production/commerce/civic/social/
-# crime/construction/justice/meta - see world.tests.test_action_costs_
-# schedule_covers_every_registered_tool for the live proof against the
-# real registry, not a hand-maintained mirror of this list). Grouped by
-# DESIGN.md's five categories for readability; the dict itself carries no
-# ordering guarantee anything depends on.
-
-# GROW-23: what a resident holding a real tool pays, in basis points of
-# the bare-handed fee. Kept beside the schedule because it is a price, and
-# `world/tools/wear.py` re-exports it so the two cannot drift.
 TOOL_HELD_FEE_BPS = 6_000
 
 SCHEDULE_TABLE: dict[str, ActionCostRule] = {
-    # -- labour: materials consumed (handled by inventory debits in each
-    # handler already - resources.py's harvest_from_zone, production.py's
-    # run_recipe, construction.py's build_structure_handler) plus tool
-    # wear, which is this schedule's contribution: a sim-currency cost
-    # with no other ledger entry anywhere else in the codebase.
     "harvest": ActionCostRule(
         category=ActionCostCategory.LABOUR, base_cost=2, per_unit_cost=3, min_cost=2,
         skill_discount=True, description="tool wear per unit of crop harvested",
@@ -592,17 +473,10 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         skill_discount=True,
         description="tool wear per footprint tile, on top of the timber/metal the handler already debits",
     ),
-    # GOV-10: joining and leaving a body. A flat handling fee like the
-    # rest of the civic paperwork - admitting somebody is a clerical act,
-    # not labour, and pricing it per-head would make a large guild
-    # expensive to run for no reason the design gives.
     "admit_to_org": ActionCostRule(
         category=ActionCostCategory.LABOUR, base_cost=2, min_cost=2,
         description="the paperwork of admitting a member",
     ),
-    # Leaving is free. A society you must PAY to leave is one a broke
-    # resident cannot leave, and that is a different institution from the
-    # one DESIGN section 7 describes.
     "leave_org": ActionCostRule(
         category=ActionCostCategory.LABOUR, base_cost=0, min_cost=0,
         description="leaving costs nothing; a body you cannot afford to "
@@ -617,9 +491,6 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         category=ActionCostCategory.LABOUR, base_cost=5, min_cost=5, skill_discount=False,
         description="physical effort of an attempt, independent of outcome; legal punishment is crime/'s job, not this schedule's",
     ),
-    # -- trade: a transaction cost, proportional to the sim-currency value
-    # moved (buy/sell/transfer) or a flat handling fee where there is no
-    # price to be proportional to (store_item/withdraw_item).
     "buy": ActionCostRule(
         category=ActionCostCategory.TRADE, value_bps=100, min_cost=2,
         description="1% transaction cost on the total price paid",
@@ -640,10 +511,6 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         category=ActionCostCategory.TRADE, base_cost=1, per_unit_cost=1, min_cost=1,
         description="handling fee per item retrieved",
     ),
-    # TOOL-03. Priced exactly like store_item/withdraw_item above, which
-    # are the same physical act against a Storage rather than a shop.
-    # Without a row here each call would take DEFAULT_RULE's 5 sim, and
-    # stocking a shelf would cost more than the bread on it.
     "stock_shelf": ActionCostRule(
         category=ActionCostCategory.TRADE, base_cost=1, per_unit_cost=1, min_cost=1,
         description="handling fee per item shelved",
@@ -660,15 +527,6 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         category=ActionCostCategory.TRADE, base_cost=1, min_cost=1,
         description="a coin to count the money out",
     ),
-    # -- social: conversation and socialising cost time that could have
-    # been earning (DESIGN.md, verbatim). Where a handler already moves
-    # money for a DIFFERENT reason (marry's temple fee), this row prices
-    # only the time component - see the module docstring's "Known
-    # double-charge risk" section.
-    # Asking the town who can help. Priced like the other knowledge tools
-    # (`look_around`, `list_places`): a question costs a moment, and a town
-    # where looking somebody up is expensive is a town that goes on
-    # shouting.
     "find_people": ActionCostRule(
         category=ActionCostCategory.SOCIAL, base_cost=1, min_cost=1,
         description="asking who does what costs a moment, not a morning",
@@ -677,22 +535,10 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         category=ActionCostCategory.SOCIAL, base_cost=1, min_cost=1,
         description="looking one neighbour up costs a moment",
     ),
-    # A two-sided swap between residents. Priced like `transfer`, the other
-    # tool that moves value between two people: the cost is the handling,
-    # not a cut of the bargain, so the town's own prices stay the agents'
-    # to set.
     "trade": ActionCostRule(
         category=ActionCostCategory.TRADE, base_cost=2, min_cost=2,
         description="striking a bargain costs the time it takes to strike",
     ),
-    # The three things a resident could not do until now. Priced at the
-    # bottom of the schedule on purpose: none of them should ever be the
-    # reason somebody starves.
-    #
-    # `eat` is free. A tool that charges a resident for eating would
-    # reproduce the fault it was written to fix - Corwin Thorne had four
-    # sim and nothing in his belly, and a fee would have left him exactly
-    # where he was.
     "eat": ActionCostRule(
         category=ActionCostCategory.SOCIAL, base_cost=0, min_cost=0,
         description="eating what you already hold costs nothing but the food",
@@ -701,10 +547,6 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         category=ActionCostCategory.SOCIAL, base_cost=0, min_cost=0,
         description="handing something to somebody standing with you; the gift is the cost",
     ),
-    # The treatment itself is 500 sim and goes to the pharmacy, so an action
-    # charge on top would be the town taxing a sick resident for the walk.
-    # Free for the same reason `eat` is: the thing being paid for is already
-    # the price.
     "buy_treatment": ActionCostRule(
         category=ActionCostCategory.SOCIAL, base_cost=0, min_cost=0,
         description="the cure is the cost; the pharmacy charges its own fee",
@@ -724,26 +566,13 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         ),
     ),
     "keep_doing": ActionCostRule(
-        # B1: "LABOUR, base 0. Each repetition is charged as itself."
-        # Charging for the commitment as well would tax one decision twice.
         category=ActionCostCategory.LABOUR, base_cost=0, min_cost=0,
         description="committing to a job costs nothing; each repetition pays its own way",
     ),
-    # C1 conveyance. All 0: the FEE or PRICE the two parties agree IS the
-    # cost, and a schedule charge on top would tax the act of letting
-    # capability spread - which is the one thing the roadmap is named for.
-    # Part D. A seat's own acts are free: charging a government to govern
-    # would make the tax rate a function of the treasury's patience rather
-    # than of anybody's politics. `convene` is the exception and is priced
-    # exactly like `start_conversation`, because it spends everyone's
-    # attention and not only the convener's.
     "set_tax_rate": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="free - governing is what the seat is for",
     ),
-    # GOV-4. Free for set_tax_rate's reason: setting policy is the seat's
-    # job. What a price control or a licensing rule costs the town is felt
-    # at the till and the registry, not charged to the seat that set it.
     "set_price_control": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="free - governing is what the seat is for",
@@ -752,33 +581,18 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="free - governing is what the seat is for",
     ),
-    # Free for issue_builder_license's reason: the holder pays the charter's
-    # permit fee to the treasury, which is the price.
     "issue_business_permit": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="free - the applicant's permit fee is the price, not the clerk's time",
     ),
-    # GROW-02. Free for set_tax_rate's reason: a seat holder issuing a
-    # licence is doing the job the seat exists for. The FEE the applicant
-    # pays is `fee_paid_sim` on the call, which goes to the treasury - that
-    # is the price of building, and it is the government's to set.
     "issue_builder_license": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="free - the applicant's fee is the price, not the clerk's time",
     ),
-    # GROW-01. Free for the same reason: granting land is the government
-    # doing its job. What the land costs the town is the ground itself,
-    # which is finite - a grant that overlaps an existing plot is refused.
     "grant_plot": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="free - the ground is the cost, and the ground is finite",
     ),
-    # GOV-03. Free for `set_tax_rate`'s reason, and one more: a charter
-    # amendment is the mechanism by which the town changes its own rules,
-    # and pricing it would mean a poor government could be prevented from
-    # legislating by its own treasury. Without a row here both would take
-    # DEFAULT_RULE's 5 sim, which two separate guards in this suite exist
-    # to catch - and did.
     "table_amendment": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="free - proposing a rule is what the seat is for",
@@ -828,9 +642,6 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         description="free - the tuition is the price",
     ),
     "set_intention": ActionCostRule(
-        # B2: "SOCIAL, base 0." A resident charged to write down what it
-        # meant to do would stop writing it down, and the ratio of
-        # intentions set to fulfilled is the whole measurement.
         category=ActionCostCategory.SOCIAL, base_cost=0, min_cost=0,
         description="free - a note to yourself costs nothing",
     ),
@@ -838,10 +649,6 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         category=ActionCostCategory.SOCIAL, base_cost=0, min_cost=0,
         description="free - changing your mind costs nothing",
     ),
-    # ENG-24. Priced exactly as intentions are, and for the same reason:
-    # the measurement is the ratio of goals set to goals reached, and a
-    # resident charged per goal would set fewer of them and the ratio
-    # would improve without the town improving at all.
     "set_goal": ActionCostRule(
         category=ActionCostCategory.SOCIAL, base_cost=0, min_cost=0,
         description="free - wanting something costs nothing",
@@ -863,9 +670,6 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         description="free - a resident charged to learn would stop learning",
     ),
     "set_wage": ActionCostRule(
-        # A5: "FEE, base 0." Charging an employer to make a promise would
-        # price the promise rather than the keeping of it, and the keeping
-        # is the whole measurement.
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="free - a promise costs nothing to make, which is the point",
     ),
@@ -874,14 +678,10 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         description="free - the wage is the cost",
     ),
     "check_debts": ActionCostRule(
-        # 0, and for `quote_action_cost`'s reason: an agent too poor to act
-        # must not also be too poor to find out what it owes. That is
-        # exactly the moment the interesting behaviour starts.
         category=ActionCostCategory.SOCIAL, base_cost=0, min_cost=0,
         description="free - asking what you owe costs nothing",
     ),
     "post_price": ActionCostRule(
-        # A3: "TRADE, base 1 sim. A sign costs a coin."
         category=ActionCostCategory.TRADE, base_cost=1, min_cost=1,
         description="a sign costs a coin",
     ),
@@ -890,17 +690,10 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         description="taking the sign down costs the same coin as putting it up",
     ),
     "revive": ActionCostRule(
-        # Tool spec A2: "Cost row: FEE, base 0." The 10,000 sim the handler
-        # moves IS the price, and a schedule fee on top would charge a
-        # resident for the act of rescuing somebody.
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="the revival fee is the price; standing over them costs nothing more",
     ),
     "buy_energy": ActionCostRule(
-        # Tool spec A1: "Cost row: FEE, base 0. The exchange is the price."
-        # Charging sim to convert sim into thinking taxes the one act that
-        # keeps a resident alive, and the walk to the counter is already a
-        # tick and a decision.
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="the exchange is the price; the counter charges nothing",
     ),
@@ -908,18 +701,10 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         category=ActionCostCategory.SOCIAL, base_cost=30, min_cost=30,
         description="a wedding day is a day not spent earning, separate from the temple's own ceremony fee",
     ),
-    # The 250 section 26: leaving home is a day's business - registering a
-    # new household, or formally joining the family's bill as a contributor.
-    # Priced alongside `marry`, the other tool that resettles a household.
     "come_of_age": ActionCostRule(
         category=ActionCostCategory.SOCIAL, base_cost=20, min_cost=20,
         description="settling where you live now you are eighteen; the temple fee for pairing off is separate",
     ),
-    # UI-05. Asking is not a wedding and it is not free: it is a trip to
-    # whoever keeps the register, and the ask itself has a cost whether or
-    # not the blessing is granted - which is the point, since a request
-    # that costs nothing would be made by every resident every morning.
-    # Well under `marry`, because nothing is settled by it.
     "ask_for_a_child": ActionCostRule(
         category=ActionCostCategory.SOCIAL, base_cost=5, min_cost=5,
         description="putting your household's name down for a child; the blessing itself is not yours to grant",
@@ -932,19 +717,10 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         category=ActionCostCategory.SOCIAL, base_cost=15, min_cost=15,
         description="the teacher's time, separate from any voluntary tuition price_sim",
     ),
-    # -- travel: cost scales with distance walked.
     "move": ActionCostRule(
         category=ActionCostCategory.TRAVEL, base_cost=1, per_unit_cost=2, min_cost=1,
         description="flat minimum plus a per-tile charge for the distance actually walked",
     ),
-    # -- perception: free in MONEY, never free in ENERGY.
-    # DESIGN.md's two-currency split puts thinking on the energy side and
-    # purchases on the money side. Looking around and recalling what the
-    # town contains moves nothing and buys nothing, so it carries no sim
-    # cost - but the agent still pays for it in tokens, because deciding to
-    # look and reading the answer is a thought. Charging sim here would
-    # price agents out of knowing their own world, which is the one thing
-    # they must be able to do to survive at all.
     "list_places": ActionCostRule(
         category=ActionCostCategory.SOCIAL, base_cost=0, min_cost=0,
         description="free: recalling which places exist costs energy to think, not money",
@@ -957,12 +733,6 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         category=ActionCostCategory.SOCIAL, base_cost=0, min_cost=0,
         description="free: observing where you already stand costs energy to think, not money",
     ),
-    # -- fees: ceremonies, petitions, licences, business/organization
-    # registration, patent office (DESIGN.md, verbatim) - plus the
-    # ordinary administrative tools (voting, complaints, employee roster
-    # changes, subpoenas, patent decisions) that are not literally in that
-    # list but are the same shape: paperwork, not labour/trade/social/
-    # travel.
     "vote": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=2, min_cost=2,
         description="casting a ballot at town hall",
@@ -971,31 +741,14 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         category=ActionCostCategory.FEE, base_cost=100, min_cost=100,
         description="filing a land-expansion petition to the President",
     ),
-    # 0 on purpose: civic.py's register_business_handler already charges
-    # BUSINESS_REGISTRATION_FEE_SIM (5,000 sim) directly via
-    # Ledger.register_business - see the module docstring's double-charge-risk
-    # section. The description is what an AGENT reads (bootstrap.py splices it
-    # into every tool's text through annotate_tool_description), so it states
-    # the fee rather than explaining our accounting.
     "register_business": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="no separate fee - registering a business costs 5,000 sim on its own",
     ),
-    # The only charge anywhere for organization registration -
-    # charter.organizations.register_organization never touches the ledger.
     "register_org": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=3_000, min_cost=3_000,
         description="the registration fee for founding an organization",
     ),
-    # ECON-14. FREE, deliberately, and it is the only sensible price.
-    #
-    # Every other civic action charges a fee because the town is paying a
-    # clerk to do something. This one is a resident handing the treasury
-    # money it is already owed. Charging for it would mean a resident with
-    # exactly its debt in hand still could not clear the debt, and the
-    # poorest - the ones who fall into head-tax arrears at all - would be
-    # charged for the privilege of getting out. A toll on repayment is how
-    # a debt becomes permanent, which is the state ECON-14 is about.
     "pay_tax": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="free: paying the treasury what you owe it costs you the debt, not a fee",
@@ -1012,9 +765,6 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         category=ActionCostCategory.FEE, base_cost=10, min_cost=10,
         description="payroll/roster paperwork",
     ),
-    # The 250 section 31: land changes hands on paper, so it is priced like
-    # every other piece of paperwork in this table, not like a trade - the
-    # sale price itself moves separately, through the tool's own ledger call.
     "transfer_tile": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=20, min_cost=20,
         description="deed transfer for one 1x1 land unit (sale or gift)",
@@ -1047,9 +797,6 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         category=ActionCostCategory.FEE, base_cost=10, min_cost=10,
         description="a sitting official's paperwork to deny a subpoena",
     ),
-    # 0 on purpose: meta.py's define_tool_handler already charges the
-    # charter's own patent_filing_fee_sim directly - double-charge-risk
-    # section of the module docstring. Use toolify to invent without the fee.
     "define_tool": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="no separate fee - the patent office charges its own filing fee",
@@ -1066,8 +813,6 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         category=ActionCostCategory.FEE, base_cost=20, min_cost=20,
         description="a minister's paperwork to revoke a granted patent",
     ),
-    # 0 by design: DESIGN.md section 2 is explicit that a business trade
-    # secret needs "no patent office needed" - meta.py's docstring agrees.
     "define_business_tool": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="free - a trade secret needs no filing",
@@ -1076,93 +821,39 @@ SCHEDULE_TABLE: dict[str, ActionCostRule] = {
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="0 by design, same reasoning as define_business_tool",
     ),
-    # A token 1: an agent that could enumerate the world for nothing would
-    # have no reason ever to remember anything.
     "describe_primitives": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=1, min_cost=1,
         description="a token fee for listing what you can do",
     ),
-    # 0, and the one row where that is a kindness rather than an accounting
-    # fact: an agent too poor to act must not also be too poor to find out why.
-    # It mutates nothing, and pricing it would trap an agent in silence at
-    # exactly the moment the interesting behaviour (borrow, sell, ask) starts.
     "quote_action_cost": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="free - asking a price costs nothing",
     ),
-    # 0, same reasoning as skillify and define_business_tool: composing
-    # primitives you could already call one at a time creates no new power, so
-    # charging for the composition charges twice. define_tool's 1,000-sim
-    # patent fee still buys what it always bought - protection - and is
-    # untouched; this is the path for an agent that just wants to work faster.
-    # 0, same as skillify: a revision changes a document, and the town's
-    # capability is unchanged until somebody walks the new steps. Charging for
-    # it would make improving a procedure cost more than leaving it wrong.
     "revise_skill": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="free - changing your mind about how a job is done",
     ),
-    # 0, same as toolify - see there.
     "revise_tool": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="free - each step still costs what it always did",
     ),
     "toolify": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
-        # TOOL-29. Composing costs nothing; CALLING what you composed does.
-        #
-        # This row said "each step still costs what it always did", and
-        # cost disclosure appends it verbatim to the served blurb - so the
-        # correction made to `toolify`'s own description was trailed by
-        # the same claim it corrects. Measured: two `look_around` calls by
-        # hand cost 0 sim; the same two inside an invented tool cost 5,
-        # because the invented NAME has no row here and falls to
-        # DEFAULT_RULE.
-        #
-        # TOOL-06 then removed the surcharge - `dispatch` skips the
-        # charge entirely for a name in `world.custom_tools` - and PROG-02
-        # found this row still saying otherwise. The sentence above
-        # describes a world that stopped existing, and cost disclosure
-        # appends it verbatim to the served blurb, so every resident
-        # deciding whether to compose anything was reading that composing
-        # makes the work dearer. That is worse than a stale comment: it is
-        # the town arguing against a feature it has, in the one place a
-        # resident looks before using it.
-        #
-        # The words follow the charge, which is the order this file's own
-        # TOOL-29 note sets out. What a composed verb costs is no longer
-        # an open design question here - the answer is in `dispatch`, and
-        # it is the sum of the steps.
         description=(
             "free to compose; calling the tool you made costs the sum of "
             "its steps and nothing for the wrapper"
         ),
     ),
-    # 0: writing a procedure down orders tools the author could already call
-    # one at a time. Not unlimited - a workflow costs THINKING to compose,
-    # which is the scarce budget, and one nobody walks end to end stays at 0%.
     "skillify": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="free - what a workflow costs you is the thinking",
     ),
-    # The wrapper that runs an unfiled program (meta.py, do_in_order). Free
-    # for TOOL-06's reason: `run_program` charges every step as itself, and
-    # a charge on the wrapper would make one decision dearer than the same
-    # acts decided one at a time. A filed composite is skipped by name in
-    # `dispatch`; this one is not in `custom_tools`, so it needs its row.
     "do_in_order": ActionCostRule(
         category=ActionCostCategory.FEE, base_cost=0, min_cost=0,
         description="free; each step costs what it costs on its own",
     ),
 }
 
-# Applied to any tool_name SCHEDULE_TABLE has no row for - a future
-# primitive, or the top-level call to a not-yet-invented composite tool
-# (see module docstring, "Why dispatch(), not execute()"). Deliberately
-# nonzero: DESIGN.md's law is "every action ... must cost", and a lookup
-# miss must never silently mean "free" - see this module's own tests for
-# a hard assertion that every currently-registered tool has a REAL row
-# (not this fallback) in SCHEDULE_TABLE.
 DEFAULT_RULE = ActionCostRule(
     category=ActionCostCategory.FEE, base_cost=5, min_cost=5,
     description="fallback for a tool name not yet in SCHEDULE_TABLE - never 0",
@@ -1349,10 +1040,6 @@ class ActionCostSchedule:
             to_account_id=TREASURY_ACCOUNT_ID,
             amount=cost,
             currency=Currency.SIM,
-            # ECON-03: an action cost is a BILL. Filed as TRANSFER it was
-            # indistinguishable from a resident handing money away, so
-            # GDP-per-inference-dollar and velocity could not be computed
-            # from this table at all.
             reason=TransactionReason.ACTION_COST,
             tick=tick,
             memo=memo_for(tool_name),
@@ -1379,9 +1066,6 @@ class ActionCostSchedule:
         ]
 
 
-# The one real schedule every caller outside this module's own tests
-# should use - see ActionCostSchedule's docstring for why the class
-# itself stays constructible with a smaller table too.
 DEFAULT_SCHEDULE = ActionCostSchedule(rules=dict(SCHEDULE_TABLE), default_rule=DEFAULT_RULE)
 
 
@@ -1422,9 +1106,6 @@ async def refund_action(
         to_account_id=actor_id,
         amount=amount,
         currency=Currency.SIM,
-        # ECON-03: and a refund is a bill being UNDONE. Booking it as
-        # TRANSFER made a reversal look like the treasury making a gift,
-        # so a run that refunded heavily read as a generous government.
         reason=TransactionReason.REFUND,
         tick=tick,
         memo=f"{REFUND_MEMO_PREFIX}{tool_name}",

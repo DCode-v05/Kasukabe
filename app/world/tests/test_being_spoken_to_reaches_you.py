@@ -83,14 +83,8 @@ def utterance(**over) -> dict:
     return payload
 
 
-# -- The named listener, which already worked ------------------------
-
-
 def test_the_person_named_in_the_parameter_is_told() -> None:
     assert "said to you" in heard_by("n09", utterance())
-
-
-# -- The person named in the sentence, which did not -----------------
 
 
 def test_a_person_named_in_the_words_is_told_too() -> None:
@@ -100,9 +94,6 @@ def test_a_person_named_in_the_words_is_told_too() -> None:
         "and obliges her alone to answer, and her perception reported "
         "ordinary overheard speech"
     )
-
-
-# -- And the bystander, who must stay a bystander --------------------
 
 
 def test_somebody_merely_present_is_not_told_they_were_addressed() -> None:
@@ -124,9 +115,6 @@ def test_a_remark_to_the_room_addresses_nobody() -> None:
         assert "said to you" not in heard_by(who, payload)
 
 
-# -- Shapes the renderer has to survive ------------------------------
-
-
 def test_an_old_record_with_no_addressed_list_still_renders() -> None:
     """Runs before this change wrote no `addressed_agent_ids`. Reading one
     back must fall through to the single listener rather than raise."""
@@ -146,9 +134,6 @@ def test_a_malformed_addressed_list_does_not_break_a_turn(bad) -> None:
 def test_the_speaker_is_never_told_they_addressed_themselves() -> None:
     payload = utterance(addressed_agent_ids=["n05", "n09"])
     assert "said to you" not in heard_by("n05", payload)
-
-
-# -- The three roles are nameable, not just two ----------------------
 
 
 def test_the_world_can_say_which_of_the_three_roles_you_had() -> None:

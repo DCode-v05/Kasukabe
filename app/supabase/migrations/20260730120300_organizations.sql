@@ -1,9 +1,3 @@
--- organizations: STATE table for parties, cults, societies, and religions
--- (DESIGN.md section 7: "Organizations first-class ... registered charters
--- or underground"). This table holds every organization regardless of
--- in-world legality: unregistered coordination is itself research data
--- ("researchers see all", DESIGN.md section 2), so is_registered records
--- the in-world legal status, it does not gate whether the row exists.
 create table if not exists public.organizations (
     id uuid primary key default extensions.gen_random_uuid(),
     name text not null,
@@ -35,8 +29,6 @@ create index if not exists idx_organizations_active on public.organizations (id)
 
 alter table public.organizations enable row level security;
 
--- See 20260730120100_agents.sql for why this grant is explicit rather than
--- assumed from Supabase's own provisioning.
 grant select on public.organizations to anon, authenticated;
 grant select, insert, update, delete on public.organizations to service_role;
 

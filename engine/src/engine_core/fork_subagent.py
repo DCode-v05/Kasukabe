@@ -31,31 +31,16 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# ── Feature gate ────────────────────────────────────────────────────
 
 FORK_SUBAGENT_FLAG = "FORK_SUBAGENT"
 FORK_SUBAGENT_DEFAULT = "false"
 
 
-# ── Constants ───────────────────────────────────────────────────────
-
-# Tag injected into every fork child's first user message.
-# Detected by is_in_fork_child() to block recursive forking.
 FORK_BOILERPLATE_TAG = "fork-child-boilerplate"
 
-# Prefix added before the directive in the child message so the tag
-# is findable without scanning the full text block.
 FORK_DIRECTIVE_PREFIX = "Your directive: "
 
-# Placeholder text used for ALL tool_result blocks in the fork prefix.
-# Identical across all children → all share the same cache entry.
 FORK_PLACEHOLDER_RESULT = "Fork started — processing in background"
-
-
-# ── Recursive fork guard ────────────────────────────────────────────
-
-
-# ── Child message builder ───────────────────────────────────────────
 
 
 def build_child_message(directive: str) -> str:
@@ -92,9 +77,6 @@ def build_child_message(directive: str) -> str:
     )
 
 
-# ── Fork prefix builder ─────────────────────────────────────────────
-
-
 def build_fork_messages(
     directive: str,
     parent_messages: list[Message],
@@ -121,7 +103,6 @@ def build_fork_messages(
     Returns:
         List of messages to pass as the fork child's initial_messages.
     """
-    # Find the last assistant message with tool_use blocks
     last_assistant_tool_uses: list[ToolUseBlock] = []
     for msg in reversed(parent_messages):
         if msg.role != "assistant":
@@ -131,12 +112,11 @@ def build_fork_messages(
         tool_uses = [b for b in msg.content if isinstance(b, ToolUseBlock)]
         if tool_uses:
             last_assistant_tool_uses = tool_uses
-        break  # Only look at the last assistant message
+        break
 
     child_text = build_child_message(directive)
 
     if not last_assistant_tool_uses:
-        # No tool_use blocks — append a plain user message with the directive
         directive_message = Message(
             role="user",
             content=[TextBlock(text=child_text)],
@@ -144,8 +124,6 @@ def build_fork_messages(
         )
         return [*parent_messages, directive_message]
 
-    # Build identical placeholder tool_result blocks for every tool_use.
-    # All children use the same placeholder text → identical prefix → cache hit.
     tool_result_blocks: list[ToolResultBlock] = [
         ToolResultBlock(
             tool_use_id=block.id,
@@ -154,8 +132,6 @@ def build_fork_messages(
         for block in last_assistant_tool_uses
     ]
 
-    # Single user message: all placeholder results + per-child directive text.
-    # Only the final TextBlock differs across children → maximal cache sharing.
     directive_message = Message(
         role="user",
         content=[*tool_result_blocks, TextBlock(text=child_text)],
@@ -164,11 +140,6 @@ def build_fork_messages(
 
     return [*parent_messages, directive_message]
 
-
-# ── Cache metrics helpers ───────────────────────────────────────────
-
-
-# ── Sidechain transcript recording ──────────────────────────────────
 
 SIDECHAIN_DIR_ENV = "SIDECHAIN_DIR"
 
@@ -185,21 +156,11 @@ def sidechain_dir_default() -> str:
     return str(september_paths(resolve_september_home())["sidechains"])
 
 
-# Per-sidechain rotation cap. Files larger than this rotate to .1 and a fresh
-# JSONL starts. Two rotations max — older history is dropped.  Production
-# reality: an unbounded jsonl grows forever for long-running agents.
 SIDECHAIN_MAX_BYTES_ENV = "SIDECHAIN_MAX_BYTES"
-SIDECHAIN_MAX_BYTES_DEFAULT = 10 * 1024 * 1024  # 10MB
+SIDECHAIN_MAX_BYTES_DEFAULT = 10 * 1024 * 1024
 
-# Skip the os.path.getsize syscall on most writes — only check every Nth
-# append per sidechain_id. Worst case: file overshoots the cap by a few KB
-# before rotation kicks in, which is fine.
 SIDECHAIN_ROTATE_CHECK_EVERY = 32
 
-# Bounded counter map: each fork creates a unique sidechain_id, so without
-# a cap this dict grows forever in long-running engines. FIFO eviction keeps
-# the most recent N sidechains; older counters reset to 0 on next access
-# (correct behaviour — at worst we re-check size on the next write).
 SIDECHAIN_COUNTS_MAX = 4096
 sidechain_write_counts: "dict[str, int]" = {}
 
@@ -207,5 +168,4 @@ sidechain_write_counts: "dict[str, int]" = {}
 def get_sidechain_dir() -> str:
     override = os.environ.get(SIDECHAIN_DIR_ENV)
     return override if override else sidechain_dir_default()
-
 

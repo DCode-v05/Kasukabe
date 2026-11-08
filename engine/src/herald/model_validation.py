@@ -26,13 +26,10 @@ from typing import Any
 from src.herald import catalog_sync
 from src.herald.defaults import ROLE_SETTINGS_FIELD, ModelRole, resolve_model
 
-# Tiers that are not chat models. Inlined when herald/router.py was removed
-# for the Kasukabe build - this was its only surviving consumer.
 NON_CHAT_TIERS = frozenset({"embedding", "rerank", "reranker", "moderation"})
 
 logger = logging.getLogger(__name__)
 
-# Chat roles checked unconditionally; FALLBACK only when resolved non-empty.
 CHAT_ROLES = (
     ModelRole.PRIMARY,
     ModelRole.PLANNER,
@@ -74,7 +71,6 @@ def validate_resolved_models(settings: Any, synced: bool) -> tuple[list[str], li
             warnings.append(message)
 
     if not synced and not overlay:
-        # One consolidated warning beats nine identical unverifiable ones.
         warnings.append(
             "catalog empty (citadel sync degraded) - configured model ids are "
             "unverified until the first successful sync; accelerated retry is "

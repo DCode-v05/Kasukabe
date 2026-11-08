@@ -30,8 +30,6 @@ def test_prayer_silent_deny_is_not_visible_to_agent(client, fake_world, auth_hea
 
 
 def test_silent_deny_takes_no_request_body(client, fake_world, auth_headers) -> None:
-    # There is deliberately nothing to type for a silent deny (app.py's
-    # route docstring) - confirm the route works with an empty POST.
     prayer = fake_world.seed_prayer()
     response = client.post(
         f"/api/god/prayers/{prayer['prayer_id']}/silent-deny", headers=auth_headers
@@ -141,7 +139,7 @@ def test_population_dials_get_and_update(client, auth_headers) -> None:
     assert updated.status_code == 200
     body = updated.json()
     assert body["death_hazard_multiplier"] == 0.0
-    assert body["target_band_min"] == 250  # untouched field survives the sparse update
+    assert body["target_band_min"] == 250
 
 
 def test_population_dials_update_rejects_inverted_band(client, auth_headers) -> None:

@@ -67,8 +67,6 @@ def test_a_fresh_clone_can_import_it() -> None:
 def test_importing_it_builds_nothing() -> None:
     import broker.app as module
 
-    # Whatever this session has already done, the module tells the truth
-    # about whether IMPORT alone built an app.
     source = (APP / "broker" / "app.py").read_text(encoding="utf-8")
     assert "\napp = create_app()" not in source, (
         "EVAL-17: the app is constructed at module scope, so importing the "

@@ -100,8 +100,6 @@ def test_it_keeps_the_session_files_a_re_audit_needs(script: str) -> None:
     assert "session_log.jsonl" in script, "the file the engines actually write"
 
 
-# ── a run has one truth and many faces ────────────────────────────────
-
 TRIAL = APP / "world" / "scenarios" / "a_trial_day_two_20.json"
 SCRIPT_TEXT = (APP / "run-scenario.sh").read_text(encoding="utf-8")
 
@@ -185,11 +183,6 @@ def test_the_trial_fits_the_cap_it_declares() -> None:
         assert residents * to_the_vote / 144 * rate <= scenario.world.budget_cap_usd, (
             f"at ${rate}/resident-day the vote is never reached"
         )
-    # The VOTE has to be affordable; the whole tick range deliberately is
-    # not. `stop_tick` was pushed out to 440 so the budget is what ends the
-    # run rather than the clock - the operator asked for the $20 to be spent,
-    # and a run that stops early on ticks leaves it unspent. The cap is the
-    # brake, and `whole_run` is only the ceiling it never reaches.
     assert whole_run > to_the_vote - scenario.world.start_tick, (
         "the run must outlast its own election"
     )
@@ -233,17 +226,9 @@ def test_every_recorder_flag_the_launcher_passes_actually_exists() -> None:
     known = set(re.findall(r'add_argument\("(--[a-z-]+)"', source))
     assert known, "could not read record_ui.py's own arguments"
 
-    # Only the record_ui INVOCATIONS. Anchored on the command form rather
-    # than the bare filename, because a comment or an echo that merely
-    # mentions record_ui.py would otherwise have its own flags scraped as if
-    # the launcher were passing them - which is how the refusal advice's
-    # `uv pip install --python ...` came to be read as a recorder flag. That
-    # is this test's own failure mode repeating: asserting on prose instead
-    # of on the call.
     calls = re.findall(r'"\$PY" -u scripts/record_ui\.py(.*?)&\n', SCRIPT_TEXT, re.S)
     assert calls, "no record_ui.py invocation found in the launcher"
     used = {f for call in calls for f in re.findall(r"(--[a-z-]+)", call)}
-    # every flag the launcher hands the recorder has to be one it parses
     for flag in used:
         assert flag in known, (
             f"run-scenario.sh passes {flag} and record_ui.py does not accept it - "

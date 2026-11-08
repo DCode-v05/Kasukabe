@@ -106,9 +106,6 @@ async def set_goal_handler(
             "set_goal", [f"{MAX_GOAL_CHARS} characters at most. Yours is {len(text)}."]
         )
 
-    # TOOL-13's fold, the same one set_intention needs: a resident that
-    # writes `cook` for `world_cook` has named a real tool and should not
-    # be refused for spelling.
     done_when_tool = params.done_when_tool
     if done_when_tool is not None:
         registry = world.tool_registry
@@ -149,8 +146,6 @@ async def set_goal_handler(
 
     live = active_goals(world, agent.agent_id)
     if len(live) >= MAX_ACTIVE_GOALS:
-        # Not an error the resident can do nothing about: name the goals
-        # and the tool that clears one, so the refusal is actionable.
         listed = "; ".join(f"{g.goal_id} ({g.text})" for g in live)
         raise ToolValidationError(
             "set_goal",
@@ -175,9 +170,6 @@ async def set_goal_handler(
         origin=GoalOrigin.REFLECTION if params.supersedes else GoalOrigin.PERSONA,
         created_tick=world.tick(),
         done_when=done_when,
-        # LIFE-01: stamped for a resident's own goals as well as the
-        # world's. A goal set as a student stops belonging to a working
-        # adult whoever formed it.
         set_in_stage=_stage_now(world, agent.agent_id),
     )
     world.goals[goal.goal_id] = goal
@@ -233,10 +225,6 @@ async def update_goal_handler(
         goal.priority = params.priority
     if params.note:
         goal.evidence.append(params.note[:120])
-    # Reaching 1.0 by hand finishes it. A resident that says it is done
-    # is done - the world only insists on the other direction, where a
-    # need-spawned goal closes on the need falling rather than on a
-    # claim.
     if goal.progress >= 1.0:
         goal.status = GoalStatus.DONE
 
@@ -325,8 +313,6 @@ async def note_belief_handler(
     existing = (world.beliefs or {}).get(belief_id)
     contradicted = None
     if existing is not None and existing.statement != statement:
-        # Changing your mind is recorded, not overwritten silently: what
-        # a resident used to believe is the evidence that it learned.
         contradicted = existing.statement
         existing.evidence.append(f"was: {existing.statement}"[:120])
     belief = existing or Belief(

@@ -1,23 +1,4 @@
 #!/usr/bin/env bash
-# Take a bare Amazon Linux team box to a machine that can run the town.
-#
-# Written after doing it by hand cost an hour of a metered box. Everything
-# here was found the expensive way:
-#
-#   * the repo is private and the box has no GitHub credentials, so the code
-#     arrives as an archive rather than a clone - and no token is left on a
-#     machine every teammate logs into as the same user;
-#   * Amazon Linux 2023 ships none of the GTK/X11 stack Chromium links
-#     against (16 libraries), has no fonts at all, and grants no user
-#     namespaces - so Chrome starts, answers on its DevTools port, and dies
-#     the moment it renders. Six cameras filmed nothing and every log said
-#     only "no close frame received or sent";
-#   * there is no sudo, so all of it is fetched with `dnf download` and
-#     unpacked with rpm2cpio into $HOME;
-#   * the engines have their own venv, separate from the app's.
-#
-# Usage, from your laptop:
-#     ./Run-commands/bootstrap-box.sh team@<address>
 set -euo pipefail
 
 BOX="${1:?usage: bootstrap-box.sh team@<address>}"

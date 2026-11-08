@@ -43,23 +43,8 @@ from world.tools.registry import ActorRequirements, ToolNamespace, ToolOutcome, 
 from world.tools.place_aliases import satisfies_gate
 from world.tools.state import WorldState
 
-# ASSUMPTION (DESIGN.md section 4 describes "transfers a copy at reduced
-# proficiency" with no number): a taught skill lands at 70% of the
-# teacher's own proficiency, comfortably "reduced" without gutting the
-# point of teaching.
 TEACH_PROFICIENCY_RETENTION = 0.7
 
-# How long an exchange between the same two people stays the same exchange.
-#
-# 12 ticks is two game-hours at core/'s "1 tick = 10 game-minutes". It has to
-# be wider than the gap a reply actually takes: an agent perceives a remark on
-# its NEXT scheduled turn, and the scheduler runs each agent every third tick
-# at the default cadence, so even a prompt answer lands 3-6 ticks later.
-# Observed live: Tobias spoke to Wren at tick 39 and Wren answered him at tick
-# 43. Anything tighter than that filed the answer as a brand-new conversation.
-# Re-exported from world.tools.state, which is where the registry that
-# enforces it lives now. Kept importable from here because every existing
-# caller and test reads it from this module.
 from world.tools.state import CONVERSATION_WINDOW_TICKS  # noqa: E402
 
 
@@ -94,14 +79,10 @@ def _continuing_conversation(
     place is compared with satisfies_gate so two spellings of one room are
     one room.
     """
-    # No history is not a failure to find one - it is the first remark in
-    # this room, which genuinely starts a conversation.
     history = getattr(world, "utterances", None) or ()
     for row in reversed(history):
         tick = row.get("tick")
         if not isinstance(tick, int) or now - tick > CONVERSATION_WINDOW_TICKS:
-            # The tail is in tick order, so the first row too old to join
-            # means every row behind it is older still.
             break
         if not satisfies_gate(row.get("location_id") or "", location_id or ""):
             continue
@@ -109,7 +90,6 @@ def _continuing_conversation(
         if existing:
             return str(existing)
     return None
-
 
 
 def others_here(world: Any, agent_id: str, location_id: "str | None") -> list[str]:
@@ -167,16 +147,6 @@ def _thread_for(
         else:
             return named, None
 
-    # The conversation this resident is IN, if any. See
-    # WorldState.conversation_pointer: it prefers the most recently opened
-    # thread the speaker is on the roster of, so a deliberately convened
-    # conversation beats the room's older ambient one.
-    #
-    # This used to scan `open_conversations_at` in last-spoken order and
-    # take the first the speaker was a participant of - which in final4
-    # was the implicit thread the room had been carrying, so Perrin's
-    # convened table kept its single remark while the family held the
-    # conversation he wanted somewhere else.
     pointer = world.conversation_pointer(speaker_id)
     if pointer is not None:
         return pointer, note
@@ -188,12 +158,6 @@ def _thread_for(
     if here:
         return here[0]["conversation_id"], note
     if not others_here(world, speaker_id, location_id):
-        # Nobody to have it with, so there is nothing to open. Speaking
-        # alone still happens - the event fires, the utterance is recorded
-        # and somebody arriving inside the window still perceives it - but
-        # a thread with one participant is a conversation nobody can ever
-        # answer into, and the perception, the Talk book and the township
-        # screen all draw it as though somebody could.
         return None, note
     return world.open_conversation(
         place=location_id, topic="", participants=[speaker_id], now=now
@@ -202,9 +166,6 @@ def _thread_for(
 
 class StartConversationParams(BaseModel):
     topic: str = Field(min_length=1, max_length=200)
-    # Everyone you want in it from the start. They must be standing where
-    # you are - a conversation happens in a room, it is not a broadcast.
-    # Empty is legitimate: it is how you open a table and wait for people.
     with_agent_ids: list[str] = Field(default_factory=list)
 
 
@@ -227,7 +188,7 @@ async def start_conversation_handler(
     absent: list[str] = []
     for other_id in params.with_agent_ids:
         if other_id == agent.agent_id or other_id in invited:
-            continue  # naming yourself, or twice, is not two people
+            continue
         other = world.agents.get(other_id)
         if other is None:
             absent.append(other_id)
@@ -239,13 +200,6 @@ async def start_conversation_handler(
 
     present = others_here(world, agent.agent_id, location_id)
     if not present:
-        # The operator's rule: a chat option exists only when there are
-        # people around. Opening one alone used to be legitimate and
-        # answered "You have opened this on your own. Anyone who speaks
-        # here joins it." - a table laid in an empty room, sitting open in
-        # the registry the perception, the Talk book and the township
-        # screen all read, so a run looked full of chatter that never
-        # happened.
         return ToolOutcome(
             result={
                 "opened": False,
@@ -279,9 +233,6 @@ async def start_conversation_handler(
         ],
     }
     if absent:
-        # Named and not here. Said the way `say` says it, because the
-        # correction an agent can act on is "they are somewhere else",
-        # not "your roster is shorter than you asked for".
         where = []
         for other_id in absent:
             name = world.agent_names.get(other_id, other_id)
@@ -294,9 +245,6 @@ async def start_conversation_handler(
             f"are standing. Here with you: {here_now}."
         )
     if not invited:
-        # An empty roster is not an empty room. Opening a table where
-        # people are standing is exactly what convening is for, and the
-        # note says who can walk up to it.
         nearby = ", ".join(world.agent_names.get(other, other) for other in present)
         opened_alone = (
             f"You named nobody, so the table is open. Here to join it: {nearby}."
@@ -304,10 +252,6 @@ async def start_conversation_handler(
         result["note"] = (
             f"{result['note']} {opened_alone}" if result.get("note") else opened_alone
         )
-    # On the record, because `world.conversations` is in-memory world state
-    # and the run report reads events. Six real trades once ran and the
-    # trace said they never happened, for exactly this reason: the mechanic
-    # worked, the agents used it, and nothing wrote it down.
     event = WorldEvent(
         type="agent.conversation.opened",
         tick=world.tick(),
@@ -329,8 +273,6 @@ class MarryParams(BaseModel):
 
 async def marry_handler(world: WorldState, agent: AgentLifeRecord, params: MarryParams) -> ToolOutcome:
     spouse = world.require_agent(params.spouse_agent_id)
-    # satisfies_gate, not !=: an agent who walked to the map's own
-    # "Kasukabe Temple" is standing in the temple. See place_aliases.py.
     if not satisfies_gate(world.location_of(spouse.agent_id), LOCATION_TEMPLE):
         raise LocationGateError("marry", LOCATION_TEMPLE, world.location_of(spouse.agent_id))
 
@@ -407,9 +349,6 @@ async def ask_for_a_child_handler(
     elif agent.spouse_id:
         parent_ids.append(agent.spouse_id)
 
-    # One pending request per household. Without this a resident that
-    # reaches for the tool every turn fills the operator's queue with the
-    # same ask, and the queue stops being readable.
     for existing in world.birth_requests.values():
         if existing.household_id == household_id and existing.status is BirthRequestStatus.PENDING:
             return ToolOutcome(
@@ -475,9 +414,6 @@ async def come_of_age_handler(
     if outcome.partner is not None:
         world.agents[outcome.partner.agent_id] = outcome.partner
     world.households[outcome.household.household_id] = outcome.household
-    # The childhood household is written back one member shorter - unless the
-    # last person just left it, in which case it is dropped rather than kept
-    # as an empty record nobody lives in.
     left = outcome.childhood_household
     if left is not None and left.household_id != outcome.household.household_id:
         if left.member_ids:
@@ -545,12 +481,6 @@ async def teach_skill_handler(
     world: WorldState, agent: AgentLifeRecord, params: TeachSkillParams
 ) -> ToolOutcome:
     if not params.student_consent:
-        # DESIGN.md section 4: teach is "consensual, refusable" - the
-        # calling agent is expected to have secured consent through
-        # ordinary conversation (DESIGN.md section 3: "negotiation is
-        # conversation; settlement is tool calls") and this flag is that
-        # settlement; a call without it is refused the same way any other
-        # unmet actor requirement is.
         raise ActorRequirementError("teach_skill", [f"{params.student_agent_id} has not consented"])
 
     student = world.require_agent(params.student_agent_id)
@@ -561,15 +491,6 @@ async def teach_skill_handler(
     mine = {name: level for name, level in world.skills.get(agent.agent_id, {}).items() if level > 0}
     proficiency = mine.get(params.skill, 0)
     if proficiency <= 0:
-        # The refusal has to name what WOULD have worked, and it has to be
-        # about the teacher rather than the world.
-        #
-        # `teach_skill` has been called twice in the project's history, in
-        # two different runs, and both were the same call: teach "Reading"
-        # to n18 for 15 sim. Both got `no skill with id 'Reading'`, which
-        # says the world has no such skill - untrue, and not the reason.
-        # The reason is that the caller does not have it. Neither resident
-        # tried again, and nothing has ever been taught for money (ECON-7).
         if mine:
             raise NotFoundError(
                 "skill",
@@ -591,13 +512,6 @@ async def teach_skill_handler(
             ),
         )
 
-    # Part D: a trade secret stays inside the business that owns it.
-    #
-    # Enforced HERE, at the lesson, rather than at authoring - teaching is the
-    # only way a skill leaves the person who has it, so this is the one door
-    # that needs a lock. Without it `namespace` would be a label the world
-    # ignored, and "a business that knows something others do not" would last
-    # exactly until the first employee talked.
     definition = world.skill_definitions.get(params.skill)
     if definition is not None and definition.namespace == "business":
         business = world.businesses.get(definition.owner_id or "")
@@ -628,10 +542,6 @@ async def teach_skill_handler(
     student_skills = world.skills.setdefault(student.agent_id, {})
     already = student_skills.get(params.skill, 0)
     student_skills[params.skill] = max(already, transferred)
-    # B6 (section 22): record WHO it came from, not just the level. Only
-    # when the lesson actually raised the student's proficiency - being
-    # taught something you already knew better does not make you their
-    # student, and recording it would put a false teacher on the sheet.
     if transferred > already:
         world.skill_sources.setdefault(student.agent_id, {})[params.skill] = agent.agent_id
 
@@ -651,58 +561,16 @@ async def teach_skill_handler(
 
 class SayParams(BaseModel):
     content: str = Field(min_length=1, max_length=2000)
-    # None: spoken aloud where the caller is standing, to whoever else is
-    # there. Set: addressed to one specific co-located agent (still
-    # overhearable by anyone else present - Kasukabe has no whispering
-    # primitive, see this function's docstring).
     listener_agent_id: str | None = None
-    # Which conversation this remark belongs to. Leave unset and the
-    # remark joins the one already happening where you are standing,
-    # which is what it has always done. Set it to answer into a specific
-    # thread when more than one is open in the same room - two pairs
-    # talking in one market used to be recorded as one conversation, with
-    # each answer filed under the other's question.
     conversation_id: str | None = None
-    # A2A's message intent (docs/A2A_CONFORMANCE.md §2, "Intent on a
-    # message": Atlas carries motivation, purpose and scope; a Kasukabe
-    # remark carried only its words). Optional, and FOR THE RECORD ONLY:
-    # it goes onto the utterance row, the event and the trace, and never
-    # into anybody's perception - a listener hears what was said, not why.
-    # Keeping it out of the room is what stops it becoming a channel for
-    # telling other residents what to think. Guarded by
-    # world/tests/test_a_remark_can_say_why.py.
     intent: str | None = Field(
         default=None, max_length=200,
         description="Why you are saying it, in a few words. Kept on the record; nobody in the town hears it.",
     )
 
 
-# Names an agent may be addressing, and the punctuation that makes it a
-# vocative rather than a mention. "Greta, can I help?" is addressed to Greta;
-# "I saw Greta yesterday" is not, and must not be.
 _VOCATIVE_AFTER = ",;:!?—-"
 
-# A full stop is the same signal, but ONLY when the name opens a sentence.
-#
-# Measured on run4: thirteen remarks went to the room, nine named somebody
-# standing there, and three resolved. The six that did not share one shape
-# - the name is its own sentence, which is how a person gets somebody's
-# attention across a room:
-#
-#     'Wren Thorne. I have wheat in my hand and words that need saying.'
-#     'Bram Holloway. I worked all morning and have nothing.'
-#     'Liora Thorne. You were looking for Perrin Holloway this morning.'
-#
-# A remark with no addressee can never be answered, never appears in that
-# person's open questions and never puts them under any obligation. The
-# reply rate sat between 25% and 45% across four runs while the town was,
-# in plain English, talking to each other by name.
-#
-# The full stop is left OUT of _VOCATIVE_AFTER on purpose, because it is
-# also just a sentence ending in a name - "I saw Greta." addresses nobody.
-# What separates them is POSITION: a vocative full stop opens the remark
-# or follows another sentence, and never closes a clause the name is the
-# object of. Hence SENTENCE_END rather than another entry above.
 SENTENCE_END = ".!?"
 
 
@@ -732,8 +600,6 @@ def addressee_from_content(
         return None
 
     hits, joint = _vocative_hits(world, speaker_id, location_id, content)
-    # Joined by a conjunction the remark belongs to the room; otherwise the
-    # first person named is the one being spoken to.
     if joint or not hits:
         return None
     return min(hits)[1]
@@ -788,19 +654,12 @@ def _vocative_hits(
     if not here:
         return [], False
 
-    # (position, agent_id) - the EARLIEST vocative is the addressee.
-    # "Greta, have you seen Ezra?" is addressed to Greta and asks about
-    # Ezra; treating both as candidates and giving up made every such
-    # remark public, which is most of how people actually talk.
     hits: list[tuple[int, str]] = []
     joint = False
     for agent_id in here:
         full = (world.agent_names.get(agent_id) or "").strip()
         if not full:
             continue
-        # Full name first, then the given name - "Greta Quarshie" and
-        # "Greta" both address Greta, and a household of Quarshies means the
-        # surname alone addresses nobody in particular.
         for candidate in (full, full.split()[0]):
             if len(candidate) < 2:
                 continue
@@ -809,40 +668,20 @@ def _vocative_hits(
             ):
                 after = content[match.end():match.end() + 1]
                 before = content[max(0, match.start() - 2):match.start()]
-                # Position alone is not evidence: "Greta's wheat was the
-                # best" opens with the name and addresses nobody. Only the
-                # punctuation around it decides.
                 lead_text = content[:match.start()].rstrip()
-                # A name is in vocative POSITION when it opens the remark,
-                # opens a sentence, or is itself preceded by vocative
-                # punctuation ("Now then, Wren.").
                 opens = (
                     not lead_text
                     or lead_text.endswith(tuple(SENTENCE_END))
                     or lead_text.endswith(tuple(_VOCATIVE_AFTER))
                 )
                 vocative = (
-                    # Trailing punctuation counts only in vocative
-                    # position. Without that, "You can go find Perrin, or
-                    # go home to Nell" addressed Perrin, who is being
-                    # talked about - found as a false positive in the same
-                    # run4 measurement that produced the full-stop rule.
                     (after in _VOCATIVE_AFTER and opens)
                     or before.strip().endswith(tuple(_VOCATIVE_AFTER))
                 )
                 if not vocative and after in SENTENCE_END:
-                    # "Wren Thorne. I have wheat in my hand." The name ends
-                    # a sentence, and it is a vocative only if it also
-                    # STARTS one - at the beginning of the remark, or after
-                    # something else that finished. "I saw Greta." fails
-                    # both and stays a mention.
                     vocative = not lead_text or lead_text.endswith(tuple(SENTENCE_END))
                 if not vocative:
                     continue
-                # "Greta and Ezra, both of you listen." addresses two people,
-                # and only Ezra carries the comma. Joined by a conjunction,
-                # the remark belongs to the room - not to whichever name
-                # happened to land next to the punctuation.
                 lead = content[:match.start()].rstrip()
                 if lead.lower().endswith((" and", " &")):
                     joint = True
@@ -918,55 +757,24 @@ async def say_handler(world: WorldState, agent: AgentLifeRecord, params: SayPara
     listener_id = params.listener_agent_id
     addressed_by_name = False
     if listener_id is None:
-        # The agent named somebody standing here. Believe the words.
         resolved = addressee_from_content(world, agent.agent_id, location_id, params.content)
         if resolved is not None:
             listener_id, addressed_by_name = resolved, True
     if listener_id == agent.agent_id:
-        # A model naming itself as the listener. Observed live: 1 remark in
-        # 26. Treated as speech to the room rather than refused - the words
-        # were really said and the room really heard them - but never
-        # recorded as a conversation with oneself, which is what the Talk
-        # book then had to render as "aloud" to avoid reading as a bug.
         listener_id, addressed_by_name = None, False
     spoke_to_absent: str | None = None
     if listener_id is not None:
         listener = world.require_agent(listener_id)
-        # Two residents in one room who spelled it differently are still in
-        # one room. This comparison is why speech to a co-located neighbour
-        # could be refused outright.
         if not satisfies_gate(world.location_of(listener.agent_id), location_id or ""):
-            # Said to the room, and reported as unheard by the person named -
-            # not refused.
-            #
-            # This used to raise LocationGateError, which threw the whole
-            # turn away: the model had already composed the remark, the room
-            # it was standing in really did hear it, and what came back was a
-            # tool failure with no usable correction in it. The by-name path
-            # two blocks down has always handled the same situation the other
-            # way (`not_here`, "walk to them, or ask someone here"), so the
-            # same mistake got a teachable answer or a hard error depending
-            # only on whether the model set the parameter or wrote a name.
-            # Observed live: three of Tobias's four remarks in one morning
-            # died this way.
             spoke_to_absent = world.agent_names.get(listener.agent_id, listener.agent_id)
             listener, listener_id, addressed_by_name = None, None, False
 
-    # Any remark joins the conversation already happening in this room -
-    # directed or not. Only a room that was quiet gets a new id.
-    #
-    # This used to run for directed speech only, so a broadcast always
-    # minted a fresh thread: 30 of them in one run, each a conversation of
-    # one line, none of which anybody could answer into.
     conversation_id, thread_note = _thread_for(
         world, agent.agent_id, params.conversation_id, location_id, world.tick()
     )
     if conversation_id is not None:
         world.join_conversation(conversation_id, agent.agent_id)
         if listener is not None:
-            # Being spoken to is being in the conversation. A resident who
-            # is addressed by name and says nothing was, until now, in no
-            # conversation at all - there was no roster to be on.
             world.join_conversation(conversation_id, listener.agent_id)
         world.note_conversation_turn(conversation_id, world.tick())
     involved = [agent.agent_id] + ([listener.agent_id] if listener else [])
@@ -980,43 +788,18 @@ async def say_handler(world: WorldState, agent: AgentLifeRecord, params: SayPara
             "location_id": location_id,
             "content": params.content,
             "is_public": listener is None,
-            # True when the world read the addressee out of the words rather
-            # than the parameter. The record must not claim the model set
-            # something it did not.
             "addressed_by_name": addressed_by_name,
             "involved_agent_ids": involved,
             "target_agent_id": listener.agent_id if listener else None,
         },
     )
-    # Only when given, so a remark without one reads exactly as it always
-    # did. Perception renders speech from the speaker and `content` alone
-    # (retrieval_depth.format_heard_event), which is what keeps this private.
     if params.intent and params.intent.strip():
         event.payload["intent"] = params.intent.strip()
-    # Who actually heard it.
-    #
-    # `say` used to return a conversation id and nothing else, so an agent
-    # could shout at somebody who was not in the room and get a success back.
-    # Observed: Liora Thorne, whose perception read "With you: Wren Thorne,
-    # Marta Thorne, Idris Thorne", called out "Perrin! You walking or what?"
-    # twice. Perrin was across town. Nothing in the result told her, so she
-    # had no way to learn it and every reason to try again.
-    #
-    # Names, not ids: the agent is about to read this back and act on it.
     heard_by = [
         world.agent_names.get(other, other)
         for other in sorted(world.agents)
         if other != agent.agent_id and world.location_of(other) == location_id
     ]
-    # Everyone this remark actually spoke to, not only the one the
-    # parameter named.
-    #
-    # Run 19: Ezra Okonjo answered Father Anselm and Tova Okonjo in one
-    # utterance addressed to Anselm - "Anselm. You want temple bread, walk
-    # to temple... Girl. Two sim for walking, you said?" - and the record
-    # showed one listener. Tova had asked the question he answered, so the
-    # world went on telling her she was unanswered and the roster credited
-    # her reply to somebody else.
     addressed_ids: list[str] = []
     if listener is not None:
         addressed_ids.append(listener.agent_id)
@@ -1024,23 +807,9 @@ async def say_handler(world: WorldState, agent: AgentLifeRecord, params: SayPara
         if other_id != agent.agent_id and other_id not in addressed_ids:
             addressed_ids.append(other_id)
     event.payload["addressed_agent_ids"] = list(addressed_ids)
-    # And they are INVOLVED, which is the field that decides whether the
-    # event reaches them at all.
-    #
-    # `involved_agent_ids` is built above from [speaker, listener], before
-    # this block has worked out who was really addressed, and used to be
-    # left that way. core/perception.py sets `involves_self` from it and
-    # carries an involving event to an agent EVEN FROM ANOTHER LOCATION -
-    # so a resident selected by a vocative rather than by the parameter
-    # was not involved, and stopped hearing the remark the moment they
-    # walked out of the room. Being named is precisely when that must not
-    # happen.
     for other_id in addressed_ids:
         if other_id not in event.payload["involved_agent_ids"]:
             event.payload["involved_agent_ids"].append(other_id)
-    # The roster, so the perception can tell somebody IN the conversation
-    # from somebody merely within earshot - Goffman's ratified-unaddressed
-    # against his bystander. See retrieval_depth.participation_role.
     if conversation_id is not None:
         record = world.conversations.get(conversation_id)
         if record is not None:
@@ -1057,13 +826,8 @@ async def say_handler(world: WorldState, agent: AgentLifeRecord, params: SayPara
             "Nobody was here to hear that. Speech only reaches people "
             "standing in the same place."
         )
-    # The specific correction: they named somebody, and that somebody is
-    # somewhere else. Said plainly, because "heard_by: []" is a fact the
-    # agent still has to interpret.
     absent = _named_but_absent(world, agent.agent_id, location_id, params.content)
     if spoke_to_absent and spoke_to_absent not in absent:
-        # Named by parameter rather than in the words, so the vocative test
-        # above cannot have found them.
         absent = [*absent, spoke_to_absent]
     if absent:
         result["not_here"] = absent
@@ -1071,11 +835,6 @@ async def say_handler(world: WorldState, agent: AgentLifeRecord, params: SayPara
             f"{', '.join(absent)} did not hear that - not in this place. "
             "Walk to them, or ask someone here."
         )
-    # B1 interruption rule 3: being named by somebody in your hearing wakes
-    # a working resident, and ambient speech does not. That difference is
-    # the whole of "working while people talk around you" - a resident who
-    # cannot be interrupted by its own name is not present in the town, and
-    # one woken by every remark in the room never finishes a job.
     for other_id in addressed_ids:
         world.wake_if_working(
             other_id,
@@ -1083,12 +842,6 @@ async def say_handler(world: WorldState, agent: AgentLifeRecord, params: SayPara
         )
 
     if thread_note:
-        # Last, and folded into whatever else the result had to say. The
-        # remark itself still happened - it was spoken in a real room to
-        # real people - so this is an addition to the outcome, not a
-        # replacement for it. Setting it earlier meant "nobody was here to
-        # hear that" quietly overwrote "that conversation is closed", and
-        # the agent was told the less useful of two true things.
         result["note"] = f"{result['note']} {thread_note}" if result.get("note") else thread_note
     return ToolOutcome(result=result, events=[event])
 
@@ -1142,9 +895,6 @@ def build_specs() -> list[ToolSpec]:
             params_model=AskForAChildParams,
             handler=ask_for_a_child_handler,
             namespace=ToolNamespace.PUBLIC,
-            # No location gate. Wanting a child is not a thing you do at a
-            # counter, and the temple gate on `marry` is about the
-            # ceremony, not about the wanting.
             location_gate=None,
             actor_requirements=ActorRequirements(min_age=MARRIAGE_MIN_AGE_YEARS),
         ),
@@ -1158,9 +908,6 @@ def build_specs() -> list[ToolSpec]:
             params_model=ComeOfAgeParams,
             handler=come_of_age_handler,
             namespace=ToolNamespace.PUBLIC,
-            # No location gate: leaving home is not a thing you do at a
-            # counter. PAIR_OFF charges the temple fee through marry(), which
-            # keeps its own temple gate on the marry tool.
             location_gate=None,
             actor_requirements=ActorRequirements(min_age=MINOR_AGE_LIMIT_YEARS),
         ),

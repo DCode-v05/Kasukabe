@@ -127,11 +127,6 @@ async def test_the_lost_call_is_in_the_trace():
     record = trace_sink.rows[0]
     assert record.success is False
     assert record.error_type == "UpstreamError"
-    # "upstream", not "bedrock": the hop names the LINK that broke, and the
-    # broker now speaks to more than one provider. A run served entirely by
-    # gpt-6-luna reported its one failure as "`bedrock` x 1" in the run
-    # report, naming a provider it never called. Which provider was behind
-    # the hop is what the `model` column is for.
     assert record.failed_at == "upstream"
     assert ledger.accounts["agent-1"].balance_cents == 1000, "an unmetered failure costs nothing"
 

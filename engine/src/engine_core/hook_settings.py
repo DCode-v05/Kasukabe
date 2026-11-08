@@ -90,9 +90,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Settings file paths
-# ---------------------------------------------------------------------------
 
 CONFIG_DIR_ENV = "INTELLIGENCE_ENGINE_CONFIG_DIR"
 CONFIG_SUBDIR = ".intelligence-engine"
@@ -136,11 +133,6 @@ def plugin_hook_paths() -> list[Path]:
     if not plugins_root.is_dir():
         return []
     return sorted(plugins_root.glob("*/hooks.json"))
-
-
-# ---------------------------------------------------------------------------
-# Settings-file loading
-# ---------------------------------------------------------------------------
 
 
 def plugin_env_overrides(plugin_hooks_json: Path) -> dict[str, str]:
@@ -193,11 +185,6 @@ def extract_hook_matchers(settings: dict[str, Any]) -> list[dict[str, Any]]:
     return [item for item in raw if isinstance(item, dict)]
 
 
-# ---------------------------------------------------------------------------
-# Hook command → hook instance conversion
-# ---------------------------------------------------------------------------
-
-
 def build_shell_command(command_str: str, shell: str) -> list[str]:
     """Return an exec-style command list for a shell command string."""
     shell = shell or "bash"
@@ -243,11 +230,6 @@ def command_hook_for_event(
     )
 
 
-# ---------------------------------------------------------------------------
-# HookSettingsManager — central coordinator
-# ---------------------------------------------------------------------------
-
-
 @dataclass
 class SessionHookEntry:
     """An in-memory session hook registered via ``register_function_hook``."""
@@ -255,7 +237,7 @@ class SessionHookEntry:
     event: HookEvent
     matcher: str
     name: str
-    hook: Any  # typed per-event hook object
+    hook: Any
 
 
 class HookSettingsManager:
@@ -298,18 +280,11 @@ class HookSettingsManager:
         self.lifecycle_bundle = lifecycle_bundle
         self.session_hooks: list[SessionHookEntry] = []
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
 
     def load(self) -> None:
         """Discover and register all hooks from settings files + session."""
         if not self.enabled:
             return
-        # Priority: user > project > local > plugin > session.
-        # Each source tuple = (name, parsed_settings, plugin_env_overrides).
-        # Plugin env overrides (PLUGIN_ROOT/PLUGIN_DATA/PLUGIN_OPTION_*)
-        # apply only to command hooks sourced from that plugin directory.
         sources: list[tuple[str, dict[str, Any], dict[str, str]]] = [
             ("user", load_settings_file(user_settings_path()), {}),
             ("project", load_settings_file(project_settings_path(self.cwd)), {}),
@@ -324,7 +299,6 @@ class HookSettingsManager:
             for matcher_block in extract_hook_matchers(settings):
                 self.register_from_block(source_name, matcher_block, plugin_env)
 
-        # Session hooks last (lowest persistence priority but full control)
         for entry in self.session_hooks:
             self.register_session_entry(entry)
 
@@ -393,9 +367,6 @@ class HookSettingsManager:
             )
         )
 
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
 
     def register_from_block(
         self,
@@ -464,9 +435,6 @@ class HookSettingsManager:
                 elif event == HookEvent.POST_TOOL_USE:
                     http_hook = HttpPostToolUseHook(url, timeout_s=timeout_s)
                 elif event == HookEvent.STOP:
-                    # Dedicated Stop variant — StopHookRegistry.execute_all
-                    # reads .message / .stop_reason, which GenericHookResult
-                    # does not have. HttpStopHook returns the right shape.
                     http_hook = HttpStopHook(url, timeout_s=timeout_s)
                 else:
                     http_hook = HttpGenericHook(
@@ -503,19 +471,12 @@ class HookSettingsManager:
         elif event == HookEvent.STOP:
             self.stop.register(name, hook_obj)
         elif self.lifecycle_bundle is not None:
-            # Generic lifecycle events — SubagentStart/Stop, PreCompact/
-            # PostCompact, UserPromptSubmit, TaskCreated/Completed, etc.
             self.lifecycle_bundle.registry(event).register(name, hook_obj)
         else:
             logger.debug(
                 "hook_settings: event %s skipped — no lifecycle_bundle",
                 event.value,
             )
-
-
-# ---------------------------------------------------------------------------
-# Matcher-filtered wrappers (inject tool-name pattern evaluation)
-# ---------------------------------------------------------------------------
 
 
 class MatchedPreToolHook:
@@ -532,7 +493,7 @@ class MatchedPreToolHook:
 
     async def execute(self, inp: PreToolUseHookInput) -> PreToolUseHookResult:
         if not matches_tool(self.matcher, inp.tool_name, inp.tool_input):
-            return PreToolUseHookResult()  # inherit, no-op
+            return PreToolUseHookResult()
         return await self.inner.execute(inp)
 
 
@@ -545,13 +506,8 @@ class MatchedPostToolHook:
 
     async def execute(self, ctx: PostToolHookContext) -> PostToolUseHookResult:
         if not matches_tool(self.matcher, ctx.tool_name, ctx.tool_input):
-            return PostToolUseHookResult()  # no-op
+            return PostToolUseHookResult()
         return await self.inner.execute(ctx)
-
-
-# ---------------------------------------------------------------------------
-# Helpers for register_function_hook with matchers
-# ---------------------------------------------------------------------------
 
 
 def make_filtered_pre_hook(

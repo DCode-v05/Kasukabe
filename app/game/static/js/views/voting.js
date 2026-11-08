@@ -1,7 +1,3 @@
-// Voting tab: live/browsable elections - candidates, votes as cast,
-// running tally, result, and transfer of power. DESIGN.md section 8's
-// "Voting viewer" bullet.
-
 import { fetchElectionDetail, fetchElections } from "./api.js";
 import { agentLabel, el, escapeHtml, fmtTick, setEmpty, setError, setLoading } from "./dom.js";
 
@@ -59,7 +55,6 @@ async function renderElections() {
   container.innerHTML = `<div class="list">${rows}</div>`;
   container.querySelectorAll(".card").forEach((cardEl) => {
     cardEl.addEventListener("click", (evt) => {
-      // Ignore clicks that landed inside the already-open detail panel.
       if (evt.target.closest(".card-detail")) return;
       openElectionId = cardEl.dataset.election;
       renderElections();

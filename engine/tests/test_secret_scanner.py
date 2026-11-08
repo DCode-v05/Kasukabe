@@ -30,38 +30,23 @@ from src.security.secret_scanner import (
 from src.security.write_guard import check_content_for_secrets, guard_content
 
 
-# ---------------------------------------------------------------------------
-# Canonical example values — one per rule. Values are fabricated to fit the
-# length/character-class constraints of each pattern. These are NOT real
-# credentials. Where a rule has a trailing-boundary pattern, the caller
-# ensures the sample is surrounded by whitespace in the test content.
-# ---------------------------------------------------------------------------
-
 ANT_SAMPLE = build_anthropic_sample()
 ANT_ADMIN_SAMPLE = build_anthropic_sample(admin=True)
 
-# OpenAI: must contain literal T3BlbkFJ anchor
 OPENAI_SAMPLE = "sk-proj-" + ("A" * 74) + "T3BlbkFJ" + ("A" * 74)
 
-# Sentry org: must contain eyJpYXQiO prefix, a region_url variant, _ + 43 base64
 SENTRY_ORG_SAMPLE = (
     "sntrys_eyJpYXQiO" + ("A" * 20) + "LCJyZWdpb25fdXJs" + ("A" * 20) + "==" + "_" + ("A" * 43)
 )
 
-# Azure AD client secret: 3 alnum + \d + "Q~" + 31-34 alnum/_/~/-/.
-# Surrounded by space boundary chars (required by pattern).
 AZURE_SAMPLE = "abc0Q~" + ("a" * 31)
 
-# HashiCorp TF: 14 alnum + .atlasv1. + 60-70 alnum/-/_/=
 HC_SAMPLE = "abcdefghij1234" + ".atlasv1." + ("a" * 62)
 
-# Grafana API key (legacy JWT): eyJrIjoi + 70-400 base64 + 0-3 padding
 GRAFANA_API_SAMPLE = "eyJrIjoi" + ("a" * 80)
 
-# Grafana service account: glsa_ + 32 alnum + _ + 8 hex
 GRAFANA_SA_SAMPLE = "glsa_" + ("a" * 32) + "_" + "deadbeef"
 
-# Private key: needs BEGIN...PRIVATE KEY + >=64 body + END...PRIVATE KEY
 PRIVATE_KEY_SAMPLE = (
     "-----BEGIN RSA PRIVATE KEY-----\n" + ("a" * 64) + "\n-----END RSA PRIVATE KEY-----"
 )
@@ -106,16 +91,14 @@ CANONICAL_POSITIVES: dict[str, str] = {
     "private-key": PRIVATE_KEY_SAMPLE,
 }
 
-# Near-miss negatives — tweak one char, truncate, or swap a literal.
 CANONICAL_NEGATIVES: dict[str, str] = {
     "aws-access-token": "AKIA1234",
     "gcp-api-key": "AIza" + ("a" * 34),
-    "azure-ad-client-secret": "abc0Q~" + ("a" * 30),  # 30 < 31
+    "azure-ad-client-secret": "abc0Q~" + ("a" * 30),
     "digitalocean-pat": "dop_v1_" + ("a" * 63),
     "digitalocean-access-token": "doo_v1_" + ("a" * 63),
     "anthropic-api-key": build_anthropic_sample(body_len=92),
     "anthropic-admin-api-key": build_anthropic_sample(admin=True, body_len=92),
-    # OpenAI negative: no T3BlbkFJ anchor
     "openai-api-key": "sk-proj-" + ("A" * 60),
     "huggingface-access-token": "hf_" + ("a" * 33),
     "github-pat": "ghp_" + ("a" * 35),
@@ -133,15 +116,13 @@ CANONICAL_NEGATIVES: dict[str, str] = {
     "npm-access-token": "npm_" + ("a" * 35),
     "pypi-upload-token": "pypi-WRONG" + ("a" * 60),
     "databricks-api-token": "dapi" + ("a" * 31),
-    # HC TF negative: missing atlasv1 literal
     "hashicorp-tf-api-token": "abcdefghij1234.other.x" + ("a" * 60),
     "pulumi-api-token": "pul-" + ("a" * 39),
     "postman-api-token": "PMAK-" + ("a" * 23) + "-" + ("a" * 34),
-    "grafana-api-key": "eyJrIjoi" + ("a" * 65),  # 65 < 70
+    "grafana-api-key": "eyJrIjoi" + ("a" * 65),
     "grafana-cloud-api-token": "glc_" + ("a" * 30),
-    "grafana-service-account-token": "glsa_" + ("a" * 32) + "_deadbee",  # 7 hex
+    "grafana-service-account-token": "glsa_" + ("a" * 32) + "_deadbee",
     "sentry-user-token": "sntryu_" + ("a" * 63),
-    # Sentry org negative: missing eyJpYXQiO prefix
     "sentry-org-token": "sntrys_WRONG"
     + ("A" * 50)
     + "LCJyZWdpb25fdXJs"
@@ -151,7 +132,6 @@ CANONICAL_NEGATIVES: dict[str, str] = {
     "stripe-access-token": "sk_unknown_" + ("a" * 20),
     "shopify-access-token": "shpat_" + ("a" * 31),
     "shopify-shared-secret": "shpss_" + ("a" * 31),
-    # Private key negative: body too short (< 64 chars between markers)
     "private-key": ("-----BEGIN RSA PRIVATE KEY-----\nshort\n-----END RSA PRIVATE KEY-----"),
 }
 
@@ -160,16 +140,10 @@ def all_rule_ids() -> list[str]:
     return [rule.id for rule in RULES]
 
 
-# ---------------------------------------------------------------------------
-# Rule-matrix coverage (36 rules × 2 cases)
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.parametrize("rule_id", all_rule_ids())
 def test_each_rule_matches_canonical_positive(rule_id: str) -> None:
     sample = CANONICAL_POSITIVES[rule_id]
     scanner = SecretScanner()
-    # Surround with whitespace so trailing-boundary patterns are satisfied.
     matches = scanner.scan(f"prefix text {sample} trailing text")
     ids = [m.rule_id for m in matches]
     assert rule_id in ids, (
@@ -197,7 +171,6 @@ def test_empty_and_none_content_return_empty() -> None:
     scanner = SecretScanner()
     assert scanner.scan("") == []
     assert scanner.scan(None) == []
-    # Non-str is treated as empty (guard against accidental bytes input).
     assert scanner.scan(b"not a str") == []  # type: ignore[arg-type]
 
 
@@ -207,11 +180,6 @@ def test_rules_catalog_is_36() -> None:
     for rule in RULES:
         assert isinstance(rule, SecretRule)
         assert rule.id and rule.label and rule.pattern
-
-
-# ---------------------------------------------------------------------------
-# Deduplication
-# ---------------------------------------------------------------------------
 
 
 def test_per_rule_deduplication() -> None:
@@ -235,7 +203,7 @@ def test_mixed_secrets_each_report_once() -> None:
         + " b "
         + CANONICAL_POSITIVES["github-pat"]
         + " c "
-        + CANONICAL_POSITIVES["github-pat"]  # duplicate
+        + CANONICAL_POSITIVES["github-pat"]
         + " d "
         + CANONICAL_POSITIVES["huggingface-access-token"]
         + " e "
@@ -243,11 +211,6 @@ def test_mixed_secrets_each_report_once() -> None:
     matches = scanner.scan(blob)
     ids = sorted(m.rule_id for m in matches)
     assert ids == ["aws-access-token", "github-pat", "huggingface-access-token"]
-
-
-# ---------------------------------------------------------------------------
-# Label-only exposure invariant
-# ---------------------------------------------------------------------------
 
 
 def test_scan_result_never_contains_matched_text() -> None:
@@ -279,11 +242,6 @@ def test_secret_detected_error_never_contains_matched_text() -> None:
         pytest.fail("guard_content should have raised")
 
 
-# ---------------------------------------------------------------------------
-# Multiline private key
-# ---------------------------------------------------------------------------
-
-
 def test_multiline_private_key_detected() -> None:
     scanner = SecretScanner()
     content = (
@@ -305,8 +263,6 @@ def test_private_key_without_end_marker_not_matched() -> None:
 
 def test_private_key_with_nonkey_marker_not_matched() -> None:
     scanner = SecretScanner()
-    # Docs that mention "private key" in prose but use DOC markers — must
-    # not trigger. The END marker must also contain "PRIVATE KEY".
     content = (
         "-----BEGIN DOCUMENTATION-----\n"
         + "This section discusses PRIVATE KEY management.\n"
@@ -324,16 +280,10 @@ def test_private_key_matches_case_insensitively() -> None:
     assert len(matches) == 1
 
 
-# ---------------------------------------------------------------------------
-# OpenAI anchor enforcement
-# ---------------------------------------------------------------------------
-
-
 def test_openai_without_t3blbkfj_anchor_rejected() -> None:
     """Ensures the openai rule actually requires the T3BlbkFJ anchor —
     a common bug in scanners that port the regex incorrectly."""
     scanner = SecretScanner()
-    # 80 chars of alnum after sk-proj- — no T3BlbkFJ anywhere
     content = "token: sk-proj-" + ("A" * 80) + " end"
     matches = [m for m in scanner.scan(content) if m.rule_id == "openai-api-key"]
     assert matches == []
@@ -341,16 +291,10 @@ def test_openai_without_t3blbkfj_anchor_rejected() -> None:
 
 def test_openai_short_form_with_anchor_matches() -> None:
     scanner = SecretScanner()
-    # sk- + 20 + T3BlbkFJ + 20
     sample = "sk-" + ("a" * 20) + "T3BlbkFJ" + ("a" * 20)
     content = f"token: {sample} end"
     matches = [m for m in scanner.scan(content) if m.rule_id == "openai-api-key"]
     assert len(matches) == 1
-
-
-# ---------------------------------------------------------------------------
-# Sentry org anchor enforcement
-# ---------------------------------------------------------------------------
 
 
 def test_sentry_org_requires_eyjpyxqio_prefix() -> None:
@@ -360,11 +304,6 @@ def test_sentry_org_requires_eyjpyxqio_prefix() -> None:
     content = "token: sntrys_" + ("A" * 80) + " end"
     matches = [m for m in scanner.scan(content) if m.rule_id == "sentry-org-token"]
     assert matches == []
-
-
-# ---------------------------------------------------------------------------
-# Lazy compilation
-# ---------------------------------------------------------------------------
 
 
 def test_lazy_compilation_defers_until_first_scan(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -393,11 +332,6 @@ def test_get_scanner_returns_shared_singleton() -> None:
     assert a is b
 
 
-# ---------------------------------------------------------------------------
-# Redaction
-# ---------------------------------------------------------------------------
-
-
 def test_redact_replaces_matched_text_without_capture_group() -> None:
     """github-pat has no capture group — full match is replaced."""
     scanner = SecretScanner()
@@ -420,7 +354,6 @@ def test_redact_preserves_trailing_boundary_char() -> None:
     redacted = scanner.redact(content)
     assert secret not in redacted
     assert "[REDACTED]" in redacted
-    # The space between the secret and "used" must still be there.
     assert "[REDACTED] used" in redacted
 
 
@@ -434,11 +367,6 @@ def test_redact_empty_or_none() -> None:
     scanner = SecretScanner()
     assert scanner.redact("") == ""
     assert scanner.redact(None) == ""
-
-
-# ---------------------------------------------------------------------------
-# Tail-preserving redact mode
-# ---------------------------------------------------------------------------
 
 
 def test_redact_tail_mode_preserves_prefix_and_suffix_for_long_values() -> None:
@@ -470,9 +398,6 @@ def test_redact_tail_mode_is_noop_without_capture_group() -> None:
 def test_redact_tail_mode_falls_back_to_full_redaction_for_short_values() -> None:
     """Captured values shorter than 16 chars would leak a huge fraction
     of the secret if we showed a prefix, so tail mode masks them fully."""
-    # Construct a minimal-width GCP key (AIza + 35 chars = 39 total). The
-    # captured group is the full key which exceeds 16, so use a short-
-    # captured rule instead: fabricate a custom rule for this test.
     short_rule = SecretRule(
         id="short-capture",
         label="Short Capture",
@@ -489,11 +414,6 @@ def test_redact_full_mode_is_default() -> None:
     scanner = SecretScanner()
     secret = CANONICAL_POSITIVES["github-pat"]
     assert "[REDACTED]" in scanner.redact(f"token={secret}")
-
-
-# ---------------------------------------------------------------------------
-# Field-name JSON redaction
-# ---------------------------------------------------------------------------
 
 
 def test_redact_json_fields_masks_opaque_token_value() -> None:
@@ -557,7 +477,7 @@ def test_redact_json_fields_handles_escaped_quotes_in_value() -> None:
 
 def test_redact_json_fields_tail_mode_preview() -> None:
     scanner = SecretScanner()
-    value = "abcdefghijklmnopqrstuvwxyz"  # 26 chars, well above min
+    value = "abcdefghijklmnopqrstuvwxyz"
     body = f'{{"api_key":"{value}"}}'
     out = scanner.redact_json_fields(body, mode="tail")
     assert value not in out
@@ -576,11 +496,6 @@ def test_redact_json_fields_empty_or_none() -> None:
     scanner = SecretScanner()
     assert scanner.redact_json_fields("") == ""
     assert scanner.redact_json_fields(None) == ""
-
-
-# ---------------------------------------------------------------------------
-# Entrypoint wrappers
-# ---------------------------------------------------------------------------
 
 
 def test_check_content_for_secrets_returns_none_on_clean() -> None:
@@ -623,11 +538,6 @@ def test_secret_detected_error_carries_multiple_labels() -> None:
         guard_content(content, where="signal-ingest")
     labels = exc_info.value.labels
     assert set(labels) == {"AWS Access Token", "GitHub PAT"}
-
-
-# ---------------------------------------------------------------------------
-# Anthropic admin key safety (product-specific)
-# ---------------------------------------------------------------------------
 
 
 def test_anthropic_admin_key_detected() -> None:

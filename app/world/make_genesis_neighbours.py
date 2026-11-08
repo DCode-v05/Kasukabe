@@ -41,15 +41,12 @@ from world.life.genesis import recount_ablation_summary
 
 OUT = Path(__file__).resolve().parent / "genesis_10.json"
 
-# The $1000 invariant (app/CONVENTIONS.md): wallets + treasury == 100,000c.
-# Ten residents at 600c each - the same per-head thinking budget the 30-cast
-# used, so a run here is comparable with a run there.
 WALLET_CENTS = 600
 POPULATION = 10
 TREASURY_CENTS = 100_000 - WALLET_CENTS * POPULATION
 
-HOUSE_A = "h_quarry"     # the Holloways, on the ore side of the street
-HOUSE_B = "h_field"      # the Thornes, on the field side
+HOUSE_A = "h_quarry"
+HOUSE_B = "h_field"
 
 
 def person(
@@ -106,12 +103,6 @@ def persona(
     }
 
 
-# ── the cast ───────────────────────────────────────────────────────────
-#
-# Five Holloways, five Thornes, one street. The trades interlock on purpose:
-# Wren grows the wheat, Marta mills and bakes it, Bram's ore buys the bread,
-# Idris fells the timber both households burn. Nobody in this street eats
-# without talking to somebody in the other house.
 NAMES = {
     "n01": "Bram Holloway",    "n02": "Ainsley Holloway",
     "n03": "Tobias Holloway",  "n04": "Perrin Holloway",
@@ -126,9 +117,6 @@ def others(me: str) -> list[tuple[str, str]]:
     return [(aid, name) for aid, name in NAMES.items() if aid != me]
 
 
-# The two live disputes, known to both sides on day zero. Neither can be
-# settled alone, which is the point: an agent that wants it resolved has to
-# open its mouth.
 DISPUTE_DEBT = (
     "Bram Holloway borrowed 400 sim from Marta Thorne to cover the assay fee "
     "on a copper seam that came up empty. Both households know. Neither has "
@@ -171,7 +159,6 @@ HOLLOWAYS = {"n01", "n02", "n03", "n04", "n05"}
 def build_agents() -> list[dict[str, Any]]:
     A: list[dict[str, Any]] = []
 
-    # ── the Holloways, ore side ────────────────────────────────────────
     A.append(person(
         "n01", "Bram Holloway", 44, "male", HOUSE_A, "miner",
         spouse="n02", children=["n03", "n04"], marital="married", sim=3200,
@@ -385,7 +372,6 @@ def build_agents() -> list[dict[str, Any]]:
         ),
     ))
 
-    # ── the Thornes, field side ────────────────────────────────────────
     A.append(person(
         "n06", "Wren Thorne", 47, "male", HOUSE_B, "farmer",
         spouse="n07", children=["n09", "n10"], marital="married", sim=3800,
@@ -618,9 +604,6 @@ def build() -> dict[str, Any]:
 
     wallets = sum(a["usd_wallet_cents"] for a in agents)
     total = wallets + TREASURY_CENTS
-    # app/CONVENTIONS.md's $1000 invariant. Checked here rather than left for
-    # preflight to discover, because a cast that cannot balance should never
-    # reach a file.
     assert total == 100_000, f"USD invariant broken: {wallets} + {TREASURY_CENTS} = {total}"
 
     genesis = {
@@ -641,9 +624,6 @@ def build() -> dict[str, Any]:
              "member_ids": [a["agent_id"] for a in agents if a["household_id"] == HOUSE_B],
              "formed_at_hours": 0.0},
         ],
-        # Required by the schema, and useful here: it gives the street one
-        # shared workplace that is neither house, so a resident who wants
-        # company has somewhere to go that is not somebody's kitchen.
         "construction_company": {
             "business_id": "b_yard", "name": "Holloway & Thorne Yard",
             "owner_agent_id": "n01", "hand_agent_ids": ["n03", "n09"],
@@ -657,7 +637,6 @@ def build() -> dict[str, Any]:
             },
         ],
         "control_businesses": [],
-        # Overwritten from the agents just below; see build()'s return.
         "ablation_summary": {},
     }
     return recount_ablation_summary(genesis)

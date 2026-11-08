@@ -36,9 +36,6 @@ import pytest
 from world.tools.registry import tool_registry_rows
 from world.tools.tests.conftest import spawn_agent
 
-# The shapes an instruction takes in this repository's own prose: a
-# second-person imperative pointing at the tool itself, and the
-# "there is no alternative" claim.
 STRATEGY = re.compile(
     r"\b[Uu]se (?:this|it|these)\b|\bYou should\b|\bThe only way\b|\bbefore composing\b"
 )

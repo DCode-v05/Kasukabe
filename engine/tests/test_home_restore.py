@@ -45,7 +45,6 @@ async def test_a_root_carries_the_whole_user(tmp_path, monkeypatch):
     ensure_layout(home)
     paths = september_paths(home)
 
-    # --- a user accumulates state -------------------------------------
     pool = await migrated_pool(paths["db"])
     await pool.execute(
         "INSERT INTO conversations (thread_id, summary) VALUES (?, ?)",
@@ -71,14 +70,12 @@ async def test_a_root_carries_the_whole_user(tmp_path, monkeypatch):
     key_file.parent.mkdir(parents=True, exist_ok=True)
     key_file.write_text("a" * 64, encoding="utf-8")
 
-    # --- the machine goes away; only the tree is carried ---------------
     relocated = tmp_path / "relocated"
     shutil.copytree(home, relocated)
     shutil.rmtree(home)
     monkeypatch.setenv("SEPTEMBER_HOME", str(relocated))
     new_paths = september_paths(relocated)
 
-    # --- a brand-new engine reads it back ------------------------------
     pool2 = SqlitePool(str(new_paths["db"]))
     await pool2.connect()
     summary = await pool2.fetchval(

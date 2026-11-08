@@ -38,13 +38,8 @@ from pathlib import Path
 APP = Path(__file__).resolve().parents[1]
 ENGINE = APP.parent / "engine"
 
-#: What `pinned_boot` registers onto the model's registry, by name.
 ENGINE_SIDE_VERBS = ("recall_memories", "recall_session_log", "search_memory")
 
-# Run in the ENGINE's interpreter, print its real tool schemas as JSON. The
-# builders are called exactly as pinned_boot calls them; `search_memory` is
-# built with no retrieval backend, which is a mode it supports and which does
-# not change the schema it declares.
 _PROBE = """
 import json, sys, tempfile
 from pathlib import Path

@@ -124,8 +124,6 @@ class TestHandleInput:
         assert coord.router.calls == 0
         assert len(coord.execution_log) == 1
         assert coord.execution_log[0][1] == "ship the fix"
-        # No target on the segment, so a NEW thread was opened rather than the
-        # existing one triage would have picked.
         assert coord.execution_log[0][0] not in ("thread-a", "thread-b")
 
 class TestOverTheRoute:
@@ -175,9 +173,6 @@ class TestOverTheRoute:
                         if called.is_set():
                             break
 
-        # The spy coordinator produces no blocks, so the SSE stream has nothing
-        # to close it. Drive it until handle_input has been observed, then stop:
-        # what is under test is the argument, not the stream's lifecycle.
         task = asyncio.create_task(drive())
         for _ in range(200):
             if seen:

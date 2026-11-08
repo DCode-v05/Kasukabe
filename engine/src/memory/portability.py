@@ -44,7 +44,6 @@ async def export_memory(db: SqlitePool) -> dict[str, Any]:
         "exported_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    # --- Episodes ---
     ep_rows = await db.fetch(
         "SELECT key, description, value, value_compressed, tier, created_at "
         "FROM episodes ORDER BY created_at",
@@ -65,7 +64,6 @@ async def export_memory(db: SqlitePool) -> dict[str, Any]:
         )
     bundle["episodes"] = episodes
 
-    # --- Knowledge Store ---
     ks_rows = await db.fetch(
         "SELECT subject, content, type, tags, confidence, source, "
         "usage_count, created_at, last_reinforced, valid_from, valid_until, "
@@ -99,7 +97,6 @@ async def export_memory(db: SqlitePool) -> dict[str, Any]:
         )
     bundle["knowledge"] = knowledge
 
-    # --- Social Graph Nodes ---
     node_rows = await db.fetch(
         "SELECT id, name, is_primary, created_at, updated_at "
         "FROM social_graph_nodes ORDER BY created_at",
@@ -119,7 +116,6 @@ async def export_memory(db: SqlitePool) -> dict[str, Any]:
             }
         )
 
-    # --- Node Attributes ---
     if node_ids:
         placeholders = ",".join("?" * len(node_ids))
         attr_rows = await db.fetch(
@@ -137,7 +133,6 @@ async def export_memory(db: SqlitePool) -> dict[str, Any]:
         for node in nodes:
             node["attributes"] = attr_map.get(node["ref_id"], {})
 
-    # --- Social Graph Edges ---
     edge_rows = await db.fetch(
         "SELECT person_a_id, person_b_id, user_perspective, engine_inference, "
         "observed_dynamics, contexts, created_at, updated_at "
@@ -166,7 +161,6 @@ async def export_memory(db: SqlitePool) -> dict[str, Any]:
 
     bundle["social_graph"] = {"nodes": nodes, "edges": edges}
 
-    # --- Evolved Soul ---
     soul_rows = await db.fetch(
         "SELECT trait, value, status, confidence, evidence_count, "
         "last_reinforced, created_at "
@@ -237,11 +231,6 @@ def scan_bundle(bundle: dict[str, Any]) -> None:
     sg_data = bundle.get("social_graph", {})
     for node in sg_data.get("nodes", []):
         attrs = node.get("attributes") or {}
-        # Scan keys AND values: social_graph.enrich_social_graph_node persists
-        # attribute_key alongside attribute_value, and the per-attribute embed
-        # call (`embed(key + " " + value)`) plus the node-level rebuild both
-        # feed keys into the embedding payload. A secret-as-key would
-        # otherwise pass the scan and land in the DB + embedding API.
         attr_items = attrs.items() if isinstance(attrs, dict) else ()
         guard_content(
             join_nonempty(node.get("name"), *(f"{k}\n{v}" for k, v in attr_items)),

@@ -45,7 +45,6 @@ async def test_second_complaint_attaches_to_existing_case(recorder: EventRecorde
     complaints = await desk.list_complaints(case.case_id)
     assert len(complaints) == 2
     assert complaint2 in complaints
-    # A second EVENT_CASE_OPENED must not fire for an attach.
     assert len(recorder.of_type(EVENT_CASE_OPENED)) == 1
     assert len(recorder.of_type(EVENT_COMPLAINT_FILED)) == 2
 

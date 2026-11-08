@@ -37,17 +37,8 @@ from world.life.models import SmallBusiness
 GENESIS = pathlib.Path(__file__).resolve().parents[2] / "world"
 GENESIS_FILES = sorted(p.name for p in GENESIS.glob("genesis*.json"))
 
-# Nothing is exempt any more. A pharmacy was, on the grounds that it sells
-# `pharmacy_treatment` - a service - and there is no medicine GOOD to shelve.
-# True, and it left its owner a counter with a price board and nothing to sell
-# across it. The 20-resident cast calls Delia's "The Willows Market and
-# Pharmacy" and she spends the run describing stocked shelves and kept
-# accounts: a village market-and-pharmacy sells what a village shop sells,
-# and the treatment fee is income on top rather than instead.
 SELLS_A_SERVICE_NOT_GOODS: set[str] = set()
 
-#: What a resident can produce with its own hands and has to be able to sell.
-#: election30 produced all of these and sold almost none of them.
 PRODUCE = ("wheat", "flour", "timber", "iron_ore")
 
 
@@ -93,11 +84,6 @@ def test_everything_a_resident_can_make_has_a_buyer(path: str) -> None:
         if shop["business_type"] not in SELLS_A_SERVICE_NOT_GOODS
     ]
     if not goods_shops:
-        # A town with no shop that sells goods at all - `genesis_3.json` is
-        # three residents, a pharmacy and a yard. There is no counter to bid
-        # at, so food moves person to person and `trade` is the mechanism.
-        # Asserted rather than skipped, so that if such a town ever GAINS a
-        # grocer this test starts holding it to the same bar as the rest.
         assert len(data.get("agents") or []) <= 6, (
             f"{path} has {len(data['agents'])} residents and no shop selling "
             "goods, which is too many people to feed hand to hand"

@@ -43,14 +43,6 @@ from world.core.clock import TICKS_PER_DAY
 
 logger = logging.getLogger(__name__)
 
-# Every number the script decides by. Fixed, published here, and never
-# adapted mid-run: the moment a control adjusts to what the town is doing
-# it stops being a control and becomes a second, worse agent.
-#
-# The prices are the ones Marta Thorne actually reached in run 20 - retail
-# 30, wholesale 24 by the dozen, flour bought at 6 - so the script is not
-# handicapped by a made-up price book. The comparison is about JUDGEMENT,
-# not about who guessed the market better.
 ASK_SIM = 30
 FLOUR_BID_SIM = 6
 RESTOCK_FLOUR_BELOW = 4
@@ -73,9 +65,6 @@ class ControlBakery:
     business_id: str
     owner_id: str
     employee_id: str | None = None
-    # Every rule that fired, with the tick it fired on. R7's failure
-    # taxonomy is built from this and from the refusals below: a control
-    # whose failures are invisible cannot be compared on failures.
     actions: list[dict[str, Any]] = field(default_factory=list)
     refusals: list[dict[str, Any]] = field(default_factory=list)
     posted_today: int | None = None
@@ -142,16 +131,6 @@ class ControlBakery:
         await registry.execute(world, self.owner_id, "cook", {
             "recipe_id": FLOUR_RECIPE, "batches": BAKE_BATCHES,
         })
-        # Baked into the owner's hands; the shelf is the business's.
-        #
-        # This used to be a bare `world.inventory.move(...)`, contradicting
-        # the docstring above ("everything it does goes through
-        # registry.execute") for the only reason it could: until TOOL-03
-        # there WAS no tool that moved goods from a hand to a shelf, so the
-        # control had a door the residents did not. That is precisely the
-        # difference a control must not have - every gap the comparison
-        # found between the scripted bakery and Marta's would have been a
-        # gap in plumbing.
         onto_shelf = min(BAKE_BATCHES, self._held(world, self.owner_id, "bread"))
         if onto_shelf > 0:
             await registry.execute(world, self.owner_id, "stock_shelf", {
@@ -229,7 +208,6 @@ class ControlBakery:
         self.actions.append({"tick": tick, "rule": "say", "answered": len(asked)})
         return True
 
-    # ── R1 to R7, for the report ──────────────────────────────────────
 
     def scorecard(self, world: Any, tick: int) -> dict[str, Any]:
         """The control's side of the business-readiness table.
@@ -240,28 +218,19 @@ class ControlBakery:
         """
         sales = [a for a in self.actions if a["rule"] == "buy"]
         return {
-            # R1: opened for trade - a posted price and stock.
             "days_opened": len({a["tick"] // TICKS_PER_DAY for a in self.actions
                                 if a["rule"] == "post_price"}),
             "posted_now": world.posted(self.business_id, "bread") is not None,
-            # R2: solvent at stop.
             "sim_at_stop": world.ledger.sim_balance(self.business_id),
             "stock_at_stop": self._held(world, self.business_id, "bread"),
-            # R3: wages paid.
             "wages_paid": sum(
                 a.get("amount_sim", 0) for a in self.actions if a["rule"] == "pay_wage"
             ),
-            # R4 is not asked of the control: a script sets no intentions,
-            # and reporting 0/0 as "0% fulfilled" would read as a failure
-            # rather than as a category that does not apply.
             "intentions": None,
-            # R5: directed questions answered. Always, by construction.
             "questions_answered": sum(
                 a.get("answered", 0) for a in self.actions if a["rule"] == "say"
             ),
-            # R6: cost per sale in USD. Zero, and that is the point.
             "usd_spent": 0,
             "restocks": len(sales),
-            # R7: the failure taxonomy.
             "refusals": [dict(row) for row in self.refusals],
         }

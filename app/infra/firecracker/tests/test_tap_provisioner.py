@@ -31,8 +31,6 @@ async def test_null_provisioner_touches_nothing() -> None:
     resources = pool.allocate("agent-0001")
     provisioner = NullNetworkProvisioner()
 
-    # Must not raise even with no real network stack available - this is
-    # what every test in the rest of this track relies on implicitly.
     await provisioner.create_tap(resources, "fcbr0")
     await provisioner.remove_tap(resources)
 
@@ -42,7 +40,7 @@ async def test_create_tap_adds_device_when_absent() -> None:
     settings = FirecrackerSettings()
     pool = ResourcePool(settings)
     resources = pool.allocate("agent-0001")
-    runner = FakeIpRunner(link_show_exit_code=1)  # "ip link show" fails => tap absent
+    runner = FakeIpRunner(link_show_exit_code=1)
     provisioner = LinuxTapProvisioner(ip_runner=runner)
 
     await provisioner.create_tap(resources, "fcbr0")
@@ -59,7 +57,7 @@ async def test_create_tap_is_idempotent_when_device_already_exists() -> None:
     settings = FirecrackerSettings()
     pool = ResourcePool(settings)
     resources = pool.allocate("agent-0002")
-    runner = FakeIpRunner(link_show_exit_code=0)  # tap already exists
+    runner = FakeIpRunner(link_show_exit_code=0)
     provisioner = LinuxTapProvisioner(ip_runner=runner)
 
     await provisioner.create_tap(resources, "fcbr0")

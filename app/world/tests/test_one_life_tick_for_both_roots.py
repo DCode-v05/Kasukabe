@@ -52,17 +52,10 @@ from world.life.tick import run_hourly_life_tick
 from world.wiring import PACKAGE_DIR, WorldConfig, build_world_server
 from world.tests.map_assets import needs_the_map
 
-# TOOL-27. This module needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped, and red for environment hides real regressions inside the
-# noise - which is how TOOL-09 stayed invisible for a whole cycle.
 pytestmark = needs_the_map
 
 SMALL_GENESIS = PACKAGE_DIR / "genesis_10.json"
 
-# Just under the eighteenth birthday: at one year per game-hour and ten
-# game-minutes per tick, a single tick carries this over the line.
 ALMOST_EIGHTEEN = 17.9
 
 

@@ -54,7 +54,6 @@ class TestRegisterAndRun:
         from src.infra.cleanup_registry import run_cleanups, clear_registry
 
         try:
-            # Should not raise
             await run_cleanups()
         finally:
             clear_registry()
@@ -88,7 +87,7 @@ class TestUnregister:
         try:
             unreg = register_cleanup("cb", cb)
             unreg()
-            unreg()  # second call must not raise
+            unreg()
         finally:
             clear_registry()
 
@@ -124,7 +123,6 @@ class TestTimeouts:
 
         try:
             register_cleanup("slow", slow)
-            # Should complete quickly — slow fn is cancelled after 0.1s
             await run_cleanups(timeout_per_fn=0.1)
         finally:
             clear_registry()
@@ -143,8 +141,8 @@ class TestTimeouts:
             called.append("fast")
 
         try:
-            register_cleanup("fast", fast)  # registered first → runs second (LIFO)
-            register_cleanup("slow", slow)  # registered second → runs first (LIFO)
+            register_cleanup("fast", fast)
+            register_cleanup("slow", slow)
             await run_cleanups(timeout_per_fn=0.1)
             assert called == ["fast"]
         finally:
@@ -164,8 +162,8 @@ class TestTimeouts:
             called.append("fine")
 
         try:
-            register_cleanup("fine", fine)  # runs second (LIFO)
-            register_cleanup("boom", boom)  # runs first (LIFO)
+            register_cleanup("fine", fine)
+            register_cleanup("boom", boom)
             await run_cleanups()
             assert called == ["fine"]
         finally:

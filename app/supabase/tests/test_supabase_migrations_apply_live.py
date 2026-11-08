@@ -79,8 +79,6 @@ def postgres_available() -> bool:
         return False
     try:
         subprocess.run(["pg_isready"], check=True, capture_output=True, timeout=5)
-        # Can we actually log in? `select 1` on the always-present
-        # maintenance database, with no prompt allowed.
         subprocess.run(
             ["psql", "-w", "-d", "postgres", "-c", "select 1", "-X", "-q"],
             check=True, capture_output=True, timeout=10,

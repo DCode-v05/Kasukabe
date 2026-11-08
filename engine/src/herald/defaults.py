@@ -32,13 +32,13 @@ class ModelRole(str, Enum):
     """Every distinct engine duty that needs a model id."""
 
     PRIMARY = "primary"
-    PLANNER = "planner"  # heavy tier
+    PLANNER = "planner"
     LIGHT = "light"
-    REASONING = "reasoning"  # tier plumbing only; no settings override
+    REASONING = "reasoning"
     DISPATCH = "dispatch"
     DISPATCH_ALTERNATIVE = "dispatch_alternative"
     FALLBACK = "fallback"
-    LC = "lc"  # Learning Centre batch model
+    LC = "lc"
     EMBEDDING = "embedding"
 
 
@@ -66,14 +66,8 @@ class EngineModelDefaults:
 
 MODEL_DEFAULTS = EngineModelDefaults()
 
-# Cost-savings baseline used by the router's savings estimator: "what would
-# this turn have cost on the flagship". Should track the flagship at launch.
-# Price fallbacks for it stay in src/herald/router.py.
 BASELINE_MODEL = "claude-opus-4-8"
 
-# Settings field that can override each role (resolve_model reads these).
-# REASONING has no settings override by design: it is reachable only through
-# tier resolution, which the planner/light overrides already steer.
 ROLE_SETTINGS_FIELD: dict[ModelRole, str] = {
     ModelRole.PRIMARY: "llm_model",
     ModelRole.PLANNER: "planner_model",
@@ -123,13 +117,6 @@ def resolve_embedding_dim(settings: Any = None) -> int:
     return MODEL_DEFAULTS.embedding_dim
 
 
-# ── Routing chain defaults ──────────────────────────────────────────
-# Consumed by src/herald/config_schema.py default factories. Keys are the
-# router's capability bands (SIMPLE/MEDIUM/COMPLEX/REASONING), values are
-# [primary, *fallbacks]. The router cost-ranks each chain (cheapest available
-# and healthy first); ordering here is the tie-break only. 'premium' stays
-# flagship-first (quality over cost) by design.
-
 TIER_CHAIN_DEFAULTS: dict[str, dict[str, list[str]]] = {
     "auto": {
         "SIMPLE": ["gemini-3.1-flash-lite", "gemini-3.5-flash", "claude-haiku-4-5-20251001"],
@@ -157,7 +144,6 @@ TIER_CHAIN_DEFAULTS: dict[str, dict[str, list[str]]] = {
     },
 }
 
-# Task-fit chains (anti-monoculture): genuine quality-peers per task type.
 TASK_CHAIN_DEFAULTS: dict[str, list[str]] = {
     "coding": ["gpt-5.4", "claude-sonnet-4-6", "claude-opus-4-8"],
     "reasoning": ["gemini-3.1-pro", "claude-opus-4-8"],

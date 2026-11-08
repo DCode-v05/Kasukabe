@@ -18,10 +18,6 @@ from game.world_client import HttpWorldClient
 from game.world_client import GENESIS_PLACES, SpendStatus, WorldClientError
 
 
-# These tests exercise the MOCK town. The module-level `app` boots real
-# now (game/config.py: mock_mode defaults False and MOCK_MODE is no
-# longer an env var), so anything wanting the fake 12-agent world has
-# to construct it explicitly - which is the only way left to ask.
 def mock_app():
     return create_app(settings=GameSettings(mock_mode=True))
 
@@ -49,7 +45,6 @@ def test_build_world_client_picks_the_real_world_by_default() -> None:
     from game.mock_world import MockWorldClient
 
     assert isinstance(build_world_client(GameSettings()), HttpWorldClient)
-    # Tests may still ask for the fake town, in code, explicitly.
     assert isinstance(
         build_world_client(GameSettings(mock_mode=True)), MockWorldClient
     )
@@ -82,7 +77,7 @@ def test_map_endpoint_returns_raw_tiled_json_not_wrapped() -> None:
         assert response.status_code == 200
         body = response.json()
         assert body["width"] == 140
-        assert "map_tiled_json" not in body  # raw map, not the Snapshot envelope
+        assert "map_tiled_json" not in body
 
 
 def test_places_endpoint_returns_the_genesis_catalog_in_mock_mode() -> None:
@@ -208,7 +203,7 @@ class ScriptedWorldClient:
             yield event
         import asyncio
 
-        await asyncio.get_event_loop().create_future()  # idle forever
+        await asyncio.get_event_loop().create_future()
 
     async def close(self) -> None:
         pass

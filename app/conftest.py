@@ -24,11 +24,6 @@ import collections
 
 from ville_assets import SKIPPED_FOR_ASSETS, VILLE_DIR
 
-# Skips that say nothing about coverage - a parametrised case that does
-# not apply, a platform branch that is genuinely irrelevant here. Matched
-# on a fragment of the reason, and kept short on purpose: the point of the
-# summary is that a reader sees what went unchecked, and a long ignore
-# list is how that stops happening.
 UNINTERESTING_SKIPS = (
     "this host has process groups",
 )

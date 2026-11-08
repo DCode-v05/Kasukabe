@@ -37,10 +37,6 @@ def build_event(event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
     return {"type": event_type, "payload": payload}
 
 
-# All in the `crime` domain (app/CONVENTIONS.md's event domain table:
-# "crime | world/ | crime.theft.attempted, crime.warrant.issued"). Both
-# of those two literal examples are reproduced verbatim below - they are
-# not a coincidence, CONVENTIONS.md was written anticipating this module.
 EVENT_THEFT_ATTEMPTED = "crime.theft.attempted"
 EVENT_FIGHT_OCCURRED = "crime.fight.occurred"
 EVENT_COMPLAINT_FILED = "crime.complaint.filed"

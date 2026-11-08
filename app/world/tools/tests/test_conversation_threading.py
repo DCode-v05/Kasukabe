@@ -119,9 +119,6 @@ def test_a_place_spelled_differently_is_still_the_same_place() -> None:
     assert got == "conv-1"
 
 
-# ── speaking to somebody who is not in the room ─────────────────────────
-
-
 def test_an_absent_named_listener_no_longer_throws_the_turn_away() -> None:
     """`say` raised LocationGateError when the model set
     listener_agent_id to somebody standing elsewhere. The model had
@@ -175,27 +172,6 @@ def test_the_absent_listener_is_still_reported_to_the_speaker() -> None:
     )
     assert "spoke_to_absent" in code
     assert "not_here" in code
-
-
-# ── a room talking is one conversation ──────────────────────────────────
-#
-# Measured on run 15: 135 utterances, 30 of them broadcasts that each
-# became a thread of ONE, 44 two-person threads, and ZERO threads with
-# three or more people in them. Group conversation was structurally
-# impossible: _continuing_conversation skipped every public remark and
-# matched an exact pair, so a third resident could never join.
-#
-# What that did to a real moment - four residents on one street, four
-# remarks inside two ticks, split into three separate threads:
-#
-#   t247 Liora  -> Perrin:  "Can I ask something? Why didn't you answer me?"
-#   t248 Marta  -> Tobias:  "Tobias. Sit down. Please."
-#   t248 Tobias -> Liora:   "Liora - sorry. Right, so I was walking..."
-#   t248 Perrin -> Liora:   "I didn't hear you. I was... somewhere else."
-#
-# Tobias answers Liora while Liora is asking Perrin, and Perrin answers
-# her too. That is one conversation in a street, and the record showed
-# three unrelated ones.
 
 
 def test_a_third_person_joins_the_conversation_already_happening() -> None:

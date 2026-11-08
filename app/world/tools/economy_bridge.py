@@ -57,17 +57,6 @@ class LedgerEconomyPort:
     matching signatures) so a type checker confirms it.
     """
 
-    # ECON-29. Which trade should be PAID for each life fee.
-    #
-    # Every life-initiated debit went to the treasury, so a resident who
-    # paid a pharmacist for medicine was paying the government, and the
-    # pharmacist - a real business with a real account - earned nothing
-    # from the one service it exists to sell. A shop whose income is
-    # confiscated at the counter cannot be studied as a business.
-    #
-    # Keyed on business TYPE rather than a genesis id: `b_pharmacy` is one
-    # genesis file's spelling, and a town that founds a second pharmacy
-    # should be able to take the money.
     PAYEE_BUSINESS_TYPE: dict[str, str] = {
         "pharmacy_treatment": "pharmacy",
     }
@@ -77,9 +66,6 @@ class LedgerEconomyPort:
     ) -> None:
         self.ledger = ledger
         self.tick_provider = tick_provider
-        # ECON-29: optional, and every caller has one. Without it the port
-        # behaves exactly as it did - everything to the treasury - which
-        # is what keeps this change safe for a caller nobody updated.
         self.world = world
 
     def payee_for(self, reason: str) -> str:
@@ -94,32 +80,16 @@ class LedgerEconomyPort:
         wanted = self.PAYEE_BUSINESS_TYPE.get(reason)
         if not wanted or self.world is None:
             return TREASURY_ACCOUNT_ID
-        # Read directly, not through a defaulting getattr. `businesses` and
-        # `business_type` are real fields on WorldState and Business, and a
-        # default here would answer "no pharmacy" the day either is
-        # renamed - silently paying the treasury for ever, which is the
-        # exact defect ECON-29 is about. `test_no_silent_defaults` caught
-        # the first draft of this doing it.
         for business in self.world.businesses.values():
             if business.business_type != wanted:
                 continue
             try:
                 self.ledger.get_account(business.business_id)
             except Exception:  # noqa: BLE001 - a business with no account
-                continue        # cannot be paid; the treasury takes it
+                continue
             return business.business_id
         return TREASURY_ACCOUNT_ID
 
-    # ECON-03. What each life-side reason string is, as a ledger reason.
-    #
-    # The callers already pass something specific - "daily_upkeep",
-    # "revival_payment", "baby_blessing" - and every one was flattened to
-    # TRANSFER before it reached the trace. `build_transaction_row` writes
-    # `reason = transaction.reason.value`, so the row said "transfer",
-    # while `run_report._transactions` queries
-    # `where reason = 'daily_upkeep'`. The report asked for the upkeep and
-    # got nothing, and run 23 printed "no upkeep charged" over ninety sim
-    # per household per day of real money.
     REASONS: "dict[str, TransactionReason]" = {
         "daily_upkeep": TransactionReason.UPKEEP,
         "revival_payment": TransactionReason.REVIVAL,

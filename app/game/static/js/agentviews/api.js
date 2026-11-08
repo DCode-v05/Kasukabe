@@ -1,10 +1,3 @@
-// Thin fetch wrappers for world.agent_viewer_api's HTTP surface
-// (world/agent_viewer_api.py). Same "configurable world API base URL"
-// story as js/views/api.js (see that file's own comment for the full
-// cross-origin rationale) - duplicated here rather than imported across
-// the js/views/ <-> js/agentviews/ directory boundary so agents.html
-// never depends on views.html's module tree.
-
 const STORAGE_KEY = "kasukabe_world_base_url";
 
 export function getWorldBaseUrl() {
@@ -40,7 +33,6 @@ async function apiFetch(path, params) {
       const body = await response.json();
       if (body && body.detail) detail = body.detail;
     } catch {
-      // response body wasn't JSON - fall back to statusText, set above.
     }
     throw new Error(`${response.status} ${path}: ${detail}`);
   }
@@ -51,19 +43,13 @@ export function checkWorldHealth() {
   return apiFetch("/health");
 }
 
-// ── agent finder ─────────────────────────────────────────────────────
-
 export function findAgents(filters) {
   return apiFetch("/agent-viewer/agents", filters);
 }
 
-// ── agent activity ───────────────────────────────────────────────────
-
 export function fetchAgentActivity(agentId) {
   return apiFetch(`/agent-viewer/agents/${encodeURIComponent(agentId)}`);
 }
-
-// ── agent reasoning ──────────────────────────────────────────────────
 
 export function fetchReasoningList(agentId, limit = 100) {
   return apiFetch(`/agent-viewer/agents/${encodeURIComponent(agentId)}/reasoning`, { limit });

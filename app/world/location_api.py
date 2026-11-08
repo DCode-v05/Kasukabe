@@ -120,8 +120,6 @@ from world.tools.locations import LOCATION_FOREST, LOCATION_TEMPLE
 from world.tools.registry import ToolNamespace, ToolRegistry
 from world.tools.state import WorldState
 
-# ── the alias tables the module docstring describes: built entirely from
-# string constants that already exist elsewhere in the repo ────────────
 
 STATIC_SECTOR_ALIASES: dict[str, str] = {
     LOCATION_TEMPLE: TEMPLE_SECTOR_NAME,
@@ -129,29 +127,11 @@ STATIC_SECTOR_ALIASES: dict[str, str] = {
     LOCATION_FOREST: FOREST_SECTOR_NAME,
 }
 
-# town_hall is not its own sector - genesis carves it as an ARENA named
-# literally "Town Hall" inside the government complex sector
-# (map/expansion.py's append_kasukabe_genesis_zones:
-# `arenas=single_arena_rect_bands(..., ("Town Hall", "Treasury Vault"))`).
 STATIC_ARENA_ALIASES: dict[str, tuple[str, str]] = {
     LOCATION_TOWN_HALL: (GOVERNMENT_SECTOR_NAME, "Town Hall"),
 }
 
-# patent_office (charter/models.py's LOCATION_PATENT_OFFICE) has no real
-# map counterpart at all: genesis only carves "Town Hall" and "Treasury
-# Vault" inside the government sector, no third arena for a patent
-# office. Listed here, unresolved, deliberately (not silently dropped)
-# so GET /places/patent_office still returns a real row (occupants,
-# usable tools) with map_sector explicitly null rather than a 404 that
-# would read as "this place doesn't exist."
 KNOWN_UNRESOLVED_LOCATION_IDS: frozenset[str] = frozenset({LOCATION_PATENT_OFFICE})
-
-# Genesis's own arena-naming convention for the 10 farmland crop strips
-# and 5 ore outcrop metal strips (map/expansion.py: `crop_names = tuple(
-# f"{crop.capitalize()} Field" for crop in CROP_VARIETIES)`, same pattern
-# for metals) - reconstructed here, not re-derived from a shared
-# constant, because expansion.py computes it inline rather than exporting
-# it; kept as its own named function so the one formula lives in one place.
 
 
 def farmland_arena_name(crop: str) -> str:
@@ -162,14 +142,6 @@ def ore_outcrop_arena_name(metal: str) -> str:
     return f"{metal.capitalize()} Outcrop"
 
 
-# Best-effort ONLY (see module docstring): a genesis business's
-# location_id is its bare business_type (wiring.py's business_location()),
-# which names no sector directly. Where DESIGN.md's own genesis building
-# list ties a business type to exactly one real building category
-# (cafe -> Hobbs Cafe, grocery/pharmacy -> The Willows Market and
-# Pharmacy), this resolves it; a business_type with no entry here (e.g.
-# "construction", the 10 control businesses' bakery/general_store/...)
-# gets no map_sector, honestly, rather than a guess.
 BUSINESS_TYPE_CATEGORY_HINT: dict[str, BuildingCategory] = {
     "cafe": BuildingCategory.CAFE,
     "grocery_store": BuildingCategory.GROCERY,
@@ -187,7 +159,7 @@ class MapResolution:
     sector: Sector | None
     arena_name: str | None
     tile: TileCoord | None
-    method: str  # "exact_sector" | "alias_sector" | "alias_arena" | "business_category_heuristic" | "no_map_service" | "unresolved"
+    method: str
 
 
 def resolve_location_on_map(map_service: MapService | None, location_id: str) -> MapResolution:
@@ -251,9 +223,6 @@ def canonical_key_for(sector: Sector, arena_name: str | None) -> str:
     (the farmland/ore/town-hall cases) - `" :: "` never appears in a real
     Ville sector or arena name, so this round-trips unambiguously."""
     return sector.name if arena_name is None else f"{sector.name} :: {arena_name}"
-
-
-# ── response models ──────────────────────────────────────────────────
 
 
 class TileView(BaseModel):
@@ -364,9 +333,6 @@ class WorldStateView(BaseModel):
     control_businesses: int
     government: GovernmentView
     ledger: LedgerStatusView
-
-
-# ── place assembly ───────────────────────────────────────────────────
 
 
 @dataclass
@@ -495,19 +461,6 @@ def map_sector_view(record: PlaceRecord) -> MapSectorView | None:
     )
 
 
-# Tool names whose location_gate is a resolver function (world.tools.
-# primitives.commerce), not a fixed string - ToolRegistry.resolve_
-# location_gate can only be evaluated against real call params, which
-# this read-only view never has. Resolved by direct domain knowledge of
-# what each one actually requires instead of executing the resolver:
-# buy/sell require a business AT this place (business_location_gate);
-# store_item/withdraw_item require a Storage already registered at this
-# place (storage_location_gate_required) - store_item alone is also
-# callable at ANY location to create a brand-new storage
-# (storage_location_gate_optional returns None for an unseen storage_id),
-# so it is not listed as place-specific unless a Storage already exists
-# here. See world/tools/primitives/commerce.py for the real gates this
-# mirrors.
 BUSINESS_GATED_TOOL_NAMES: frozenset[str] = frozenset({"buy", "sell"})
 STORAGE_GATED_TOOL_NAMES: frozenset[str] = frozenset({"withdraw_item"})
 STORAGE_OPTIONAL_TOOL_NAMES: frozenset[str] = frozenset({"store_item"})
@@ -519,9 +472,9 @@ def usable_tools_at(
     tools: list[UsableToolView] = []
     for spec in registry.tools.values():
         if spec.namespace is not ToolNamespace.PUBLIC:
-            continue  # namespace ACL - see module docstring
+            continue
         if spec.location_gate is None:
-            continue  # not location-specific, not useful information here
+            continue
         if spec.name in BUSINESS_GATED_TOOL_NAMES:
             if has_business:
                 tools.append(
@@ -640,9 +593,6 @@ def build_detail_view(world: WorldState, registry: ToolRegistry, record: PlaceRe
     )
 
 
-# ── /world/state ─────────────────────────────────────────────────────
-
-
 def build_ledger_status_view(world: WorldState) -> LedgerStatusView:
     return LedgerStatusView(
         halted=world.ledger.halted,
@@ -661,10 +611,6 @@ async def build_world_state_view(world: WorldState, genesis_population: int, con
     alive = sum(1 for a in world.agents.values() if a.alive)
     dormant = sum(1 for a in world.agents.values() if a.dormancy.is_dormant)
     deaths = sum(1 for a in world.agents.values() if not a.alive)
-    # Every newborn agent (world.god_grant_birth_request in wiring.py)
-    # gets a fresh agent_id inserted into world.agents beyond the genesis
-    # roster - an exact live count, not an event-log tally bounded by the
-    # ring buffer (see this module's docstring on that bound).
     births = max(0, len(world.agents) - genesis_population)
 
     return WorldStateView(
@@ -689,9 +635,6 @@ async def build_world_state_view(world: WorldState, genesis_population: int, con
     )
 
 
-# ── deps + router ────────────────────────────────────────────────────
-
-
 @dataclass
 class LocationDeps:
     """Everything the routes below need, gathered by whichever host
@@ -710,7 +653,6 @@ class LocationDeps:
     registry: ToolRegistry
     genesis_population: int = 250
     control_business_count: int = 10
-
 
 
 async def add_cors_headers(response: Response) -> None:
@@ -737,18 +679,6 @@ def build_location_router(get_deps: Callable[[], LocationDeps]) -> APIRouter:
     def deps_dependency() -> LocationDeps:
         return get_deps()
 
-    # CORE-19. These two used to be `/places` and `/world/state`, the same
-    # paths `agents_api` declares. Both routers are mounted on the embedded
-    # host, FastAPI serves whichever was included first - agents_api - and
-    # nothing anywhere said so: this FastAPI keeps an included router as one
-    # opaque entry in `app.routes`, so even a route dump showed no clash.
-    #
-    # The richer views here (map geometry, clock, government, ledger) were
-    # therefore dead on the only host any run uses, and `run_report.py`
-    # depends on `run_id` coming from the agents version - so a reordered
-    # include would have moved the report's run identity without anything
-    # failing. Renamed rather than merged: every existing caller keeps the
-    # router that already answers it, and these become reachable at last.
     @router.get("/world/places", response_model=list[PlaceSummaryView])
     async def list_places(deps: LocationDeps = Depends(deps_dependency)) -> list[PlaceSummaryView]:
         records = build_place_records(deps.world, deps.map_service)

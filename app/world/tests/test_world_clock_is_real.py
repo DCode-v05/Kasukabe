@@ -28,7 +28,6 @@ def test_gameclock_has_no_hour_or_minute_attribute() -> None:
     clock = GameClock(total_hours=12.5)
     assert not hasattr(clock, "hour")
     assert not hasattr(clock, "minute")
-    # What it does have, and why the day counter was right all along.
     assert clock.day == 0
 
 
@@ -74,8 +73,6 @@ def test_route_reports_a_clock_that_moves_with_the_tick() -> None:
             assigns.append(ast.unparse(node.value))
 
     assert assigns, "the route stopped building a WorldStateView"
-    # No getattr-with-a-default may stand between the clock and the UI:
-    # that is precisely the shape that failed silently for a whole run.
     for expr in assigns:
         assert "getattr" not in expr, (
             f"{expr!r} can default to 0 forever without ever raising"

@@ -29,9 +29,6 @@ from world.run_genesis import (
 from world.admin_api import AdminExtras
 
 
-# ── the reserve ────────────────────────────────────────────────────────
-
-
 def test_the_runner_stops_below_the_brokers_cap() -> None:
     """A $2.50 run - run 24's cap - must not aim at exactly $2.50."""
     config = GenesisRunnerConfig.from_env({"SPEND_CAP_USD": "2.50"})
@@ -70,9 +67,6 @@ def test_the_reserve_covers_more_than_one_tick() -> None:
     ticks, so a margin smaller than one tick's spend cannot stop the run
     in time. Run 24's priciest ticks ran a few cents."""
     assert halt_reserve_cents(250) >= 10
-
-
-# ── the readout ────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio

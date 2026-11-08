@@ -46,9 +46,6 @@ def agent_row(**overrides: object) -> dict[str, object]:
     return row
 
 
-# ── schema bootstrap ─────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_ensure_schema_creates_all_eighteen_tables(client: SqliteClient) -> None:
     """Eighteen since INFRA-09 added `run_manifest` (what a run was made
@@ -78,9 +75,6 @@ async def test_ensure_schema_is_idempotent_on_reconnect(tmp_path: Path) -> None:
     await first.insert("agents", [agent_row()])
     await first.close()
 
-    # Reconnecting must not re-run "create table" against a populated
-    # database (sqlite_schema.sql uses IF NOT EXISTS, but ensure_schema's
-    # own "is the database empty" guard is what is under test here).
     second = SqliteClient(SupabaseConfig(sqlite_path=db_path))
     rows = await second.select("agents")
     await second.close()
@@ -89,10 +83,8 @@ async def test_ensure_schema_is_idempotent_on_reconnect(tmp_path: Path) -> None:
 
 
 # ── crash-safety pragmas ────────────────────────────────────────────
-# See test_supabase_crash_safety.py for the real (SIGKILL-a-subprocess)
 # proof these pragmas actually deliver "no corruption, no lost committed
 # rows". These tests only check the pragmas are the values the trace
-# store's design requires - the cheap, fast half of that guarantee.
 
 
 def test_connect_sqlite_enables_wal_for_a_real_file(tmp_path: Path) -> None:
@@ -104,9 +96,6 @@ def test_connect_sqlite_enables_wal_for_a_real_file(tmp_path: Path) -> None:
 
 
 def test_connect_sqlite_skips_wal_for_in_memory_database() -> None:
-    # SQLite has no write-ahead log for ":memory:" - asking for WAL there
-    # is a silent no-op (journal_mode stays "memory"), not an error. This
-    # asserts connect_sqlite() does not even try, per its own docstring.
     conn = connect_sqlite(":memory:", busy_timeout_ms=5000)
     try:
         assert conn.execute("PRAGMA journal_mode").fetchone()[0].lower() == "memory"
@@ -125,7 +114,6 @@ def test_connect_sqlite_sets_busy_timeout_from_argument(tmp_path: Path) -> None:
 def test_connect_sqlite_sets_synchronous_normal(tmp_path: Path) -> None:
     conn = connect_sqlite(str(tmp_path / "sync.sqlite3"), busy_timeout_ms=5000)
     try:
-        # SQLite reports synchronous as an integer: 0=OFF, 1=NORMAL, 2=FULL.
         assert conn.execute("PRAGMA synchronous").fetchone()[0] == 1
     finally:
         conn.close()
@@ -148,9 +136,6 @@ async def test_sqlite_client_applies_configured_busy_timeout(tmp_path: Path) -> 
         await client.close()
 
 
-# ── insert ──────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_insert_batch_returns_all_rows_with_generated_columns(client: SqliteClient) -> None:
     rows = await client.insert(
@@ -161,11 +146,8 @@ async def test_insert_batch_returns_all_rows_with_generated_columns(client: Sqli
     assert len(rows) == 2
     assert {r["slug"] for r in rows} == {"agent-001", "agent-002"}
     by_slug = {r["slug"]: r for r in rows}
-    # created_tick=100 -> game_day 0, minute_of_day 1000 (144 ticks/day, 10
-    # game-minutes/tick per DESIGN.md section 1).
     assert by_slug["agent-001"]["created_game_day"] == 0
     assert by_slug["agent-001"]["created_game_minute_of_day"] == 1000
-    # created_tick=144 -> exactly one day in.
     assert by_slug["agent-002"]["created_game_day"] == 1
     assert by_slug["agent-002"]["created_game_minute_of_day"] == 0
 
@@ -214,7 +196,7 @@ async def test_concurrent_inserts_from_two_tables_never_lose_a_row(client: Sqlit
     petitions = await client.select("petitions")
     assert len(events) == n
     assert len(petitions) == n
-    assert len({e["id"] for e in events}) == n  # every id unique, none silently overwritten
+    assert len({e["id"] for e in events}) == n
 
 
 @pytest.mark.asyncio
@@ -227,7 +209,7 @@ async def test_insert_generates_uuid_for_entity_table_id(client: SqliteClient) -
     rows = await client.insert("agents", [agent_row()])
 
     assert isinstance(rows[0]["id"], str)
-    assert len(rows[0]["id"]) == 36  # canonical uuid4 string length
+    assert len(rows[0]["id"]) == 36
 
 
 @pytest.mark.asyncio
@@ -324,7 +306,7 @@ async def test_insert_enforces_ledger_invariant(client: SqliteClient) -> None:
                     "amount": 5,
                     "usd_wallets_total_after": 99995,
                     "usd_treasury_total_after": 0,
-                    "usd_burned_total_after": 999,  # wrong: does not sum to 100000
+                    "usd_burned_total_after": 999,
                     "tick": 1,
                 }
             ],
@@ -349,9 +331,6 @@ async def test_insert_accepts_valid_ledger_transaction(client: SqliteClient) -> 
     )
 
     assert rows[0]["usd_wallets_total_after"] == 99995
-
-
-# ── select ──────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -421,9 +400,6 @@ async def test_select_on_empty_table_returns_empty_list(client: SqliteClient) ->
     assert await client.select("agents") == []
 
 
-# ── update ──────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_update_matching_rows(client: SqliteClient) -> None:
     await client.insert("agents", [agent_row(slug="agent-001"), agent_row(slug="agent-002")])
@@ -455,9 +431,6 @@ async def test_update_round_trips_bool_and_json_columns(client: SqliteClient) ->
     )
 
     assert updated[0]["footprint"] == {"tiles": [1, 2, 3]}
-
-
-# ── upload_archive ──────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -528,20 +501,15 @@ async def test_upload_archive_routes_to_s3_when_bucket_configured(
     )
     await client.close()
 
-    # Backend-portable return value stays "bucket/path" regardless of the
-    # real S3 key underneath it (see upload_archive's docstring).
     assert storage_path == "llm-payloads/agent-001/1.json.gz"
     assert len(FakeS3Client.instances) == 1
     fake = FakeS3Client.instances[0]
     assert fake.config.bucket == "kasukabe-genesis-123"
     assert fake.config.region == "ap-south-1"
-    # The fixed archives/payloads/ prefix infra/scripts/01-setup-s3-and-iam.sh
-    # carves out, not the logical "llm-payloads" bucket name.
     assert fake.put_calls == [
         ("archives/payloads/agent-001/1.json.gz", b"gzipped-bytes", "application/gzip")
     ]
     assert fake.closed is True
-    # Local filesystem fallback must NOT have been touched.
     assert not (client.local_storage_root / "llm-payloads").exists()
 
 
@@ -592,9 +560,6 @@ async def test_upload_archive_wraps_s3_error_as_supabase_error(tmp_path: Path) -
     async def failing_put(**kwargs: object) -> None:
         raise S3Error(key="x", detail="AccessDenied", status_code=403)
 
-    # Pre-set client.s3 so upload_archive's lazy "if self.s3 is None"
-    # construction is skipped and this fake is used instead - no need to
-    # monkeypatch the S3Client class itself for this one.
     client.s3 = FakeS3Client(S3Config(bucket="b", region="ap-south-1"))
     client.s3.put_object = failing_put  # type: ignore[method-assign]
 
@@ -604,9 +569,6 @@ async def test_upload_archive_wraps_s3_error_as_supabase_error(tmp_path: Path) -
 
     assert exc_info.value.table == "s3:llm-payloads"
     assert "AccessDenied" in exc_info.value.detail
-
-
-# ── helper function unit tests ─────────────────────────────────────
 
 
 def test_build_where_empty_filters() -> None:
@@ -630,9 +592,6 @@ def test_build_order_explicit_direction() -> None:
 
 def test_build_order_multiple_columns() -> None:
     assert build_order("agent_id.asc, tick.desc") == "agent_id ASC, tick DESC"
-
-
-# ── coercion table exhaustiveness against the real schema ──────────
 
 
 def test_json_and_bool_column_tables_reference_real_tables_and_columns() -> None:

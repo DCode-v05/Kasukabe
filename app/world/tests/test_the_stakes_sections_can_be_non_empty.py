@@ -67,9 +67,6 @@ def test_the_arrears_name_matches_the_emitter() -> None:
     assert '_events("economy.head_tax_debt.accrued")' in report
 
 
-# ── (d): the docstring that stayed true-sounding ───────────────────────
-
-
 def test_the_module_no_longer_says_the_bus_is_unbound() -> None:
     """`attach_persistence` binds the bus and has for some time. A reader
     following the old paragraph never wondered whether the trace store was
@@ -88,9 +85,6 @@ def test_the_rendered_footer_says_the_real_reason() -> None:
     live and stored reads, so a regenerated report blanks its live rows"."""
     report = (APP / "world" / "run_report.py").read_text(encoding="utf-8")
     footer = report[report.index("Written by `world/run_report.py`"):][:600]
-    # "before stopping", not the whole sentence: this reads the SOURCE,
-    # where the string is split across two lines for width, so a longer
-    # phrase would fail on the concatenation rather than on the content.
     assert "before stopping" in footer, "the advice was dropped"
     assert "does not carry the conversation" not in footer, (
         "CORE-03: the footer still gives a reason that is no longer true"

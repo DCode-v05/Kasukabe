@@ -13,15 +13,10 @@ import re
 from dataclasses import dataclass
 
 
-# ---------------------------------------------------------------------------
-# Result types
-# ---------------------------------------------------------------------------
-
-
 @dataclass(frozen=True, slots=True)
 class SubcommandResult:
     raw: str
-    classification: str  # SEARCH / READ / WRITE / DESTRUCTIVE / UNKNOWN
+    classification: str
     destructive_warning: str | None = None
 
 
@@ -32,16 +27,8 @@ class CommandClassification:
     subcommands: tuple[SubcommandResult, ...]
 
 
-# ---------------------------------------------------------------------------
-# Classification priority (higher index = more dangerous)
-# ---------------------------------------------------------------------------
-
 PRIORITY = {"UNKNOWN": 0, "SEARCH": 1, "READ": 2, "WRITE": 3, "DESTRUCTIVE": 4}
 
-
-# ---------------------------------------------------------------------------
-# Preprocessing
-# ---------------------------------------------------------------------------
 
 SAFE_REDIRECTIONS = re.compile(
     r"[012]?>\s*/dev/null(?=\s|$)"
@@ -70,22 +57,19 @@ def strip_quotes(cmd: str) -> str:
     while i < n:
         c = cmd[i]
         if c == "'":
-            # Single-quoted string: no escapes, ends at next '
             i += 1
             while i < n and cmd[i] != "'":
                 i += 1
-            i += 1  # skip closing quote
+            i += 1
         elif c == '"':
-            # Double-quoted string: backslash escapes
             i += 1
             while i < n and cmd[i] != '"':
                 if cmd[i] == "\\" and i + 1 < n:
                     i += 2
                 else:
                     i += 1
-            i += 1  # skip closing quote
+            i += 1
         elif c == "\\" and i + 1 < n:
-            # Escaped character outside quotes — keep it
             result.append(cmd[i : i + 2])
             i += 2
         else:
@@ -176,13 +160,7 @@ def split_compound(cmd: str) -> list[str]:
     return segments
 
 
-# ---------------------------------------------------------------------------
-# Destructive patterns (16 core + Zsh threats)
-# ---------------------------------------------------------------------------
-
-# Each tuple: (compiled_regex, human-readable warning)
 DESTRUCTIVE_PATTERNS: list[tuple[re.Pattern[str], str]] = [
-    # Git data loss
     (re.compile(r"\bgit\s+reset\s+--hard\b", re.I), "git reset --hard discards uncommitted work"),
     (
         re.compile(r"\bgit\s+push\b[^;&|\n]*(--force-with-lease)\b", re.I),
@@ -212,18 +190,11 @@ DESTRUCTIVE_PATTERNS: list[tuple[re.Pattern[str], str]] = [
         re.compile(r"\bgit\s+branch\s+(-D\b|--delete\s+--force\b|--force\s+--delete\b)", re.I),
         "git branch force-delete removes branch",
     ),
-    # Git safety bypass
     (
         re.compile(r"\bgit\s+(commit|push|merge)\s+.*--no-verify\b", re.I),
         "--no-verify bypasses safety hooks",
     ),
     (re.compile(r"\bgit\s+commit\s+.*--amend\b", re.I), "git commit --amend rewrites last commit"),
-    # File deletion — path-based detection runs at permissions.py step 1.7
-    # (src/sandbox/dangerous_removal.py) as the primary gate when the
-    # FEATURE_DANGEROUS_REMOVAL flag is on (default). These flag-based
-    # patterns remain as a defense-in-depth fallback so that rolling back
-    # the new gate (FEATURE_DANGEROUS_REMOVAL=false) still surfaces the
-    # classic `rm -rf /` shape as DESTRUCTIVE for step-6 approval.
     (
         re.compile(r"(?:^|[;&|\n]\s*)rm\s+.*-[a-zA-Z]*r[a-zA-Z]*f", re.I),
         "rm -rf recursively force-deletes",
@@ -240,7 +211,6 @@ DESTRUCTIVE_PATTERNS: list[tuple[re.Pattern[str], str]] = [
         re.compile(r"(?:^|[;&|\n]\s*)rm\s+(?!.*-[a-zA-Z]*f).*-[a-zA-Z]*r", re.I),
         "rm -r recursively deletes",
     ),
-    # Database
     (
         re.compile(r"\b(DROP|TRUNCATE)\s+(TABLE|DATABASE|SCHEMA)\b", re.I),
         "DROP/TRUNCATE destroys database objects",
@@ -249,13 +219,10 @@ DESTRUCTIVE_PATTERNS: list[tuple[re.Pattern[str], str]] = [
         re.compile(r"\bDELETE\s+FROM\b(?!.*\bWHERE\b)", re.I),
         "DELETE FROM without WHERE deletes all rows",
     ),
-    # Infrastructure
     (re.compile(r"\bkubectl\s+delete\b", re.I), "kubectl delete removes cluster resources"),
     (re.compile(r"\bterraform\s+destroy\b", re.I), "terraform destroy tears down infrastructure"),
 ]
 
-# Pipe-to-shell patterns — checked pre-split on the full command since
-# compound splitting on | would separate the download from the shell.
 PIPE_TO_SHELL_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (
         re.compile(r"\b(curl|wget)\b.*\|\s*(sh|bash|zsh)\b", re.I),
@@ -263,7 +230,6 @@ PIPE_TO_SHELL_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     ),
 ]
 
-# Zsh-specific threats — all classified as DESTRUCTIVE
 ZSH_DANGEROUS_CMDS = (
     "zmodload",
     "emulate",
@@ -287,27 +253,16 @@ ZSH_DANGEROUS_CMDS = (
 ZSH_CMDS_PATTERN = re.compile(r"\b(" + "|".join(re.escape(c) for c in ZSH_DANGEROUS_CMDS) + r")\b")
 
 ZSH_PATTERNS: list[tuple[re.Pattern[str], str]] = [
-    # =cmd expansion (not == comparison, not VAR=val)
     (re.compile(r"(?<![=\w])=[a-zA-Z_]\w*"), "Zsh =cmd expansion can execute arbitrary commands"),
-    # Dangerous builtins
     (ZSH_CMDS_PATTERN, "Zsh builtin bypasses sandbox"),
-    # Process substitution
     (re.compile(r"<\(|>\(|=\("), "process substitution can execute hidden commands"),
-    # Glob qualifiers with code execution
     (re.compile(r"\(e:|(\(\+)"), "Zsh glob qualifier can execute code"),
-    # Always block
     (re.compile(r"\}\s*always\s*\{"), "Zsh always block alters control flow"),
-    # fc -e executes commands via editor substitution
     (re.compile(r"\bfc\s+-[a-zA-Z]*e"), "fc -e can execute arbitrary commands via editor"),
 ]
 
-# jq system() — checked against raw (pre-quote-stripped) command
 JQ_SYSTEM = re.compile(r"\bjq\b.*\bsystem\s*\(", re.I)
 
-
-# ---------------------------------------------------------------------------
-# Write patterns
-# ---------------------------------------------------------------------------
 
 WRITE_PATTERNS = re.compile(
     r"("
@@ -320,9 +275,6 @@ WRITE_PATTERNS = re.compile(
     r"|\bchmod\s"
     r"|\bchown\s"
     r"|\bgit\s+(commit|add|stash|merge|rebase|cherry-pick)\b"
-    # `sed -i` intentionally absent: sed is classified by the permission
-    # pipeline's step 4.5 validator (src/sandbox/sed_validation.py), which
-    # understands full expression semantics instead of matching a prefix.
     r"|\bpatch\s"
     r"|\b(npm|pip|cargo|go)\s+install\b"
     r")",
@@ -330,29 +282,17 @@ WRITE_PATTERNS = re.compile(
 )
 
 
-# ---------------------------------------------------------------------------
-# Read patterns
-# ---------------------------------------------------------------------------
-
 READ_PATTERNS = re.compile(
     r"^\s*git\s+(status|log|diff|show|branch|remote|tag|describe|rev-parse|shortlog)\b",
     re.I,
 )
 
 
-# ---------------------------------------------------------------------------
-# Search patterns
-# ---------------------------------------------------------------------------
-
 SEARCH_PATTERNS = re.compile(
     r"^\s*(grep|find|ls|cat|head|tail|wc|rg|ag|fd|which|type|echo|printf|file|stat|du|df)\b",
     re.I,
 )
 
-
-# ---------------------------------------------------------------------------
-# Cross-subcommand compound rules
-# ---------------------------------------------------------------------------
 
 CD_CMD = re.compile(r"^\s*cd\s", re.I)
 GIT_CMD = re.compile(r"\bgit\b", re.I)
@@ -361,35 +301,25 @@ WRITE_TO_GIT_INTERNALS = re.compile(
 )
 
 
-# ---------------------------------------------------------------------------
-# Single-command classifier
-# ---------------------------------------------------------------------------
-
-
 def classify_single(cmd: str) -> SubcommandResult:
     """Classify a single (non-compound) command."""
     raw = cmd
-    # Preprocessing
     cleaned = strip_safe_redirections(cmd)
-    # Keep pre-quote-stripped version for jq check
     pre_quote = cleaned
     stripped = strip_quotes(cleaned)
 
-    # Destructive patterns
     for pattern, warning in DESTRUCTIVE_PATTERNS:
         if pattern.search(stripped):
             return SubcommandResult(
                 raw=raw, classification="DESTRUCTIVE", destructive_warning=warning
             )
 
-    # Zsh threats
     for pattern, warning in ZSH_PATTERNS:
         if pattern.search(stripped):
             return SubcommandResult(
                 raw=raw, classification="DESTRUCTIVE", destructive_warning=warning
             )
 
-    # jq system() — check raw (pre-quote-stripped) since jq expressions are in quotes
     if JQ_SYSTEM.search(pre_quote):
         return SubcommandResult(
             raw=raw,
@@ -397,24 +327,16 @@ def classify_single(cmd: str) -> SubcommandResult:
             destructive_warning="jq system() executes shell commands",
         )
 
-    # Write patterns
     if WRITE_PATTERNS.search(stripped):
         return SubcommandResult(raw=raw, classification="WRITE")
 
-    # Read patterns
     if READ_PATTERNS.match(stripped):
         return SubcommandResult(raw=raw, classification="READ")
 
-    # Search patterns
     if SEARCH_PATTERNS.match(stripped):
         return SubcommandResult(raw=raw, classification="SEARCH")
 
     return SubcommandResult(raw=raw, classification="UNKNOWN")
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 
 
 def classify_command(command: str) -> CommandClassification:
@@ -430,8 +352,6 @@ def classify_command(command: str) -> CommandClassification:
             subcommands=(),
         )
 
-    # Pre-split check: pipe-to-shell patterns must be checked on the full
-    # command before splitting on | would separate curl/wget from sh/bash.
     full_stripped = strip_quotes(strip_safe_redirections(command))
     for pattern, warning in PIPE_TO_SHELL_PATTERNS:
         if pattern.search(full_stripped):
@@ -448,7 +368,6 @@ def classify_command(command: str) -> CommandClassification:
     segments = split_compound(command)
     results = [classify_single(seg) for seg in segments]
 
-    # Cross-subcommand escalation rules
     has_cd = any(CD_CMD.match(r.raw) for r in results)
     has_git = any(GIT_CMD.search(r.raw) for r in results)
     has_write_to_git = any(WRITE_TO_GIT_INTERNALS.search(r.raw) for r in results)
@@ -460,14 +379,12 @@ def classify_command(command: str) -> CommandClassification:
         compound_warning = "writing to .git internals alongside git execution"
 
     if compound_warning:
-        # Override to DESTRUCTIVE
         return CommandClassification(
             classification="DESTRUCTIVE",
             destructive_warning=compound_warning,
             subcommands=tuple(results),
         )
 
-    # Find highest danger level
     best = results[0]
     for r in results[1:]:
         if PRIORITY.get(r.classification, 0) > PRIORITY.get(best.classification, 0):

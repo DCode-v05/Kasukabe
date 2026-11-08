@@ -67,15 +67,6 @@ def _promises_no_surcharge(description: str) -> bool:
     """
     if re.search(r"costs \d+ sim more than its steps", description):
         return False
-    # PROG-02. The digitless phrasing, which this predicate did not
-    # catch and which survived in `action_costs.SCHEDULE_TABLE`'s
-    # `toolify` row long after TOOL-06 removed the charge it described:
-    # "priced as an unknown verb, which costs more than its steps did".
-    # Cost disclosure appends that row to the served blurb, so the text a
-    # resident reads promised the wrapper was free in one sentence and
-    # dearer than its parts in the next - while this guard, looking only
-    # for a number, reported agreement. A predicate that can only see one
-    # spelling of the lie is a guard that cannot fail on the other.
     if re.search(r"more than its steps", description):
         return False
     return "the wrapper itself is free" in description

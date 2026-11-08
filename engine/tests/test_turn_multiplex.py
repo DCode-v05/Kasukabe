@@ -198,7 +198,6 @@ class TestTerminalDone:
         payload = [
             json.loads(i.split("data: ", 1)[1].strip()) for i in items if isinstance(i, str)
         ][0]["payload"]
-        # One failed segment must be visible, not averaged away.
         assert [s["status"] for s in payload["segments"]] == ["completed", "failed"]
 
 
@@ -258,7 +257,6 @@ class TestReplayRoute:
         body = resp.text
         assert body.count("event: block") == 3
         assert '"replayed": 3' in body
-        # The engine-origin block survived replay, and still reads as engine-origin.
         assert '"thread_id": null' in body
 
     @pytest.mark.asyncio
@@ -318,7 +316,6 @@ class TestEndOfTurnReviewIsHonest:
     def test_outcome_is_consumed_once(self):
         server.record_thread_failure("thread-b")
         assert server.segment_outcome("thread-b")["status"] == "failed"
-        # A later turn on the same thread starts clean rather than inheriting.
         assert server.segment_outcome("thread-b")["status"] == "completed"
 
     def test_a_thread_with_no_signal_reports_completed(self):
@@ -433,7 +430,6 @@ class TestFailureWindowIsBounded:
         for i in range(server.FAILED_THREAD_WINDOW + 50):
             server.record_thread_failure(f"thread-{i}")
         assert len(server.failed_threads) <= server.FAILED_THREAD_WINDOW
-        # The most recent failures are the ones still worth reporting.
         assert f"thread-{server.FAILED_THREAD_WINDOW + 49}" in server.failed_threads
 
 

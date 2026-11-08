@@ -129,7 +129,7 @@ class TestReaperExemption:
         await store.ensure_conversation("old-plain")
         await store.ensure_conversation("fresh")
         await store.set_pinned("old-pinned", True)
-        await backdate(db, "old-pinned", 200_000)  # far past the 24h TTL
+        await backdate(db, "old-pinned", 200_000)
         await backdate(db, "old-plain", 200_000)
 
         deleted = await store.cleanup_expired(86400)
@@ -185,7 +185,7 @@ class TestWaitingInputExemption:
         pause = asyncio.create_task(
             coord.await_block_input({"question": "q?", "format": "text"})
         )
-        await asyncio.sleep(0.2)  # 4x the unpinned cutoff
+        await asyncio.sleep(0.2)
         assert coord.pending_inputs, "pinned wait must still be parked"
         block_id = next(iter(coord.pending_inputs))
         owner, resumed = await coord.resume_block("t1", block_id, value="answer", text="")
@@ -198,7 +198,7 @@ class TestCheckpointExemption:
     async def test_pinned_checkpoint_outlives_expiry(self, db):
         mgr = ResumeStateManager(db)
         state = ResumeState(charter_id="ch-pinned", thread_id="t1")
-        await mgr.write_checkpoint(state, ttl=-1, pinned=True)  # already "expired"
+        await mgr.write_checkpoint(state, ttl=-1, pinned=True)
 
         assert (await mgr.read_checkpoint("ch-pinned")) is not None
         await mgr.cleanup_expired()
@@ -286,7 +286,6 @@ class TestCheckpointWiring:
         thread.conversation_store = store
         thread.resume_state_mgr = ResumeStateManager(db)
 
-        # The exact sequence thread.execute() runs at its checkpoint seam.
         pinned = await thread.conversation_store.is_pinned("t1")
         await thread.resume_state_mgr.write_checkpoint(
             ResumeState(charter_id="ch-live", thread_id="t1"), ttl=-1, pinned=pinned

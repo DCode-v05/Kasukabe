@@ -102,11 +102,6 @@ def main(argv: list[str] | None = None) -> int:
         r for r in findings.failed if (r.area, r.item) not in baseline
     ]
 
-    # The gate is a ratchet, not a target. A failure that is already in the
-    # lock is a known, recorded debt - it is in `docs/proof/FINDINGS.md`
-    # with a name, and holding the build red for it would only teach the
-    # team to bypass the build. What must never pass is a row going
-    # backwards, or a new failure appearing.
     for r in went_backwards:
         print(
             f"  REGRESSED {r.area}/{r.item}: "

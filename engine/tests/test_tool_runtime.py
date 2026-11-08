@@ -26,9 +26,6 @@ def make_tool(**overrides) -> ToolDef:
     return ToolDef(**base)
 
 
-# ── Default and static fallback ──────────────────────────
-
-
 def test_default_interrupt_behavior_is_block():
     tool = make_tool()
     assert tool.get_interrupt_behavior() == InterruptBehavior.BLOCK
@@ -38,9 +35,6 @@ def test_static_cancel_returned_when_fn_none():
     tool = make_tool(interrupt_behavior=InterruptBehavior.CANCEL)
     assert tool.interrupt_behavior_fn is None
     assert tool.get_interrupt_behavior() == InterruptBehavior.CANCEL
-
-
-# ── Runtime fn takes precedence ──────────────────────────
 
 
 def test_runtime_fn_returns_cancel_overrides_static_block():
@@ -80,8 +74,6 @@ def test_runtime_fn_receives_tool_input_and_can_vary_per_call():
     the whole reason the runtime path exists on top of the static field."""
 
     def choose(tool_input: dict) -> InterruptBehavior:
-        # Bash with an explicit timeout is safe to cancel; uncapped bash
-        # stays BLOCK so the user cannot yank a long-running file write.
         return InterruptBehavior.CANCEL if "timeout" in tool_input else InterruptBehavior.BLOCK
 
     tool = make_tool(name="bash", interrupt_behavior_fn=choose)
@@ -103,18 +95,14 @@ def test_runtime_fn_with_none_input_passes_empty_dict():
     assert received == [{}]
 
 
-# ── Fail-safe fallback on exception ──────────────────────
-
-
 def test_runtime_fn_exception_falls_back_to_block():
     def boom(input: dict) -> InterruptBehavior:
         raise RuntimeError("broken tool declaration")
 
     tool = make_tool(
-        interrupt_behavior=InterruptBehavior.CANCEL,  # static says cancel
+        interrupt_behavior=InterruptBehavior.CANCEL,
         interrupt_behavior_fn=boom,
     )
-    # Fail-safe: exception returns BLOCK regardless of static value.
     assert tool.get_interrupt_behavior({}) == InterruptBehavior.BLOCK
 
 
@@ -123,7 +111,6 @@ def test_runtime_fn_exception_is_caught_not_raised():
         raise ValueError("nope")
 
     tool = make_tool(interrupt_behavior_fn=boom)
-    # Must not raise out of the query — executor needs a safe answer.
     result = tool.get_interrupt_behavior({})
     assert result == InterruptBehavior.BLOCK
 

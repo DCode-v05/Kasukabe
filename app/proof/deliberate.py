@@ -23,7 +23,6 @@ declaration here helps nobody.
 
 from __future__ import annotations
 
-#: signature -> (the parameter the refusal must name, why the town refuses it)
 DECLARED: dict[str, tuple[str, str]] = {
     "sell(business_id, item, quantity, unit_price_sim)": (
         "unit_price_sim",

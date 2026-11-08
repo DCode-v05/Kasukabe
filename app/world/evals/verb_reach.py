@@ -54,11 +54,6 @@ SCENARIO_ROOT = Path(__file__).resolve().parent / "scenarios"
 
 DEFAULT_SAMPLES = 20
 
-# Fixed here, before any run measured against them, and not movable after a
-# result is seen - Build Spec v2 section 10.4. 60% is the same bar G1 holds
-# for the human reply floor, and the reasoning is the same: a verb reached
-# less often than that in its OWN canonical situation will not be reached
-# in a live morning.
 THRESHOLDS: dict[str, dict[str, float]] = {
     "positive": {"reach": 0.60, "params_right": 0.80, "misfire": 0.20},
     "near_miss": {"reach": 0.60, "params_right": 0.80, "misfire": 0.20},
@@ -66,17 +61,11 @@ THRESHOLDS: dict[str, dict[str, float]] = {
     "after_refusal": {"refusal_recovery": 0.50},
 }
 
-# Verbs that only LOOK. A resident who looks before it acts is behaving
-# well, and counting that against it would punish exactly the caution the
-# town wants. Only a world-CHANGING verb called instead of the target is a
-# misfire.
 OBSERVATION_VERBS = frozenset({
     "look_around", "list_places", "describe_place", "describe_person",
     "describe_primitives", "quote_action_cost", "find_people", "read_will",
     "recall_memories", "recall_session_log",
 })
-# Speech is not a rival action either: saying "thirty-six for three planks"
-# and then trading is one intention, not two.
 SPEECH_VERBS = frozenset({"say", "start_conversation"})
 
 
@@ -93,24 +82,8 @@ class Scenario:
     recent_speech: list[dict[str, str]]
     open_question_to_me: str | None
     expect: dict[str, Any]
-    # TOOL-31. Tools this resident has ALREADY written, seeded into the
-    # registry before the situation is rendered. Until this existed every
-    # authoring scenario began from an empty library, which asks only
-    # whether a resident writes a first tool - never whether it builds on
-    # the one it wrote yesterday, which is the whole of compounding.
     already_wrote: list[dict[str, Any]] = field(default_factory=list)
-    # The authoring hint a live resident reads once it has repeated a job,
-    # as {"what": "'harvest' then 'craft'", "times": 4}. Omitted, the
-    # situation shows the tool DESCRIPTIONS alone - which is what the L1
-    # run of 2026-09-12 measured, and four of its five repetition
-    # scenarios scored 0% reach. A resident in a live run at that point
-    # has also been told, in the perception, that it keeps doing this.
     shows_authoring_hint: dict[str, Any] | None = None
-    # Who the resident is in an open conversation with, one-to-one or a
-    # group. `buy` is OFFERED only while a resident is in one (operator's
-    # rule, 2026-09-21; `registry.CONVERSATION_ENABLED_TOOLS`), so a
-    # scenario that wants `buy` in the model's hands has to say who it is
-    # talking to - exactly as a live resident would have to be.
     in_conversation_with: list[str] = field(default_factory=list)
 
 
@@ -123,24 +96,6 @@ class ScoreCard:
     refusal_recovery: float | None
 
 
-# EVAL-08's other half, and W-6's acceptance test. Every registered verb
-# either has scenarios or is named here with a reason, so a tool cannot
-# ship unmeasured in silence - which is how `toolify`, `do_in_order` and
-# `buy_energy` each reached a live run with nobody having asked whether a
-# resident would reach for them.
-#
-# This is NOT a to-do list. Writing a scenario means stating the situation
-# a verb exists for, and guessing at that is precisely what EVAL-08 refuses
-# to do. Four reasons a verb belongs here:
-#
-#   * GOVERNMENT-namespace and invisible until a seat is filled, which no
-#     run has ever done (`set_tax_rate`, `table_amendment`, `convene`, ...);
-#   * an answer to a refusal rather than a decision (`revise_skill`,
-#     `retire_goal`, `update_goal`, `drop_intention`);
-#   * the other end of a two-sided act whose first half is covered
-#     (`fire_employee`, `leave_org`, `withdraw_item`, `deposit_to_till`);
-#   * a life event the town has never reached (`come_of_age`, `marry`,
-#     `ask_for_a_child`, `read_will`, `set_will`).
 UNCOVERED_BY_DESIGN: tuple[str, ...] = (
     "admit_to_org", "appoint_police", "approve_patent", "arrest",
     "ask_for_a_child", "auction_land", "build_structure", "come_of_age",
@@ -241,17 +196,11 @@ def score_samples(scenario: Scenario, samples: list[dict[str, Any]]) -> ScoreCar
             reached += 1
             first = next(c for c in calls if c.get("tool") == wanted)
             got = first.get("params") or {}
-            # `"*"` asks whether the power was used at all, not for an exact
-            # value: "it passed a `returns` block" is checkable, and "it
-            # passed THIS returns block" would be a guess at the model's
-            # wording dressed up as a bar.
             if all(
                 bool(got.get(k)) if v == "*" else str(got.get(k)) == str(v)
                 for k, v in must_include.items()
             ):
                 params_ok += 1
-        # A world-changing verb that is not the target, called BEFORE the
-        # target if the target came at all.
         rivals = [
             name for name in names
             if name and name != wanted
@@ -293,9 +242,6 @@ def verdict(scenario: Scenario, card: ScoreCard) -> bool:
     return True
 
 
-# ── putting the resident in the situation ─────────────────────────────
-
-
 def soul_seed_for(resident: str) -> str:
     """The resident's own persona, as the engine writes it to persona.txt.
 
@@ -320,36 +266,6 @@ def soul_seed_for(resident: str) -> str:
             if raw.get("agent_id") != resident:
                 continue
             agent = RichGenesisAgent.model_validate(raw)
-            # EXACTLY the order run_genesis writes to persona.txt:
-            # persona first, law of the town last. The first draft of this
-            # had them reversed and scored eight fewer scenarios - `trade`
-            # fell from 80% reach to 40% - because a prompt that ends on
-            # "Internally, you are generous but proud" leaves a model
-            # composing a character, and one that ends on "only a tool call
-            # reaches the world" leaves it acting. A harness whose prompt
-            # differs from the resident's by so much as an ordering is
-            # measuring a prompt nobody is ever given.
-            #
-            # EVAL-06, and a gap CORE-16 opened WHILE FIXING SOMETHING
-            # ELSE. `run_genesis` now writes persona.txt as three parts,
-            # not two: persona, then THE TOWN ROSTER, then the soul seed.
-            # The roster was moved out of the per-tick standing brief and
-            # into the once-written seed because re-sending it every tick
-            # costs O(residents) tokens per resident per tick.
-            #
-            # This harness kept composing two parts, so from that change
-            # onward it measured a resident who did not know anybody else
-            # existed - and the roster exists precisely because a resident
-            # without it reaches for names off the map's buildings
-            # (Tobias hailing "Harvey" and "Isabella", Bram walking to
-            # "sh_silva", none of whom are in the run). A `trade` or
-            # `sell` scenario scored against a model with no idea who the
-            # town contains is not a measurement of trade.
-            #
-            # `test_the_system_prompt_is_byte_identical_to_persona_dot_txt`
-            # pins the FIRST and LAST part of that composition, which is
-            # what the ordering finding was about; it does not pin the
-            # middle, so nothing caught this.
             return "\n\n".join([
                 build_persona_prompt(agent),
                 _town_roster_text(agent, resident),
@@ -426,10 +342,6 @@ def _town_roster_text(agent: Any, resident: str) -> str:
                 continue
             other_name = raw.get("name") or other_id
             trade = str(raw.get("occupation") or "").replace("_", " ")
-            # "Marta Thorne (n07), baker" - `GenesisRunner.roster_entry`'s
-            # shape, which now carries the id. A scenario whose roster
-            # omitted it would measure a resident that cannot name anybody
-            # who is not in the room, which is not the town's resident.
             entry = f"{other_name} ({other_id})"
             entry = f"{entry}, {trade}" if trade else entry
             if mine and raw.get("household_id") == mine:
@@ -463,9 +375,6 @@ async def render_situation(scenario: Scenario) -> tuple[str, list[dict[str, Any]
     world, registry = await build_world(genesis_tick=0, seed=1)
     _seed_what_the_resident_already_wrote(world, registry, scenario)
 
-    # The tools a LIVE resident in this situation would be handed - not
-    # every tool the town has. `buy` is offered only in a conversation, so
-    # a harness that always served it would measure a resident no run has.
     from world.tools.registry import CONVERSATION_ENABLED_TOOLS
 
     schemas = [
@@ -494,15 +403,7 @@ async def render_situation(scenario: Scenario) -> tuple[str, list[dict[str, Any]
     text = render_perception_text(
         perception,
         depth=RetrievalDepthConfig(),
-        # EVAL-06: the NAME and the TRADE, not the unit id.
-        #
-        # This passed `scenario.resident` - "n09" - so the brief told the
-        # model it was a unit number while the run tells it "You are
-        # Corwin Thorne, the town's forester". A harness that introduces
-        # the resident differently from the way the town does is measuring
-        # a different resident.
         self_brief=_self_brief_for(scenario),
-        # The conversation line a live resident reads when it is in one.
         conversation=(
             {"conversation_id": "eval-conversation", "topic": "",
              "participants": [scenario.resident, *scenario.in_conversation_with],
@@ -515,9 +416,6 @@ async def render_situation(scenario: Scenario) -> tuple[str, list[dict[str, Any]
     if scenario.open_question_to_me:
         text += f"\n\nSaid to you, and not yet answered: {scenario.open_question_to_me}"
     if scenario.shows_authoring_hint:
-        # The live wording, from the world's own function - never a
-        # paraphrase. EVAL-06 cost this project one whole L1 run by
-        # measuring a prompt no resident is given.
         from world.tools.state import authoring_hint_text
 
         shown = scenario.shows_authoring_hint
@@ -525,10 +423,6 @@ async def render_situation(scenario: Scenario) -> tuple[str, list[dict[str, Any]
         text += "\n\n" + authoring_hint_text(
             shown["what"],
             int(shown["times"]),
-            # Optional so every scenario written before run 29 renders
-            # exactly the text it was scored against. A scenario that
-            # omits these is still measuring the description-plus-verbs
-            # hint, which is the thing 0% was measured on.
             decisions=(
                 int(shown["decisions"]) if shown.get("decisions") is not None else None
             ),
@@ -641,9 +535,6 @@ def ask_model(
             break
         calls.extend({"tool": c["tool"], "params": c["params"]} for c in step_calls)
 
-        # A world-changing call ends the turn: the real dispatch would have
-        # moved goods or money, and asking again would be measuring a world
-        # that no longer exists.
         if any(c["tool"] not in OBSERVATION_VERBS for c in step_calls):
             break
 
@@ -687,27 +578,6 @@ def run(scenarios: list[Scenario], samples: int, record_into: str = "") -> int:
     failures = 0
     for scenario in scenarios:
         prompt, schemas = asyncio.run(render_situation(scenario))
-        # Off by default, and this is a finding rather than a shortcut.
-        #
-        # The spec asks for "the real soul seed for that resident" and the
-        # obvious reading - hand it to the model as a `system` string -
-        # MAKES EVERY SCORE WORSE. Measured, same scenarios, same model,
-        # five samples: 21 of 37 scenarios pass with no system prompt, 13
-        # with persona-then-law, 12 with law-then-persona, and `trade`
-        # falls from 80% reach to 0%.
-        #
-        # It cannot be that a persona stops a resident acting: run 22 made
-        # 282 tool calls with personas loaded. So the fault is in the
-        # DELIVERY here, not the persona - live, the text is a registered
-        # prompt section that thread.py composes a full system prompt
-        # around, and a bare `system` string is a different prompt wearing
-        # the same words. A harness that sends a prompt no resident is ever
-        # given measures nothing about the town.
-        #
-        # Until this harness can borrow the engine's own composition, it
-        # measures a DESCRIPTION against a bare situation, which is what it
-        # was built for and what it does honestly. KASUKABE_L1_PERSONA=1
-        # runs the other way for anyone continuing this.
         system = soul_seed_for(scenario.resident) if os.environ.get(
             "KASUKABE_L1_PERSONA"
         ) else ""
@@ -719,8 +589,6 @@ def run(scenarios: list[Scenario], samples: int, record_into: str = "") -> int:
         if record_into:
             recorded = record_scorecard(record_into, scenario.name, scenario.kind, card, passed=ok)
             if not recorded:
-                # The number is still the number; say the row did not land
-                # rather than letting the operator assume it did.
                 print(f"       (could not record {scenario.name} in {record_into})")
         mark = "PASS" if ok else "FAIL"
         recovery = (
@@ -744,8 +612,6 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description="L1 verb-reach evaluation.")
     parser.add_argument("tools", nargs="*", help="only these tools (default: all)")
     parser.add_argument("--samples", type=int, default=DEFAULT_SAMPLES)
-    # Re-measuring ONE scenario after changing a description is the loop this
-    # harness exists for, and it cost a whole run of every scenario to do.
     parser.add_argument("--only", default="", help="only scenarios whose name contains this")
     parser.add_argument(
         "--record-into", default="",

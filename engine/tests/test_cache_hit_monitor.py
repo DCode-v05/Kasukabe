@@ -33,16 +33,10 @@ from src.engine_core.events import CacheHitRatioAlert
 from src.herald.types import StopReason, StreamEvent, ToolCall, Usage
 
 
-# ── Helpers ────────────────────────────────────────────────────────
-
-
 def healthy_turn(monitor: CacheHitMonitor, turn: int) -> None:
     """Feed a turn with a healthy 80% cache hit ratio — expects no alerts."""
     alerts = monitor.observe_turn(turn=turn, cache_read=8000, cache_create=1000, uncached=1000)
     assert alerts == [], f"Expected no alerts on healthy turn {turn}, got {alerts}"
-
-
-# ── No-alert cases ─────────────────────────────────────────────────
 
 
 class TestNoAlert:
@@ -56,7 +50,6 @@ class TestNoAlert:
         m = CacheHitMonitor()
         healthy_turn(m, turn=1)
         alerts = m.observe_turn(turn=2, cache_read=5000, cache_create=0, uncached=5000)
-        # ratio = 5000/10000 = 0.50, which equals the threshold, so no alert.
         ratio_low = [a for a in alerts if a.alert_type == CacheAlertType.RATIO_LOW]
         assert ratio_low == []
 
@@ -72,27 +65,21 @@ class TestNoAlert:
         """Exactly 10% drop should NOT trigger (threshold is strictly >10%)."""
         m = CacheHitMonitor()
         m.observe_turn(turn=1, cache_read=10000, cache_create=0, uncached=0)
-        # 10% drop = 9000 tokens remaining, absolute drop = 1000 (< 2000 anyway)
         alerts = m.observe_turn(turn=2, cache_read=9000, cache_create=0, uncached=0)
         prefix = [a for a in alerts if a.alert_type == CacheAlertType.PREFIX_UNSTABLE]
         assert prefix == []
-
-
-# ── RATIO_LOW alerts ───────────────────────────────────────────────
 
 
 class TestRatioLow:
     def test_ratio_low_fires_from_turn_2(self):
         m = CacheHitMonitor()
         healthy_turn(m, turn=1)
-        # Turn 2: ratio = 1000 / (1000 + 0 + 9000) = 10%
         alerts = m.observe_turn(turn=2, cache_read=1000, cache_create=0, uncached=9000)
         types = [a.alert_type for a in alerts]
         assert CacheAlertType.RATIO_LOW in types
 
     def test_ratio_low_not_fired_on_turn_1(self):
         m = CacheHitMonitor()
-        # Even with terrible ratio, turn 1 must not fire RATIO_LOW
         alerts = m.observe_turn(turn=1, cache_read=100, cache_create=0, uncached=9900)
         ratio_low = [a for a in alerts if a.alert_type == CacheAlertType.RATIO_LOW]
         assert ratio_low == []
@@ -114,27 +101,22 @@ class TestRatioLow:
         assert ratio_low.cache_read == 1000
         assert ratio_low.cache_create == 500
         assert ratio_low.uncached == 8500
-        assert ratio_low.message  # non-empty
+        assert ratio_low.message
 
     def test_ratio_low_not_fired_when_no_cached_tokens(self):
         """If neither cache_read nor cache_create > 0, skip the ratio alert
         (nothing was ever submitted for caching — no signal to act on)."""
         m = CacheHitMonitor()
         healthy_turn(m, turn=1)
-        # All uncached — ratio = 0/10000 = 0 but cache_read + cache_create == 0
         alerts = m.observe_turn(turn=2, cache_read=0, cache_create=0, uncached=10000)
         ratio_low = [a for a in alerts if a.alert_type == CacheAlertType.RATIO_LOW]
         assert ratio_low == []
-
-
-# ── PREFIX_UNSTABLE alerts ─────────────────────────────────────────
 
 
 class TestPrefixUnstable:
     def test_prefix_unstable_fires_on_large_drop(self):
         m = CacheHitMonitor()
         m.observe_turn(turn=1, cache_read=10000, cache_create=0, uncached=0)
-        # Drop from 10000 to 0 — 100% drop, 10000 absolute (well over 2000)
         alerts = m.observe_turn(turn=2, cache_read=0, cache_create=0, uncached=10000)
         types = [a.alert_type for a in alerts]
         assert CacheAlertType.PREFIX_UNSTABLE in types
@@ -142,7 +124,6 @@ class TestPrefixUnstable:
     def test_prefix_unstable_fires_on_11_pct_drop_above_floor(self):
         m = CacheHitMonitor()
         m.observe_turn(turn=1, cache_read=50000, cache_create=0, uncached=0)
-        # ~12% drop = 6000 tokens (above 2000 floor)
         alerts = m.observe_turn(turn=2, cache_read=44000, cache_create=0, uncached=0)
         types = [a.alert_type for a in alerts]
         assert CacheAlertType.PREFIX_UNSTABLE in types
@@ -179,23 +160,15 @@ class TestPrefixUnstable:
         assert prefix == []
 
 
-# ── Both alerts simultaneously ────────────────────────────────────
-
-
 class TestBothAlerts:
     def test_both_fire_on_large_drop_with_low_ratio(self):
         m = CacheHitMonitor()
-        # Turn 1: establish high baseline
         m.observe_turn(turn=1, cache_read=10000, cache_create=0, uncached=0)
-        # Turn 2: drop to 200 (98% drop, 9800 absolute) with very low ratio
         alerts = m.observe_turn(turn=2, cache_read=200, cache_create=0, uncached=9800)
         types = {a.alert_type for a in alerts}
         assert CacheAlertType.PREFIX_UNSTABLE in types
         assert CacheAlertType.RATIO_LOW in types
         assert len(alerts) == 2
-
-
-# ── Zero-token safety ─────────────────────────────────────────────
 
 
 class TestZeroTokens:
@@ -208,11 +181,7 @@ class TestZeroTokens:
         m = CacheHitMonitor()
         m.observe_turn(turn=1, cache_read=0, cache_create=0, uncached=0)
         alerts = m.observe_turn(turn=2, cache_read=0, cache_create=0, uncached=0)
-        # cache_read + cache_create == 0 → no RATIO_LOW; prev == 0 → no PREFIX
         assert alerts == []
-
-
-# ── State isolation ───────────────────────────────────────────────
 
 
 class TestStateIsolation:
@@ -223,7 +192,6 @@ class TestStateIsolation:
         m1.observe_turn(turn=1, cache_read=10000, cache_create=0, uncached=0)
         m2.observe_turn(turn=1, cache_read=10000, cache_create=0, uncached=0)
 
-        # Drop m1 but not m2
         alerts_m1 = m1.observe_turn(turn=2, cache_read=0, cache_create=0, uncached=10000)
         alerts_m2 = m2.observe_turn(turn=2, cache_read=10000, cache_create=0, uncached=0)
 
@@ -234,16 +202,11 @@ class TestStateIsolation:
         """The monitor tracks only the immediate previous turn, not a rolling max."""
         m = CacheHitMonitor()
         m.observe_turn(turn=1, cache_read=10000, cache_create=0, uncached=0)
-        # Turn 2: drop 50% — fires PREFIX_UNSTABLE (5000 absolute > 2000)
         alerts2 = m.observe_turn(turn=2, cache_read=5000, cache_create=0, uncached=5000)
         assert any(a.alert_type == CacheAlertType.PREFIX_UNSTABLE for a in alerts2)
-        # Turn 3: same as turn 2 — prev is now 5000, no drop
         alerts3 = m.observe_turn(turn=3, cache_read=5000, cache_create=0, uncached=5000)
         prefix3 = [a for a in alerts3 if a.alert_type == CacheAlertType.PREFIX_UNSTABLE]
         assert prefix3 == []
-
-
-# ── Fix 1: Absolute token threshold ──────────────────────────────
 
 
 class TestAbsoluteTokenThreshold:
@@ -275,13 +238,9 @@ class TestAbsoluteTokenThreshold:
         """1999 tokens dropped (just below floor) should NOT fire."""
         m = CacheHitMonitor()
         m.observe_turn(turn=1, cache_read=10000, cache_create=0, uncached=0)
-        # 10000 → 8001 = 1999 drop (19.99%), above 10% but below 2000 floor
         alerts = m.observe_turn(turn=2, cache_read=8001, cache_create=0, uncached=0)
         prefix = [a for a in alerts if a.alert_type == CacheAlertType.PREFIX_UNSTABLE]
         assert prefix == []
-
-
-# ── Fix 2: Compaction suppression ─────────────────────────────────
 
 
 class TestCompactionSuppression:
@@ -290,7 +249,6 @@ class TestCompactionSuppression:
         m = CacheHitMonitor()
         m.observe_turn(turn=1, cache_read=10000, cache_create=0, uncached=0)
         m.suppress_next_drop()
-        # Massive drop — would normally fire but is suppressed
         alerts = m.observe_turn(turn=2, cache_read=0, cache_create=0, uncached=10000)
         prefix = [a for a in alerts if a.alert_type == CacheAlertType.PREFIX_UNSTABLE]
         assert prefix == []
@@ -300,9 +258,7 @@ class TestCompactionSuppression:
         m = CacheHitMonitor()
         m.observe_turn(turn=1, cache_read=10000, cache_create=0, uncached=0)
         m.suppress_next_drop()
-        # Turn 2: suppressed — no alert, baseline resets to 5000
         m.observe_turn(turn=2, cache_read=5000, cache_create=0, uncached=5000)
-        # Turn 3: another drop, NOT suppressed — should fire
         alerts = m.observe_turn(turn=3, cache_read=1000, cache_create=0, uncached=9000)
         prefix = [a for a in alerts if a.alert_type == CacheAlertType.PREFIX_UNSTABLE]
         assert len(prefix) == 1
@@ -312,9 +268,7 @@ class TestCompactionSuppression:
         m = CacheHitMonitor()
         m.observe_turn(turn=1, cache_read=10000, cache_create=0, uncached=0)
         m.suppress_next_drop()
-        # Turn 2: suppressed, cache_read=3000 becomes new baseline
         m.observe_turn(turn=2, cache_read=3000, cache_create=0, uncached=7000)
-        # Turn 3: 3000 → 2800 = 200 drop (6.7%), below threshold — no alert
         alerts = m.observe_turn(turn=3, cache_read=2800, cache_create=0, uncached=7200)
         prefix = [a for a in alerts if a.alert_type == CacheAlertType.PREFIX_UNSTABLE]
         assert prefix == []
@@ -331,14 +285,10 @@ class TestCompactionSuppression:
         m = CacheHitMonitor()
         m.observe_turn(turn=1, cache_read=10000, cache_create=0, uncached=0)
         m.suppress_next_drop()
-        # Suppressed turn with terrible ratio — PREFIX suppressed but RATIO_LOW fires
         alerts = m.observe_turn(turn=2, cache_read=100, cache_create=100, uncached=9800)
         types = [a.alert_type for a in alerts]
         assert CacheAlertType.PREFIX_UNSTABLE not in types
         assert CacheAlertType.RATIO_LOW in types
-
-
-# ── Fix 3: TTL-awareness ──────────────────────────────────────────
 
 
 class TestTTLAwareness:
@@ -359,7 +309,7 @@ class TestTTLAwareness:
             cache_read=0,
             cache_create=0,
             uncached=10000,
-            elapsed_ms=60_000,  # 1 minute
+            elapsed_ms=60_000,
         )
         prefix = next(a for a in alerts if a.alert_type == CacheAlertType.PREFIX_UNSTABLE)
         assert "TTL" not in prefix.message
@@ -373,7 +323,7 @@ class TestTTLAwareness:
             cache_read=0,
             cache_create=0,
             uncached=10000,
-            elapsed_ms=CACHE_TTL_5MIN_MS + 1000,  # just over 5 min
+            elapsed_ms=CACHE_TTL_5MIN_MS + 1000,
         )
         prefix = next(a for a in alerts if a.alert_type == CacheAlertType.PREFIX_UNSTABLE)
         assert "5min TTL" in prefix.message
@@ -387,7 +337,7 @@ class TestTTLAwareness:
             cache_read=0,
             cache_create=0,
             uncached=10000,
-            elapsed_ms=CACHE_TTL_1HOUR_MS + 1000,  # just over 1 hour
+            elapsed_ms=CACHE_TTL_1HOUR_MS + 1000,
         )
         prefix = next(a for a in alerts if a.alert_type == CacheAlertType.PREFIX_UNSTABLE)
         assert "1h TTL" in prefix.message
@@ -407,9 +357,6 @@ class TestTTLAwareness:
         prefix = next(a for a in alerts if a.alert_type == CacheAlertType.PREFIX_UNSTABLE)
         assert "model changed" in prefix.message
         assert "TTL" not in prefix.message
-
-
-# ── Fix 4: Feature flag ──────────────────────────────────────────
 
 
 class TestFeatureFlag:
@@ -437,9 +384,6 @@ class TestFeatureFlag:
         env_file.write_text("CACHE_HIT_MONITOR_ENABLED=true\n")
         s = Settings.load(env_path=env_file)
         assert s.cache_hit_monitor_enabled is True
-
-
-# ── Fix 5: Likely cause attribution ──────────────────────────────
 
 
 class TestCauseAttribution:
@@ -541,9 +485,6 @@ class TestCauseAttribution:
         assert "tools changed" not in prefix.message
 
 
-# ── Through the real agent loop ──────────────────────────────────
-
-
 class CacheUsageAdapter:
     """Replays a scripted per-turn Usage through stream_with_tools().
 
@@ -609,9 +550,6 @@ def noop_registry():
     return reg
 
 
-# Turn 1 warms the cache; turn 2 reads almost nothing from it. That is a 98%
-# drop of 49000 tokens (past both the 10% and the 2000-token floors) and a 2%
-# hit ratio on turn 2, so this pair trips PREFIX_UNSTABLE and RATIO_LOW at once.
 UNSTABLE_TURNS = [
     Usage(input_tokens=1000, output_tokens=50, cache_read_input_tokens=50000),
     Usage(

@@ -76,7 +76,7 @@ def test_approve_petition_rejects_invalid_edge(client, fake_world, auth_headers)
         headers=auth_headers,
         json={"edge": "north", "depth": 5},
     )
-    assert response.status_code == 422  # pydantic rejects before it ever reaches world
+    assert response.status_code == 422
 
 
 def test_deny_petition(client, fake_world, auth_headers) -> None:

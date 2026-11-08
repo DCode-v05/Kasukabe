@@ -26,15 +26,9 @@ from src.sandbox.policy import SandboxPolicy
 
 logger = logging.getLogger(__name__)
 
-# Library-level default so SandboxSessionManager can be constructed without
-# settings (tests, direct use). The value itself lives once, in config.py;
-# bootstrap always passes the settings field, which defaults to the same
-# constant.
 DEFAULT_IDLE_TTL_S = SANDBOX_IDLE_TTL_DEFAULT_S
-DEFAULT_SWEEP_INTERVAL_S = 600  # reaper checks every 10 min
+DEFAULT_SWEEP_INTERVAL_S = 600
 
-# Callable[[list[str]], Awaitable[bool]] — asks the human to approve network egress.
-# None => network requests are denied (fail-closed).
 PermissionCallback = Any
 
 
@@ -80,7 +74,6 @@ class ExecBackend(Protocol):
     @property
     def uses_bubblewrap(self) -> bool: ...
 
-    # Background-process management surface (used by build_sandbox_tools).
     async def kill_orphaned_children(self) -> int: ...
 
     def process_list(self) -> list[dict[str, Any]]: ...
@@ -105,11 +98,8 @@ class SandboxConfig:
     """How to provision one sandbox session."""
 
     session_id: str | None = None
-    # default-DENY: the untrusted side has no egress of its own (trusted/untrusted split).
     allow_network: bool = False
-    # None -> SandboxPolicy.default()
     policy: SandboxPolicy | None = None
-    # None -> network requests are denied (fail-closed).
     permission_callback: PermissionCallback = None
 
 
@@ -174,11 +164,9 @@ class LocalBwrapProvider:
             logger.warning("sandbox destroy failed for session=%s: %s", handle.session_id, e)
 
     async def pause(self, handle: SessionHandle) -> None:
-        # No-op at the Docker stage. Firecracker provider snapshots here.
         return None
 
     async def resume(self, handle: SessionHandle) -> None:
-        # No-op at the Docker stage. Firecracker provider restores here.
         return None
 
 
@@ -245,7 +233,6 @@ class SandboxSessionManager:
         be = self.live()
         return bool(getattr(be, "is_busy", False)) if be is not None else False
 
-    # ── ExecBackend surface — async exec (re)provisions + touches activity ──
     async def run_bash(self, *a, **k) -> SandboxResult:
         return await (await self.ensure()).run_bash(*a, **k)
 
@@ -272,7 +259,6 @@ class SandboxSessionManager:
         if be is not None and hasattr(be, "kill_orphaned_children"):
             return await be.kill_orphaned_children(*a, **k)
 
-    # ── process management — operate on the live session if one exists ──
     def process_list(self):
         be = self.live()
         return be.process_list() if be is not None else []
@@ -306,12 +292,10 @@ class SandboxSessionManager:
         return be.process_remove(*a, **k) if be is not None else {"error": "no active sandbox"}
 
     def cleanup(self) -> None:
-        # ExecBackend compatibility; real teardown is shutdown()/reap_if_idle().
         be = self.live()
         if be is not None:
             be.cleanup()
 
-    # ── lifecycle ──────────────────────────────────────────────────────
     async def reap_if_idle(self) -> bool:
         """Destroy the session if idle past TTL and not busy. Returns True if reaped."""
         async with self.lock:

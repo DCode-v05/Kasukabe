@@ -66,13 +66,6 @@ SESSION_LOG_FILENAME = "session_log.jsonl"
 
 SESSION_LOG_TOOL_NAME = "recall_session_log"
 
-# Registering a ToolDef alone is not enough to let the model actually call
-# it: thread.py's check_permission() runs on every tool call regardless of
-# how it's registered, and denies by default absent an explicit rule -
-# exactly the gap that silently swallowed this tool's first real test (no
-# ToolExecution "result" phase ever fired; the call was denied before the
-# handler ran). Mirrors world_tools.py's WORLD_TOOL_ALLOW_RULE exactly:
-# appended to thread.session_rules, never a thread.py edit.
 SESSION_LOG_TOOL_ALLOW_RULE = PermissionRule(
     tool=SESSION_LOG_TOOL_NAME,
     pattern="",
@@ -82,45 +75,12 @@ SESSION_LOG_TOOL_ALLOW_RULE = PermissionRule(
 )
 
 
-# ── ENG-09: the action record ────────────────────────────────────────────
-#
-# What a turn is remembered AS, for the purpose of replaying it to the
-# resident who lived it. Deliberately not the same thing as what the turn
-# is logged as: the log keeps everything, this keeps the acts.
-#
-# The numbers are budgets, not tastes. This string is written into the
-# conversation store once per turn and then read back into every later
-# prompt for as long as the history window holds it, so an unbounded record
-# would buy ENG-09 by paying for ENG-02 all over again. A `say` with a
-# paragraph in it, or a registry listing that came back 8 KB long, is
-# clipped to the part that identifies it.
 ACTION_RECORD_MAX_ACTIONS = 12
 ACTION_RECORD_MAX_PARAM_CHARS = 100
 ACTION_RECORD_MAX_RESULT_CHARS = 160
 
-# `thread.py:4944` sets status "success" or "error" on the result event;
-# other producers in the engine use these words for the same thing, and
-# memory_stream.py:265 already reads all three as failure. Kept identical so
-# a resident's memory of a refusal and its history of one cannot disagree.
 FAILED_STATUSES = frozenset({"error", "failed", "denied"})
 
-# A turn that only wrote. 152 of run 23's 349 sessions ended here, and the
-# review's fix says to store "exactly that fact" - because a resident whose
-# history shows six essays in a row is being shown that essays are what it
-# does, while one whose history shows six turns of having done nothing is
-# being shown a problem.
-# PROMPT-03. The same relabelling as the acted-turn record above, and
-# the same reason: this is the world's note about a turn that is over,
-# not a sentence the resident is offering.
-#
-# It also now says the consequence rather than only the fact. In
-# `deni-a6f9eb4-5h` 2,746 turns ended with no action and no claim of
-# one, and each of those residents read this line back on its next turn
-# as a neutral summary of a morning. It is not neutral: a day is 144
-# ticks, upkeep falls whether you acted or not, and a turn spent
-# thinking is a turn billed.
-# Named once, because `resident_voice.py` recognises a stored record by it
-# on the way to the model and must not drift from what is written here.
 RECORD_HEADING = "RECORD OF THE TURN THAT JUST ENDED (written by the world, not by you):"
 
 SILENT_TURN_RECORD = (
@@ -166,20 +126,6 @@ def render_action_record(actions: list[dict[str, Any]]) -> str:
     if not actions:
         return SILENT_TURN_RECORD
 
-    # PROMPT-03. This heading used to read "I acted this turn:" and the
-    # trace of `deni-a6f9eb4-5h` shows what that cost: 595 turns produced
-    # NO tool call and wrote a block in exactly this shape instead -
-    # `I acted this turn: - world:look_around() -> {...}` - complete with
-    # plausible results the model composed itself. One of them called
-    # `world:describeprimitives()`, a tool with no underscore and no
-    # existence, which is how you can tell it was written rather than
-    # executed.
-    #
-    # The format was being read as a template to fill in. So it now says
-    # what it is: a record of the past, in the past tense, marked as
-    # something the world wrote rather than something the resident says.
-    # A model that reproduces THIS has produced a log entry about a turn
-    # it is still in, which reads as obviously wrong to it.
     shown = actions[:ACTION_RECORD_MAX_ACTIONS]
     lines = [RECORD_HEADING]
     for action in shown:
@@ -199,16 +145,6 @@ def render_action_record(actions: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-# The session log this process is writing, or None before boot has built
-# one. ENG-09's action record has to be reachable from
-# `bounded_history.bound_history_in_the_seam(coordinator)`, and a
-# coordinator carries no route to it: `pinned_boot.py` calls that function
-# with the coordinator and nothing else, and pinned_boot.py is owned
-# elsewhere. One engine process serves exactly one resident - the same
-# assumption `SESSION_LOG_FILENAME`, the per-process agent_id and the
-# pinned thread already make - so "the session log" is a well-defined
-# thing here, and naming it beats reaching into the emitter's subscriber
-# list to find it.
 _active_session_log: "SessionLogWriter | None" = None
 
 
@@ -228,13 +164,6 @@ def install_session_log_permissions(thread: Any) -> None:
 class _InFlightTurn:
     input_text: str
     reasoning_chunks: list[str] = field(default_factory=list)
-    # What the model SAID, as opposed to what it thought.
-    #
-    # Reasoning is optional - a model may answer without any - but text
-    # output happens on every turn that is not a bare tool call, and it was
-    # never recorded. A session log that keeps the thinking and drops the
-    # speech cannot answer "what did this agent actually say", which is the
-    # question a reader of a conversation is asking.
     output_chunks: list[str] = field(default_factory=list)
     actions: list[dict[str, Any]] = field(default_factory=list)
 
@@ -255,20 +184,12 @@ class SessionLogWriter:
         self.log_path = log_path
         self.log_path.parent.mkdir(parents=True, exist_ok=True)
         self._current: _InFlightTurn | None = None
-        # B3: the last completed turn's done_status, kept in memory so the
-        # tick response can report how many steps it took and whether it
-        # ended because it ran out. It is already written to disk on every
-        # flush; re-reading the log file to answer a question about the
-        # turn that just finished would be reading our own tail.
         self.last_summary: dict[str, Any] | None = None
 
     def attach(self, emitter: EventEmitter) -> None:
         global _active_session_log
 
         emitter.on(self._on_event)
-        # Subscribing is the moment this becomes the process's live record
-        # of what a turn is doing, so it is the moment ENG-09's action
-        # record can start being answered from it. See `active_session_log`.
         _active_session_log = self
 
     def start_turn(self, input_text: str) -> None:

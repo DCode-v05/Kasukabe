@@ -99,8 +99,6 @@ def test_step_emits_agent_moved_with_valid_coordinates() -> None:
 
 
 def test_step_every_event_type_is_a_valid_convention_string() -> None:
-    # app/CONVENTIONS.md's naming scheme: <domain>.<verb> or
-    # <domain>.<subject>.<verb>, lowercase snake_case segments.
     state = MockTownState(tick=0, agents=build_mock_agents(8, seed=123))
     rng = random.Random(123)
     for _ in range(50):
@@ -181,7 +179,7 @@ async def test_mock_world_client_get_spend_status_moves_with_tick() -> None:
         first = await client.get_spend_status()
         assert first.available is True
         assert first.total_usd_cents == 100_000
-        assert first.burned_usd_cents == 0  # tick 0
+        assert first.burned_usd_cents == 0
 
         for _ in range(20):
             client.state, _events = step(client.state, client.rng)
@@ -208,6 +206,6 @@ async def test_mock_world_client_streams_tick_events() -> None:
 async def test_mock_world_client_close_stops_background_task() -> None:
     settings = GameSettings(mock_agent_count=3, mock_seed=4)
     client = MockWorldClient(settings, tick_interval_s=0.01)
-    await client.get_snapshot()  # starts the background tick task
+    await client.get_snapshot()
     await client.close()
     assert client.closed is True

@@ -37,14 +37,9 @@ EM_DASH = "—"
 
 COVERED_ROOTS = ("src/", "tests/")
 
-# Names that begin with a single underscore but are deliberately allowed. Most
-# of the historically kept underscores (attribute access like os._exit, SQL
-# suffixes like _vec/_fts, string dict keys) are never flagged because this gate
-# only judges Python definitions, not reads or string contents. This list is the
-# safety net for the rare case where one is a real binding.
 ALLOWLIST: frozenset[str] = frozenset(
     {
-        "_",  # conventional throwaway
+        "_",
         "_exit",
         "_fields",
         "_fields_",
@@ -60,7 +55,6 @@ ALLOWLIST: frozenset[str] = frozenset(
     }
 )
 
-# Suppress a single line by ending it with this marker.
 NOQA = "noqa: style"
 
 DUNDER = re.compile(r"^__.+__$")
@@ -106,7 +100,6 @@ def added_lines(base: str) -> dict[str, dict[int, str]]:
             out.setdefault(path, {})[new_line] = line[1:]
             new_line += 1
 
-    # Untracked files under the covered roots: every line is new.
     for path in run(["git", "ls-files", "--others", "--exclude-standard", "--", *COVERED_ROOTS]).splitlines():
         if not covered(path):
             continue
@@ -124,7 +117,7 @@ def defined_underscore_names(source: str) -> list[tuple[int, str]]:
     try:
         tree = ast.parse(source)
     except SyntaxError:
-        return []  # em-dash check still runs; underscore check skipped for this file
+        return []
     found: list[tuple[int, str]] = []
 
     def consider(name: str, lineno: int) -> None:

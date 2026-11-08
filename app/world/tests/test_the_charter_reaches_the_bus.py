@@ -40,8 +40,6 @@ async def test_a_charter_sub_engine_publishes_onto_the_bus(tmp_path):
     await runner.boot()
     world = runner.world_state
 
-    # Every sub-engine shares the seam. Elections is the one whose absence
-    # made every government tool uncallable for 23 runs.
     for name in ("elections", "amendments", "government", "land", "justice"):
         sub = getattr(world.charter, name, None)
         if sub is None:

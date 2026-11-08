@@ -1,9 +1,3 @@
-// Conversations tab: individual chats AND group conversations (inferred
-// from co-located participants exchanging utterances in an overlapping
-// tick window - see world/social_api.py's cluster_conversations),
-// filterable by place/participant/time, group visually distinct from
-// one-to-one. DESIGN.md section 8's "Conversations" bullet.
-
 import { fetchConversationDetail, fetchConversations } from "./api.js";
 import { debounce, el, escapeHtml, fmtTick, setEmpty, setError, setLoading } from "./dom.js";
 

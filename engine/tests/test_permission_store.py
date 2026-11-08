@@ -21,11 +21,6 @@ from src.sandbox.permission_store import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Escape / unescape
-# ---------------------------------------------------------------------------
-
-
 class TestEscapeUnescape:
     def test_escape_parens(self):
         assert escape_rule_content("print(1)") == r"print\(1\)"
@@ -54,11 +49,6 @@ class TestEscapeUnescape:
     def test_empty_string(self):
         assert escape_rule_content("") == ""
         assert unescape_rule_content("") == ""
-
-
-# ---------------------------------------------------------------------------
-# Rule string parsing
-# ---------------------------------------------------------------------------
 
 
 class TestParseRuleString:
@@ -113,11 +103,6 @@ class TestParseRuleString:
         assert result.content is None
 
 
-# ---------------------------------------------------------------------------
-# Rule string formatting
-# ---------------------------------------------------------------------------
-
-
 class TestFormatRuleString:
     def test_tool_only(self):
         assert format_rule_string("Bash") == "Bash"
@@ -142,11 +127,6 @@ class TestFormatRuleString:
         parsed = parse_rule_string(s)
         assert parsed.tool == "Bash"
         assert parsed.content == 'python -c "print(1)"'
-
-
-# ---------------------------------------------------------------------------
-# rule_to_string / rule_from_string
-# ---------------------------------------------------------------------------
 
 
 class TestRuleConversions:
@@ -189,11 +169,6 @@ class TestRuleConversions:
         assert restored.source == original.source
 
 
-# ---------------------------------------------------------------------------
-# PermissionProvenance
-# ---------------------------------------------------------------------------
-
-
 class TestPermissionProvenance:
     def test_persistable_sources(self):
         """Only the user's own tier is written to disk."""
@@ -226,11 +201,6 @@ class TestPermissionProvenance:
         assert normalize_source("engine") == "engine"
         assert normalize_source("managed") == "managed"
         assert normalize_source("septemberai") == "septemberai"
-
-
-# ---------------------------------------------------------------------------
-# PermissionStore — load / save / CRUD
-# ---------------------------------------------------------------------------
 
 
 class TestPermissionStore:
@@ -314,7 +284,6 @@ class TestPermissionStore:
         )
         store.save(PermissionProvenance.USER)
 
-        # Load into fresh store
         store2 = PermissionStore(user_path=p)
         store2.load()
         rules = store2.get_rules()
@@ -452,7 +421,6 @@ class TestPermissionStore:
         assert len(allow_rules) == 1
         assert allow_rules[0].tool == "new_allow"
 
-        # DENY rule untouched
         deny_rules = store.get_rules_by_behavior(PermissionBehavior.DENY)
         assert len(deny_rules) == 1
         assert deny_rules[0].tool == "keep_deny"

@@ -139,8 +139,6 @@ async def funded_ledger(agent_ids: list[str], agent_usd_cents: int = 10_000) -> 
 @pytest.mark.asyncio
 async def test_totals_match_a_full_scan_of_the_log() -> None:
     ledger = await funded_ledger(["adult", "other", "child"])
-    # genesis funds every agent uniformly; the minor link is set on the
-    # Account afterward, matching test_ledger_parent_debit.py's idiom.
     ledger.accounts["child"].is_minor = True
     ledger.accounts["child"].parent_id = "adult"
 
@@ -157,11 +155,8 @@ async def test_totals_match_a_full_scan_of_the_log() -> None:
         snapshot = gather_wallet_and_burn(ledger, agent_id, tick)
         expected = reference_window_total(ledger, agent_id, since_tick, tick)
         assert snapshot.recent_burn_usd_cents == expected, agent_id
-        # Non-trivial: a test where every expected value is 0 proves nothing.
         assert expected > 0
 
-    # A narrow window, off the end of the log, and one that starts before
-    # tick 0 - the three places a binary search goes wrong.
     for window in (1, 2, 7, 144, 1_000):
         snapshot = gather_wallet_and_burn(ledger, "adult", tick, window)
         assert snapshot.recent_burn_usd_cents == reference_window_total(
@@ -183,11 +178,9 @@ async def test_a_second_reading_does_not_rescan_the_log() -> None:
     ledger.transactions = log
     assert len(log) >= 600
 
-    gather_wallet_and_burn(ledger, "a1", 299)  # first call builds the index
+    gather_wallet_and_burn(ledger, "a1", 299)
     log.rows_touched = 0
 
-    # A whole tick of readings over an unchanged log: 50 residents asking
-    # what they burned must not cost 50 x 600 rows.
     for _ in range(50):
         gather_wallet_and_burn(ledger, "a1", 299)
         gather_wallet_and_burn(ledger, "a2", 299)
@@ -196,7 +189,6 @@ async def test_a_second_reading_does_not_rescan_the_log() -> None:
         f"{len(log)}-row log"
     )
 
-    # And a tick that DID add transactions pays for those, not for history.
     await burn(ledger, "a1", 2, 300)
     await burn(ledger, "a2", 2, 300)
     log.rows_touched = 0
@@ -222,13 +214,6 @@ async def test_the_runners_volatile_line_reads_through_the_index() -> None:
 
     log = CountingTransactionLog(list.__iter__(ledger.transactions))
     ledger.transactions = log
-    # ECON-20 gave `wallet_line` a second half - today's upkeep and head
-    # tax, via `todays_obligations`. The REAL method is bound here rather
-    # than stubbed: with `world_state=None` it returns (0, 0, None) by its
-    # own "never guesses" rule, so this test still measures exactly what
-    # it claims (ledger rows read per volatile line) while keeping the
-    # production code in the path. A lambda would have hidden a future
-    # `todays_obligations` that walks the transaction log.
     runner = SimpleNamespace(
         ledger=ledger, budget_hit_last_turn={}, world_state=None
     )
@@ -244,7 +229,6 @@ async def test_the_runners_volatile_line_reads_through_the_index() -> None:
         f"{log.rows_touched} rows read for 30 volatile lines over a {len(log)}-row log"
     )
     assert all(line == first for line in repeated)
-    # The line is still a real reading, not a cached zero.
     assert first["last_turn_usd_cents"] > 0
     assert first["runway_game_days"] is not None
 
@@ -263,7 +247,6 @@ async def test_a_replaced_transaction_log_is_re_derived() -> None:
     restored = await funded_ledger(["a1"])
     for tick in range(0, 10):
         await burn(restored, "a1", 4, tick)
-    # The restore shape: a different list object holding different rows.
     ledger.transactions = list(list.__iter__(restored.transactions))
 
     assert gather_wallet_and_burn(ledger, "a1", 49).recent_burn_usd_cents == 40
@@ -284,8 +267,6 @@ async def test_a_shortened_log_is_re_derived() -> None:
     assert shortened < 100
     assert gather_wallet_and_burn(ledger, "a1", 19).recent_burn_usd_cents == shortened
 
-    # Rolled back and re-grown to the same length with different rows: the
-    # length matches what was consumed, so only row identity catches it.
     ledger2 = await funded_ledger(["a1"])
     for tick in range(0, 6):
         await burn(ledger2, "a1", 5, tick)

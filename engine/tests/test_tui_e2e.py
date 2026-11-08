@@ -42,7 +42,7 @@ class StubCoordinator:
         craft=False,
         craft_wait=True,
         citations=False,
-        **gates,  # output-gate kwargs the server forwards (voice, image, ...)
+        **gates,
     ):
         if thread_id_box is not None:
             thread_id_box[0] = "t1"
@@ -70,7 +70,7 @@ def make_state(emitter):
     from src.config import Settings
 
     state = EngineState(settings=Settings(), emitter=emitter)
-    emitter.on(server.block_fan_sink)  # ASGITransport bypasses lifespan; wire the sink explicitly
+    emitter.on(server.block_fan_sink)
     return state
 
 
@@ -96,7 +96,6 @@ async def test_tui_wire_parses_real_blocks(monkeypatch):
     assert "text" in types and "tool" in types and "craft" in types
     assert types[-1] == "done"
     assert done["status"] == "completed"
-    # the block envelope is the real one
     text_block = next(b for b in blocks if b["type"] == "text")
     assert text_block["payload"]["text"] == "Hello\n"
     assert text_block["thread_id"] == "t1"
@@ -115,7 +114,7 @@ async def test_tui_app_drives_real_server(monkeypatch):
         async with asyncio.timeout(20):
             await app.workers.wait_for_complete()
         await pilot.pause()
-        assert app.selected_thread_id == "t1"  # adopted the real done.thread_id
+        assert app.selected_thread_id == "t1"
 
 
 @pytest.mark.asyncio
@@ -130,4 +129,4 @@ async def test_tui_render_block_handles_every_type(monkeypatch):
         await pilot.pause()
         for t in BLOCK_TYPES:
             app.stream.render_block({"id": f"{t}:1", "type": t, "thread_id": "t1", "payload": {}})
-        await pilot.pause()  # no exception = every type renders
+        await pilot.pause()

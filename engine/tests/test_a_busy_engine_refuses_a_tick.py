@@ -95,9 +95,8 @@ def test_a_second_tick_is_refused_while_the_first_runs() -> None:
 
     async def drive() -> tuple[int, dict]:
         app = build_sim_agent_app(engine)
-        # Start a turn and leave it running.
         first = asyncio.create_task(engine.send_tick("first"))
-        await asyncio.sleep(0)          # let it take the lock
+        await asyncio.sleep(0)
         assert engine.turn_in_flight, "the first turn did not start"
 
         from httpx import ASGITransport, AsyncClient

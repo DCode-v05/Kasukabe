@@ -100,8 +100,6 @@ async def test_a_site_with_no_labour_left_is_not_offered(world, registry) -> Non
     """`work_site` refuses these separately, so naming one is a dead end."""
     site = await _open_a_site(world, registry, "plot-1")
     building = world.buildings[site]
-    # `labour_remaining` is derived, so the crew finishing the work is what
-    # sets it - which is the state a real site reaches, not a forced field.
     building.labour_ticks_done = building.labour_ticks_required
     assert building.labour_remaining == 0
 

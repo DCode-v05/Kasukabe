@@ -1,22 +1,9 @@
-// UI-31's harness: runs the REAL renderPetition out of console.js against
-// a DOM small enough to fit in one file, and prints what the console sent.
-//
-// Parsing console.js for the string "confirmable(" would pass forever
-// while the button fired on one click - this project has shipped exactly
-// that kind of test twice (CORE-23, EVAL-21), so this clicks the button
-// and watches the network instead.
-//
-// Reads a JSON plan on argv[2]: {"clicks": N, "arenas": "a, b"} and prints
-// one JSON line: {"sent": [...], "label": "<button text now>"}.
-
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 
 const plan = JSON.parse(process.argv[2]);
 const SOURCE = path.join(__dirname, "..", "static", "console.js");
-
-// ── the smallest DOM that renderPetition actually touches ──────────────
 
 class Node {
   constructor(tag) {
@@ -80,8 +67,6 @@ class Node {
   }
 }
 
-// A deliberately dumb tag scanner: enough for the flat markup
-// renderPetition emits, and it fails loudly rather than guessing.
 function parse(html) {
   const out = [];
   const tag = /<(input|select|button|div|span)\b([^>]*?)(\/?)>/g;
@@ -94,7 +79,6 @@ function parse(html) {
       node.attrs[a[1]] = a[2];
       if (a[1] === "value") node.value = a[2];
     }
-    // The button's resting label, which `confirmable` has to preserve.
     if (m[1] === "button") {
       const close = html.indexOf("</button>", tag.lastIndex);
       node.textContent = close === -1 ? "" : html.slice(tag.lastIndex, close);
@@ -141,14 +125,9 @@ sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
 
 let source = fs.readFileSync(SOURCE, "utf8");
-// The page's own bootstrap must not run: this harness is testing one
-// renderer, not the console's boot.
 source = source.replace('document.addEventListener("DOMContentLoaded", init);', "");
 vm.runInContext(source + "\n;globalThis.__renderPetition = renderPetition;", sandbox);
 
-// `listItem` and `refreshPresident` reach for page furniture this harness
-// has no reason to build; both are replaced with the smallest thing that
-// keeps the renderer honest.
 vm.runInContext(
   `listItem = function (html) { const d = document.createElement("div"); d.innerHTML = html; return d; };
    refreshPresident = async function () {};

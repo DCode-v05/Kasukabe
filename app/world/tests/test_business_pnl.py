@@ -19,11 +19,6 @@ from world.tools.models import Business
 from world.wiring import WorldConfig, build_world_server
 from world.tests.map_assets import needs_the_map
 
-# TOOL-27. This module needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped, and red for environment hides real regressions inside the
-# noise - which is how TOOL-09 stayed invisible for a whole cycle.
 pytestmark = needs_the_map
 
 TICKS_PER_DAY = 144
@@ -63,8 +58,6 @@ async def payroll(server, business_id, worker, amount, tick):
     )
 
 
-# -- the classification ----------------------------------------------------
-
 def test_direction_alone_decides_which_column_a_leg_lands_in():
     """A Transaction is one two-party leg, so the business is on exactly one
     side of it - no reason-guessing needed for the sign."""
@@ -83,8 +76,6 @@ def test_a_transaction_the_business_is_not_party_to_is_neither():
     assert classify_leg("biz-1", T()) == (0, 0)
 
 
-# -- the books -------------------------------------------------------------
-
 @pytest.mark.asyncio
 async def test_revenue_costs_and_profit_come_out_of_the_real_ledger():
     server = await build_world_server(WorldConfig())
@@ -95,8 +86,6 @@ async def test_revenue_costs_and_profit_come_out_of_the_real_ledger():
 
     row = make_client(server).get("/businesses/biz-1/pnl").json()
     assert row["revenue_sim"] == 900
-    # Wages only. The registration fee moves owner -> treasury (ledger/core.py),
-    # so the business is not a party to that leg and it is not its cost.
     assert row["costs_sim"] == 400
     assert row["profit_sim"] == row["revenue_sim"] - row["costs_sim"]
     assert row["wages_paid_sim"] == 400
@@ -110,8 +99,8 @@ async def test_the_books_are_broken_out_over_time_not_just_a_total():
     server = await build_world_server(WorldConfig())
     await open_shop(server)
     buyer = list(server.world.agents)[1]
-    await sale(server, "biz-1", buyer, 500, tick=1)                    # day 0
-    await sale(server, "biz-1", buyer, 100, tick=TICKS_PER_DAY + 1)    # day 1
+    await sale(server, "biz-1", buyer, 500, tick=1)
+    await sale(server, "biz-1", buyer, 100, tick=TICKS_PER_DAY + 1)
     row = make_client(server).get("/businesses/biz-1/pnl").json()
     days = {p["day"]: p for p in row["by_day"]}
     assert days[0]["revenue_sim"] == 500
@@ -124,9 +113,9 @@ async def test_a_failing_business_reads_as_declining_before_it_vanishes():
     await open_shop(server, starting_sim=5_000)
     buyer, worker = list(server.world.agents)[1:3]
     await sale(server, "biz-1", buyer, 900, tick=1)
-    await payroll(server, "biz-1", worker, 100, tick=2)                       # day 0: +800
+    await payroll(server, "biz-1", worker, 100, tick=2)
     await sale(server, "biz-1", buyer, 50, tick=TICKS_PER_DAY + 1)
-    await payroll(server, "biz-1", worker, 700, tick=TICKS_PER_DAY + 2)       # day 1: -650
+    await payroll(server, "biz-1", worker, 700, tick=TICKS_PER_DAY + 2)
     row = make_client(server).get("/businesses/biz-1/pnl").json()
     assert row["trend"] == "declining"
 
@@ -159,8 +148,6 @@ async def test_a_brand_new_business_does_not_claim_a_trend_it_cannot_know():
     row = make_client(server).get("/businesses/biz-1/pnl").json()
     assert row["trend"] == "too early to say"
 
-
-# -- the listing -----------------------------------------------------------
 
 @pytest.mark.asyncio
 async def test_the_town_wide_list_puts_the_worst_first():

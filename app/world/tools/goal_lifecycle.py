@@ -66,10 +66,6 @@ logger = logging.getLogger(__name__)
 MAX_ACTIVE_GOALS = 5
 MAX_BELIEFS_PER_AGENT = 40
 
-# What the world says when it spawns a goal from a need. Plain, and
-# phrased as the resident's own situation rather than an instruction,
-# because the resident is free to abandon it - and whether it does is
-# itself worth counting.
 NEED_GOAL_TEXT: dict[NeedKind, str] = {
     NeedKind.FOOD: "Get something to eat.",
     NeedKind.MONEY: "Earn enough to cover what I owe.",
@@ -80,8 +76,6 @@ NEED_GOAL_TEXT: dict[NeedKind, str] = {
     NeedKind.SAFETY: "Deal with what is hanging over me.",
 }
 
-# Priority the world assigns to a need-spawned goal. Survival outranks
-# comfort; the numbers are the same 1-5 scale a resident uses.
 NEED_GOAL_PRIORITY: dict[NeedKind, int] = {
     NeedKind.FOOD: 5,
     NeedKind.ENERGY: 5,
@@ -151,9 +145,6 @@ def supersede_goals_of_a_life_left_behind(
     events: list[WorldEvent] = []
     for goal in active_goals(world, agent_id):
         if goal.set_in_stage is None or goal.set_in_stage != was.value:
-            # Formed in the stage it is now in, or before the world
-            # started stamping them. Left alone: superseding a goal the
-            # world cannot place would retire things at random.
             continue
         goal.status = GoalStatus.SUPERSEDED
         goal.evidence.append(f"set as a {was.value}; now {now.value}")
@@ -339,11 +330,6 @@ def note_refusal_belief(
     try:
         return _note_refusal_belief(world, agent_id, tool_name, reason, location_id)
     except Exception:
-        # Loud, but never fatal: this runs inside the except block that is
-        # about to re-raise the resident's actual refusal, and an exception
-        # here would replace that refusal with a stack trace about
-        # bookkeeping. Logged at error so a run that stops learning from
-        # refusals says so in the log rather than going quiet.
         logger.exception(
             "ENG-24: could not write a refusal belief for %s/%s", agent_id, tool_name
         )
@@ -362,9 +348,6 @@ def _note_refusal_belief(
     existing = (world.beliefs or {}).get(belief_id)
     statement = f"{tool_name} does not work here: {reason}"[:160]
     if existing is not None:
-        # Confidence rises toward certainty but never reaches it -
-        # a rule can change, and a belief pinned at 1.0 could never be
-        # revised by the town amending its own charter.
         existing.confidence = min(0.95, existing.confidence + 0.15)
         existing.statement = statement
         existing.last_updated_tick = world.tick()
@@ -409,8 +392,6 @@ def _trim_beliefs(world: "WorldState", agent_id: str) -> None:
         world.beliefs.pop(belief.belief_id, None)
 
 
-# Horizons that do not survive the night. A `week` goal that expired
-# daily would be a `today` goal with a longer word on it.
 EXPIRING_HORIZONS = frozenset({GoalHorizon.NOW, GoalHorizon.TODAY})
 
 
@@ -450,9 +431,6 @@ def refresh_and_spawn(world: "WorldState", agent_id: str) -> list[WorldEvent]:
     on the same tick it stopped being hungry.
     """
     refresh_needs(world, agent_id)
-    # LIFE-01 FIRST: a resident whose life just changed should not have
-    # this tick's needs spawn goals into the life it has left, and the
-    # supersession has to be seen before anything new is created.
     events = supersede_goals_of_a_life_left_behind(world, agent_id)
     events.extend(relieve_need_goals(world, agent_id))
     events.extend(spawn_goals_from_needs(world, agent_id))

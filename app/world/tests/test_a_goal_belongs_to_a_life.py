@@ -61,9 +61,6 @@ def _goal(world, text: str, horizon=GoalHorizon.WEEK) -> Goal:
     return goal
 
 
-# ── the stage is read off the world ──────────────────────────────────
-
-
 def test_a_child_is_a_child(town):
     world, _ = town
     assert life_stage(world, RESIDENT) is LifeStage.CHILD
@@ -112,12 +109,9 @@ def test_the_retirement_age_is_the_charters_not_a_constant(town):
     assert life_stage(world, RESIDENT) is LifeStage.ELDER
 
 
-# ── and a goal that belonged to the old life closes ──────────────────
-
-
 def test_a_childs_goal_is_superseded_when_it_comes_of_age(town):
     world, _ = town
-    supersede_goals_of_a_life_left_behind(world, RESIDENT)   # record: child
+    supersede_goals_of_a_life_left_behind(world, RESIDENT)
     school = _goal(world, "Finish at the schoolhouse")
     assert school.set_in_stage == "child"
 
@@ -165,16 +159,16 @@ def test_a_goal_set_in_the_new_life_survives(town):
     stage would wipe everything, including what was just decided."""
     world, _ = town
     world.agents[RESIDENT] = world.agents[RESIDENT].model_copy(update={"age_years": 19.0})
-    supersede_goals_of_a_life_left_behind(world, RESIDENT)   # record: unsettled
+    supersede_goals_of_a_life_left_behind(world, RESIDENT)
     fresh = _goal(world, "Find work at the mill")
 
-    world.occupations[RESIDENT] = "miller"                    # -> working
+    world.occupations[RESIDENT] = "miller"
     supersede_goals_of_a_life_left_behind(world, RESIDENT)
 
     assert fresh.status is GoalStatus.SUPERSEDED, "set as unsettled, now working"
 
     after = _goal(world, "Learn the trade properly")
-    supersede_goals_of_a_life_left_behind(world, RESIDENT)    # no change
+    supersede_goals_of_a_life_left_behind(world, RESIDENT)
     assert after.status is GoalStatus.ACTIVE
 
 
@@ -226,11 +220,11 @@ def test_the_turn_itself_supersedes_a_life_left_behind(town):
     spawned goals, which is stamped at creation either way.
     """
     world, _ = town
-    supersede_goals_of_a_life_left_behind(world, RESIDENT)   # record: child
+    supersede_goals_of_a_life_left_behind(world, RESIDENT)
     school = _goal(world, "Finish at the schoolhouse")
 
     world.agents[RESIDENT] = world.agents[RESIDENT].model_copy(update={"age_years": 19.0})
-    refresh_and_spawn(world, RESIDENT)          # a turn, not the helper
+    refresh_and_spawn(world, RESIDENT)
 
     assert school.status is GoalStatus.SUPERSEDED, (
         "a turn does not notice a life changing; the supersession is not "
@@ -249,9 +243,6 @@ def test_the_supersession_runs_before_new_goals_are_spawned(town):
     superseded = source.index("supersede_goals_of_a_life_left_behind")
     spawned = source.index("spawn_goals_from_needs")
     assert superseded < spawned
-
-
-# ── the line none of this crosses ────────────────────────────────────
 
 
 def test_the_world_never_says_what_to_want_at_any_stage(town):

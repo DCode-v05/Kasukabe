@@ -1,8 +1,3 @@
-// Entry point for views.html: tab wiring, the world-API connection
-// indicator, and lazy per-tab loading (a tab's data is fetched the first
-// time it's opened, then on every subsequent open, so switching tabs
-// stays cheap and data never goes stale across a long-lived tab).
-
 import { checkWorldHealth, getWorldBaseUrl, setWorldBaseUrl } from "./api.js";
 import { el } from "./dom.js";
 import { loadGovernance } from "./governance.js";
@@ -62,7 +57,4 @@ wireTabs();
 wireApiBox();
 refreshConnectionDot();
 activateTab(currentTab());
-// Re-check the connection every 20s so the dot reflects the world
-// process actually restarting or dropping mid-session, without an
-// operator having to reload the page to find out.
 setInterval(refreshConnectionDot, 20_000);

@@ -33,7 +33,6 @@ import pytest
 TOWNSHIP_DIR = Path(__file__).parent.parent / "static" / "js" / "township"
 PROVIDER = TOWNSHIP_DIR / "township-v2.js"
 
-# What each consumer reaches for on `window`, and why it matters.
 EXPECTED = {
     "shell.js": [
         ("openModal", "the resident file never opens"),

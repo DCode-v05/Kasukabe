@@ -27,8 +27,6 @@ from world.run_genesis import (
 )
 
 
-# ── the rule itself ────────────────────────────────────────────────────
-
 @pytest.mark.parametrize(
     "event_type",
     [
@@ -55,8 +53,6 @@ def test_the_per_tick_chatter_that_cost_21gb_still_does_not(event_type):
     )
 
 
-# ── end to end, through the runner's own persist() ─────────────────────
-
 @pytest.mark.asyncio
 async def test_an_event_published_on_a_booted_runner_reaches_the_table(tmp_path, monkeypatch):
     db = tmp_path / "kasukabe.db"
@@ -81,7 +77,6 @@ async def test_an_event_published_on_a_booted_runner_reaches_the_table(tmp_path,
             payload={"business_id": "mill", "item": "flour", "sim_price": 12},
         )
     )
-    # And one that must NOT be recorded, published the same way.
     await runner.world_state.event_bus.publish(
         WorldEvent(type="agent.moved", tick=7, payload={"agent_id": "n01"})
     )

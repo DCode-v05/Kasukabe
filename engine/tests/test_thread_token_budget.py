@@ -121,10 +121,8 @@ class TestFullTurnSequence:
                 global_turn_tokens=state.get_turn_output_tokens(),
             )
             assert isinstance(decision, ContinueDecision)
-            # After continue, snapshot is re-taken (matches thread.py wiring)
             state.snapshot_turn_budget(state.current_turn_token_budget)
 
-        # Three continuations fired
         assert state.budget_tracker.continuation_count == 3
 
     def test_turn_over_90pct_after_continuations_stops_with_event(self):
@@ -132,7 +130,6 @@ class TestFullTurnSequence:
         state.snapshot_turn_budget(500_000)
         state.budget_tracker = create_budget_tracker()
 
-        # Turn 1: 100k (20%) — continue
         state.record_turn_usage(FakeUsage(output_tokens=100_000))
         d1 = check_token_budget(
             tracker=state.budget_tracker,
@@ -143,9 +140,6 @@ class TestFullTurnSequence:
         assert isinstance(d1, ContinueDecision)
         state.snapshot_turn_budget(state.current_turn_token_budget)
 
-        # Turn 2: 460k more (92% total this-turn measure is based on delta
-        # from snapshot; snapshot was reset to output_tokens=100k, so a
-        # 460k turn output → global_turn_tokens=460k > 450k → stop).
         state.record_turn_usage(FakeUsage(output_tokens=460_000))
         d2 = check_token_budget(
             tracker=state.budget_tracker,
@@ -168,7 +162,6 @@ class TestFullTurnSequence:
         state.snapshot_turn_budget(500_000)
         state.budget_tracker = create_budget_tracker()
 
-        # Warm-up: three healthy continuations
         for i, turn_tokens in enumerate([10_000, 20_000, 30_000]):
             state.record_turn_usage(FakeUsage(output_tokens=turn_tokens))
             d = check_token_budget(
@@ -182,7 +175,6 @@ class TestFullTurnSequence:
 
         assert state.budget_tracker.continuation_count == 3
 
-        # Turn 4: 200 tokens — first low, should still continue
         state.record_turn_usage(FakeUsage(output_tokens=200))
         d4 = check_token_budget(
             tracker=state.budget_tracker,
@@ -194,7 +186,6 @@ class TestFullTurnSequence:
         state.snapshot_turn_budget(state.current_turn_token_budget)
         assert state.budget_tracker.continuation_count == 4
 
-        # Turn 5: 150 tokens — second consecutive low → diminishing fires
         state.record_turn_usage(FakeUsage(output_tokens=150))
         d5 = check_token_budget(
             tracker=state.budget_tracker,
@@ -215,16 +206,13 @@ class TestFullTurnSequence:
         state.snapshot_turn_budget(500_000)
         state.budget_tracker = create_budget_tracker()
 
-        # Turn 1: big output
         state.record_turn_usage(FakeUsage(output_tokens=200_000))
         delta_before_compact = state.get_turn_output_tokens()
         assert delta_before_compact == 200_000
 
-        # Compaction happens — re-snapshot (matches thread.py integration)
         state.snapshot_turn_budget(state.current_turn_token_budget)
         assert state.output_tokens_at_turn_start == 200_000
 
-        # Turn 2 after compaction: 80k delta, not 280k
         state.record_turn_usage(FakeUsage(output_tokens=80_000))
         assert state.get_turn_output_tokens() == 80_000
 
@@ -238,7 +226,7 @@ class TestFullTurnSequence:
         assert b1 == 50_000
         state.snapshot_turn_budget(b1)
         b2 = resolve_budget("continue please", None, state)
-        assert b2 == 50_000  # carried from state.current_turn_token_budget
+        assert b2 == 50_000
 
 
 class TestThreadLevelCarryAcross:
@@ -335,13 +323,12 @@ class TestThreadLevelCarryAcross:
 
         decision = check_token_budget(
             tracker=state.budget_tracker,
-            is_sub_agent=True,  # sub-agent gate
+            is_sub_agent=True,
             budget=state.current_turn_token_budget,
             global_turn_tokens=state.get_turn_output_tokens(),
         )
         assert isinstance(decision, StopDecision)
         assert decision.completion_event is None
-        # Tracker is NOT mutated on short-circuit
         assert state.budget_tracker.continuation_count == 0
 
     def test_passive_noop_when_feature_not_exercised(self):
@@ -350,7 +337,6 @@ class TestThreadLevelCarryAcross:
         state.snapshot_turn_budget(500_000)
         state.budget_tracker = create_budget_tracker()
 
-        # Model blows past 90% on first turn (no continuations used)
         state.record_turn_usage(FakeUsage(output_tokens=490_000))
         d = check_token_budget(
             tracker=state.budget_tracker,
@@ -359,7 +345,7 @@ class TestThreadLevelCarryAcross:
             global_turn_tokens=state.get_turn_output_tokens(),
         )
         assert isinstance(d, StopDecision)
-        assert d.completion_event is None  # no event noise
+        assert d.completion_event is None
 
 
 class TestMessageFrozenHashContract:
@@ -373,7 +359,7 @@ class TestMessageFrozenHashContract:
 
     def test_message_is_hashable(self):
         m = Message(role="user", content="hi")
-        assert hash(m) == hash(m)  # stable
+        assert hash(m) == hash(m)
         assert m in {m}
 
     def test_hash_ignores_metadata(self):
@@ -392,7 +378,7 @@ class TestMessageFrozenHashContract:
             Message(role="user", content="hi", metadata={"is_meta": True}),
             Message(role="assistant", content="hello"),
         }
-        assert len(messages) == 2  # first two collapse (equal + same hash)
+        assert len(messages) == 2
 
 
 class TestMessageMetadataTagging:
@@ -436,7 +422,6 @@ class TestFeatureGating:
     def test_flag_off_no_change(self):
         state = LoopState()
         s = Settings(token_budget_enabled=False)
-        # Flag-off: thread.py skips the whole block → nothing happens
         if s.token_budget_enabled:
             budget = resolve_budget("+500k do a thing", None, state)
             state.snapshot_turn_budget(budget)

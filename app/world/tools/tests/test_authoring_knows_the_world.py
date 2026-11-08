@@ -53,9 +53,6 @@ async def resident(world, agent_id: str = "n01", place: str = FARM):
     return agent_id
 
 
-# -- The context itself ----------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_the_context_knows_what_the_resident_can_do(world, registry) -> None:
     agent_id = await resident(world)
@@ -104,9 +101,6 @@ async def test_an_unknown_resident_does_not_crash_the_context(world, registry) -
     assert context["you"]["agent_id"] == "nobody"
 
 
-# -- skillify carries it ---------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_a_refused_skill_comes_back_with_the_vocabulary(world, registry) -> None:
     """The turn this saves. Marta filed six steps as world_move,
@@ -119,10 +113,6 @@ async def test_a_refused_skill_comes_back_with_the_vocabulary(world, registry) -
             "name": "morning round",
             "steps": [{"order": 1, "kind": "tool", "ref": "definitely_not_a_tool"}],
         })
-    # Carried on the error rather than crammed into its message, so it
-    # reaches the model as data. Both wire renderers - admin_api's
-    # exception handler and run_genesis's /agents/{id}/tools route - pass
-    # it through; see ToolError.context.
     context = caught.value.context
     assert context is not None, "the refusal taught the author nothing"
     assert context["tools_you_can_use"]
@@ -153,9 +143,6 @@ async def test_the_result_says_the_filing_can_be_changed_later(world, registry) 
     assert "revise_skill" in str(outcome.result.get("note", ""))
 
 
-# -- toolify carries it ----------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_a_refused_tool_comes_back_with_the_vocabulary(world, registry) -> None:
     agent_id = await resident(world)
@@ -182,9 +169,6 @@ async def test_the_tool_result_says_revise_tool_exists(world, registry) -> None:
         "steps": [{"tool_name": "look_around", "params": {}}],
     })
     assert "revise_tool" in str(outcome.result.get("note", ""))
-
-
-# -- The hint points at work, not at walking -------------------------
 
 
 def test_the_hint_ignores_walking_and_looking() -> None:

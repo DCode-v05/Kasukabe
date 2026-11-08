@@ -33,22 +33,12 @@ async def test_a_retiree_with_a_salary_is_paid(tmp_path):
     await runner.boot()
     world = runner.world_state
 
-    # Fund the treasury. It holds ZERO sim at genesis while the residents
-    # hold 1.57 million between them, so on a real run a pension is owed and
-    # unpayable until tax revenue arrives - see the test below, which pins
-    # that as a fact rather than letting it look like this one failing.
     from world.ledger.money import TREASURY_ACCOUNT_ID
 
     await world.ledger.mint_sim(TREASURY_ACCOUNT_ID, 10_000, tick=0, reason="blessing")
 
     old = next(iter(world.agents))
     world.agents[old] = world.agents[old].model_copy(update={"age_years": 72.0})
-    # ECON-09, second defect. This used to key the promise on the bare
-    # agent id, which is NOT what `pay_wage` writes - `labour.py:112`
-    # keys it "{business_id}|{employee_id}". So this test agreed with the
-    # broken lookup in `pay_the_pensions` and passed for years while no
-    # pension was ever paid on a real run. Seeded the way production
-    # seeds it, so the test can fail when the lookup is wrong.
     world.wage_promises[f"b_mill|{old}"] = WagePromise(
         business_id="b_mill", employee_id=old, wage_sim=400, every_days=1,
         promised_tick=0,

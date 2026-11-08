@@ -31,9 +31,6 @@ from src.sandbox.permission_store import (
 from src.sandbox.permissions import PermissionBehavior, PermissionRule
 
 
-# ── Vocabulary ────────────────────────────────────────────────────
-
-
 class TestVocabulary:
     def test_the_four_tiers_are_exactly_these(self):
         assert {p.value for p in PermissionProvenance} == {
@@ -55,9 +52,6 @@ class TestVocabulary:
         assert "project_settings" not in values
 
 
-# ── Persistence and editability are different questions ───────────
-
-
 class TestPersistenceAndEditability:
     def test_only_the_user_tier_is_written_to_disk(self):
         assert PERSISTABLE_PROVENANCE == frozenset({PermissionProvenance.USER})
@@ -75,9 +69,6 @@ class TestPersistenceAndEditability:
         """A runtime must not be able to rewrite authority it does not own."""
         assert PermissionProvenance.MANAGED not in EDITABLE_PROVENANCE
         assert PermissionProvenance.SEPTEMBERAI not in EDITABLE_PROVENANCE
-
-
-# ── Legacy strings keep loading ───────────────────────────────────
 
 
 class TestLegacyStrings:
@@ -104,9 +95,6 @@ class TestLegacyStrings:
     def test_current_values_pass_through_unchanged(self):
         for p in PermissionProvenance:
             assert normalize_source(p.value) == p.value
-
-
-# ── Store behaviour ───────────────────────────────────────────────
 
 
 class TestStore:
@@ -159,9 +147,6 @@ class TestStore:
         """The constructor must not accept a tier that no longer exists."""
         with pytest.raises(TypeError):
             PermissionStore(user_path=tmp_path / "p.json", project_path=tmp_path / "q.json")
-
-
-# ── Shadow detection speaks the same vocabulary ───────────────────
 
 
 class TestShadowDetectionVocabulary:

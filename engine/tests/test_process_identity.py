@@ -25,7 +25,7 @@ class TestResolveBinary:
             assert result is not None
             assert "python" in result.lower()
         else:
-            assert result is None  # stubs return None on non-Linux
+            assert result is None
 
     def test_resolve_nonexistent_pid(self):
         result = resolve_binary_from_pid(99_999_999)
@@ -101,8 +101,6 @@ class TestResolvePidFromTcpPeer:
         client = socket.create_connection(listener.getsockname())
         server, _ = listener.accept()
         try:
-            # From the server's side the client is the peer, exactly what the
-            # proxy passes in.
             pid = resolve_pid_from_tcp_peer(server.getpeername(), server.getsockname())
             assert pid == os.getpid()
         finally:
@@ -114,7 +112,6 @@ class TestResolvePidFromTcpPeer:
         if platform.system() != "Linux":
             pytest.skip("socket ownership is resolved through /proc")
 
-        # A port pair with no corresponding socket must not resolve to anything.
         assert resolve_pid_from_tcp_peer(("127.0.0.1", 1), ("127.0.0.1", 2)) is None
 
     @patch("src.sandbox.process_identity.platform.system", return_value="Darwin")

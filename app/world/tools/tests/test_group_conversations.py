@@ -45,9 +45,6 @@ async def _call(registry, world, agent_id: str, tool: str, **params):
     return await registry.execute(world, agent_id, tool, params)
 
 
-# ── convening ─────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_convened_conversation_exists_before_anybody_speaks(
     world: WorldState, registry
@@ -132,9 +129,6 @@ async def test_naming_yourself_or_repeating_a_name_does_not_duplicate_the_roster
     participants = world.conversations[outcome.result["conversation_id"]]["participants"]
     assert participants.count("n01") == 1
     assert participants.count("n02") == 1
-
-
-# ── speaking into one ─────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -232,9 +226,6 @@ async def test_being_addressed_puts_a_silent_resident_on_the_roster(
     assert "n02" in world.conversations[conversation]["participants"]
 
 
-# ── refusals that teach ───────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_speaking_into_a_closed_conversation_is_refused_and_says_so(
     world: WorldState, registry
@@ -265,9 +256,6 @@ async def test_speaking_into_a_conversation_elsewhere_says_where_it_is(
                           content="shouting from the field", conversation_id=conversation)
     note = str(outcome.result.get("note", ""))
     assert MARKET.lower() in note.lower()
-
-
-# ── lifecycle ─────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio

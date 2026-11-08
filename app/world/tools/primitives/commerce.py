@@ -45,8 +45,6 @@ from world.tools.state import WorldState
 def require_business(world: WorldState, business_id: str):
     business = resolve_business(world, business_id)
     if business is None:
-        # Read off the world, so a business registered mid-run appears here
-        # the moment it exists.
         raise NotFoundError("business", business_id, list(world.businesses))
     return business
 
@@ -74,9 +72,6 @@ def _resolve_holder(
         return business, "business", business.location_id
 
     if holder_id not in world.agents:
-        # People by name as well as number: a resident reads names in every
-        # perception, and a list of `n07, n13, n18` told it nothing it could
-        # use (runs 28 and 28b).
         raise NotFoundError(
             "seller or buyer",
             holder_id,
@@ -118,8 +113,6 @@ def _require_reachable(
     return here
 
 
-# Whether a sale needs the two parties to be talking. On by default; off only
-# for a control arm measuring what the rule costs. Recorded in the manifest.
 SALES_NEED_CONVERSATION = os.environ.get(
     "KASUKABE_SALES_NEED_CONVERSATION", "1"
 ).strip().lower() not in {"0", "false", "no", "off"}
@@ -219,24 +212,8 @@ def _require_dealing(
     """
     if not SALES_NEED_CONVERSATION or holder_id == agent_id:
         return None
-    # A shop that has posted a price is open, whoever is standing in it.
-    #
-    # election30: buyers were turned away because "nobody is minding Kasukabe
-    # Cafe right now", or because they were not already talking to a seller
-    # who was not there to talk to. 9 of 47 sell calls landed, and the town
-    # ate raw flour beside shelves it could not buy from. The shop had
-    # already named its price; there was nobody there to agree it twice.
-    #
-    # This restores the spec's `test_absent_owner_still_sells_at_the_posted_
-    # price` and its reason - "a shop that only trades while its owner is
-    # standing in it is a person, not a business" - WITHOUT giving back the
-    # defect that replaced it, because the posted price is the agreement.
     if shop_is_open_for(world, holder_id, item):
         return None
-    # The world's own scripted actors (`control:*`) deal on EITHER side - the
-    # control bakery sells bread and also buys flour from residents - and
-    # cannot talk. Requiring a conversation of them would stop the
-    # experiment's baseline restocking without a word.
     if _is_world_run(world, agent_id):
         return None
     minders = _minders_of(world, holder_id)
@@ -244,10 +221,6 @@ def _require_dealing(
         return None
     here = world.location_of(agent_id)
     present = [m for m in minders if satisfies_gate(world.location_of(m) or "", here or "")]
-    # People are written as their agent ID, not their name: the refusal is
-    # passed through `names.name_mentions`, which rewrites every id into
-    # "Name (id)" - and a resident needs the id to address them. A bare name
-    # would leave it knowing who, but not how to say so.
     who = _holder_name(world, holder_id)
     if not present:
         runner = minders[0] if minders else "its owner"
@@ -379,7 +352,6 @@ def _sold_elsewhere(world: WorldState, item: str, asked: str) -> str:
     others = sorted(
         (o for o in market_offers(world, limit=60)
          if o["item"] == item and o["seller_id"] != asked and o["ask_sim"] is not None),
-        # Somebody who is there to agree the sale before an unattended shelf.
         key=lambda o: (0 if o.get("minded", True) else 1),
     )
     if not others:
@@ -436,24 +408,14 @@ async def buy_handler(world: WorldState, agent: AgentLifeRecord, params: BuyPara
     unit_price = post.ask_sim
     total_price = unit_price * params.quantity
 
-    # Checked before the ledger call, not after: world.ledger.move() is an
-    # external system this module never rolls back (see registry.py's
-    # ordering discipline), so a buyer must never be able to pay for stock
-    # the seller does not have. Inventory.move() would itself raise on
-    # a shortfall, but only *after* the payment already landed.
     available = world.inventory.quantity(seller_id, params.item)
     if available < params.quantity:
         raise InsufficientInventoryError(
             seller_id, params.item, params.quantity, available
         )
 
-    # GOV-4: a price posted before a cap is still not payable after it.
     await _require_price_in_band(world, "buy", params.item, unit_price)
 
-    # Last before the money moves, deliberately: after "do they sell it" and
-    # "is it on the shelf", because telling a resident to go and talk to a
-    # seller whose shelf is empty buys it a wasted call - it would speak,
-    # and then be told there is nothing to buy.
     conversation_id = _require_dealing(
         world, "buy", agent.agent_id, seller_id, item=params.item
     )
@@ -483,8 +445,6 @@ async def buy_handler(world: WorldState, agent: AgentLifeRecord, params: BuyPara
             "item": params.item,
             "quantity": params.quantity,
             "total_price_sim": total_price,
-            # A4's event row: the report can now tell a sale at a posted
-            # price from a bargain struck in speech without parsing prose.
             "posted_price_sim": unit_price,
             "holder_kind": kind,
             "location_id": where,
@@ -511,7 +471,6 @@ async def buy_handler(world: WorldState, agent: AgentLifeRecord, params: BuyPara
             "you_now_hold": {
                 params.item: world.inventory.quantity(agent.agent_id, params.item)
             },
-            # Kept for every caller and test written against the old shape.
             "total_price_sim": total_price,
         },
         events=[event],
@@ -549,15 +508,12 @@ async def sell_handler(world: WorldState, agent: AgentLifeRecord, params: SellPa
     unit_price = post.bid_sim
     total_price = unit_price * params.quantity
 
-    # Same ordering reason as buy_handler: check the seller actually has
-    # the goods before the buyer's ledger account pays for them.
     available = world.inventory.quantity(agent.agent_id, params.item)
     if available < params.quantity:
         raise InsufficientInventoryError(agent.agent_id, params.item, params.quantity, available)
 
     await _require_price_in_band(world, "sell", params.item, unit_price)
 
-    # Last before the money moves - see buy_handler for why it is last.
     conversation_id = _require_dealing(
         world, "sell", agent.agent_id, buyer_id, item=params.item
     )
@@ -665,7 +621,6 @@ async def transfer_handler(
             agent.agent_id, params.to_agent_id, params.amount_sim, world.tick()
         )
     elif reason == "payment":
-        # The payer is the borrower here: money going back the other way.
         repaid = world.record_repayment(
             agent.agent_id, params.to_agent_id, params.amount_sim
         )
@@ -750,9 +705,6 @@ async def withdraw_item_handler(
 ) -> ToolOutcome:
     storage = world.storages.get(params.storage_id)
     if storage is None:
-        # The one recorded attempt at this verb in the project's history
-        # invented `field_storage`, was told only that it did not exist,
-        # and never tried again.
         raise NotFoundError(
             "storage", params.storage_id, storages_worth_naming(world, agent.agent_id)
         )
@@ -795,21 +747,14 @@ def storage_location_gate_optional(world: WorldState, params: StoreItemParams) -
 def storage_location_gate_required(world: WorldState, params: WithdrawItemParams) -> str:
     storage = world.storages.get(params.storage_id)
     if storage is None:
-        # The gate runs BEFORE the handler, so this is the sentence a wrong
-        # id actually gets. It has no actor to stand beside, so it names
-        # every storage rather than the nearby ones.
         raise NotFoundError("storage", params.storage_id, sorted(world.storages))
     return storage.location_id
-
 
 
 class TradeParams(BaseModel):
     counterparty_agent_id: str = Field(min_length=1, max_length=64)
     item: str = Field(min_length=1, max_length=64)
     quantity: int = Field(gt=0, le=10_000)
-    # 0 is legal: a gift is a trade at a price of nothing. DESIGN.md's
-    # research question is whether residents give things away, and a tool
-    # that forbade it would answer that question for them.
     price_sim: int = Field(ge=0, le=10_000_000)
 
 
@@ -851,19 +796,7 @@ async def trade_handler(
     here = world.location_of(agent.agent_id)
     there = world.location_of(other_id)
     if here is None or not satisfies_gate(here, there or ""):
-        # Goods change hands where the hands are. Not a dynamic
-        # location_gate, because the required place depends on the
-        # COUNTERPARTY rather than on the params alone, and the gate
-        # resolver cannot see who that is standing anywhere.
-        #
-        # `satisfies_gate` rather than `!=` (TOOL-19): every other
-        # co-location check in the town already folds - `give`
-        # (living.py:142), `revive` (:299), `teach_skill`
-        # (social.py:475), `conveyance.py:73` - and two spellings of one
-        # room refusing a trade is the same defect those were fixed for.
         raise LocationGateError("trade", here or "the same place", there)
-    # GOV-4. Per unit, because a cap is per unit; a price of 0 is a gift and
-    # no floor forbids one (`price_band_refusal`).
     await _require_price_in_band(
         world, "trade", params.item, params.price_sim / params.quantity
     )
@@ -877,8 +810,6 @@ async def trade_handler(
         )
 
     if params.price_sim:
-        # Fallible, and therefore first. An InsufficientFundsError here
-        # leaves the goods untouched.
         await world.ledger.move(
             from_account_id=other_id,
             to_account_id=agent.agent_id,
@@ -905,9 +836,6 @@ async def trade_handler(
             "price_sim": params.price_sim,
             "location_id": here,
             "conversation_id": conversation_id,
-            # Both sides perceive it on their next turn, which is what lets a
-            # settlement be reconstructed from the trace and what lets the
-            # buyer act on having the goods.
             "involved_agent_ids": [agent.agent_id, other_id],
         },
     )
@@ -958,7 +886,6 @@ def _the_shop_holding_it_here(
     letting `post_price`'s own on_hand note say so.
     """
     if not item or world.inventory.quantity(agent.agent_id, item) > 0:
-        # Holding it yourself is an ordinary personal sale.
         return None
     here = world.location_of(agent.agent_id)
     if not here:
@@ -991,26 +918,6 @@ def _posting_holder(
     and a price key off one relationship rather than two.
     """
     if business_id is None:
-        # TRADE-07. Post where the GOODS are, when they are plainly not
-        # on you.
-        #
-        # This is the deadlock that cost run `deni-a6f9eb4-5h` every
-        # transaction in it, in its last surviving form. A resident does
-        # `stock_shelf` (the goods leave its hands for the shop's shelf)
-        # and then `post_price` with no business named - so the ask goes
-        # on the PERSON, who now holds none of it, and `buy` answers
-        # "n13 needs 1 bread, has 0" to anybody who walks in.
-        #
-        # TRADE-01 fixed the case where the resident NAMED the business
-        # and the name was dropped. This is the case where it named
-        # nothing, which is the commoner one and reads as more obviously
-        # correct to a shopkeeper standing in its own shop.
-        #
-        # Only when all four are true, so it can never quietly sell
-        # somebody else's stock: the resident holds none of the item, it
-        # owns or works for exactly one business here, that business
-        # holds some, and it is standing on the premises. Anything less
-        # and it posts on itself, which is what it asked for.
         shop = _the_shop_holding_it_here(world, agent, item)
         if shop is not None:
             return shop.business_id, "business"
@@ -1058,8 +965,6 @@ async def post_price_handler(
             ],
         )
 
-    # GOV-4. A price the law forbids is not posted, rather than posted and
-    # then refused to every buyer who walks over to pay it.
     for side in (params.ask_sim, params.bid_sim):
         if side is not None:
             await _require_price_in_band(world, "post_price", params.item, side)
@@ -1093,26 +998,12 @@ async def post_price_handler(
             "location_id": world.location_of(agent.agent_id),
         },
     )
-    # TRADE-03. Say, at POST time, whether anyone could actually buy this.
-    #
-    # `buy` reads the HOLDER'S inventory, so an ask posted by somebody who
-    # holds none of the item is a listing nobody can complete. In run
-    # `deni-a6f9eb4-5h` that is precisely what n13 created - the bread had
-    # gone onto the shop's shelf one call earlier - and it found out only
-    # when two other residents walked over and were refused. The seller
-    # was told its posting had succeeded and never learned otherwise.
-    #
-    # A note, not a refusal. Pricing something you are about to acquire is
-    # a legitimate thing to do and refusing it would take a real move away
-    # from a resident; what was missing was being told, while there is
-    # still a turn left to do something about it.
     on_hand = world.inventory.quantity(holder_id, params.item)
     note = None
     if params.ask_sim is not None and on_hand <= 0:
         whose = "this business holds" if kind == "business" else "you hold"
         elsewhere = ""
         if kind == "person":
-            # The exact mistake, named: the goods are usually on a shelf.
             shelves = [
                 business_id
                 for business_id in (world.businesses or {})
@@ -1154,9 +1045,6 @@ async def withdraw_price_handler(
     world: WorldState, agent: AgentLifeRecord, params: WithdrawPriceParams
 ) -> ToolOutcome:
     """Take a price down. The item stops being for sale at it."""
-    # The same holder resolution as `post_price`, item included: a price
-    # that TRADE-07 put on the shop must be findable by the resident that
-    # posted it, or it could post and never take down.
     holder_id, kind = _posting_holder(
         world, "withdraw_price", agent, params.on_behalf_of_business, params.item
     )
@@ -1188,33 +1076,6 @@ async def withdraw_price_handler(
         },
         events=[event],
     )
-
-
-# ── the shelf and the till (TOOL-03) ──────────────────────────────────
-#
-# A business's stock lives under its business_id in `world.inventory`
-# (inventory.py keys on any owner id, agent or business), and its money in
-# a ledger account of the same name. Neither had a door.
-#
-# `craft` and `cook` put goods in the AGENT's hand (production.py:47-48).
-# Nothing moved them to the shop: `store_item` builds a `Storage`, not a
-# business; `transfer` and `give` are agent-to-agent. Nothing moved sim out
-# of the till either - `pay_wage` only pays `employee_agent_ids`, and
-# `transfer` spends the actor's own account.
-#
-# So Marta baked bread into her own hands and could not shelve it, while
-# `buy` at `b_bakery` needed the shop's stock and the shop had only what
-# genesis put there. The only route the physics allowed was to hire
-# yourself and pay yourself a wage - which works today because
-# `hire_employee` never checks that the employee is somebody else. That is
-# an accident, not a feature, and TOOL-15 closes it below.
-#
-# The scripted control bakery already does all of this through a private
-# path - `world.inventory.move(self.owner_id, self.business_id, ...)`
-# (control_bakery.py:116) - directly contradicting its own docstring that
-# "everything it does goes through registry.execute". A control that
-# bypasses the physics is measuring a different world than the residents
-# live in, which is exactly what a control must not do.
 
 
 def _business_counter(
@@ -1485,8 +1346,6 @@ def build_specs() -> list[ToolSpec]:
         ToolSpec(
             name="post_price",
             description=(
-                # Addendum section 3's 89-word text, to rule 1: the physics,
-                # then the sibling verb, and nothing about when to use it.
                 "Put a standing price on an item so others can `buy` from you or "
                 "`sell` to you without bargaining each time. ask_sim is what you "
                 "sell one unit for; bid_sim is what you pay for one. Post for "
@@ -1499,8 +1358,6 @@ def build_specs() -> list[ToolSpec]:
             params_model=PostPriceParams,
             handler=post_price_handler,
             namespace=ToolNamespace.PUBLIC,
-            # The gate depends on whether a business was named, which the
-            # params alone do not decide - see _posting_holder.
             location_gate=None,
             actor_requirements=ActorRequirements(),
         ),
@@ -1520,9 +1377,6 @@ def build_specs() -> list[ToolSpec]:
         ToolSpec(
             name="buy",
             description=(
-                # Addendum section 4, 78 words. Names `trade` and
-                # `look_around`, because run 19 proved a refusal that names
-                # no other verb sends the town somewhere else entirely.
                 "Buy an item at the price its seller has posted, paying sim from "
                 "your hand. The seller is a business whose premises you stand in, "
                 "or a person standing with you who has posted a price. You pay the "
@@ -1534,9 +1388,6 @@ def build_specs() -> list[ToolSpec]:
             params_model=BuyParams,
             handler=buy_handler,
             namespace=ToolNamespace.PUBLIC,
-            # The seller may be a business OR a person beside you, so which
-            # place is required is not knowable from the params - the check
-            # is in the handler. See _require_reachable.
             location_gate=None,
             actor_requirements=ActorRequirements(),
         ),
@@ -1569,8 +1420,6 @@ def build_specs() -> list[ToolSpec]:
             params_model=TradeParams,
             handler=trade_handler,
             namespace=ToolNamespace.PUBLIC,
-            # The gate depends on the counterparty, not the params, so the
-            # co-location check lives in the handler.
             location_gate=None,
             actor_requirements=ActorRequirements(),
         ),

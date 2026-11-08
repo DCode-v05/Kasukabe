@@ -30,9 +30,6 @@ import pytest
 
 SCENARIOS = Path(__file__).resolve().parents[1] / "evals" / "scenarios"
 
-# The spec's section 1.6 backfill list. Named rather than derived: this is
-# the list somebody decided mattered, and a derived one would drift with
-# whatever happens to be covered.
 BACKFILL = (
     "trade", "sell", "buy", "start_conversation", "find_people",
     "skillify", "toolify", "define_tool", "teach_skill", "vote", "pray",
@@ -95,12 +92,6 @@ def test_every_scenario_explains_why_it_exists() -> None:
     for path in SCENARIOS.rglob("*.json"):
         body = json.loads(path.read_text(encoding="utf-8"))
         why = body.get("_why", "")
-        # A bar against EMPTY and PLACEHOLDER, not against brevity. An
-        # earlier draft asked for 80 characters and failed
-        # `check_debts/negative_a_quiet_field.json`, whose whole reason is
-        # "Nothing owed either way and nobody asking. A free tool is still
-        # a turn." - 71 characters and a better sentence than most. The
-        # test was wrong about the scenario, not the other way round.
         assert len(why) > 30, (
             f"{path.name} gives no reason it exists - a scenario written "
             "from a situation nobody has been in is a guess about the town "
@@ -172,9 +163,6 @@ def test_no_scenario_names_a_verb_the_town_does_not_have(
         f"these scenarios name verbs the registry does not serve: {phantom}. "
         "Each one would score 0% reach forever and be counted as covered."
     )
-
-
-# ── The acceptance test the review asked for (W-6) ──
 
 
 def test_every_registered_verb_is_covered_or_named_as_uncovered(registry_tools) -> None:

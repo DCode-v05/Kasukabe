@@ -171,9 +171,6 @@ def test_malformed_rows_do_not_break_the_query() -> None:
     assert WorldState.open_questions(world, "n10", now_tick=5) == []
 
 
-# ── Rendering: the agent has to be able to read it ───────────────────
-
-
 def test_open_questions_render_into_the_perception() -> None:
     from world.retrieval_depth import format_open_questions
 
@@ -238,34 +235,6 @@ def test_the_perception_carries_open_questions_when_given_them() -> None:
     assert "Will you fetch the water?" in text
 
 
-# -- The closing line, and what it was doing ---------------------------
-#
-# MEASURED on run5 (docs/runs/series/run5): eight turns carried an open
-# question and ALL EIGHT produced no tool call whatsoever - not a
-# different action, nothing. The baseline on turns with no open question
-# was 57 of 94, so 8 of 8 is not what that rate predicts.
-#
-# The section ended:
-#
-#     You have not answered. Answer with `say` if you mean to, or let it
-#     go and do what matters more.
-#
-# The second half was written to keep the mechanism from forcing a reply -
-# a mechanism that forced one would score 100% and measure nothing. But
-# "let it go and do what matters more" is not neutral. It is the last
-# thing in the section, it is an explicit invitation to do neither, and it
-# arrives attached to a question somebody is waiting on.
-#
-# Marta asked Wren three times in that run, in three separate remarks, and
-# he never answered once.
-#
-# The fix is to STOP EARLIER. Reporting that a question is open and that
-# it has not been answered is a fact. Telling a resident it may let the
-# question go is advice, and this section has no business giving any -
-# the same rule the convening hint and the silent-turn report already
-# follow.
-
-
 def test_the_section_does_not_offer_to_let_it_go() -> None:
     from world.retrieval_depth import format_open_questions
 
@@ -305,9 +274,6 @@ def test_it_still_names_the_verb_and_gives_no_order() -> None:
     lowered = text.lower()
     for order in ("you must", "you should", "make sure", "remember to", "answer them now"):
         assert order not in lowered
-
-
-# ── TOOL-17: a question you cannot answer is not a question ──────────
 
 
 def _placed(state: WorldState, where: dict[str, str]) -> WorldState:

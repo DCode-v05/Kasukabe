@@ -30,9 +30,6 @@ from src.engine_core.cached_snip import (
 from src.herald.types import Message, TextBlock, ToolUseBlock, ToolResultBlock
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
-
-
 def msg(role: str, content) -> Message:
     if isinstance(content, str):
         return Message(role=role, content=content)
@@ -66,9 +63,6 @@ def place_cc(messages: list[dict]) -> None:
     place_message_cache_marker(messages)
 
 
-# ── Feature flag ──────────────────────────────────────────────────────────────
-
-
 class TestFeatureFlag:
     def test_disabled_by_default(self, monkeypatch):
         monkeypatch.delenv("FEATURE_CACHED_SNIP_PREPASS", raising=False)
@@ -83,16 +77,12 @@ class TestFeatureFlag:
         assert cached_snip_prepass_enabled() is True
 
 
-# ── State management ─────────────────────────────────────────────────────────
-
-
 class TestCachedSnipState:
     def test_queue_and_consume(self):
         state = CachedSnipState()
         queue_deletions(state, ["id1", "id2"])
         result = consume_pending_deletes(state)
         assert set(result) == {"id1", "id2"}
-        # Pending is cleared after consume
         assert consume_pending_deletes(state) is None
 
     def test_queue_empty_is_noop(self):
@@ -120,7 +110,6 @@ class TestCachedSnipState:
         state.header_latched = True
         queue_deletions(state, ["id1"])
         reset_state(state)
-        # header_latched must survive reset — once committed, always send.
         assert state.header_latched is True
 
     def test_multiple_queues_accumulate(self):
@@ -131,19 +120,15 @@ class TestCachedSnipState:
         assert set(result) == {"id1", "id2", "id3"}
 
 
-# ── snip_prepass_get_deletes ──────────────────────────────────────────────────
-
-
 class TestSnipPrepassGetDeletes:
     def test_returns_empty_for_short_conversation(self):
         messages = read_pair("t1", "/a.py", "content")
         assert snip_prepass_get_deletes(messages) == []
 
     def test_identifies_duplicate_reads(self):
-        # Same file read twice → first read is redundant
         msgs = (
             read_pair("t1", "/file.py", "v1")
-            + [Message(role="assistant", content="ok")]  # padding
+            + [Message(role="assistant", content="ok")]
             + read_pair("t2", "/file.py", "v2")
         )
         ids = snip_prepass_get_deletes(msgs)
@@ -179,9 +164,6 @@ class TestSnipPrepassGetDeletes:
         assert original_contents == after_contents
 
 
-# ── insert_after_tool_results ────────────────────────────────────────────────
-
-
 class TestInsertAfterToolResults:
     def test_inserts_after_last_tool_result(self):
         content = [
@@ -191,7 +173,6 @@ class TestInsertAfterToolResults:
         ]
         block = {"type": "cache_edits", "edits": []}
         result = insert_after_tool_results(content, block)
-        # Should be inserted at index 2 (after last tool_result at index 1)
         assert result[2] == block
         assert result[0]["type"] == "tool_result"
         assert result[1]["type"] == "tool_result"
@@ -201,15 +182,12 @@ class TestInsertAfterToolResults:
         content = [{"type": "text", "text": "hello"}]
         block = {"type": "cache_edits", "edits": []}
         result = insert_after_tool_results(content, block)
-        # With no tool_results, inserts before the last block
         assert block in result
 
     def test_appends_text_sentinel_when_edits_block_would_be_last(self):
-        # Only tool_results, no trailing text → sentinel "." should be appended
         content = [{"type": "tool_result", "tool_use_id": "x"}]
         block = {"type": "cache_edits", "edits": []}
         result = insert_after_tool_results(content, block)
-        # cache_edits inserted at index 1; since it would be last, a text sentinel follows
         assert result[1] == block
         assert result[2] == {"type": "text", "text": "."}
 
@@ -217,9 +195,6 @@ class TestInsertAfterToolResults:
         content = [{"type": "tool_result", "tool_use_id": "x"}]
         result = insert_after_tool_results(content, {"type": "cache_edits", "edits": []})
         assert result is not content
-
-
-# ── apply_cache_edits_to_messages ─────────────────────────────────────────────
 
 
 def make_api_messages_with_cc() -> list[dict]:
@@ -256,7 +231,6 @@ class TestApplyCacheEditsToMessages:
         msgs = make_api_messages_with_cc()
         state = CachedSnipState()
         result, any_edits = apply_cache_edits_to_messages(msgs, state, None)
-        # id1 is in msg[0], which is BEFORE msg[2] (last cc) → gets cache_reference
         user0_blocks = result[0]["content"]
         tr_block = next(b for b in user0_blocks if b.get("type") == "tool_result")
         assert tr_block.get("cache_reference") == "id1"
@@ -265,7 +239,6 @@ class TestApplyCacheEditsToMessages:
         msgs = make_api_messages_with_cc()
         state = CachedSnipState()
         result, _ = apply_cache_edits_to_messages(msgs, state, None)
-        # id2 is in msg[2] (the last cc message itself) → must NOT get cache_reference
         user2_blocks = result[2]["content"]
         tr_block = next(b for b in user2_blocks if b.get("type") == "tool_result")
         assert "cache_reference" not in tr_block
@@ -275,7 +248,6 @@ class TestApplyCacheEditsToMessages:
         state = CachedSnipState()
         result, any_edits = apply_cache_edits_to_messages(msgs, state, ["id1"])
         assert any_edits is True
-        # cache_edits should be in the last user message (msg[2])
         user2_blocks = result[2]["content"]
         edits_blocks = [b for b in user2_blocks if b.get("type") == "cache_edits"]
         assert len(edits_blocks) == 1
@@ -293,9 +265,6 @@ class TestApplyCacheEditsToMessages:
     def test_re_inserts_pinned_edits(self):
         msgs = make_api_messages_with_cc()
         state = CachedSnipState()
-        # Pre-populate a pinned edit at position 0 referencing id1 (present
-        # in msgs). Ids absent from current messages are dropped by the
-        # cross-context pollution guard — tested separately.
         state.pinned_edits.append(PinnedCacheEdit(user_message_index=0, tool_ids=["id1"]))
         result, any_edits = apply_cache_edits_to_messages(msgs, state, None)
         assert any_edits is True
@@ -307,11 +276,8 @@ class TestApplyCacheEditsToMessages:
     def test_deduplicates_across_pinned_and_new(self):
         msgs = make_api_messages_with_cc()
         state = CachedSnipState()
-        # Pin id1 at position 0
         state.pinned_edits.append(PinnedCacheEdit(user_message_index=0, tool_ids=["id1"]))
-        # Also try to delete id1 as "new" — should be deduped
         result, any_edits = apply_cache_edits_to_messages(msgs, state, ["id1"])
-        # id1 should appear exactly once across all cache_edits blocks
         all_edits_blocks = [
             b
             for msg in result
@@ -334,9 +300,6 @@ class TestApplyCacheEditsToMessages:
         result, any_edits = apply_cache_edits_to_messages([], state, ["id1"])
         assert result == []
         assert any_edits is False
-
-
-# ── Provider integration (Provider) ─────────────────────────────────
 
 
 class TestProviderCachedSnip:
@@ -385,12 +348,10 @@ class TestProviderCachedSnip:
         monkeypatch.setenv("FEATURE_CACHED_SNIP_PREPASS", "true")
         p = self.make_provider()
         p.queue_snip_cache_edits(["tool_id_123"])
-        # Force state so build_kwargs will use it
         p.cached_snip_state.header_latched = False
 
         from src.herald.types import Message, ToolUseBlock, ToolResultBlock
 
-        # Build a minimal message array: assistant tool use + user tool result
         messages = [
             Message(
                 role="user",
@@ -411,7 +372,6 @@ class TestProviderCachedSnip:
         kwargs = p.build_kwargs(messages, None, None)
         api_msgs = kwargs["messages"]
 
-        # Find the cache_edits block in the last user message
         last_user_msg = next((m for m in reversed(api_msgs) if m.get("role") == "user"), None)
         assert last_user_msg is not None
         edits_blocks = [
@@ -442,7 +402,6 @@ class TestProviderCachedSnip:
     def test_build_kwargs_no_beta_when_nothing_pending(self, monkeypatch):
         monkeypatch.setenv("FEATURE_CACHED_SNIP_PREPASS", "true")
         p = self.make_provider()
-        # No pending deletions, no latched header → no betas should be added
         from src.herald.types import Message, TextBlock
 
         messages = [Message(role="user", content=[TextBlock(text="hello")])]
@@ -452,21 +411,20 @@ class TestProviderCachedSnip:
     def test_build_kwargs_keeps_beta_when_header_latched(self, monkeypatch):
         monkeypatch.setenv("FEATURE_CACHED_SNIP_PREPASS", "true")
         p = self.make_provider()
-        p.queue_snip_cache_edits([])  # initializes state
-        p.cached_snip_state.header_latched = True  # simulates prior send
+        p.queue_snip_cache_edits([])
+        p.cached_snip_state.header_latched = True
 
         from src.herald.types import Message, TextBlock
 
         messages = [Message(role="user", content=[TextBlock(text="hi")])]
         kwargs = p.build_kwargs(messages, None, None)
-        # Header must still be sent even with no new edits
         assert "betas" in kwargs
         assert CACHE_EDITING_BETA_HEADER in kwargs["betas"]
 
     def test_build_kwargs_skips_injection_on_unsupported_model(self, monkeypatch):
         """Model gate: unsupported models must not get cache_edits injected."""
         monkeypatch.setenv("FEATURE_CACHED_SNIP_PREPASS", "true")
-        p = self.make_provider(model="claude-3-5-sonnet-20241022")  # unsupported
+        p = self.make_provider(model="claude-3-5-sonnet-20241022")
         p.queue_snip_cache_edits(["tool_id_123"])
 
         from src.herald.types import Message, TextBlock, ToolUseBlock, ToolResultBlock
@@ -493,9 +451,6 @@ class TestProviderCachedSnip:
         assert "betas" not in kwargs or kwargs.get("betas") == []
 
 
-# ── Model support gate ───────────────────────────────────────────────────────
-
-
 class TestModelSupport:
     def test_supported_models(self):
         assert is_model_supported_for_cache_editing("claude-opus-4-6")
@@ -509,9 +464,6 @@ class TestModelSupport:
         assert not is_model_supported_for_cache_editing(None)
 
 
-# ── Cache-break detection ────────────────────────────────────────────────────
-
-
 class TestCacheBreakDetection:
     def test_no_state_no_break(self):
         assert detect_unexpected_cache_break(None, 0, 100) is False
@@ -523,19 +475,16 @@ class TestCacheBreakDetection:
     def test_cold_prev_no_break(self):
         state = CachedSnipState()
         state.pinned_edits.append(PinnedCacheEdit(user_message_index=0, tool_ids=["a"]))
-        # prev was already cold — first turn or post-reset, nothing to lose
         assert detect_unexpected_cache_break(state, 0, 0) is False
 
     def test_cache_still_warm_no_break(self):
         state = CachedSnipState()
         state.pinned_edits.append(PinnedCacheEdit(user_message_index=0, tool_ids=["a"]))
-        # cache_read > 0 — server still knows our references
         assert detect_unexpected_cache_break(state, 500, 1000) is False
 
     def test_unexpected_break_detected(self):
         state = CachedSnipState()
         state.pinned_edits.append(PinnedCacheEdit(user_message_index=0, tool_ids=["a"]))
-        # Prior turn warm, current turn cache gone — our pinned refs are stale
         assert detect_unexpected_cache_break(state, 0, 1000) is True
 
     def test_pending_only_triggers_break(self):
@@ -572,16 +521,12 @@ class TestAdapterObservesCacheBreak:
             PinnedCacheEdit(user_message_index=0, tool_ids=["id1"])
         )
         p.cached_snip_state.header_latched = True
-        # Warm turn
         p.observe_usage_for_cache_break(1000)
-        assert p.cached_snip_state.pinned_edits  # still there
-        # Cold turn — break detected
+        assert p.cached_snip_state.pinned_edits
         p.observe_usage_for_cache_break(0)
         assert p.cached_snip_state.pending_deletes == []
         assert p.cached_snip_state.pinned_edits == []
-        # header_latched survives — we keep sending header for session
         assert p.cached_snip_state.header_latched is True
-        # prev updated even on break
         assert p.prev_cache_read == 0
 
     def test_warm_turn_preserves_state(self):
@@ -592,10 +537,7 @@ class TestAdapterObservesCacheBreak:
         )
         p.observe_usage_for_cache_break(500)
         p.observe_usage_for_cache_break(600)
-        assert p.cached_snip_state.pinned_edits  # untouched
-
-
-# ── Cross-context pollution guard (shared adapter / sub-agent) ──────────────
+        assert p.cached_snip_state.pinned_edits
 
 
 class TestApplyCacheEditsFiltering:
@@ -610,12 +552,10 @@ class TestApplyCacheEditsFiltering:
         from src.herald.types import Message, TextBlock, ToolUseBlock, ToolResultBlock
 
         state = CachedSnipState()
-        # Pinned edit references "parent_tool_id" (from parent thread)
         state.pinned_edits.append(
             PinnedCacheEdit(user_message_index=0, tool_ids=["parent_tool_id"])
         )
 
-        # Sub-agent messages contain only "subagent_tool_id"
         messages = [
             Message(role="user", content=[TextBlock(text="sub task")]),
             Message(
@@ -630,7 +570,6 @@ class TestApplyCacheEditsFiltering:
         api_msgs = self.serialized(messages)
         result, any_edits = apply_cache_edits_to_messages(api_msgs, state, None)
 
-        # No cache_edits block should have been injected with parent_tool_id
         for msg in result:
             content = msg.get("content")
             if not isinstance(content, list):
@@ -658,7 +597,6 @@ class TestApplyCacheEditsFiltering:
             api_msgs, state, ["absent_id", "present_id"]
         )
 
-        # Only "present_id" should end up in the cache_edits block
         found_refs: list[str] = []
         for msg in result:
             content = msg.get("content")

@@ -18,9 +18,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Alias of the canonical conversation-working-set retention window (see the
-# comment on CONVERSATION_TTL_SECONDS): WM entries belong to conversations
-# and must never be reaped on a different clock.
 from src.engine_core.conversation_store import CONVERSATION_TTL_SECONDS
 
 WM_TTL_SECONDS = CONVERSATION_TTL_SECONDS

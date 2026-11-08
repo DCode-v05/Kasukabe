@@ -45,14 +45,6 @@ class BillOfMaterials:
     metal: int
 
 
-# First-cut geometric rates: timber scales with floor area (every tile
-# needs flooring/framing), metal scales with perimeter (the tiles that
-# actually need a load-bearing wall/frame edge facing the outside).
-# DESIGN.md section 2 only commits to "auto-computed from geometry", not
-# to specific numbers - whichever module ends up pricing construction
-# contracts is free to apply its own markup or waste factor on top of
-# these raw counts; this module's job stops at "how much raw material
-# does this shape need."
 TIMBER_PER_FLOOR_TILE = 2
 METAL_PER_PERIMETER_TILE = 1
 

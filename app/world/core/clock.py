@@ -17,12 +17,9 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict
 
 TICK_MINUTES = 10
-TICKS_PER_DAY = 144  # 24h * 60min / 10min-per-tick, DESIGN.md section 1
+TICKS_PER_DAY = 144
 MINUTES_PER_DAY = 24 * 60
 
-# Night is 22:00-06:00 (8 hours), matching DESIGN.md section 1's "Agents
-# sleep ~8 game-hours (no interactive LLM calls; learning pipeline runs
-# then)." day_start/night_start bound the day half of the cycle.
 DAY_START_HOUR = 6
 NIGHT_START_HOUR = 22
 

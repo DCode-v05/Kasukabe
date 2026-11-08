@@ -38,8 +38,6 @@ def test_the_volatile_line_matches_the_ledger_to_the_cent() -> None:
         "runway_game_days": 5.3,
     })
     assert line is not None
-    # Energy, not dollars: 142 cents is 1,420 energy (world/ledger/money.py).
-    # Still the ledger's own figure, scaled by one constant - not recomputed.
     assert "Energy: 1,420." in line
     assert "478 sim" in line
     assert "5.3" in line

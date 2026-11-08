@@ -104,9 +104,6 @@ def create_app(
             return JSONResponse({"available": False, "hops": []})
         with conn:
             if not has_failed_at_column(conn):
-                # Said out loud rather than reported as zero. A page showing
-                # "0 bedrock failures" off a table that cannot record the
-                # answer is confidently wrong, and the reader cannot tell.
                 return JSONResponse(
                     {
                         "available": False,

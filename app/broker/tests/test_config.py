@@ -30,8 +30,6 @@ def test_mock_mode_cannot_be_set_from_the_environment() -> None:
 
 
 def test_defaults_match_task_spec_numbers() -> None:
-    # TASK spec (broker-lanes track): "process-wide hard USD cap (default
-    # 400.00)... warn at 80%" and "100 RPM per model PER REGION".
     settings = BrokerSettings()
     assert settings.rpm_per_lane == 100
     assert settings.spend_cap_usd == 400.0
@@ -81,9 +79,6 @@ def test_build_from_env_aggregates_every_parse_error() -> None:
 
 
 def test_validate_requires_world_and_trace_store_when_not_mock() -> None:
-    # The trace store is SQLite, not Supabase (DESIGN.md section 9). A real
-    # run that cannot write traces has no research output, so an empty path
-    # stays a hard error the same way the Supabase credentials used to be.
     settings = BrokerSettings(mock_mode=False, world_base_url="", trace_sqlite_path="")
     errors = settings.validate()
     assert any("WORLD_BASE_URL" in e for e in errors)
@@ -122,13 +117,6 @@ def test_validate_rejects_bad_circuit_breaker_values() -> None:
 def test_load_validated_raises_config_error_with_all_problems(
     monkeypatch: pytest.MonkeyPatch, tmp_path
 ) -> None:
-    # Deterministic: a clean env plus one explicit bad var, not ambient
-    # state - CONVENTIONS.md requires tests to be fast, free, and
-    # deterministic, and reading the real process environment would be
-    # none of those things.
-    # WORLD_BASE_URL is blanked explicitly: it has a usable default, so
-    # without this the only problem would be TRACE_BATCH_SIZE and the test
-    # would not prove that errors AGGREGATE rather than short-circuit.
     monkeypatch.setattr(
         "os.environ",
         {"TRACE_BATCH_SIZE": "0", "WORLD_BASE_URL": ""},
@@ -140,7 +128,7 @@ def test_load_validated_raises_config_error_with_all_problems(
 
     joined = "\n".join(excinfo.value.errors)
     assert "TRACE_BATCH_SIZE" in joined
-    assert "WORLD_BASE_URL" in joined  # mock_mode=false pulls in the real-deployment checks
+    assert "WORLD_BASE_URL" in joined
 
 
 def test_config_error_lists_every_message() -> None:

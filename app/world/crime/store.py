@@ -44,18 +44,9 @@ class CrimeStore:
         self.arrests: list[ArrestRecord] = []
         self.outcomes: list[CaseOutcome] = []
         self.confinements: dict[str, ConfinementRecord] = {}
-        # agent_id -> confinement_id of the one currently-unreleased
-        # sentence, if any. A second dict rather than a bool flag on
-        # ConfinementRecord so "is X currently confined" is an O(1)
-        # lookup instead of a scan, matching how get_active_confinement
-        # is on the hot path for "should this agent's tools be
-        # location-locked right now" checks.
         self.active_confinement_by_agent: dict[str, str] = {}
-        # case_id -> witness_event_id. See module docstring: only
-        # metrics.py reads this, via list_ground_truth_links.
         self.case_ground_truth_links: dict[str, str] = {}
 
-    # -- witness events (ground truth) -----------------------------------
 
     async def append_witness_event(self, event: WitnessEvent) -> None:
         async with self.lock:
@@ -70,7 +61,6 @@ class CrimeStore:
         async with self.lock:
             return [e.model_copy(deep=True) for e in self.witness_events.values()]
 
-    # -- cases -------------------------------------------------------------
 
     async def put_case(self, case: CaseFile) -> None:
         async with self.lock:
@@ -85,7 +75,6 @@ class CrimeStore:
         async with self.lock:
             return [c.model_copy(deep=True) for c in self.cases.values()]
 
-    # -- complaints (immutable, append-only) ------------------------------
 
     async def append_complaint(self, complaint: ComplaintRecord) -> None:
         async with self.lock:
@@ -95,7 +84,6 @@ class CrimeStore:
         async with self.lock:
             return [c for c in self.complaints if c.case_id == case_id]
 
-    # -- interviews (immutable, append-only) ------------------------------
 
     async def append_interview(self, interview: InterviewLog) -> None:
         async with self.lock:
@@ -105,7 +93,6 @@ class CrimeStore:
         async with self.lock:
             return [i for i in self.interviews if i.case_id == case_id]
 
-    # -- warrants ------------------------------------------------------------
 
     async def put_warrant(self, warrant: Warrant) -> None:
         async with self.lock:
@@ -120,7 +107,6 @@ class CrimeStore:
         async with self.lock:
             return [w.model_copy(deep=True) for w in self.warrants.values() if w.case_id == case_id]
 
-    # -- arrests (immutable, append-only) ---------------------------------
 
     async def append_arrest(self, arrest: ArrestRecord) -> None:
         async with self.lock:
@@ -130,7 +116,6 @@ class CrimeStore:
         async with self.lock:
             return [a for a in self.arrests if a.case_id == case_id]
 
-    # -- outcomes (immutable, append-only) --------------------------------
 
     async def append_outcome(self, outcome: CaseOutcome) -> None:
         async with self.lock:
@@ -144,7 +129,6 @@ class CrimeStore:
         async with self.lock:
             return [o for o in self.outcomes if o.case_id == case_id]
 
-    # -- confinement ---------------------------------------------------------
 
     async def put_confinement(self, record: ConfinementRecord) -> None:
         async with self.lock:
@@ -168,7 +152,6 @@ class CrimeStore:
             records = [self.confinements[cid] for cid in self.active_confinement_by_agent.values()]
             return [r.model_copy(deep=True) for r in records]
 
-    # -- ground-truth links (metrics.py only, see module docstring) --------
 
     async def link_ground_truth(self, case_id: str, witness_event_id: str) -> None:
         async with self.lock:
@@ -178,21 +161,6 @@ class CrimeStore:
         async with self.lock:
             return dict(self.case_ground_truth_links)
 
-    # -- checkpointing ------------------------------------------------------
-    #
-    # GOV-12. Every other store the runner owns round-trips a checkpoint;
-    # this one did not exist as far as a checkpoint was concerned, so a
-    # resumed town forgot every open case, every warrant, and - worst of
-    # the three - every unreleased confinement. A resident serving a
-    # sentence walked free at the resume and the case it was serving for
-    # was gone, which is not a lenient town, it is a town with no memory
-    # of its own justice.
-    #
-    # Synchronous, unlike everything above it. A checkpoint is taken at a
-    # tick boundary with nothing else running; taking the lock here would
-    # mean the adapter had to be async, and `CheckpointRegistry` is not.
-    # The tradeoff is deliberate and is the same one `LedgerCheckpoint-
-    # Adapter` makes.
 
     _CHECKPOINTED_MAPS = (
         ("witness_events", WitnessEvent),
@@ -221,10 +189,6 @@ class CrimeStore:
         return data
 
     def restore(self, data: dict[str, Any]) -> None:
-        # Rehydrated through the models, not blind-setattr'd. A disk
-        # checkpoint is JSON and JSON does not know what a CaseFile is -
-        # the failure `test_a_resumed_town_is_not_made_of_dicts` was
-        # written for, repeated here rather than re-learned.
         for name, model in self._CHECKPOINTED_MAPS:
             rows = data.get(name) or {}
             setattr(self, name, {key: model.model_validate(row) for key, row in rows.items()})

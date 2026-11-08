@@ -71,7 +71,6 @@ async def test_the_council_can_vote_itself_down_to_one_ruler(tmp_path) -> None:
                                      seats[: charter.amendment_votes_required])
     assert world.charter.amendments.proposals[abolish].status is AmendmentStatus.PASSED_AWAITING_PRESIDENT
 
-    # Nobody at the console: the veto window closes and it signs itself.
     await runner.close_the_veto_window(timestamp_for(world.tick() + 1))
 
     after = await world.charter.store.get_charter()
@@ -88,7 +87,6 @@ async def test_after_the_collapse_one_person_changes_the_constitution_alone(tmp_
     await _table_and_carry(runner, seats, "minister_seats", 0, seats[: first.amendment_votes_required])
     await runner.close_the_veto_window(timestamp_for(world.tick() + 1))
 
-    # Elections every thirty days, carried by the PM's single vote.
     solo = await _table_and_carry(runner, seats, "election_interval_days", 30.0, [seats[0]])
     assert world.charter.amendments.proposals[solo].status is AmendmentStatus.PASSED_AWAITING_PRESIDENT
     await runner.close_the_veto_window(timestamp_for(world.tick() + 2))

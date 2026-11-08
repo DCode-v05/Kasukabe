@@ -23,9 +23,6 @@ CAP = 65536
 def _store(tmp_path, rows):
     db = tmp_path / "trace.db"
     conn = sqlite3.connect(db)
-    # `success` matters: the check averages successful calls only, because a
-    # prompt refused for being too large is already counted as a failure and
-    # averaging it here measures the symptom rather than the trend.
     conn.execute("CREATE TABLE llm_calls (request_body TEXT, success INTEGER)")
     conn.executemany("INSERT INTO llm_calls (request_body, success) VALUES (?, 1)",
                      [(json.dumps(r),) for r in rows])

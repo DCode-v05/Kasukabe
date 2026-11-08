@@ -18,14 +18,8 @@ import time
 logger = logging.getLogger(__name__)
 
 
-# Default grace period: 1 hour. A finished agent's artifacts stay around
-# long enough for a human to inspect post-mortem, but get collected next
-# sweep. Override with SUBAGENT_GRACE_MS env var.
 PANEL_GRACE_MS_DEFAULT = 60 * 60 * 1000
 
-# Minimum seconds between two real eviction sweeps of the same directory
-# pair. Opportunistic eviction runs at the end of every SubAgent.run() — if
-# 20 agents finish in the same second, only the first actually sweeps.
 SWEEP_MIN_INTERVAL_S = 60.0
 LAST_SWEEP_TS: float = 0.0
 
@@ -105,8 +99,6 @@ def evict_all_stale(
             return {"metadata": [], "sidechain": []}
         LAST_SWEEP_TS = now
 
-    # Sidechain dir default is centralized in fork_subagent.get_sidechain_dir
-    # so env-var resolution stays in one place.
     from src.engine_core.fork_subagent import get_sidechain_dir
 
     md_dir = metadata_dir or os.environ.get("SUBAGENT_METADATA_DIR", "").strip()

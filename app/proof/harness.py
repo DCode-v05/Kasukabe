@@ -77,7 +77,6 @@ class Cognition:
     def base_url(self) -> str:
         return f"http://127.0.0.1:{self.port}"
 
-    # -- what a story asks -----------------------------------------------
 
     async def think(
         self,
@@ -98,10 +97,6 @@ class Cognition:
 
         provider = Provider(self._herald_settings())
         if self.seam:
-            # The wrapper chain production actually boots. Wrapping here
-            # means the suite that found a silent turn is the same suite
-            # that proves the seam now notices it - no second instrument,
-            # no chance of the fix being measured by a friendlier one.
             from src.sim.a_turn_that_tried_to_act import (
                 notice_a_turn_that_tried_to_act,
             )
@@ -177,7 +172,7 @@ def build_broker(brain: Any, trace_path: Path) -> Any:
     from supabase.sqlite_client import SqliteClient
 
     settings = BrokerSettings(
-        mock_mode=True,  # settings only: the gateway below is what serves
+        mock_mode=True,
         rpm_per_lane=10_000,
         spend_cap_usd=1_000_000.0,
         trace_sqlite_path=str(trace_path),

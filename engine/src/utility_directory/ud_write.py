@@ -25,7 +25,6 @@ class UDWrite:
     def __init__(self, db: SqlitePool) -> None:
         self.db = db
 
-    # --- Agents ---
 
     async def write_user_agent(self, agent_data: dict[str, Any]) -> dict[str, Any]:
         """Write a full user agent record — upsert by (name).
@@ -83,7 +82,7 @@ class UDWrite:
             ),
         )
         await self.db.commit()
-        assert row is not None  # INSERT ... RETURNING always yields a row
+        assert row is not None
         result = dict(row)
         for col in (
             "learned_state",
@@ -125,7 +124,6 @@ class UDWrite:
         await self.db.commit()
         return cursor.rowcount > 0
 
-    # --- Skills ---
 
     async def write_user_skill(self, skill_data: dict[str, Any]) -> dict[str, Any]:
         """Write a user skill's STATE row — upsert by (name).
@@ -171,7 +169,7 @@ class UDWrite:
             ),
         )
         await self.db.commit()
-        assert row is not None  # INSERT ... RETURNING always yields a row
+        assert row is not None
         result = dict(row)
         if isinstance(result.get("learned_state"), str):
             result["learned_state"] = json.loads(result["learned_state"])

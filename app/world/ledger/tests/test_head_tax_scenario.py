@@ -90,9 +90,6 @@ async def test_multi_day_head_tax_scenario() -> None:
     balances never negative, and the ledger invariant holding throughout.
     """
     ledger = await build_genesis_ledger(HEADS, agent_usd_cents=200, sim_per_agent=0)
-    # Enough for day 2's full bill (300) plus day 3's own head (100), not
-    # enough left over for day 3's two dependents (200 more): the exact
-    # shortfall this scenario needs to prove debt accrual honestly.
     ledger.accounts["amara"].sim_units = 400
     debts = HeadTaxDebtStore()
     charter_store, government = await make_government()
@@ -105,14 +102,6 @@ async def test_multi_day_head_tax_scenario() -> None:
     assert timestamp_for(DAY_3_TICK).game_day == 3
     assert timestamp_for(DAY_4_TICK).game_day == 4
 
-    # -- day 1: this town has not legislated a tax, so nobody is taxed ----
-    #
-    # Set here rather than leaned on. This used to read the genesis default
-    # and assert it was 0, which made the scenario depend on a constant it
-    # is not about - and ECON-01 changed that constant, because a town that
-    # starts at 0 bps and has no seated government to raise it can never
-    # tax anybody. The story below is "a rate of nothing charges nothing,
-    # then a government sets one", and it should say which rate it means.
     await government.set_tax_rate(
         0, "m2", LOCATION_GOVERNMENT_COMPLEX, now_tick=DAY_1_TICK - 1
     )
@@ -134,18 +123,14 @@ async def test_multi_day_head_tax_scenario() -> None:
     assert result_1.total_new_debt_sim == 0
     assert ledger.sim_balance("amara") == 400
 
-    # -- between day 1 and day 2: the government legislates a tax rate ---
-    # A real seat holder, at the real government complex, through the
-    # real GovernmentActions API, not a direct store poke.
     policy = await government.set_tax_rate(
         1_000, "m2", LOCATION_GOVERNMENT_COMPLEX, now_tick=DAY_1_TICK + 1
     )
     assert policy.tax_rate_bps == 1_000
     assert policy.version == 2
 
-    # -- day 2: the new rate is live; amara covers all three heads -------
     rate = await read_tax_rate_bps(charter_store)
-    assert rate == 1_000  # the rate change took effect
+    assert rate == 1_000
 
     view_before_day_2 = await head_tax_view(
         debts, debtor_agent_id="amara", head_agent_ids=HEADS, tax_rate_bps=rate
@@ -170,17 +155,16 @@ async def test_multi_day_head_tax_scenario() -> None:
     assert result_2.total_new_debt_sim == 0
     assert len(result_2.paid) == 3
     on_behalf_of = {t.on_behalf_of for t in result_2.paid}
-    assert on_behalf_of == {None, "beni", "chiazo"}  # per-head attribution
+    assert on_behalf_of == {None, "beni", "chiazo"}
     for transaction in result_2.paid:
         assert transaction.amount == 100
         assert transaction.from_account == "amara"
         assert transaction.to_account == TREASURY_ACCOUNT_ID
 
-    assert ledger.sim_balance("amara") == 100  # 400 - 300
+    assert ledger.sim_balance("amara") == 100
     assert ledger.sim_balance(TREASURY_ACCOUNT_ID) == 300
     assert await debts.outstanding("amara") == 0
 
-    # -- day 3: only enough left for one head, two dependents go to debt --
     result_3 = await charge_daily_head_tax(
         ledger,
         debts,
@@ -193,12 +177,12 @@ async def test_multi_day_head_tax_scenario() -> None:
     ledger.check_invariant()
     assert_no_negative_balances(ledger, HEADS)
 
-    assert result_3.total_paid_sim == 100  # amara's own head, paid first
+    assert result_3.total_paid_sim == 100
     assert result_3.paid[0].on_behalf_of is None
     assert result_3.total_new_debt_sim == 200
     assert {d.head_agent_id for d in result_3.new_debts} == {"beni", "chiazo"}
-    assert ledger.sim_balance("amara") == 0  # spent everything, never negative
-    assert ledger.sim_balance(TREASURY_ACCOUNT_ID) == 400  # 300 + 100
+    assert ledger.sim_balance("amara") == 0
+    assert ledger.sim_balance(TREASURY_ACCOUNT_ID) == 400
 
     assert await debts.outstanding("amara") == 200
 
@@ -209,7 +193,6 @@ async def test_multi_day_head_tax_scenario() -> None:
     assert view_after_day_3.tax_rate_bps == 1_000
     assert view_after_day_3.sim_per_head == 100
 
-    # -- the debt is not silent: it is filed at the real complaints desk --
     beni_debt = next(d for d in result_3.new_debts if d.head_agent_id == "beni")
     complaint, case = await file_head_tax_delinquency(
         desk,
@@ -222,14 +205,11 @@ async def test_multi_day_head_tax_scenario() -> None:
     assert case.status is CaseStatus.OPEN
     assert case.accused_agent_id == "amara"
     assert complaint.case_id == case.case_id
-    # It is really in the store, not just in the return value.
     stored_case = await desk.get_case(case.case_id)
     assert stored_case.accused_agent_id == "amara"
     all_cases = await desk.list_cases()
     assert case.case_id in {c.case_id for c in all_cases}
 
-    # A second head's shortfall from the same day's debt attaches to the
-    # existing case instead of opening a duplicate.
     chiazo_debt = next(d for d in result_3.new_debts if d.head_agent_id == "chiazo")
     _, same_case = await file_head_tax_delinquency(
         desk,
@@ -242,14 +222,6 @@ async def test_multi_day_head_tax_scenario() -> None:
     assert same_case.case_id == case.case_id
     assert len(await desk.list_complaints(case.case_id)) == 2
 
-    # -- day 4: amara earns a wage, day 4's tax is paid, debt is repaid --
-    # The treasury pays wages out of the same sim balance it collects tax
-    # into (world.ledger.core.pay_wage's own docstring: TREASURY_ACCOUNT_ID
-    # is "a government job"); top it up first, exactly like
-    # test_ledger_wage_tax_pension.py's own
-    # test_pay_wage_from_the_government does, to represent the sim a real
-    # treasury would also hold from business fees and the rest of the
-    # economy this scenario does not otherwise model.
     treasury_topup_sim = 1_000
     ledger.accounts[TREASURY_ACCOUNT_ID].sim_units += treasury_topup_sim
     await ledger.pay_wage(TREASURY_ACCOUNT_ID, "amara", 500, tick=DAY_4_TICK - 1)
@@ -270,7 +242,7 @@ async def test_multi_day_head_tax_scenario() -> None:
     assert_no_negative_balances(ledger, HEADS)
     assert result_4.total_paid_sim == 300
     assert result_4.total_new_debt_sim == 0
-    assert ledger.sim_balance("amara") == 200  # 500 - 300
+    assert ledger.sim_balance("amara") == 200
 
     repayment = await repay_head_tax_debt(
         ledger, debts, debtor_agent_id="amara", amount_sim=200, tick=DAY_4_TICK
@@ -281,15 +253,9 @@ async def test_multi_day_head_tax_scenario() -> None:
     assert ledger.sim_balance("amara") == 0
     assert await debts.outstanding("amara") == 0
 
-    # -- the $1000 USD invariant held throughout: this whole scenario is
-    # sim-currency only, so USD never moved, and it still reconciles.
     assert ledger.usd_total() == TOTAL_USD_CENTS
     assert ledger.halted is False
 
-    # -- the treasury's final sim balance is independently reconciled
-    # from the ledger's own transaction log (every sim leg that ever
-    # touched it, in either direction) plus the one manual top-up above,
-    # rather than trusted from this test's running totals.
     sim_inflows = sum(
         t.amount
         for t in ledger.transactions
@@ -304,9 +270,6 @@ async def test_multi_day_head_tax_scenario() -> None:
         ledger.sim_balance(TREASURY_ACCOUNT_ID) == treasury_topup_sim + sim_inflows - sim_outflows
     )
 
-    # -- and specifically, every sim unit amara herself paid in tax or
-    # debt repayment is exactly her three days' bills plus her repayment,
-    # nothing more and nothing less.
     amara_to_treasury_sim = sum(
         t.amount
         for t in ledger.transactions
@@ -314,4 +277,4 @@ async def test_multi_day_head_tax_scenario() -> None:
         and t.to_account == TREASURY_ACCOUNT_ID
         and t.currency is Currency.SIM
     )
-    assert amara_to_treasury_sim == 300 + 100 + 300 + 200  # day2 + day3 + day4 + repayment
+    assert amara_to_treasury_sim == 300 + 100 + 300 + 200

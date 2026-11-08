@@ -63,10 +63,6 @@ from src.learning_centre.signals import LearningSignal
 
 logger = logging.getLogger("kasukabe.sim.world_corrections")
 
-# The exact prefix `WorldClient.call_tool` puts on a 4xx and on a
-# transport failure. Matched at the START only: a resident who says "no
-# error here" in a `say` result is not being corrected by anybody, and a
-# substring match would file its own speech as the world's physics.
 REFUSAL_PREFIX = "Error:"
 
 
@@ -101,11 +97,6 @@ def correction_from_refusal(
     asked = ", ".join(f"{k}={v!r}" for k, v in sorted(tool_input.items())) or "no arguments"
     return LearningSignal(
         type="correction",
-        # CORE-29. `step11_skill_evolution` filters on `source = 'user'`;
-        # this said "engine" and so all 70 of run 23's corrections were
-        # written, stored, counted - and never read. See the module
-        # docstring for why `user` is the right label in this vocabulary
-        # rather than a workaround.
         source="user",
         subject=tool_name,
         thread_id=thread_id,

@@ -41,22 +41,14 @@ async def test_old_pm_loses_access_the_instant_the_swap_lands(world, registry) -
     await spawn_agent(world, "new_pm", LOCATION_GOVERNMENT_COMPLEX)
     await swear_in(world, "old_pm")
 
-    # Old PM can exercise a GOVERNMENT-namespace tool before the handover.
     result = await registry.execute(world, "old_pm", "petition", PETITION_PARAMS)
     assert result.result["petition_id"]
 
-    # The handover: one atomic GovernmentState replacement, exactly what
-    # charter/elections.py's tally() does.
     await swear_in(world, "new_pm")
 
-    # No overlap: the old PM's access is gone, not merely "also" the new
-    # PM's - reads as the identical error an outsider gets (existence
-    # leak), never a distinguishable "you used to be allowed."
     with pytest.raises(ToolNotFoundError):
         await registry.execute(world, "old_pm", "petition", PETITION_PARAMS)
 
-    # No gap: the new PM's access is live in the same instant, not delayed
-    # a tick or requiring any separate grant step.
     result = await registry.execute(world, "new_pm", "petition", PETITION_PARAMS)
     assert result.result["petition_id"]
 
@@ -128,13 +120,7 @@ async def test_handover_access_transitions_monotonically_under_concurrent_calls(
         outcome for who, outcome in completion_order[:handover_index] if who == "new_pm"
     ]
 
-    # No overlap: once the handover has completed, old_pm is never granted
-    # again.
     assert all(outcome == "denied" for outcome in old_pm_after_handover)
-    # No gap: before the handover, old_pm was always granted (it is still
-    # legitimately sitting) and new_pm was never granted (not yet elected).
     assert all(outcome == "granted" for outcome in old_pm_before_handover)
     assert all(outcome == "denied" for outcome in new_pm_before_handover)
-    # And at least one call landed on each side of the handover, or the
-    # test would not actually be exercising the race.
     assert old_pm_before_handover and old_pm_after_handover

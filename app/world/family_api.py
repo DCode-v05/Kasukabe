@@ -54,9 +54,6 @@ from world.life.upkeep import (
 )
 from world.tools.state import WorldState
 
-# A household with no earner and no balance is not "1000 days of runway",
-# it is broke. Runway is capped so the watchlist cannot be gamed by a
-# division that trends to infinity, and so the JSON never carries an inf.
 RUNWAY_CAP_DAYS = 999
 
 
@@ -73,10 +70,6 @@ class FamilyDeps:
 def name_map(genesis: Genesis) -> dict[str, str]:
     return {agent.agent_id: agent.name for agent in genesis.agents}
 
-
-# ---------------------------------------------------------------------------
-# view models
-# ---------------------------------------------------------------------------
 
 class AgentSurvival(BaseModel):
     """19.1 - per-agent survival status."""
@@ -158,10 +151,6 @@ class MoneyFlow(BaseModel):
     out_of_treasury_sim: int
     between_agents_sim: int
 
-
-# ---------------------------------------------------------------------------
-# the arithmetic, kept out of the handlers so it can be tested directly
-# ---------------------------------------------------------------------------
 
 def runway_days(balance_sim: int, daily_bill_sim: int) -> int:
     """How many days this balance covers this bill.
@@ -249,10 +238,6 @@ def household_solvency(world: WorldState, household_id: str, day: int) -> Househ
     member_ids = list(household.member_ids) if household is not None else []
     members = [world.agents[m] for m in member_ids if m in world.agents]
     bill = compute_household_bill(household_id, day, members)
-    # Nobody's wallet is pooled by force (section 5.1) - but the household
-    # is billed as one (5.2), so solvency is the combined balance against
-    # the combined bill. That is the number that decides whether anyone in
-    # it eats, which is what this view is for.
     combined = sum(sim_balance_of(world, m) for m in bill.earner_ids + bill.dependent_ids)
     runway = runway_days(combined, bill.total_sim)
     return HouseholdSolvency(
@@ -320,17 +305,12 @@ async def add_cors_headers(response: Response) -> None:
     response.headers["Access-Control-Allow-Origin"] = "*"
 
 
-# ---------------------------------------------------------------------------
-# the router
-# ---------------------------------------------------------------------------
-
 def build_family_router(get_deps: Callable[[], FamilyDeps]) -> APIRouter:
     router = APIRouter(tags=["family"], dependencies=[Depends(add_cors_headers)])
 
     def current_day(world: WorldState) -> int:
         return int(world.game_clock().total_hours // 24)
 
-    # -- 19.1 ---------------------------------------------------------------
 
     @router.get("/family/agents", response_model=list[AgentSurvival])
     async def agents() -> list[AgentSurvival]:
@@ -338,7 +318,6 @@ def build_family_router(get_deps: Callable[[], FamilyDeps]) -> APIRouter:
         names = name_map(deps.genesis)
         return [agent_survival(deps.world, names, a) for a in deps.world.agents.values()]
 
-    # -- 19.2 ---------------------------------------------------------------
 
     @router.get("/family/households", response_model=list[HouseholdSolvency])
     async def households() -> list[HouseholdSolvency]:
@@ -346,7 +325,6 @@ def build_family_router(get_deps: Callable[[], FamilyDeps]) -> APIRouter:
         day = current_day(deps.world)
         return [household_solvency(deps.world, hid, day) for hid in deps.world.households]
 
-    # -- 19.3 ---------------------------------------------------------------
 
     @router.get("/family/at-risk", response_model=list[HouseholdSolvency])
     async def at_risk(limit: int = 20) -> list[HouseholdSolvency]:
@@ -358,7 +336,6 @@ def build_family_router(get_deps: Callable[[], FamilyDeps]) -> APIRouter:
         rows.sort(key=lambda h: (h.days_of_runway, -h.dependents))
         return rows[: max(1, limit)]
 
-    # -- 19.4 ---------------------------------------------------------------
 
     @router.get("/family/wealth", response_model=WealthBoard)
     async def wealth(top: int = 5) -> WealthBoard:
@@ -399,7 +376,6 @@ def build_family_router(get_deps: Callable[[], FamilyDeps]) -> APIRouter:
             biggest_earners=board(earned),
         )
 
-    # -- 19.5 ---------------------------------------------------------------
 
     @router.get("/family/tree/{agent_id}", response_model=FamilyTree)
     async def tree(agent_id: str) -> FamilyTree:
@@ -413,8 +389,6 @@ def build_family_router(get_deps: Callable[[], FamilyDeps]) -> APIRouter:
         parents = [n for p in agent.parent_ids if (n := tree_node(deps.world, names, p, "parent"))]
         children = [n for c in agent.children_ids if (n := tree_node(deps.world, names, c, "child"))]
         spouse = tree_node(deps.world, names, agent.spouse_id, "spouse") if agent.spouse_id else None
-        # Siblings are not stored; they are everyone who shares a parent and
-        # is not this agent. Deriving beats a second field that can drift.
         sibling_ids = {
             other.agent_id
             for other in deps.world.agents.values()
@@ -423,7 +397,6 @@ def build_family_router(get_deps: Callable[[], FamilyDeps]) -> APIRouter:
         siblings = [n for s in sorted(sibling_ids) if (n := tree_node(deps.world, names, s, "sibling"))]
         return FamilyTree(root=root, parents=parents, spouse=spouse, children=children, siblings=siblings)
 
-    # -- 19.6 ---------------------------------------------------------------
 
     @router.get("/family/money-flow", response_model=MoneyFlow)
     async def flow(since_tick: int = 0) -> MoneyFlow:

@@ -27,7 +27,7 @@ import pytest
 from broker.auth import AuthenticationError, resolve_agent_id
 
 APP = Path(__file__).resolve().parents[2]
-SIGNED = ""          # no secret configured: the unsigned path
+SIGNED = ""
 HEADERS = {"authorization": "Bearer a0042"}
 
 
@@ -70,12 +70,7 @@ def test_the_peer_comes_from_the_connection_not_the_request() -> None:
         "INFRA-05: the peer is not taken from the connection, so a client "
         "can claim to be local"
     )
-    # Stamped AFTER the inbound headers are copied in, so an inbound header
-    # of the same name is overwritten rather than trusted.
     assert source.index("headers = dict(request.headers)") < source.index(stamp)
-
-
-# ── the committed secrets ──────────────────────────────────────────────
 
 
 def test_the_launcher_holds_no_secret_of_its_own() -> None:

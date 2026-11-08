@@ -35,11 +35,6 @@ from world.life.soul_seed import (
 from world.tools.economy_bridge import life_event_to_world_event
 from world.wiring import TraceStore
 
-# Words that would leak a STRATEGY (this task's "CRITICAL CONSTRAINT: tell
-# them the RULES, never the STRATEGY") rather than a rule. Kept narrow and
-# literal (not a claim of completeness) - this is a tripwire against an
-# obvious regression, not a substitute for the human read of
-# law_of_the_town_rules() this test file's own review already did.
 STRATEGY_WORDS = (
     "cooperate",
     "cooperation",
@@ -95,8 +90,6 @@ class TestFormatting:
 class TestLawOfTheTownRules:
     def test_rules_state_every_required_fact(self) -> None:
         text = " ".join(law_of_the_town_rules())
-        # Energy, not dollars: thinking is billed in energy, and sim-currency
-        # is stated to be the only money (world/ledger/money.py).
         assert "Thinking uses energy" in text
         assert "only money in Kasukabe" in text
         assert "balance" in text
@@ -126,19 +119,11 @@ class TestBuildSoulSeed:
         assert "5,000 sim-currency" in text
 
     def test_reflects_a_different_agents_own_actual_balance(self) -> None:
-        # Not every genesis agent starts with the population default -
-        # this proves the figure in the text is this agent's real field,
-        # not a hardcoded example.
         agent = make_agent(name="Kenji Ito", usd_wallet_cents=350, starting_sim_balance=12_500)
         text = build_soul_seed(agent)
         assert "3,500 energy" in text
         assert "12,500 sim-currency" in text
         assert "2,000 energy" not in text
-        # The default the population is seeded with, which must NOT appear
-        # in this agent's text. It used to be spelled 5,000 - the same
-        # number the exchange rate became on 2026-09-04, so the canary
-        # started matching the law of the world rather than a leaked
-        # balance. Derived from the default so it can never collide again.
         default_sim = f"{GENESIS_AGENT_STARTING_SIM_BALANCE:,} sim-currency"
         assert f"you hold {default_sim}" not in text.lower()
 
@@ -149,23 +134,12 @@ class TestBuildSoulSeed:
         assert leaked == [], f"build_soul_seed() leaked strategy words: {leaked}"
 
     def test_accepts_a_real_genesisagent_instance_not_a_stand_in(self) -> None:
-        # make_agent() builds a real world.life.models.GenesisAgent
-        # through its own pydantic constructor/validation, the exact
-        # shape world.life.genesis.generate_genesis() and
-        # world.run_genesis.py's seed_genesis() both produce and consume
-        # - not a hand-rolled stub with a different shape standing in
-        # for it. (Not calling generate_genesis() itself here: that
-        # function pulls in this package's relationship-opinion
-        # generator, which is unrelated, actively-developed code this
-        # task does not own - see this file's own module docstring and
-        # this task's report for the live KeyError observed there.)
         agent = make_agent(name="Priya Nair", usd_wallet_cents=200, starting_sim_balance=5_000)
         assert isinstance(agent, GenesisAgent)
         text = build_soul_seed(agent)
         assert agent.name in text
         from world.ledger.money import format_energy
 
-        # Energy, not dollars - still the agent's own genesis figure.
         assert format_energy(agent.usd_wallet_cents) in text
         assert format_sim(agent.starting_sim_balance) in text
 
@@ -204,9 +178,6 @@ class TestBroadcastLawOfTheTown:
         assert event.payload["message"] == default_broadcast_message()
 
     def test_event_type_is_valid_per_conventions_naming_scheme(self) -> None:
-        # The real validator world.core.events.WorldEvent applies at
-        # construction time, not a hand-rolled regex guess at what it
-        # checks.
         assert validate_event_type(BROADCAST_EVENT_TYPE) is None
 
 
@@ -227,9 +198,6 @@ class TestBroadcastReachesLivingAgentsAndTheTraceStore:
         locations.attach(event_bus)
         perception = PerceptionSystem(locations, event_bus)
 
-        # Real, in-memory SQLite trace store, wired exactly the way
-        # world.wiring.build_world_server() wires the production one:
-        # subscribed to "*" so it observes every event unconditionally.
         client = get_client()
         trace_store = TraceStore(client)
         ledger = Ledger()
@@ -240,8 +208,6 @@ class TestBroadcastReachesLivingAgentsAndTheTraceStore:
 
         locations.place("a0001", "cafe")
         locations.place("a0002", "farmland")
-        # a0003 deliberately left unplaced - a broadcast must still reach
-        # an agent nowhere on the map, unlike a location-scoped event.
         locations.place(excluded_agent_id, "temple")
 
         life_event = broadcast_law_of_the_town(living_agent_ids, message="test broadcast text")
@@ -251,8 +217,6 @@ class TestBroadcastReachesLivingAgentsAndTheTraceStore:
 
         await event_bus.publish(world_event)
 
-        # 1. Every living agent's perception carries it, involves_self,
-        # regardless of location.
         for agent_id in living_agent_ids:
             built = perception.build_perception(agent_id, tick)
             matches = [h for h in built.heard_events if h.type == BROADCAST_EVENT_TYPE]
@@ -260,14 +224,9 @@ class TestBroadcastReachesLivingAgentsAndTheTraceStore:
             assert matches[0].involves_self is True
             assert matches[0].payload["message"] == "test broadcast text"
 
-        # 2. An agent not on the living roster, even though present in
-        # the world and even standing at an unrelated location, does not
-        # receive it.
         excluded_perception = perception.build_perception(excluded_agent_id, tick)
         assert all(h.type != BROADCAST_EVENT_TYPE for h in excluded_perception.heard_events)
 
-        # 3. It landed in the real trace store as a distinct, queryable
-        # event type - not just fanned out in-process.
         rows = await client.select("events", filters={"type": eq(BROADCAST_EVENT_TYPE)})
         assert len(rows) == 1
         row = rows[0]

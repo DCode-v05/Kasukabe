@@ -50,13 +50,8 @@ async def _bakery(world: WorldState, *, owner: str = "n05") -> Business:
         "b_bakery", owner, fee_sim=1, tick=world.tick()
     )
     world.inventory.credit("b_bakery", "bread", 8)
-    # A till with money in it. A business that cannot pay for what it buys
-    # is a true refusal, and not the one any test here is about.
     await world.ledger.mint_sim("b_bakery", 5_000, tick=world.tick())
     return business
-
-
-# ── posting ───────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -145,7 +140,6 @@ async def test_an_employee_can_post_for_the_shop_and_a_stranger_cannot(
         await registry.execute(world, "n09", "post_price", {
             "item": "bread", "ask_sim": 1, "on_behalf_of_business": "b_bakery",
         })
-    # Names the way out, per the addendum's rule 3.
     assert "on_behalf_of_business" in str(exc.value)
 
 
@@ -209,9 +203,6 @@ async def test_withdrawing_a_price_that_was_never_posted(
     assert "no price is posted" in str(exc.value)
 
 
-# ── buying at the posted price ────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_buyer_pays_the_posted_price_not_their_own(
     world: WorldState, registry
@@ -220,7 +211,7 @@ async def test_a_buyer_pays_the_posted_price_not_their_own(
     went away: there is no price to name."""
     await _bakery(world)
     await spawn_agent(world, "n09", BAKERY_AT)
-    in_conversation(world, "n09", "n05")   # a sale is agreed in conversation
+    in_conversation(world, "n09", "n05")
     await registry.execute(world, "n05", "post_price", {
         "item": "bread", "ask_sim": 30, "on_behalf_of_business": "b_bakery",
     })
@@ -233,7 +224,6 @@ async def test_a_buyer_pays_the_posted_price_not_their_own(
     assert outcome.result["unit_price_sim"] == 30
     assert outcome.result["total_sim"] == 60
     assert world.inventory.quantity("n09", "bread") == 2
-    # 60 for the bread, plus the schedule's transaction cost on top.
     from world.ledger.action_costs import ActionActor, cost_for
 
     fee = cost_for("buy", {"quantity": 2, "total_price_sim": 60}, ActionActor("n09"))
@@ -258,7 +248,7 @@ async def test_a_buyer_cannot_name_a_price_at_all(world: WorldState, registry) -
 
     await _bakery(world)
     await spawn_agent(world, "n09", BAKERY_AT)
-    in_conversation(world, "n09", "n05")   # a sale is agreed in conversation
+    in_conversation(world, "n09", "n05")
     await registry.execute(world, "n05", "post_price", {
         "item": "bread", "ask_sim": 30, "on_behalf_of_business": "b_bakery",
     })
@@ -270,7 +260,6 @@ async def test_a_buyer_cannot_name_a_price_at_all(world: WorldState, registry) -
         })
     said = str(caught.value)
     assert "unit_price_sim" in said
-    # And the refusal teaches: it names what buy DOES take.
     assert "seller_id" in said and "quantity" in said
 
     outcome = await registry.execute(world, "n09", "buy", {
@@ -321,8 +310,6 @@ async def test_buying_from_a_person_requires_standing_with_them(
     await world.event_bus.emit(
         "agent.moved", tick=3, payload={"agent_id": "n09", "location_id": FIELD}
     )
-    # Standing with her is necessary and no longer sufficient: a sale is
-    # agreed between two people who are talking (`commerce._require_dealing`).
     in_conversation(world, "n09", "n06")
     outcome = await registry.execute(world, "n09", "buy", {
         "seller_id": "n06", "item": "cabbage", "quantity": 2,
@@ -406,7 +393,7 @@ async def test_a_shop_minded_by_its_employee_sells_while_the_owner_is_away(
 async def test_buying_more_than_the_shelf_holds(world: WorldState, registry) -> None:
     await _bakery(world)
     await spawn_agent(world, "n09", BAKERY_AT)
-    in_conversation(world, "n09", "n05")   # a sale is agreed in conversation
+    in_conversation(world, "n09", "n05")
     await registry.execute(world, "n05", "post_price", {
         "item": "bread", "ask_sim": 30, "on_behalf_of_business": "b_bakery",
     })
@@ -420,14 +407,11 @@ async def test_buying_more_than_the_shelf_holds(world: WorldState, registry) -> 
     assert world.ledger.sim_balance("n09") == before, "a refusal must cost nothing"
 
 
-# ── selling into a posted bid ─────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_seller_receives_the_posted_bid(world: WorldState, registry) -> None:
     await _bakery(world)
     await spawn_agent(world, "n06", BAKERY_AT)
-    in_conversation(world, "n06", "n05")   # a sale is agreed in conversation
+    in_conversation(world, "n06", "n05")
     world.inventory.credit("n06", "flour", 10)
     await registry.execute(world, "n05", "post_price", {
         "item": "flour", "bid_sim": 6, "on_behalf_of_business": "b_bakery",
@@ -453,7 +437,6 @@ async def test_selling_where_nobody_posted_a_bid_names_trade(
     await _bakery(world)
     await spawn_agent(world, "n06", BAKERY_AT)
     world.inventory.credit("n06", "flour", 10)
-    # An ask is not a bid: a shop that sells bread is not thereby buying it.
     await registry.execute(world, "n05", "post_price", {
         "item": "flour", "ask_sim": 8, "on_behalf_of_business": "b_bakery",
     })
@@ -466,9 +449,6 @@ async def test_selling_where_nobody_posted_a_bid_names_trade(
     assert "trade" in str(exc.value)
 
 
-# ── what the trace can see ────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_posted_sale_is_distinguishable_from_a_bargain(
     world: WorldState, registry
@@ -477,7 +457,7 @@ async def test_a_posted_sale_is_distinguishable_from_a_bargain(
     share haggled in speech. The report must not have to parse prose."""
     await _bakery(world)
     await spawn_agent(world, "n09", BAKERY_AT)
-    in_conversation(world, "n09", "n05")   # a sale is agreed in conversation
+    in_conversation(world, "n09", "n05")
     await registry.execute(world, "n05", "post_price", {
         "item": "bread", "ask_sim": 30, "on_behalf_of_business": "b_bakery",
     })
@@ -523,7 +503,7 @@ async def test_the_transaction_cost_still_scales_with_the_posted_price(
     """
     await _bakery(world)
     await spawn_agent(world, "n09", BAKERY_AT)
-    in_conversation(world, "n09", "n05")   # a sale is agreed in conversation
+    in_conversation(world, "n09", "n05")
     await registry.execute(world, "n05", "post_price", {
         "item": "bread", "ask_sim": 4_000, "on_behalf_of_business": "b_bakery",
     })
@@ -534,7 +514,6 @@ async def test_the_transaction_cost_still_scales_with_the_posted_price(
     })
 
     spent = before - world.ledger.sim_balance("n09")
-    # 8,000 for the bread, and 1% of 8,000 on top - not the 2-sim floor.
     assert spent == 8_000 + 80
 
 
@@ -556,5 +535,4 @@ async def test_an_unpriced_trade_resolves_to_no_value_rather_than_a_guess(
         "item": "bread", "ask_sim": 30, "on_behalf_of_business": "b_bakery",
     })
     assert posted_trade_value(world, "buy", params) == 60
-    # A `sell` needs a BID; an ask is not one.
     assert posted_trade_value(world, "sell", params) is None

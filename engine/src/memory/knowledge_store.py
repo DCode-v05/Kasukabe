@@ -189,7 +189,6 @@ class KnowledgeStore:
                     result["score"] = score
                     scored.append((score, result))
 
-        # FTS5 keyword fallback
         from src.memory.episodic_memory import build_fts_query, bm25_to_score
 
         fts_query = build_fts_query(query)
@@ -220,7 +219,6 @@ class KnowledgeStore:
                     result["score"] = kw
                     scored.append((kw, result))
 
-        # Final fallback — keyword scoring on recent entries without embeddings
         if not query_embedding or not self.db.vec_available:
             kw_rows = await self.db.fetch(
                 """
@@ -246,7 +244,6 @@ class KnowledgeStore:
                     result["score"] = kw
                     scored.append((kw, result))
 
-        # Apply recency boost — recent knowledge ranks higher
         for i, (score, result) in enumerate(scored):
             boost = recency_boost(result.get("created_at", ""))
             boosted = score * boost
@@ -308,7 +305,6 @@ class KnowledgeStore:
         cutoff = (datetime.now(timezone.utc) - timedelta(days=DECAY_WINDOW_DAYS)).isoformat()
         now_str = datetime.now(timezone.utc).isoformat()
 
-        # Step 1: Find entries to decay
         rows = await self.db.fetch(
             """
             SELECT id, confidence FROM knowledge_store
@@ -328,7 +324,6 @@ class KnowledgeStore:
             )
             decay_count += 1
 
-        # Step 2: Supersede entries below threshold
         supersede_cursor = await self.db.execute(
             """
             UPDATE knowledge_store

@@ -50,14 +50,12 @@ class UDFull:
         if version == VERSION_USER:
             return await self.get_agent_user_created(name)
 
-        # Fetch platform definition from catalog
         platform = self.catalog.get_agent(name)
         if platform is None:
             return None
 
-        result = dict(platform)  # shallow copy
+        result = dict(platform)
 
-        # Check for user state in SQLite
         user_state = await self.db.fetchrow(
             """SELECT learned_state, custom_config
                FROM user_agents
@@ -81,7 +79,6 @@ class UDFull:
             else:
                 result["custom_config"] = None
         else:
-            # First use — no user state yet, platform defaults only
             result["learned_state"] = None
             result["custom_config"] = None
 
@@ -119,15 +116,12 @@ class UDFull:
         if version == VERSION_USER:
             return await self.get_skill_user_created(name)
 
-        # Fetch platform definition from catalog
         platform = self.catalog.get_skill(name)
         if platform is None:
             return None
 
-        result = dict(platform)  # shallow copy
+        result = dict(platform)
 
-        # The definition came from the catalog above. SQLite contributes only
-        # the learned overlay — it no longer stores a competing definition.
         user_state = await self.db.fetchrow(
             """SELECT learned_state
                FROM user_skills
@@ -173,14 +167,12 @@ class UDFull:
 
         Tools are platform-only. User table holds config overrides.
         """
-        # Fetch platform definition from catalog
         platform = self.catalog.get_tool(name)
         if platform is None:
             return None
 
-        result = dict(platform)  # shallow copy
+        result = dict(platform)
 
-        # Check for user config override in SQLite
         user_config = await self.db.fetchrow(
             """SELECT custom_config FROM user_tools
                WHERE platform_tool_name = ?""",
@@ -206,7 +198,6 @@ class UDFull:
         custom_config if one exists. Used by hydrate_tools() at boot to
         dynamically resolve handlers via the implementation column.
         """
-        # Get all user tool configs in one query
         user_rows = await self.db.fetch(
             """SELECT platform_tool_name, custom_config
                FROM user_tools""",
@@ -221,7 +212,7 @@ class UDFull:
 
         results: list[dict[str, Any]] = []
         for tool in self.catalog.all_tools():
-            result = dict(tool)  # shallow copy
+            result = dict(tool)
             tool_name = result.get("name", "")
             result["custom_config"] = user_configs.get(tool_name)
             results.append(result)

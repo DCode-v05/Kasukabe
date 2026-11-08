@@ -124,10 +124,6 @@ async def audit(findings: Findings) -> None:
             by_verdict["refused"].append(shape)
             rejected[shape.signature] = f"{type(exc).__name__}: {exc}"
 
-    # A refused shape is one of two things, and the summary has to keep them
-    # apart or it will read as breakage for as long as the project has a
-    # deliberate tightening in it - which is forever, and a row that can
-    # never be green is a row nobody reads.
     on_purpose = [
         shape for shape in by_verdict["refused"]
         if declared_reason(shape.signature, rejected[shape.signature]) is not None
@@ -147,25 +143,7 @@ async def audit(findings: Findings) -> None:
         )
     )
 
-    # One row per drifted contract, named, so a fix can be pointed at it.
-    #
-    # NOT every row here is a defect, and the report must not pretend
-    # otherwise. Some of this drift is deliberate and good: TRADE-01
-    # turned `post_price`'s silent drop of `business_id` into an explicit
-    # refusal, so a corpus call that "succeeded" by doing the wrong thing
-    # correctly fails to validate now. That is the fix working.
-    #
-    # What every row DOES prove is that a real model, in a real run, wrote
-    # these argument names and the world accepted them. `param_repair`'s
-    # SYNONYMS table exists for exactly this - "72 entries, every one
-    # observed in a real session log" - and these are the spellings it
-    # does not yet fold. A model still reaching for the old name today
-    # pays for the call and gets nothing.
     for shape in sorted(by_verdict["refused"], key=lambda s: -s.times):
-        # A refusal this project chose is a decision, not a breakage - but
-        # only while the declaration still describes the refusal the town
-        # actually gives. `deliberate.py` checks that; a declaration that
-        # has drifted leaves the row failing.
         intended = declared_reason(shape.signature, rejected[shape.signature])
         if intended is not None:
             findings.add(
@@ -195,17 +173,9 @@ async def audit(findings: Findings) -> None:
 
     for shape in sorted(by_verdict["gone"], key=lambda s: -s.times):
         seen = f"seen in {', '.join(sorted(shape.series)[:3])}"
-        # A verb the WORLD registry does not serve may still be served to
-        # the model by the engine (`pinned_boot` registers the three memory
-        # verbs straight onto the thread's registry). Ask that registry
-        # before calling anything withdrawn: six of these rows were a live
-        # verb this package was not looking at.
         engine_side = resolve(shape.tool, sorted(shape.keys))
         if engine_side is not None:
             hint, why = engine_side
-            # A verb the ENGINE serves can be tightened on purpose too, and
-            # the declaration has to reach those rows or a boundary this
-            # project drew reads as breakage.
             if hint == "failed":
                 intended = declared_reason(shape.signature, why)
                 if intended is not None:

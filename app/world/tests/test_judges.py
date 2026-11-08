@@ -25,9 +25,6 @@ from world.evals.judges import (
 )
 
 
-# ── the categories are the ones the question distinguishes ────────────
-
-
 def test_persona_has_the_specs_three_categories():
     """§3.2, verbatim: "one of `in character`, `generic`, `out of
     character`"."""
@@ -69,9 +66,6 @@ def test_the_rubrics_tell_the_judge_not_to_reward_length_or_manners():
     assert "reward" in PERSONA_RUBRIC
 
 
-# ── the wallet ────────────────────────────────────────────────────────
-
-
 def test_the_judge_bills_the_treasury_and_never_a_resident():
     """An eval billed as cognition is a resident paying to be measured,
     and it lands in the cognition lane. The same rule 3.1 follows."""
@@ -98,9 +92,6 @@ def test_one_item_per_call():
     assert '"messages": [{"role": "user"' in source
 
 
-# ── the distribution ──────────────────────────────────────────────────
-
-
 def test_errors_are_counted_not_dropped():
     """Dropping them turns "the broker was down for forty of these" into a
     confident distribution over the ten that worked."""
@@ -125,8 +116,6 @@ def test_the_render_never_says_pass_or_fail():
     ).lower()
 
     assert "pass" not in text and "fail" not in text
-    # Not even when every single turn was out of character, which is the
-    # moment a verdict would be most tempting and most wrong.
     assert "out of character" in text
 
 
@@ -144,9 +133,6 @@ def test_an_empty_run_does_not_divide_by_zero():
     """A judging run that found nothing to judge is a normal state - a
     town where nobody spoke - not a crash."""
     assert "0 judged" in render("persona", distribution([]), [])
-
-
-# ── stratification ────────────────────────────────────────────────────
 
 
 def test_the_sample_is_stratified_so_one_resident_cannot_dominate():

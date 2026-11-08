@@ -73,9 +73,6 @@ def test_callbacks_cleared_after_cancel():
     assert len(token.callbacks) == 0
 
 
-# ── Child tokens ──────────────────────────────────────────
-
-
 def test_child_token_propagates():
     parent = CancellationToken()
     child = create_child_token(parent)
@@ -99,9 +96,6 @@ def test_child_of_already_cancelled_parent():
     child = create_child_token(parent)
     assert child.cancelled
     assert child.reason == "already"
-
-
-# ── Bubble tokens ─────────────────────────────────────────
 
 
 def test_bubble_token_propagates_parent_to_child():
@@ -141,11 +135,7 @@ def test_bubble_no_double_cancel():
     parent.cancel("already gone")
     child = create_bubble_token(parent)
     assert child.cancelled
-    # Child trying to bubble shouldn't error
     child.cancel("too late")
-
-
-# ── AbortReason enum ─────────────────────────────────────
 
 
 def test_abort_reason_values():
@@ -156,12 +146,8 @@ def test_abort_reason_values():
 
 def test_abort_reason_has_timeout():
     assert AbortReason.TIMEOUT == "timeout"
-    # All four must be distinct values
     values = {r.value for r in AbortReason}
     assert len(values) == 4
-
-
-# ── CombinedCancellationToken ────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -180,7 +166,7 @@ async def test_combined_token_fires_on_parent():
 async def test_combined_token_fires_on_sibling_with_default_reason():
     sibling = CancellationToken()
     combined = CombinedCancellationToken(sibling=sibling)
-    sibling.cancel("bash exploded")  # no explicit abort_reason
+    sibling.cancel("bash exploded")
     assert combined.cancelled
     assert combined.reason == "bash exploded"
     assert combined.abort_reason == AbortReason.SIBLING_ERROR
@@ -212,7 +198,6 @@ async def test_combined_token_first_source_wins():
     parent = CancellationToken()
     combined = CombinedCancellationToken(parent=parent, timeout_ms=5000)
     parent.cancel("parent first", AbortReason.USER_INTERRUPTED)
-    # Timeout never fires because first-source already cancelled.
     await asyncio.sleep(0.02)
     assert combined.reason == "parent first"
     assert combined.abort_reason == AbortReason.USER_INTERRUPTED
@@ -224,7 +209,6 @@ async def test_combined_token_cleanup_cancels_timer():
     combined = CombinedCancellationToken(timeout_ms=30)
     combined.cleanup()
     await asyncio.sleep(0.08)
-    # Timer was cancelled at cleanup, so the token should never have fired.
     assert not combined.cancelled
 
 
@@ -234,7 +218,6 @@ async def test_combined_token_cleanup_prevents_late_parent_fire():
     combined = CombinedCancellationToken(parent=parent)
     combined.cleanup()
     parent.cancel("late", AbortReason.USER_INTERRUPTED)
-    # Listener still fires, but the disposed flag turns it into a no-op.
     assert not combined.cancelled
 
 
@@ -248,7 +231,6 @@ async def test_combined_token_merges_three_sources_parent_wins():
         timeout_ms=5000,
     )
     parent.cancel("parent", AbortReason.USER_INTERRUPTED)
-    # Firing sibling + waiting past timeout should be no-ops.
     sibling.cancel("sibling")
     await asyncio.sleep(0.02)
     assert combined.reason == "parent"

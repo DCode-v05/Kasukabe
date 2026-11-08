@@ -74,7 +74,6 @@ def init(db: SqlitePool) -> None:
         )
         await store.track(evt)
 
-        # Cache tracking: record cache hit/miss alongside the token event
         try:
             from src.herald import herald_api
 

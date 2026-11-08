@@ -27,10 +27,6 @@ class TestSafeBinaryAllowlist:
         )
 
     def test_sed_not_in_safe_bins(self):
-        # sed is gated by src/sandbox/sed_validation.py (step 4.5 of the
-        # permission pipeline), not here. It must not appear in the
-        # executor-level safe-bin allowlist. validate_safe_bin therefore
-        # rejects every sed invocation by way of "not in safe_bins".
         assert "sed" not in DEFAULT_SAFE_BINS
         assert not validate_safe_bin(
             ["sed", "-i", "s/old/new/"], DEFAULT_SAFE_BINS, DEFAULT_TRUSTED_DIRS
@@ -343,11 +339,6 @@ class TestNetworkPermission:
             ex.cleanup()
 
 
-# ============================================================
-# SECURITY HARDENING TESTS
-# ============================================================
-
-
 class TestSecurityHardening:
     def test_pip_not_in_safe_bins(self):
         """pip removed from safe binary allowlist."""
@@ -385,7 +376,6 @@ class TestSecurityHardening:
         """Regex patterns longer than MAX_REGEX_LEN are rejected."""
         ex = SandboxExecutor(session_id="redos-1")
         try:
-            # Write a file to search
             await ex.write_file("test.txt", "hello world")
             long_pattern = "a" * (MAX_REGEX_LEN + 1)
             result = await ex.search_content(long_pattern)
@@ -415,7 +405,6 @@ class TestPolicyIntegration:
 
         policy = SandboxPolicy.default()
         executor = SandboxExecutor(policy=policy)
-        # Policy-derived bins should match the policy's binary count + python if bwrap
         assert len(executor.safe_bins) >= len(policy.binaries)
         assert "jq" in executor.safe_bins
         assert "grep" in executor.safe_bins
@@ -427,7 +416,7 @@ class TestPolicyIntegration:
         policy = SandboxPolicy.from_dict({"binaries": {"echo": {"max_positional": 3}}})
         executor = SandboxExecutor(policy=policy)
         assert executor.safe_bins["echo"].max_positional == 3
-        assert "jq" not in executor.safe_bins  # policy only has echo
+        assert "jq" not in executor.safe_bins
 
     def test_no_policy_uses_defaults(self):
         executor = SandboxExecutor()
@@ -436,7 +425,6 @@ class TestPolicyIntegration:
 
     def test_cleanup_closes_seccomp_fd(self):
         executor = SandboxExecutor()
-        # Simulate an open inheritable fd (the same shape build_cmd creates).
         import tempfile
         import os
 
@@ -447,12 +435,11 @@ class TestPolicyIntegration:
             executor.seccomp_fd = fd
             executor.cleanup()
             assert executor.seccomp_fd is None
-            # cleanup() should have closed the fd; reusing it should now fail.
             try:
                 os.fstat(fd)
                 raise AssertionError("expected fd to be closed by cleanup()")
             except OSError:
-                pass  # expected — fd is closed
+                pass
         finally:
             tmp.close()
             try:

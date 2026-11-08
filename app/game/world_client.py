@@ -91,55 +91,10 @@ from game.position import fallback_tile_for, sprite_key_for
 
 logger = logging.getLogger("game.world_client")
 
-# UI-30. How much of the town's speech one agent card asks for, and how
-# much of it survives the filter.
-#
-# `/world/utterances` has no per-agent parameter, so the client pulls a
-# shared tail and selects from it. The tail has to be generous or a quiet
-# resident's card comes back empty while the loud ones fill it: at run
-# 23's rate the last 400 remarks are most of a run, and the world keeps
-# 2000 (`MAX_UTTERANCES_KEPT`), so this asks for a fifth of what is there
-# rather than all of it. What is shown is then capped, because an
-# inspector panel is a panel and not a transcript - the Talk feed is the
-# place to read the whole conversation.
 UTTERANCE_TAIL_FETCHED = 400
 RECENT_UTTERANCES_SHOWN = 25
 
 
-# ── places: real genesis geography, not simulated agent state ──────────
-#
-# DESIGN.md section 8's places panel needs a name/category/tile for every
-# named genesis location (temple, government complex, cafe, grocery,
-# pharmacy, park, college, offices, houses, farmland, ore, forest).
-# world/ has no GET /places yet (confirmed live, see module docstring),
-# so HttpWorldClient falls back to this table when that call 404s -
-# get_places()'s own docstring covers exactly when that happens and what
-# world/ needs to add to retire it.
-#
-# This is NOT mock data: every name below is a real the_ville sector
-# name already established elsewhere in this codebase (mock_world.py's
-# own MOCK_LOCATIONS docstring: "the real the_ville sector names ...
-# copied as literal strings" from world/map/genesis.py's
-# KNOWN_SECTOR_CATEGORIES), and the five Kasukabe-minted zones
-# (government/temple/farmland/ore/forest) are placed at the exact tile
-# centers world/map/expansion.py's append_kasukabe_genesis_zones()
-# actually computes - not eyeballed:
-#   - base map is 140x100 (confirmed: the_ville_jan7.json's own
-#     "width"/"height"), DEFAULT_GENESIS_STRIP_DEPTH=30, so the minted
-#     strip is rows [100, 130) across the full 140-wide map.
-#   - split_span(140, 5) divides the width into 5 equal 28-tile bands,
-#     assigned in this exact order: government, temple, farmland, ore
-#     outcrop, forest (expansion.py's own zone_spans unpacking).
-#   - each entry below is that band's center: x = band_start + 14,
-#     y = 100 + 15 = 115.
-#
-# "houses" has no entry: the base Ville map's individual house/apartment
-# sectors (KNOWN_SECTOR_CATEGORIES lists several, e.g. "Adam Smith's
-# house") have no tile-center data available to game/ (that lives in
-# smallville/'s matrix/special_blocks CSVs, which are not part of this
-# package's static assets and are not something game/ should be parsing
-# on its own - see this module's own docstring on the module boundary).
-# Left out rather than guessed at.
 class Place(BaseModel):
     """One named, flyable location for the places panel. Deliberately
     defined here (not contracts.py, which this task does not own) -
@@ -175,24 +130,6 @@ GENESIS_PLACES: tuple[Place, ...] = (
     _place("Kasukabe Forest", "forest", 126, 115),
 )
 
-# ── spend / burn rate for the HUD ────────────────────────────────────
-#
-# DESIGN.md section 3's $1000 invariant (wallets + treasury + burned ==
-# 100000 cents) plus section 8's HUD requirement ("live spend and burn
-# rate"). world/'s admin console exposes a richer `/admin/spend/status`,
-# but that is operator-token-gated (world/admin_api.py) - game/ is
-# DESIGN.md's "unauthenticated live town view" and must never carry that
-# token. Two PUBLIC, unauthenticated routes already give the same number
-# a different way (both confirmed live against a real booted world/
-# container):
-#   GET /ledger/invariant          -> {"expected_cents": 100000, ...}
-#   GET /ledger/balance/{account}  -> {"usd_cents": ...} for ANY account,
-#                                      including world.ledger.money.
-#                                      BURNED_ACCOUNT_ID = "system:burned"
-#                                      (DESIGN.md section 3's "burned"
-#                                      leg of the invariant).
-# Copied literal (not imported - see module docstring on the module
-# boundary), matching world/ledger/money.py's BURNED_ACCOUNT_ID exactly.
 BURNED_ACCOUNT_ID = "system:burned"
 
 
@@ -228,10 +165,6 @@ def _load_genesis_map_json(path: Path = GENESIS_MAP_PATH) -> dict:
     own snapshot() method)."""
     with open(path, encoding="utf-8") as f:
         return json.load(f)
-
-
-# ── presentation-layer fallbacks for what the real /agents payload
-#    does not carry yet (see module docstring) ──────────────────────────
 
 
 def _agent_display_name(agent_id: str) -> str:
@@ -290,23 +223,14 @@ def _agent_summary_from_world(raw: dict[str, Any]) -> AgentSummary:
         sprite_key=sprite_key_for(agent_id),
         position=AgentPosition(location_id=location_id, tile_x=tile_x, tile_y=tile_y),
         current_action=_current_action_from_health(dormancy, health),
-        current_utterance=None,  # world/'s HTTP API exposes no utterances yet
+        current_utterance=None,
         is_alive=bool(raw.get("alive", True)),
         is_dormant=bool(dormancy.get("is_dormant", False)),
-        # Part E: skills and the workflow step ride the SAME /agents row as
-        # position and money, so the viewer never has to reconcile two polls
-        # taken a tick apart. `or []` because a world server built before
-        # these fields existed simply omits them - an older world degrades to
-        # "no skills known", never to a raise that drops the whole row.
         skills=raw.get("skills") or [],
         following=raw.get("following") or None,
         age_years=raw.get("age_years"),
         occupation=raw.get("occupation") or None,
         sex=raw.get("sex") or None,
-        # UI-04. Present on the row all along and dropped here, exactly as
-        # UI-12's bio was. `None` when the world did not send them, so the
-        # viewer can tell "the world says nothing" from "the world says
-        # nothing is there" - only the first may fall back to the model.
         wallets=(
             Wallets(
                 usd_wallet_cents=max(0, int(raw.get("usd_wallet_cents") or 0)),
@@ -332,15 +256,6 @@ def _agent_detail_from_world(
         agent_id=agent_id,
         display_name=raw.get("name") or _agent_display_name(agent_id),
         sprite_key=sprite_key_for(agent_id),
-        # UI-12. These were hard-coded empty, with a comment saying the
-        # world exposed no bio "yet". It has: `world/agents_api.py`'s
-        # `/agents/{id}` serves bio, personality_traits, habits, spouse_id,
-        # parent_ids, children_ids, marital_status, skills and co_located,
-        # and every one of them was being dropped on the floor here - so
-        # the agent inspector, which DESIGN section 8 defines as "click any
-        # agent -> live conversation, memories, wallet, relationships",
-        # showed a blank card for a resident the world could describe in
-        # full.
         bio=str(raw.get("bio") or ""),
         occupation=raw.get("occupation"),
         age_years=raw.get("age_years"),
@@ -352,19 +267,7 @@ def _agent_detail_from_world(
         current_action=_current_action_from_health(dormancy, health),
         is_alive=bool(raw.get("alive", True)),
         is_dormant=bool(dormancy.get("is_dormant", False)),
-        # UI-30. Was hard-coded `[]`, so the one panel DESIGN section 8
-        # describes as "click any agent -> live conversation" showed no
-        # conversation at all, for a town that said 229 things in run 23
-        # and served every one of them at `/world/utterances`.
         recent_utterances=_utterances_for(agent_id, utterance_rows),
-        # UI-12 / UI-30: kin, from the fields the world already sends.
-        #
-        # `RelationshipRecord` existed and was always empty from the real
-        # client, which is half of UI-30's "documents a contract nobody
-        # implements". The social graph proper lives in each engine's own
-        # brain.sqlite and is a separate finding (EVAL-23); what the world
-        # can answer today is who somebody is married to and who they are
-        # related to, and that is worth more than an empty list.
         relationships=_kin_from_world(raw),
     )
 
@@ -413,8 +316,6 @@ def _utterances_for(
                 )
             )
         except Exception:
-            # One malformed row must not cost a reader the other 199 -
-            # the same rule `get_snapshot` applies to one bad /agents entry.
             logger.warning("game.world_client: skipping one malformed utterance row: %r", row)
     return mine[-RECENT_UTTERANCES_SHOWN:]
 
@@ -713,9 +614,6 @@ class HttpWorldClient:
         elections = await self._get_json_list("/voting/elections", "elections")
         current = next((e for e in elections if e.get("phase") != "tallied"),
                        elections[0] if elections else None)
-        # The newest COUNTED election, separately: the next one is scheduled
-        # the moment a vote is counted, so "the open one" stops being the one
-        # with the result exactly when the result is what everybody wants.
         latest = next((e for e in elections if e.get("phase") == "tallied"), None)
 
         async def detail_of(summary):

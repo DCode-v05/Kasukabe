@@ -25,7 +25,6 @@ async def db():
     pool = SqlitePool(":memory:")
     await pool.connect()
 
-    # Apply migrations
     from pathlib import Path
 
     migrations_dir = Path(__file__).parent.parent / "migrations"
@@ -36,11 +35,6 @@ async def db():
 
     yield pool
     await pool.close()
-
-
-# ============================================================
-# EPISODIC MEMORY
-# ============================================================
 
 
 class TestEpisodicMemory:
@@ -87,13 +81,11 @@ class TestEpisodicMemory:
     async def test_search_no_results(self, em):
         await em.create_episode("Meeting notes", "Team standup", "details")
         results = await em.search_episodes("quantum physics")
-        # keyword search won't match
         assert len(results) == 0
 
     @pytest.mark.asyncio
     async def test_archive_old_episodes(self, em, db):
         ep = await em.create_episode("Old event", "Very old", "Old content")
-        # Manually backdate
         await db.execute(
             "UPDATE episodes SET created_at = datetime('now', '-60 days') WHERE id = ?",
             (ep["id"],),
@@ -104,12 +96,7 @@ class TestEpisodicMemory:
         assert count == 1
 
         value = await em.get_episode_value(ep["id"])
-        assert value == "Old content"  # decompressed from archive
-
-
-# ============================================================
-# KNOWLEDGE STORE
-# ============================================================
+        assert value == "Old content"
 
 
 class TestKnowledgeStore:
@@ -163,7 +150,6 @@ class TestKnowledgeStore:
         superseded = await ks.supersede_entry(entry["id"])
         assert superseded["superseded_at"] is not None
 
-        # Should not appear in search
         results = await ks.search_knowledge("budget")
         assert all(r["id"] != entry["id"] for r in results)
 
@@ -174,7 +160,6 @@ class TestKnowledgeStore:
             "User prefers dark mode",
             confidence=0.5,
         )
-        # Backdate last_reinforced
         await db.execute(
             "UPDATE knowledge_store SET last_reinforced = datetime('now', '-60 days') WHERE id = ?",
             (entry["id"],),
@@ -198,11 +183,6 @@ class TestKnowledgeStore:
             "SELECT usage_count FROM knowledge_store WHERE id = ?", (entry["id"],)
         )
         assert row["usage_count"] == 1
-
-
-# ============================================================
-# SOCIAL GRAPH
-# ============================================================
 
 
 class TestSocialGraph:
@@ -312,14 +292,8 @@ class TestSocialGraph:
     async def test_find_or_create_dedup_with_few_nodes(self, sg):
         """Dedup works even with fewer than 5 nodes (exact match path)."""
         first = await sg.find_or_create_person("Diana")
-        # Only 1 node exists — still should dedup
         second = await sg.find_or_create_person("Diana")
         assert first["id"] == second["id"]
-
-
-# ============================================================
-# SOUL
-# ============================================================
 
 
 class TestSoul:
@@ -390,11 +364,6 @@ class TestSoul:
         assert len(style_traits) == 1
 
 
-# ============================================================
-# KEYWORD SCORING (stemming + stop-words)
-# ============================================================
-
-
 class TestKeywordScoring:
     def test_exact_match(self):
         from src.memory.embeddings import keyword_score
@@ -424,7 +393,6 @@ class TestKeywordScoring:
     def test_stop_words_filtered_from_query(self):
         from src.memory.embeddings import keyword_score
 
-        # "the" is filtered, only "budget" matters
         score = keyword_score("the budget", "budget allocation for Q4")
         assert score == 1.0
 
@@ -452,14 +420,8 @@ class TestKeywordScoring:
         assert stem("companies") == "company"
         assert stem("processed") == "process"
         assert stem("management") == "manage"
-        # Short words pass through
         assert stem("run") == "run"
         assert stem("ai") == "ai"
-
-
-# ============================================================
-# RECENCY BOOST
-# ============================================================
 
 
 class TestRecencyBoost:
@@ -502,7 +464,6 @@ class TestRecencyBoost:
 
         em = EpisodicMemory(db)
 
-        # Create old episode (60 days ago)
         old_time = (datetime.now(timezone.utc) - timedelta(days=60)).isoformat()
         await db.execute(
             "INSERT INTO episodes (id, key, description, value, created_at) VALUES (?, ?, ?, ?, ?)",
@@ -513,7 +474,6 @@ class TestRecencyBoost:
             ("old-ep", "budget review", "quarterly budget analysis"),
         )
 
-        # Create recent episode (today)
         now_time = datetime.now(timezone.utc).isoformat()
         await db.execute(
             "INSERT INTO episodes (id, key, description, value, created_at) VALUES (?, ?, ?, ?, ?)",
@@ -527,14 +487,8 @@ class TestRecencyBoost:
 
         results = await em.search_episodes("budget review")
         assert len(results) >= 2
-        # Recent episode should rank first
         assert results[0]["id"] == "new-ep"
         assert results[0]["score"] > results[1]["score"]
-
-
-# ============================================================
-# UNIFIED CROSS-MEMORY SEARCH
-# ============================================================
 
 
 class TestUnifiedSearch:
@@ -568,24 +522,20 @@ class TestUnifiedSearch:
         sg = SocialGraph(db)
 
         await sg.create_person("Sarah")
-        # Episode that mentions Sarah
         await em.create_episode("meeting with Sarah", "Sarah discussed project plans", "details")
 
-        # First: search WITHOUT social graph — get base score
         search_no_sg = Search(db, episodic_memory=em, knowledge_store=ks)
         results_no_sg = await search_no_sg.unified("Sarah meeting")
         ep_no_sg = next((r for r in results_no_sg if r.get("_source") == "episode"), None)
         assert ep_no_sg is not None
         base_score = ep_no_sg["score"]
 
-        # Second: search WITH social graph — Sarah found → boost applied
         search_with_sg = Search(db, episodic_memory=em, knowledge_store=ks, social_graph=sg)
         results_with_sg = await search_with_sg.unified("Sarah meeting")
         ep_with_sg = next((r for r in results_with_sg if r.get("_source") == "episode"), None)
         assert ep_with_sg is not None
         boosted_score = ep_with_sg["score"]
 
-        # Boosted score should be higher than base score
         assert boosted_score > base_score
 
     @pytest.mark.asyncio
@@ -611,11 +561,6 @@ class TestUnifiedSearch:
         search = Search(db)
         results = await search.unified("")
         assert results == []
-
-
-# ============================================================
-# CONSCIOUSNESS DEPTH
-# ============================================================
 
 
 class TestConsciousnessDepth:
@@ -679,7 +624,6 @@ class TestConsciousnessDepth:
         from src.memory.consciousness import ConsciousnessManager, CORE_SOUL
 
         if not CORE_SOUL:
-            # Seed minimal core soul for test
             import src.memory.consciousness as cm
 
             cm.CORE_SOUL = {"preamble": "Test soul"}
@@ -689,7 +633,6 @@ class TestConsciousnessDepth:
         sg = SocialGraph(db)
         soul_mod = Soul(db)
 
-        # Seed data
         await em.create_episode("recent task", "did something important", "details")
         await ks.write_knowledge_fact("key fact", "this matters a lot")
 
@@ -704,11 +647,6 @@ class TestConsciousnessDepth:
         rendered = ctx.render()
         assert "recent task" in rendered
         assert "key fact" in rendered
-
-
-# ============================================================
-# EMBEDDING BATCHING
-# ============================================================
 
 
 class TestEmbeddingBatch:
@@ -751,11 +689,6 @@ class TestEmbeddingBatch:
         vec = await svc.embed("test")
         assert len(vec) == 8
         assert all(x == 0.0 for x in vec)
-
-
-# ============================================================
-# IN-MEMORY WORKING MEMORY
-# ============================================================
 
 
 class TestInMemoryWorkingMemory:

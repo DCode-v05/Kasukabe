@@ -17,11 +17,6 @@ import re
 
 from world.life.genesis import INSTITUTION_STAFF
 
-# The town is the generated population PLUS one resident per institution
-# post. The hospital, school, police station and the rest are staffed by
-# real agents now, not invented in the browser, so every count below is
-# "general population + posts" rather than a bare literal.
-
 
 from world.life.constants import (
     GENESIS_AGENT_WALLET_USD_CENTS,
@@ -43,10 +38,6 @@ def test_generate_genesis_is_deterministic_given_the_same_seed() -> None:
     a = generate_genesis(seed=7)
     b = generate_genesis(seed=7)
 
-    # generated_at is a wall-clock timestamp; everything else must match
-    # byte for byte given the same seed - this includes every persona
-    # field and every relationship opinion, since they all draw from the
-    # same seeded rng.
     a_dict = a.model_dump(exclude={"generated_at"})
     b_dict = b.model_dump(exclude={"generated_at"})
     assert a_dict == b_dict
@@ -74,12 +65,8 @@ def test_generate_genesis_sex_split_is_exactly_50_50() -> None:
     general = [a for a in genesis.agents if not a.agent_id.startswith("s")]
     male = sum(1 for a in general if a.sex is Sex.MALE)
     female = sum(1 for a in general if a.sex is Sex.FEMALE)
-    # The generated population is dealt from an exactly even deck.
     assert male == female == GENESIS_POPULATION // 2
 
-    # Institution staff are an independent coin per post, so the TOWN total
-    # drifts off 50/50 by chance. Asserted loosely on purpose: pinning it
-    # would be pinning one seed's coin flips, not a property of the design.
     town_male = sum(1 for a in genesis.agents if a.sex is Sex.MALE)
     town_female = sum(1 for a in genesis.agents if a.sex is Sex.FEMALE)
     assert town_male + town_female == GENESIS_POPULATION + INSTITUTION_POSTS
@@ -100,10 +87,6 @@ def test_generate_genesis_every_agent_has_a_substantial_bio() -> None:
     Personas section calls worthless for research.
     """
     genesis = generate_genesis(seed=1)
-    # A naive ". " count undercounts whenever a sentence ends inside a
-    # quote (e.g. "...back home.' He lives...", period-quote-space) -
-    # split on any sentence terminator optionally followed by a closing
-    # quote instead, which handles that case correctly.
     sentence_boundary = re.compile(r"(?<=[.!?])[\"']?\s+")
     for agent in genesis.agents:
         sentence_count = len([s for s in sentence_boundary.split(agent.bio.strip()) if s])
@@ -159,7 +142,7 @@ def test_generate_genesis_construction_company_has_owner_and_four_hands() -> Non
     assert company.owner_agent_id != ""
     assert len(company.hand_agent_ids) == 4
     all_construction_agents = {company.owner_agent_id, *company.hand_agent_ids}
-    assert len(all_construction_agents) == 5  # owner is not also a hand
+    assert len(all_construction_agents) == 5
 
     by_id = {a.agent_id: a for a in genesis.agents}
     assert by_id[company.owner_agent_id].occupation == "construction_company_owner"
@@ -178,17 +161,15 @@ def test_generate_genesis_ten_control_businesses_are_scripted_and_ownerless() ->
     genesis = generate_genesis(seed=1)
     assert len(genesis.control_businesses) == 10
     ids = {b.business_id for b in genesis.control_businesses}
-    assert len(ids) == 10  # all unique
+    assert len(ids) == 10
     for business in genesis.control_businesses:
-        assert business.pricing_strategy  # every one has a rule-based strategy
+        assert business.pricing_strategy
 
 
 def test_generate_genesis_ablation_split_is_210_20_20() -> None:
     """DESIGN.md section 10 + this task's spec: 210 full / 20
     no-reflection / 20 no-learning, summing to 250. No fourth arm."""
     genesis = generate_genesis(seed=1)
-    # The summary must agree with the agents it summarises: staff run FULL,
-    # so the experimental arms keep their sizes and FULL absorbs the rest.
     assert genesis.ablation_summary.full == 210 + INSTITUTION_POSTS
     assert genesis.ablation_summary.no_reflection == 20
     assert genesis.ablation_summary.no_learning == 20
@@ -197,8 +178,6 @@ def test_generate_genesis_ablation_split_is_210_20_20() -> None:
     counts: dict[AblationArm, int] = {}
     for agent in genesis.agents:
         counts[agent.ablation_arm] = counts.get(agent.ablation_arm, 0) + 1
-    # Staff run FULL: the ablation brackets are sized against the generated
-    # population, and staffing the hospital must not change arm sizes.
     assert counts[AblationArm.FULL] == 210 + INSTITUTION_POSTS
     assert counts[AblationArm.NO_REFLECTION] == 20
     assert counts[AblationArm.NO_LEARNING] == 20
@@ -215,8 +194,6 @@ def test_generate_genesis_usd_ledger_matches_the_1000_dollar_invariant() -> None
         genesis.usd_ledger.agent_wallets_cents
         == (GENESIS_POPULATION + INSTITUTION_POSTS) * GENESIS_AGENT_WALLET_USD_CENTS
     )
-    # Treasury is the REMAINDER of a fixed $1000 town, not a constant: more
-    # residents means more purses and a smaller treasury, never a bigger town.
     assert genesis.usd_ledger.treasury_cents == (
         100_000 - genesis.usd_ledger.agent_wallets_cents
     )
@@ -234,9 +211,6 @@ def test_write_genesis_json_round_trips(tmp_path) -> None:  # type: ignore[no-un
     assert loaded["population"] == 30 + INSTITUTION_POSTS
     assert len(loaded["agents"]) == 30 + INSTITUTION_POSTS
     assert loaded["seed"] == 3
-    # The rich persona payload is actually on disk, not just in memory -
-    # this is what world/wiring.py's plain Genesis.model_validate_json()
-    # safely ignores and what a research/ consumer would read directly.
     assert "persona" in loaded["agents"][0]
     assert "opinions" in loaded["agents"][0]["persona"]
 
@@ -244,27 +218,13 @@ def test_write_genesis_json_round_trips(tmp_path) -> None:  # type: ignore[no-un
 def test_generate_genesis_is_population_agnostic() -> None:
     """DESIGN.md section 5: "app is population-agnostic (1000+ possible)"."""
     genesis = generate_genesis(seed=1, population=40)
-    # Agnostic in the population, NOT in the institutions: the town has one
-    # hospital and one school whatever its size, so every cast is the
-    # requested population plus the fixed roster that staffs them.
     assert len(genesis.agents) == 40 + INSTITUTION_POSTS
     assert genesis.usd_ledger.agent_wallets_cents == (
         (40 + INSTITUTION_POSTS) * GENESIS_AGENT_WALLET_USD_CENTS
     )
-    # And the town is still worth exactly $1000 at any size.
     assert (
         genesis.usd_ledger.agent_wallets_cents + genesis.usd_ledger.treasury_cents
     ) == 100_000
-
-
-# ══════════════════════════════════════════════════════════════════════
-# RICH PERSONA validator tests (this task's spec): every DESIGN.md
-# Personas-section field is present and non-trivial, and every named
-# neighbour opinion is checked for existence, matching names, and
-# perfect reciprocity - the "if Hana resents Kenji over a debt, Kenji's
-# persona knows about that debt from his side" requirement, enforced in
-# code rather than trusted by construction.
-# ══════════════════════════════════════════════════════════════════════
 
 
 def test_persona_depth_present_and_non_trivial_for_every_agent() -> None:
@@ -301,9 +261,6 @@ def test_persona_competence_and_blind_spot_are_trade_specific() -> None:
     by_occupation: dict[str, set[str]] = {}
     for agent in genesis.agents:
         by_occupation.setdefault(agent.occupation, set()).add(agent.persona.competence)
-    # farmers and pharmacists exist in this roster (seed=1, population=250)
-    # and must never share a competence line - proves the pools are
-    # actually occupation-keyed, not one shared bag of text.
     farmer_competences = by_occupation.get("farmer", set())
     pharmacist_competences = by_occupation.get("pharmacist", set())
     if farmer_competences and pharmacist_competences:
@@ -382,8 +339,6 @@ def test_opinions_are_symmetric_with_matching_shared_fact_and_roles() -> None:
             assert {opinion.role, reciprocal.role} == expected_roles or (
                 opinion.role == reciprocal.role and opinion.role in expected_roles
             )
-    # Sanity: seed=1's 250-agent roster actually produces a real graph,
-    # not an accidentally-empty one.
     assert opinion_count > 300
 
 
@@ -450,8 +405,8 @@ def test_secret_target_agent_id_when_set_references_a_real_agent() -> None:
             any_targeted = True
             assert target_id != agent.agent_id
             assert target_id in agent_ids
-            assert target_id in agent.persona.secret or True  # target named in secret text
-    assert any_targeted  # seed=1's roster actually exercises this path
+            assert target_id in agent.persona.secret or True
+    assert any_targeted
 
 
 def test_secrets_are_not_written_back_onto_their_target() -> None:
@@ -469,13 +424,6 @@ def test_secrets_are_not_written_back_onto_their_target() -> None:
         target = by_id[target_id]
         opinion_targets = {o.target_agent_id for o in target.persona.opinions}
         assert agent.agent_id not in opinion_targets or True
-        # The secret itself must never appear verbatim in the target's
-        # own opinions about the secret-holder (it would stop being a
-        # secret) - opinions are drawn from an entirely separate pool
-        # (namepool.py's relationship pools) from secrets (SECRET_POOL /
-        # SECRET_ABOUT_NEIGHBOUR_POOL), so this holds by construction;
-        # this test pins that invariant so a future edit can't merge
-        # the two pools by accident.
         for opinion in target.persona.opinions:
             if opinion.target_agent_id == agent.agent_id:
                 assert opinion.shared_fact != agent.persona.secret

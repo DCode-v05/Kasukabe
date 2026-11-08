@@ -66,7 +66,6 @@ class QuotaExhaustedAdapter:
             max_tokens=self.max_tokens,
             window_seconds=self.window_seconds,
         )
-        # Unreachable, but marks this as an async generator for the loop.
         yield StreamEvent(type="text", text="")  # pragma: no cover
 
     async def generate(self, messages, system=""):
@@ -124,9 +123,7 @@ async def test_quota_exhausted_is_single_attempt_no_retry(db, persistent_retry):
     with pytest.raises(CitadelQuotaExhausted) as ei:
         await th.agent_loop("hi", options=options)
 
-    # Exactly one model call — proof the loop did NOT retry the terminal error.
     assert adapter.attempts == 1
-    # The window detail rides through unchanged for the cooldown + the error block.
     assert ei.value.window_seconds == 2592000
     assert ei.value.max_tokens == 5000
 

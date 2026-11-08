@@ -92,7 +92,6 @@ def test_an_older_perception_is_reduced_to_when_and_where() -> None:
     wire = _wire(adapter)
     assert "It is game-day 0, 07:00 (day). You are at street." in wire
     assert "It is game-day 0, 08:00 (day). You are at Kasukabe Farmland." in wire
-    # The detail of the two superseded pictures is gone; only the current one keeps it.
     assert wire.count("You have 3730 sim in hand.") == 1
     assert wire.count("Said to you, and not yet answered:") == 1
     assert wrapped.perceptions_compacted == 2

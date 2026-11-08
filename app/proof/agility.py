@@ -39,8 +39,6 @@ from proof.verdicts import FAILED, PROVEN, Findings, Verdict
 
 AREA = "model-agility"
 
-# Two calls, so interleaving has something to interleave, and arguments
-# distinctive enough that corruption is unmistakable.
 SENT = [
     ("world_look_around", {"detail": "full"}),
     ("world_move", {"destination_location_id": "Kasukabe Bakery"}),
@@ -79,11 +77,6 @@ class Outcome:
         self.stop: str = ""
         self.raised: str = ""
         self.traced: int = 0
-        #: Did the seam record that this turn tried to act and delivered
-        #: nothing? The bar is "may lose the turn, may not lose the truth",
-        #: so a loss the chain wrote down is a pass and a loss it swallowed
-        #: is not. Without this the judge can only see the calls, and a
-        #: recorded loss is indistinguishable from a silent one.
         self.noticed: bool = False
 
     @property
@@ -103,9 +96,6 @@ async def run_once(mutator: Any) -> Outcome:
     tmp = Path(tempfile.mkdtemp(prefix="proof-agility-")) / "trace.db"
     brain = ScriptedBrain(plan=always(SENT), mutate=mutator)
     try:
-        # seam=True: the wrapper chain `pinned_boot` actually builds. An
-        # agility suite run against the bare parser measures a chain
-        # nobody deploys.
         async with cognition(brain, tmp, seam=True) as town:
             try:
                 events = await asyncio.wait_for(
@@ -142,13 +132,6 @@ def judge(name: str, clean: Outcome, got: Outcome) -> Verdict:
             "a lost turn that raises is survivable",
         )
 
-    # CORRUPTION means the engine mixed calls up - a verb that was never
-    # sent, or one call wearing another's arguments. It does NOT mean the
-    # arguments differ from `SENT`: several hazards deliberately rewrite
-    # what the model emits, and faithfully delivering a badly-formed call
-    # is correct behaviour at this tier. Whether the WORLD then refuses it
-    # cleanly is a question for the world stories, against the registry's
-    # real validator.
     for got_name, got_args in got.calls:
         if got_name not in sent_args:
             return Verdict(
@@ -166,10 +149,6 @@ def judge(name: str, clean: Outcome, got: Outcome) -> Verdict:
             )
 
     if clean.calls and not got.calls:
-        # The bar, stated in the module docstring: the town may lose the
-        # turn, it may not lose the truth. A loss the chain RECORDED meets
-        # it - the resident wasted a tick and every reader downstream can
-        # see that it tried. A loss nothing wrote down does not.
         if got.noticed:
             return Verdict(
                 AREA, name,

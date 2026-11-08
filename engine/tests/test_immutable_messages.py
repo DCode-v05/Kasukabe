@@ -70,9 +70,6 @@ class SpyAdapter:
         return "summary"
 
 
-# --- Test: messages list reference changes after each turn ---
-
-
 class TestMessageListImmutability:
     def test_spread_creates_new_list(self):
         original = [LLMMessage(role="user", content="hello")]
@@ -111,9 +108,6 @@ class TestMessageListImmutability:
         assert id(messages) != snapshot_id
         assert len(messages_for_api) == 1
         assert len(messages) == 3
-
-
-# --- Test: API receives snapshot, not live list ---
 
 
 class TestAPIReceivesSnapshot:
@@ -156,9 +150,6 @@ class TestAPIReceivesSnapshot:
 
         assert len(messages_for_api) == snapshot_len
         assert len(messages) == snapshot_len + 2
-
-
-# --- Test: mutations to turn accumulators don't affect previous messages ---
 
 
 class TestAccumulatorIsolation:
@@ -222,9 +213,6 @@ class TestAccumulatorIsolation:
         assert len(messages) == 3
 
 
-# --- Test: MAX_TOKENS recovery creates new list ---
-
-
 class TestMaxTokensRecovery:
     def test_continuation_merges_accumulators_into_new_list(self):
         messages = [LLMMessage(role="user", content="write an essay")]
@@ -255,13 +243,8 @@ class TestMaxTokensRecovery:
         original_id = id(messages)
         original_len = len(messages)
 
-        # Escalation just continues — messages unchanged
-        # (snapshot rebuilt at next turn start)
         assert id(messages) == original_id
         assert len(messages) == original_len
-
-
-# --- Test: compaction creates new list (already does) ---
 
 
 class TestCompactionImmutability:
@@ -273,7 +256,6 @@ class TestCompactionImmutability:
         ]
         original_id = id(messages)
 
-        # Simulate what compactor.compact_if_needed returns
         compacted = [
             LLMMessage(role="user", content="[Summary of previous conversation]"),
             LLMMessage(role="user", content="msg2"),
@@ -284,9 +266,6 @@ class TestCompactionImmutability:
         assert len(messages) == 2
 
 
-# --- Test: overflow retry resets accumulators ---
-
-
 class TestOverflowRetryReset:
     def test_reset_clears_accumulators(self):
         messages = [LLMMessage(role="user", content="hello")]
@@ -294,7 +273,6 @@ class TestOverflowRetryReset:
         turn_assistant_msgs = [LLMMessage(role="assistant", content="partial")]
         turn_tool_results_msgs = [LLMMessage(role="user", content="result")]
 
-        # Simulate reactive compact
         compacted = [LLMMessage(role="user", content="[compacted]")]
         messages = compacted
         messages_for_api = list(messages)
@@ -305,9 +283,6 @@ class TestOverflowRetryReset:
         assert len(turn_assistant_msgs) == 0
         assert len(turn_tool_results_msgs) == 0
         assert messages_for_api[0].content == "[compacted]"
-
-
-# --- Test: Message dataclass is frozen ---
 
 
 class TestMessageImmutability:
@@ -334,18 +309,13 @@ class TestMessageImmutability:
             block.content = "changed"
 
 
-# --- Test: multi-turn accumulation across turns ---
-
-
 class TestMultiTurnAccumulation:
     def test_two_turns_produce_correct_message_history(self):
-        # Turn 1 setup
         messages = [LLMMessage(role="user", content="hello")]
         messages_for_api = list(messages)
         turn_assistant_msgs: list[LLMMessage] = []
         turn_tool_results_msgs: list[LLMMessage] = []
 
-        # Turn 1: assistant responds with tool call, gets result
         turn_assistant_msgs.append(
             LLMMessage(
                 role="assistant",
@@ -368,12 +338,10 @@ class TestMultiTurnAccumulation:
         assert len(messages) == 3
         turn1_id = id(messages)
 
-        # Turn 2 setup — fresh snapshot and accumulators
         messages_for_api = list(messages)
         turn_assistant_msgs = []
         turn_tool_results_msgs = []
 
-        # Turn 2: assistant responds with final answer
         turn_assistant_msgs.append(LLMMessage(role="assistant", content="Here's the answer."))
         turn_tool_results_msgs.append(
             LLMMessage(
@@ -413,7 +381,6 @@ class TestMultiTurnAccumulation:
         messages = [*messages_for_api, *turn_assistant_msgs, *turn_tool_results_msgs]
         merge_id = id(messages)
 
-        # Charter reminder appended post-merge
         messages = [
             *messages,
             LLMMessage(

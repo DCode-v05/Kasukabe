@@ -26,8 +26,6 @@ from src.sim.world_tools import WorldClient
 from tests.sim_fake_citadel import FakeBroker, install_fake_broker, text_turn_sse
 
 
-# Text that belongs to a coding assistant, not to a person living in a town.
-# Each of these was observed in a real run-23 prompt.
 ASSISTANT_MARKERS = (
     "[Post-compact tool reminder]",
     "[Context restored after compaction]",
@@ -108,7 +106,6 @@ async def test_the_tools_on_the_wire_fit_a_budget(tmp_path, broker):
         broker_base_url="http://broker.test",
         home_root=str(tmp_path),
     )
-    # A registry the size the town actually serves, half of it indexed.
     tools = [
         {
             "name": f"verb_{i}",

@@ -42,9 +42,6 @@ async def resident(world, agent_id: str = "n01", place: str = FARM):
     return agent_id
 
 
-# -- The advantage: escaping the primitive whitelist ------------------
-
-
 @pytest.mark.asyncio
 async def test_a_composed_tool_may_stand_on_one_and_still_reach_primitives(
     world, registry
@@ -83,7 +80,6 @@ async def test_a_composed_tool_may_stand_on_one_and_still_reach_primitives(
     assert leaves == ["look_around"], leaves
     assert set(leaves) <= registry.primitive_names
 
-    # And the thing that is still unrepresentable: a tool nobody can call.
     with pytest.raises(ToolValidationError):
         await registry.dispatch(world, agent_id, "toolify", {
             "name": "wishful",
@@ -106,9 +102,6 @@ async def test_a_composed_tool_cannot_be_built_out_of_the_meta_tools(
                 "description": "composition all the way down",
                 "steps": [{"tool_name": forbidden, "params": {}}],
             })
-
-
-# -- The advantage: a name that shadows a real tool -------------------
 
 
 @pytest.mark.asyncio
@@ -161,9 +154,6 @@ async def test_a_tool_named_like_a_namespaced_primitive_cannot_hijack_a_skill_st
     )
 
 
-# -- The advantage: paying once for many steps ------------------------
-
-
 @pytest.mark.asyncio
 async def test_a_composed_tool_pays_for_every_step_it_takes(world, registry) -> None:
     """The economic escape, and the one worth most.
@@ -209,10 +199,6 @@ async def test_a_composed_tool_pays_for_every_step_it_takes(world, registry) -> 
         "description": "size three people up",
         "steps": [
             {"tool_name": "describe_person", "params": {"agent_id": other}}
-            # NOT n02: the baseline probe above already asked about
-            # n02 on this tick, so under TRADE-04 that step would fold
-            # and this test would measure the fold instead of the
-            # composition.
             for other in ("n03", "n04", "n05")
         ],
     })
@@ -225,8 +211,6 @@ async def test_a_composed_tool_pays_for_every_step_it_takes(world, registry) -> 
         f"{3 * one_look} - composition is a discount on the world"
     )
 
-    # And the fold is symmetrical, which is what keeps it from BEING a
-    # discount: asking the same thing twice costs one, inside or out.
     before = world.ledger.sim_balance(agent_id)
     await registry.dispatch(world, agent_id, "describe_person", {"agent_id": "n02"})
     await registry.dispatch(world, agent_id, "describe_person", {"agent_id": "n02"})
@@ -239,9 +223,6 @@ async def test_a_composed_tool_pays_for_every_step_it_takes(world, registry) -> 
         f"repeating a read inside a tool cost {inside_repeat} and outside "
         f"{outside_repeat} - wrapping it is buying a discount"
     )
-
-
-# -- The advantage: doing elsewhere what only happens somewhere --------
 
 
 @pytest.mark.asyncio
@@ -266,9 +247,6 @@ async def test_a_composed_tool_does_not_carry_a_location_with_it(
         await registry.dispatch(world, agent_id, "pray_anywhere", {})
 
 
-# -- The advantage: a workflow that never ends ------------------------
-
-
 @pytest.mark.asyncio
 async def test_two_skills_cannot_call_each_other(world, registry) -> None:
     """Neither one nests past the limit on its own. Together they are a
@@ -286,15 +264,13 @@ async def test_two_skills_cannot_call_each_other(world, registry) -> None:
         "name": "second",
         "steps": [{"order": 1, "kind": "skill", "ref": "first"}],
     })
-    # `first` cannot now be revised to call `second` without closing the
-    # loop. Whatever the outcome, it must be a decision and not a hang.
     try:
         await registry.dispatch(world, agent_id, "revise_skill", {
             "name": "first",
             "steps": [{"order": 1, "kind": "skill", "ref": "second"}],
         })
     except ToolError:
-        return  # refused outright, which is the cleaner answer
+        return
     depth_probe = world.skill_definitions["first"]
     from world.tools.meta import _nesting_depth
 
@@ -302,9 +278,6 @@ async def test_two_skills_cannot_call_each_other(world, registry) -> None:
         "a cycle got past the depth check, so a reader of the prompt sees "
         "a procedure that refers to itself through another one"
     )
-
-
-# -- The advantage: somebody else's secret ----------------------------
 
 
 @pytest.mark.asyncio
@@ -343,9 +316,6 @@ async def test_a_skill_cannot_cite_a_business_secret_it_may_not_see(
             "name": "borrowed",
             "steps": [{"order": 1, "kind": "skill", "ref": "mill secret"}],
         })
-
-
-# -- The advantage: a refusal that leaks ------------------------------
 
 
 @pytest.mark.asyncio

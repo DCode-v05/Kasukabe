@@ -30,7 +30,6 @@ def _decision_sites(key: str) -> int:
         for node in ast.walk(tree):
             if not isinstance(node, ast.Attribute) or node.attr != key:
                 continue
-            # config.key = ... is the write, not a read
             parent_is_assign_target = isinstance(getattr(node, "ctx", None), ast.Store)
             if not parent_is_assign_target:
                 hits += 1
@@ -75,8 +74,8 @@ def test_the_knob_that_does_decide_is_the_context_window() -> None:
         source.split("COMPACTION_THRESHOLD = ")[1].split()[0]
     )
     tokens = 90_000
-    assert tokens >= int(40_000 * threshold)       # budgeted: compacts
-    assert tokens < int(256_000 * threshold)       # advertised: never would
+    assert tokens >= int(40_000 * threshold)
+    assert tokens < int(256_000 * threshold)
 
 
 def test_compaction_threshold_still_reads_nothing() -> None:

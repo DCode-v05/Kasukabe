@@ -26,7 +26,7 @@ from src.sandbox.seccomp import (
     SOCKET_X86_64,
 )
 
-BPF_INSN_SIZE = 8  # each BPF instruction is 8 bytes
+BPF_INSN_SIZE = 8
 
 
 def decode_insn(data: bytes, index: int) -> tuple[int, int, int, int]:
@@ -41,8 +41,6 @@ class TestBPFStructure:
     def test_empty_blocklist_produces_minimal_filter(self):
         profile = SeccompProfile(blocked_syscalls={})
         bpf = compile_bpf(profile, AUDIT_ARCH_X86_64)
-        # 4 instructions: load arch, check arch, kill if wrong arch, load nr, allow
-        # Actually: load arch (1) + check arch (1) + kill (1) + load nr (1) + allow (1) = 5
         assert len(bpf) == 5 * BPF_INSN_SIZE
 
     def test_first_instruction_loads_arch(self):
@@ -58,8 +56,8 @@ class TestBPFStructure:
         code, jt, jf, k = decode_insn(bpf, 1)
         assert code == JMP_JEQ_K
         assert k == AUDIT_ARCH_X86_64
-        assert jt == 1  # skip kill instruction
-        assert jf == 0  # fall through to kill
+        assert jt == 1
+        assert jf == 0
 
     def test_wrong_arch_kills_process(self):
         profile = SeccompProfile(blocked_syscalls={101: EPERM})
@@ -78,10 +76,8 @@ class TestBPFStructure:
     def test_blocked_syscall_returns_errno(self):
         profile = SeccompProfile(blocked_syscalls={101: EPERM})
         bpf = compile_bpf(profile, AUDIT_ARCH_X86_64)
-        # Structure: arch_load, arch_check, arch_kill, nr_load, jeq_101, allow, ret_errno
         n_insns = len(bpf) // BPF_INSN_SIZE
         assert n_insns == 7
-        # Last instruction should be RET_ERRNO(EPERM)
         code, jt, jf, k = decode_insn(bpf, 6)
         assert code == RET_K
         assert k == (SECCOMP_RET_ERRNO | EPERM)
@@ -89,7 +85,6 @@ class TestBPFStructure:
     def test_default_action_is_allow(self):
         profile = SeccompProfile(blocked_syscalls={101: EPERM})
         bpf = compile_bpf(profile, AUDIT_ARCH_X86_64)
-        # The instruction before the errno returns should be ALLOW
         code, jt, jf, k = decode_insn(bpf, 5)
         assert code == RET_K
         assert k == SECCOMP_RET_ALLOW
@@ -98,7 +93,6 @@ class TestBPFStructure:
         blocked = {101: EPERM, 165: EPERM, 169: EPERM}
         profile = SeccompProfile(blocked_syscalls=blocked)
         bpf = compile_bpf(profile, AUDIT_ARCH_X86_64)
-        # 4 (preamble) + 3 (checks) + 1 (allow) + 3 (errno returns) = 11
         assert len(bpf) == 11 * BPF_INSN_SIZE
 
     def test_aarch64_architecture(self):
@@ -112,46 +106,43 @@ class TestDangerousSyscalls:
     """Verify dangerous syscalls are in the block tables."""
 
     def test_ptrace_blocked_x86_64(self):
-        assert 101 in BLOCKED_X86_64  # ptrace
+        assert 101 in BLOCKED_X86_64
 
     def test_mount_blocked_x86_64(self):
-        assert 165 in BLOCKED_X86_64  # mount
+        assert 165 in BLOCKED_X86_64
 
     def test_unshare_blocked_x86_64(self):
-        assert 272 in BLOCKED_X86_64  # unshare
+        assert 272 in BLOCKED_X86_64
 
     def test_bpf_blocked_x86_64(self):
-        assert 321 in BLOCKED_X86_64  # bpf
+        assert 321 in BLOCKED_X86_64
 
     def test_kexec_blocked_x86_64(self):
-        assert 246 in BLOCKED_X86_64  # kexec_load
+        assert 246 in BLOCKED_X86_64
 
     def test_pivot_root_blocked_x86_64(self):
-        assert 155 in BLOCKED_X86_64  # pivot_root
+        assert 155 in BLOCKED_X86_64
 
     def test_init_module_blocked_x86_64(self):
-        assert 175 in BLOCKED_X86_64  # init_module
+        assert 175 in BLOCKED_X86_64
 
     def test_setns_blocked_x86_64(self):
-        assert 308 in BLOCKED_X86_64  # setns
+        assert 308 in BLOCKED_X86_64
 
     def test_ptrace_blocked_aarch64(self):
-        assert 117 in BLOCKED_AARCH64  # ptrace
+        assert 117 in BLOCKED_AARCH64
 
     def test_mount_blocked_aarch64(self):
-        assert 40 in BLOCKED_AARCH64  # mount
+        assert 40 in BLOCKED_AARCH64
 
     def test_bpf_blocked_aarch64(self):
-        assert 280 in BLOCKED_AARCH64  # bpf
+        assert 280 in BLOCKED_AARCH64
 
     def test_keyctl_group_aarch64_numbers(self):
-        # asm-generic ABI: add_key=217, request_key=218, keyctl=219, clone=220.
-        # These were once off-by-one (220 wrongly listed as keyctl), which blocked
-        # clone and broke every fork inside the sandbox on arm64.
-        assert 217 in BLOCKED_AARCH64  # add_key
-        assert 218 in BLOCKED_AARCH64  # request_key
-        assert 219 in BLOCKED_AARCH64  # keyctl
-        assert 220 not in BLOCKED_AARCH64  # clone — must NOT be blocked
+        assert 217 in BLOCKED_AARCH64
+        assert 218 in BLOCKED_AARCH64
+        assert 219 in BLOCKED_AARCH64
+        assert 220 not in BLOCKED_AARCH64
 
     def test_execution_syscalls_never_blocked(self):
         """Regression guard: blocking clone/execve/exit breaks every sandboxed
@@ -185,7 +176,6 @@ class TestBuildBpfForSandbox:
         mock_arch.return_value = (AUDIT_ARCH_X86_64, BLOCKED_X86_64, SOCKET_X86_64)
         bpf = build_bpf_for_sandbox(allow_network=False)
         assert bpf is not None
-        # Should have more instructions than network-allowed version
         bpf_with_net = build_bpf_for_sandbox(allow_network=True)
         assert len(bpf) > len(bpf_with_net)
 

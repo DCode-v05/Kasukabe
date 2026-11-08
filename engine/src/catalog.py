@@ -41,14 +41,8 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
-# Share of the model's context window that skill metadata may occupy before it
-# is trimmed. Two percent of a 200k window is ~4k characters, enough for a few
-# hundred one-line descriptions.
 SKILL_METADATA_CONTEXT_WINDOW_PERCENT = 2
 
-# Used when the context window is unknown. Absolute character count, not tokens:
-# the budget guards prompt bloat, and an exact token count is not worth a
-# tokenizer round-trip on every catalog read.
 DEFAULT_SKILL_METADATA_CHAR_BUDGET = 8_000
 
 SKILL_MD_FILENAME = "SKILL.md"
@@ -62,7 +56,7 @@ class CatalogEntry:
     name: str
     version: str
     data: dict
-    source: str = "core"  # core, user, forked, lc_created, managed
+    source: str = "core"
 
 
 @dataclass(frozen=True)
@@ -160,17 +154,12 @@ class Catalog:
     def reload_user_skills(self, user_skills_dir: Path) -> None:
         """Hot-reload user skills from /data/skills/ after creation/deletion."""
         user_entries = load_skill_folders(user_skills_dir, source="user")
-        # Remove existing user skills, keep platform
         to_remove = [
             n for n, e in self.skills.items() if e.source in ("user", "forked", "lc_created")
         ]
         for n in to_remove:
             del self.skills[n]
-        # Add fresh user skills (shadow platform by name)
         self.skills.update(user_entries)
-
-
-# ── Folder loaders ───────────────────────────────────────────
 
 
 def split_frontmatter(text: str) -> tuple[dict, str]:
@@ -209,8 +198,6 @@ def read_skill_folder(skill_dir: Path) -> dict | None:
     if skill_md.exists():
         meta, body = split_frontmatter(skill_md.read_text(encoding="utf-8"))
         data = dict(meta)
-        # codex nests it as `metadata: {short-description: ...}`; accept either
-        # that or a flat `short-description` key.
         nested = data.pop("metadata", None)
         if isinstance(nested, dict) and "short-description" in nested:
             data.setdefault("short-description", nested["short-description"])
@@ -247,10 +234,6 @@ def load_skills_from_roots(roots: Iterable[SkillRoot]) -> dict[str, CatalogEntry
 
     for root in roots:
         if root.path.exists() and not root.path.is_dir():
-            # An absent root is normal (a user may have no skills yet). A root
-            # that exists and is NOT a directory is a misconfiguration, and
-            # treating the two alike turns a typo'd path into a silently empty
-            # skill list instead of a startup failure.
             raise NotADirectoryError(
                 f"Skill root is not a directory: {root.path} (source={root.source})"
             )
@@ -288,9 +271,6 @@ def load_skill_folders(directory: Path, source: str = "core") -> dict[str, Catal
     Thin wrapper over :func:`load_skills_from_roots` for the single-root callers.
     """
     return load_skills_from_roots([SkillRoot(path=directory, source=source)])
-
-
-# ── Skill metadata budget ────────────────────────────────────
 
 
 def skill_metadata_budget(context_window: int | None) -> int:
@@ -354,7 +334,6 @@ def load_agent_folders(directory: Path, source: str = "core") -> dict[str, Catal
         try:
             data = json.loads(meta_file.read_text(encoding="utf-8"))
             data["_agent_dir"] = str(agent_dir)
-            # Load system-prompt.md if exists
             prompt_file = agent_dir / "system-prompt.md"
             if prompt_file.exists():
                 data["system_prompt"] = prompt_file.read_text(encoding="utf-8")
@@ -383,9 +362,6 @@ def load_tool_entries(directory: Path) -> dict[str, CatalogEntry]:
             logger.warning("Failed to load tool %s: %s", json_file, e)
 
     return entries
-
-
-# ── Skill CRUD (for user-created skills) ─────────────────────
 
 
 def render_skill_md(meta: dict, body: str) -> str:
@@ -471,8 +447,6 @@ def update_user_skill(data_dir: Path, name: str, updates: dict) -> dict:
             meta["category"] = updates["category"]
 
         (skill_dir / SKILL_MD_FILENAME).write_text(render_skill_md(meta, body), encoding="utf-8")
-        # The folder now speaks SKILL.md; drop the legacy pair so there is one
-        # source of truth rather than two that can disagree.
         (skill_dir / LEGACY_SKILL_JSON_FILENAME).unlink(missing_ok=True)
         (skill_dir / "prompt.md").unlink(missing_ok=True)
 
@@ -483,9 +457,6 @@ def update_user_skill(data_dir: Path, name: str, updates: dict) -> dict:
             (scripts_dir / filename).write_text(code, encoding="utf-8")
 
     return {"name": name, "status": "updated"}
-
-
-# ── Main loader ──────────────────────────────────────────────
 
 
 def default_skill_roots(
@@ -530,7 +501,6 @@ def load_catalog(
 
     catalog = Catalog(agents=agents, skills=skills, tools=tools)
 
-    # Load core soul
     soul_path = root / "core" / "core_soul.json"
     if soul_path.exists():
         try:

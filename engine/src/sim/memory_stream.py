@@ -64,10 +64,6 @@ from src.engine_core.events import (
 
 MEMORY_STREAM_FILENAME = "memory_stream.jsonl"
 
-# Tools whose effects are worth remembering more than a lookup is. These
-# are the world-mutating ones (DESIGN.md section 2: "World state mutates
-# ONLY through tool calls"), so an action that changed the town outranks
-# one that only looked at it.
 CONSEQUENTIAL_TOOLS = frozenset({
     "buy", "sell", "transfer", "transfer_tile", "auction_land", "set_will",
     "marry", "come_of_age", "build_structure", "register_business",
@@ -75,20 +71,12 @@ CONSEQUENTIAL_TOOLS = frozenset({
     "file_complaint", "teach_skill", "say", "pray",
 })
 
-# A call that SUCCEEDED and changed nothing is not an event in a life. Run 28:
-# 1,250 of the town's 1,315 observation memories (95%) were echoes of these -
-# `I did world:rest: {...}` 328 times, `look_around` 161 - in the stream that
-# retrieval, reflection and the learning centre read, burying the morning's
-# one sale. The world states the same facts in the next perception. A FAILED
-# one is still remembered: a refusal teaches, whatever the tool.
 UNREMARKABLE_WHEN_THEY_SUCCEED = frozenset({
     "rest", "look_around", "list_places", "describe_place", "describe_person",
     "describe_primitives", "check_debts", "recall_goals", "recall_memories",
     "recall_session_log", "quote_action_cost", "find_people", "search_memory",
 })
 
-# Phrases that mark reasoning as looking BACK rather than only forward.
-# A reflection cites what it was drawn from; a plan does not.
 _BACKWARD_LOOKING = re.compile(
     r"\b(earlier|before|last time|previously|already|again|yesterday|"
     r"i (?:have|had|did|tried|learned|noticed)|so far)\b",
@@ -102,20 +90,6 @@ _INTENT = re.compile(
 
 MAX_CONTENT_CHARS = 600
 
-# ENG-14. Where a turn's reasoning actually arrives.
-#
-# This module accumulated `ThinkingDelta` and nothing else, and the broker
-# emits a thinking delta only for a provider's `reasoningContent` field
-# (broker/translate.py). kimi-k2.5 does not fill that field: it writes its
-# deliberation into the ordinary text stream, wrapped in <think></think>,
-# and run 23 shows the closing tag sitting inside TextDelta content. So
-# `reasoning_chunks` was empty on every real turn of every run, `_INTENT`
-# and `_BACKWARD_LOOKING` never had a string to match, and not one plan or
-# reflection record has ever been written - only observations. The memory
-# stream was a tool log with two record types that could not occur.
-#
-# session_log.py has had a TextDelta branch since it was written, which is
-# why session logs carry an agent's words and the memory stream did not.
 _THINK_CLOSE = "</think>"
 _THINK_OPEN = "<think>"
 
@@ -154,7 +128,7 @@ def score_importance(memory_type: str, *, tool: str | None = None, failed: bool 
     if memory_type == "plan":
         return 6
     if failed:
-        return 7                      # a failure teaches more than a success
+        return 7
     if tool and tool in CONSEQUENTIAL_TOOLS:
         return 5
     return 3
@@ -166,11 +140,6 @@ class _InFlightTurn:
 
     perception: str
     reasoning_chunks: list[str] = field(default_factory=list)
-    # ENG-14: the same turn's TEXT, kept only up to the first tool call.
-    # Text before the first call is deliberation - the model working out
-    # what to do. Text after it is narration of a result the observation
-    # records already hold, and folding that back in would turn every
-    # report of a completed action into a "plan" for it.
     text_chunks: list[str] = field(default_factory=list)
     observations: list[dict[str, Any]] = field(default_factory=list)
 
@@ -237,8 +206,6 @@ class MemoryStreamWriter:
         self.sink = sink
         self.tick = 0
         self._current: _InFlightTurn | None = None
-        # Sequence numbers this process has written, so a reflection can
-        # cite the observations it was actually drawn from.
         self._seq = 0
         self._recent_observation_ids: list[int] = []
 
@@ -259,9 +226,6 @@ class MemoryStreamWriter:
         if isinstance(event, ThinkingDelta):
             turn.reasoning_chunks.append(event.text)
         elif isinstance(event, TextDelta):
-            # ENG-14. See _THINK_CLOSE above: on this sim's one model the
-            # text stream is where reasoning arrives, so a stream that
-            # ignored it recorded no plan and no reflection, ever.
             if not turn.observations:
                 turn.text_chunks.append(event.text)
         elif isinstance(event, ToolExecution):
@@ -288,13 +252,12 @@ class MemoryStreamWriter:
         written: list[dict[str, Any]] = []
         observation_ids: list[int] = []
 
-        # 1. observations - what actually happened, one per completed call
         for obs in turn.observations:
             if obs.get("pending"):
-                continue                  # a call whose result never came back
+                continue
             tool = obs.get("tool") or "unknown"
             if not obs.get("failed") and tool.split(":", 1)[-1] in UNREMARKABLE_WHEN_THEY_SUCCEED:
-                continue                  # a wait or a look that changed nothing
+                continue
             verb = "tried and failed to" if obs.get("failed") else "did"
             content = f"I {verb} {tool}: {_clip(str(obs.get('result', '')))}"
             record = self._record(
@@ -305,14 +268,11 @@ class MemoryStreamWriter:
             observation_ids.append(record["seq"])
             written.append(record)
 
-        # 2. a plan, when the reasoning actually stated an intent
         if reasoning and _INTENT.search(reasoning):
             written.append(
                 self._record("plan", _clip(reasoning), score_importance("plan"))
             )
 
-        # 3. a reflection, when the reasoning looked back - and it cites
-        #    what it looked back AT, which is what makes this a chain
         if reasoning and _BACKWARD_LOOKING.search(reasoning):
             cited = (observation_ids + self._recent_observation_ids)[:8]
             written.append(
@@ -324,7 +284,6 @@ class MemoryStreamWriter:
                 )
             )
 
-        # keep a short tail of observation ids for the next turn to cite
         self._recent_observation_ids = (observation_ids + self._recent_observation_ids)[:16]
 
         for record in written:
@@ -380,23 +339,6 @@ def read_memory_stream(log_path: Path, limit: int = 20) -> list[dict[str, Any]]:
     return records[:limit]
 
 
-# ---------------------------------------------------------------------------
-# Reading the stream back: the half that was missing
-# ---------------------------------------------------------------------------
-# Park et al.'s memory stream is only half a mechanism if an agent can write to
-# it and never read from it. Until this, that was exactly the state of things:
-# MemoryStreamWriter recorded every observation, reflection and plan, and the
-# only reader was `read_memory_stream()` - a Python function callable by the
-# console and by tests, and by nothing the agent itself could reach. Connect a
-# real model to that and the agent forms memories it can never retrieve, which
-# is not a memory stream, it is a log file.
-#
-# This closes it the same way session_log.py does, through the two sanctioned
-# seams and with no edit to any frozen module: a ToolDef registered into the
-# engine's own ToolRegistry, plus a PermissionRule appended to
-# thread.session_rules - because thread.py's check_permission() denies by
-# default, and a registered tool with no rule is silently never callable.
-
 MEMORY_STREAM_TOOL_NAME = "recall_memories"
 
 MEMORY_STREAM_TOOL_ALLOW_RULE = PermissionRule(
@@ -415,7 +357,6 @@ def install_memory_stream_permissions(thread: Any) -> None:
         thread.session_rules.append(MEMORY_STREAM_TOOL_ALLOW_RULE)
 
 
-# The three record types _record() actually writes (see start_turn/finish_turn).
 MEMORY_KIND_LABEL = {"observation": "observed", "reflection": "reflected", "plan": "planned"}
 
 

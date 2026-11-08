@@ -104,12 +104,6 @@ async def test_a_refusal_leaves_the_world_with_the_names_on_it(tmp_path):
     who, other = _a_named_pair(runner)
     name = runner.agent_names[other]
 
-    # Run 28b's shape exactly, reproduced: a price posted and the goods
-    # gone. The refusal `InsufficientInventoryError` writes is a true
-    # sentence about a person, built from the id alone - `"n07 needs 1
-    # bread, has 0"` - and it is the one this run lost eighteen calls to.
-    # A refusal that already names somebody (`NotFoundError` builds its own
-    # label) would pass this test whether the fix were here or not.
     runner.world_state.inventory.credit(other, "bread", 1)
     await runner.registry.execute(runner.world_state, other, "post_price",
                                   {"item": "bread", "ask_sim": 15})
@@ -141,8 +135,6 @@ async def test_the_brief_names_the_person_a_debt_is_owed_to(tmp_path):
     runner = _runner(tmp_path)
     await runner.boot(resume=False)
     borrower, lender = _a_named_pair(runner)
-    # The ledger fact a `transfer` tagged as a loan leaves behind - the same
-    # row `check_debts` and the brief both read (`WorldState.record_loan`).
     runner.world_state.record_loan(lender, borrower, 400, runner.world_state.tick())
 
     brief = runner.standing_brief(borrower)

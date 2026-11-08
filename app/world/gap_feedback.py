@@ -50,19 +50,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:  # pragma: no cover - typing only
     from world.tools.state import WorldState
 
-# One game-day at TICKS_PER_DAY = 144. An agent that has been told about a gap
-# and did nothing has decided; asking again tomorrow is a reminder, asking
-# again in ten minutes is nagging.
 NOTICE_COOLDOWN_TICKS = 144
 
-# How many agents must have hit a gap before anyone is told about it. 2, not 1:
-# a single agent's refusal is usually that agent being in the wrong place,
-# while two independent agents wanting the same impossible thing is the town
-# wanting it.
 MIN_AGENTS_FOR_A_GAP = 2
 
-# Told about at most this many gaps at once. A list of everything the town
-# cannot do is a wishlist, not a prompt - and it costs tokens every tick.
 MAX_GAPS_PER_NOTICE = 2
 
 
@@ -85,7 +76,6 @@ class GapFeedback:
     """Decides who gets told what, and remembers every time it told them."""
 
     notices: list[GapNotice] = field(default_factory=list)
-    # (agent_id, requirement) -> tick last told. The rate limiter.
     last_told: dict[tuple[str, str], int] = field(default_factory=dict)
     enabled: bool = True
 
@@ -103,8 +93,6 @@ class GapFeedback:
         if not mine:
             return None
 
-        # Headcount across the whole town, not just this agent - the gap has to
-        # be the town's before it is worth naming.
         crowd: dict[str, set[str]] = {}
         for refusal in world.tool_refusals:
             crowd.setdefault(refusal.unmet_requirement, set()).add(refusal.agent_id)

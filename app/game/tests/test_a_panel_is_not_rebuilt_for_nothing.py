@@ -75,9 +75,6 @@ def test_it_reports_whether_it_wrote(painted: dict) -> None:
     assert painted["returns"][-1] is False
 
 
-# ── the renderers really go through it ─────────────────────────────────
-
-
 @pytest.mark.parametrize(
     "renderer",
     ["renderGovernment", "renderScoreboard", "renderWork", "renderPlaceCard",

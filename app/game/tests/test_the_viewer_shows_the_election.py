@@ -63,7 +63,7 @@ def _client(app: FastAPI) -> HttpWorldClient:
 
 @pytest.mark.asyncio
 async def test_after_the_count_the_result_is_still_there() -> None:
-    client = _client(_world([NEXT, COUNTED]))   # newest first, as the world sends them
+    client = _client(_world([NEXT, COUNTED]))
 
     body = await client.get_election()
 

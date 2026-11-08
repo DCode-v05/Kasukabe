@@ -24,9 +24,6 @@ def turn(reasoning: str = "", output: str = "", agent_id: str = "n06", tick: int
     return {"agent_id": agent_id, "tick": tick, "reasoning": reasoning, "output": output}
 
 
-# ── P1: the machinery of an assistant ─────────────────────────────────
-
-
 def test_the_request_plan_reminder_is_caught():
     """61 of 240 sampled rows carried it."""
     report = scan_turns([turn(reasoning="I should use request_plan to widen scope.")])
@@ -69,9 +66,6 @@ def test_the_bar_is_zero_not_rare():
 
     assert report.sampled == 500
     assert report.p2_passes is False
-
-
-# ── P2: first person only ─────────────────────────────────────────────
 
 
 def test_calling_itself_an_engine_is_caught():
@@ -117,9 +111,6 @@ def test_the_quote_is_kept_so_the_finding_can_be_argued_with():
     ])
 
     assert "assistant" in report.first_person[0]["quote"]
-
-
-# ── P3: asked your name, do you say it ────────────────────────────────
 
 
 NAMES = {"n05": "Marta Thorne", "n09": "Farid Vance"}
@@ -191,9 +182,6 @@ def test_a_town_where_nobody_asked_has_no_rate():
 
     assert report.p3_rate is None
     assert "nobody was asked" in render(report)
-
-
-# ── how it reads ──────────────────────────────────────────────────────
 
 
 def test_the_gates_do_say_pass_and_fail_unlike_the_judges():

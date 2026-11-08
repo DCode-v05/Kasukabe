@@ -47,9 +47,6 @@ async def household(world, *ids: str, place: str = TABLE):
         world.agent_names[agent_id] = f"Resident {agent_id}"
 
 
-# -- The pointer itself ----------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_a_resident_in_no_conversation_has_no_pointer(world, registry) -> None:
     await household(world, "n01")
@@ -87,11 +84,6 @@ async def test_walking_out_drops_the_pointer(world, registry) -> None:
     await registry.dispatch(world, "n01", "start_conversation", {
         "topic": "grain", "with_agent_ids": ["n02"],
     })
-    # Placed directly rather than via `move`, which starts a ROUTE the
-    # resident walks over several ticks - the first draft of this test
-    # called `move` and then asserted the pointer had dropped, while n02
-    # was still standing at the table with a journey pending. Arriving is
-    # what leaves a conversation, not setting off.
     world.locations.place("n02", ELSEWHERE)
     assert world.location_of("n02") == ELSEWHERE, "premise: n02 has arrived"
     assert world.conversation_pointer("n02") is None
@@ -108,9 +100,6 @@ async def test_a_closed_conversation_is_not_pointed_at(world, registry) -> None:
     })
     world.current_tick += CONVERSATION_WINDOW_TICKS + 1
     assert world.conversation_pointer("n01") is None
-
-
-# -- `say` follows it ------------------------------------------------
 
 
 @pytest.mark.asyncio
@@ -206,9 +195,6 @@ async def test_a_resident_with_no_pointer_behaves_exactly_as_before(world, regis
     second = await registry.dispatch(world, "n02", "say", {"content": "Morning to you."})
     assert first.result["conversation_id"]
     assert second.result["conversation_id"] == first.result["conversation_id"]
-
-
-# -- The resident can see which one they are in ----------------------
 
 
 @pytest.mark.asyncio

@@ -23,9 +23,6 @@ async def test_successful_theft_moves_sim_and_records_ground_truth(economy: Fake
     location.place("thief", "park")
     location.place("victim", "park")
     desk = make_desk(economy, location, recorder)
-    # Find a seed draw that succeeds deterministically by forcing the RNG -
-    # a plain random.Random(0) was built here and then never used, because
-    # AlwaysSucceed below replaces it entirely.
     class AlwaysSucceed(random.Random):
         def random(self) -> float:
             return 0.0

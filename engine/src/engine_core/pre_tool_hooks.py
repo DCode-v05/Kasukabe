@@ -86,11 +86,6 @@ from typing import Any, Awaitable, Callable, Protocol
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Data types
-# ---------------------------------------------------------------------------
-
-
 @dataclass(frozen=True)
 class PreToolUseHookInput:
     """Snapshot of the pending tool call, passed to every pre-tool hook.
@@ -138,7 +133,7 @@ class PreToolUseHookResult:
         wins across all hooks.
     """
 
-    decision: str = "inherit"  # "allow" | "deny" | "inherit"
+    decision: str = "inherit"
     deny_reason: str = ""
     updated_input: dict[str, Any] | None = None
     additional_context: str = ""
@@ -152,17 +147,12 @@ class AggregatedPreToolResult:
 
     denied: bool = False
     deny_reason: str = ""
-    allowed: bool = False  # explicit allow, only if no deny
+    allowed: bool = False
     updated_input: dict[str, Any] | None = None
     additional_contexts: list[str] = field(default_factory=list)
     prevent_continuation: bool = False
-    blocking_error: str | None = None  # first non-empty wins; returns error as tool result
+    blocking_error: str | None = None
     hook_outcomes: list[dict] = field(default_factory=list)
-
-
-# ---------------------------------------------------------------------------
-# Protocol
-# ---------------------------------------------------------------------------
 
 
 class PreToolUseHook(Protocol):
@@ -176,11 +166,6 @@ class PreToolUseHook(Protocol):
     """
 
     async def execute(self, input: PreToolUseHookInput) -> PreToolUseHookResult: ...
-
-
-# ---------------------------------------------------------------------------
-# Registry
-# ---------------------------------------------------------------------------
 
 
 @dataclass
@@ -294,7 +279,6 @@ class PreToolUseHookRegistry:
 
                 elif res.decision == "allow":
                     entry["allowed"] = True
-                    # allow is recorded but only applied if no deny (post-loop)
 
                 if res.updated_input is not None:
                     agg.updated_input = res.updated_input
@@ -313,18 +297,12 @@ class PreToolUseHookRegistry:
 
             agg.hook_outcomes.append(entry)
 
-        # Apply allow only when no hook denied.
         if not agg.denied:
             agg.allowed = any(
                 e.get("allowed", False) for e in agg.hook_outcomes if e.get("ok", False)
             )
 
         return agg
-
-
-# ---------------------------------------------------------------------------
-# Hook implementations
-# ---------------------------------------------------------------------------
 
 
 class CallablePreToolUseHook:
@@ -407,8 +385,6 @@ class CommandPreToolUseHook:
             return result_from_dict(data)
 
         if run.returncode == 2:
-            # Explicit deny. JSON with fields takes priority; otherwise
-            # the stdout text is the deny reason.
             try:
                 data = json.loads(run.stdout_text) if run.stdout_text else {}
                 if isinstance(data, dict):
@@ -427,11 +403,6 @@ class CommandPreToolUseHook:
             run.stderr_text[:200],
         )
         return PreToolUseHookResult()
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 
 def result_from_dict(data: Any) -> PreToolUseHookResult:

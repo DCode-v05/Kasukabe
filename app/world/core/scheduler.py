@@ -117,17 +117,6 @@ class AgentScheduler:
         if cadence < 1:
             raise ValueError(f"cadence_ticks must be >= 1, got {cadence}")
 
-        # Offset is in [1, cadence], never 0: a 0 offset would put this
-        # agent's first decision AT current_tick, which - for every agent
-        # registered before the sim has ticked at all (current_tick=0) -
-        # is a tick that due_agents() never actually gets asked about
-        # (tick() always advances the clock before checking who's due).
-        # That agent would then look "already overdue" the moment the
-        # very first real tick runs, merging its phase with whichever
-        # bucket IS genuinely due on tick 1 and permanently collapsing
-        # two buckets into one. Starting every offset at 1 instead keeps
-        # each bucket's first decision strictly in the future relative to
-        # registration, so the round-robin spread holds from tick one.
         offset = (self.registration_count % cadence) + 1
         self.registration_count += 1
         self.entries[agent_id] = ScheduleEntry(

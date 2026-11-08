@@ -79,8 +79,6 @@ from world.charter.elections import compute_tally
 from world.life.models import Genesis
 from world.tools.state import WorldState
 
-# ── deps ──────────────────────────────────────────────────────────────
-
 
 @dataclass
 class GovernanceDeps:
@@ -114,9 +112,6 @@ def agent_ref(names: dict[str, str], agent_id: str | None) -> AgentRef | None:
     if agent_id is None:
         return None
     return AgentRef(agent_id=agent_id, name=names.get(agent_id))
-
-
-# ── charter + policy views ──────────────────────────────────────────────
 
 
 class CharterView(BaseModel):
@@ -288,9 +283,6 @@ class ComplaintView(BaseModel):
     filed_tick: int
 
 
-# ── amendment log + charter diff ────────────────────────────────────────
-
-
 class ChangedField(BaseModel):
     field_name: str
     before: Any
@@ -370,25 +362,11 @@ def amendment_log_entry(
 ) -> AmendmentLogEntryView:
     yes_votes = sum(1 for v in proposal.votes.values() if v)
     no_votes = sum(1 for v in proposal.votes.values() if not v)
-    # charter_history is a version-indexed list (index i has .version == i
-    # - see world/charter/amendments.py's sign_amendment: every push is
-    # current.version + 1, and the only way a Charter is ever appended is
-    # through that one call site), so "the charter right before this
-    # amendment" is simply charter_history[v - 1].
     diff: CharterDiff | None = None
     if proposal.resulting_charter_version is not None:
         after_v = proposal.resulting_charter_version
         if 0 < after_v < len(charter_history):
             diff = diff_charters(charter_history[after_v - 1], charter_history[after_v])
-    # There is no dedicated ToolInvocationRecord for propose/vote/sign/
-    # veto today (verified: grepping world/tools/primitives for
-    # "amendment" finds nothing - only `vote` on an ELECTION ballot is a
-    # public tool; amendment propose/cast_amendment_vote have no tool
-    # wrapper at all, and sign_amendment/veto_amendment are called
-    # directly by world/admin_api.py's President routes, bypassing
-    # ToolRegistry.execute() entirely, so they never reach
-    # world.tool_invocations either). The real, honest "what act enacted
-    # this" is the charter/ method name itself.
     action = {
         "proposed": "charter.amendments.propose_amendment",
         "passed_awaiting_president": "charter.amendments.cast_amendment_vote (threshold reached)",
@@ -396,15 +374,6 @@ def amendment_log_entry(
         "vetoed": "charter.amendments.veto_amendment (President console)",
         "rejected": "charter.amendments.cast_amendment_vote (threshold unreachable)",
     }[proposal.status.value]
-    # cast_amendment_vote() recomputes the required yes-count against
-    # whatever charter is CURRENT at each vote (amendments.py never pins
-    # a proposal to the charter version in force when it was proposed).
-    # For an ENACTED proposal, "the charter in force right before this
-    # amendment" (charter_history[resulting_charter_version - 1]) is
-    # exactly that charter and gives an exact answer; for anything still
-    # open or rejected, the latest charter is the best available
-    # approximation (see this module's own report for the honest
-    # limitation - no per-vote snapshot of the threshold is persisted).
     if proposal.resulting_charter_version is not None and 0 < proposal.resulting_charter_version <= len(charter_history):
         votes_required = charter_history[proposal.resulting_charter_version - 1].amendment_votes_required
     else:
@@ -432,9 +401,6 @@ def amendment_log_entry(
         enacting_action=action,
         diff=diff,
     )
-
-
-# ── elections / voting ───────────────────────────────────────────────────
 
 
 class CandidacyView(BaseModel):
@@ -524,13 +490,6 @@ def election_detail(names: dict[str, str], election: Election, previous_pm_agent
             )
             for c in election.candidates.values()
         ],
-        # DESIGN.md section 7: "one agent, one vote, cast in person" reads
-        # as a secret ballot in the live event feed (elections.py's
-        # cast_vote deliberately omits the candidate from the broadcast
-        # event - see its own comment) but the full ballot is still real,
-        # queryable state in the store, and DESIGN.md section 8 explicitly
-        # asks this viewer for "votes as they are cast" - a research
-        # instrument, not the town's own public record.
         ballots=[
             BallotView(voter=agent_ref(names, voter_id), candidate=agent_ref(names, candidate_id))  # type: ignore[arg-type]
             for voter_id, candidate_id in election.ballots.items()
@@ -539,30 +498,10 @@ def election_detail(names: dict[str, str], election: Election, previous_pm_agent
     )
 
 
-# ── the router ────────────────────────────────────────────────────────
-
-
 async def add_cors_headers(response: Response) -> None:
     """See module docstring's "Cross-origin" note - this is the whole
     CORS story for a read-only, credential-less GET API."""
     response.headers["Access-Control-Allow-Origin"] = "*"
-
-
-# ---------------------------------------------------------------------------
-# B5: the treasury, and which term a policy change happened under (section 23)
-# ---------------------------------------------------------------------------
-# "A real budget an elected government actually manages: tax income in,
-# pensions/police/permits/tenders out, and a visible balance - so a policy
-# choice has a traceable financial consequence, not just a rule change."
-# "Election outcomes should visibly change what happens next: a new Prime
-# Minister's actual policy choices should be attributable, in the trace, to
-# that specific term in office."
-#
-# Both are read paths over state that already exists: the treasury balance
-# lives in world.ledger, and every amendment already records its own
-# enacted_tick. What was missing was showing the balance next to the policies
-# that move it, and joining an amendment's tick back to whoever held the seat
-# at that moment.
 
 
 class TreasuryView(BaseModel):
@@ -682,8 +621,6 @@ def build_terms(
             )
         )
     if not terms and current is not None and current.pm_agent_id:
-        # A government seated without an election (genesis, or an operator
-        # appointment) is still a term - it just has no election to point at.
         terms.append(
             TermView(
                 pm_agent_id=current.pm_agent_id,
@@ -703,7 +640,6 @@ def build_terms(
 def build_governance_router(get_deps: Callable[[], GovernanceDeps]) -> APIRouter:
     router = APIRouter(tags=["governance"], dependencies=[Depends(add_cors_headers)])
 
-    # -- charter -----------------------------------------------------------
 
     @router.get("/governance/charter", response_model=CharterView)
     async def current_charter() -> CharterView:
@@ -717,7 +653,6 @@ def build_governance_router(get_deps: Callable[[], GovernanceDeps]) -> APIRouter
             history = list(deps.world.charter.store.charter_history)
         return [charter_view(c) for c in history]
 
-    # -- policy / "active policies" -----------------------------------------
 
     @router.get("/governance/policy", response_model=PolicyView)
     async def current_policy() -> PolicyView:
@@ -753,7 +688,6 @@ def build_governance_router(get_deps: Callable[[], GovernanceDeps]) -> APIRouter
             tenders=[tender_view(names, t) for t in tenders],
         )
 
-    # -- government / who sits ----------------------------------------------
 
     @router.get("/governance/government", response_model=GovernmentStateView)
     async def government() -> GovernmentStateView:
@@ -762,9 +696,6 @@ def build_governance_router(get_deps: Callable[[], GovernanceDeps]) -> APIRouter
         state = await deps.world.charter.store.get_government_state()
         return government_state_view(names, state)
 
-    # -- amendment log --------------------------------------------------------
-
-    # -- B5: the budget, and who is answerable for it (section 23) --------
 
     @router.get("/governance/treasury", response_model=TreasuryView)
     async def treasury() -> TreasuryView:
@@ -809,9 +740,6 @@ def build_governance_router(get_deps: Callable[[], GovernanceDeps]) -> APIRouter
         )
         return [amendment_log_entry(names, p, history) for p in proposals]
 
-    # -- immutable complaint ledger (DESIGN.md section 7's constitutional
-    # check, distinct from crime/'s complaint desk - see charter/models.py's
-    # ComplaintEntry docstring) --------------------------------------------
 
     @router.get("/governance/complaints", response_model=list[ComplaintView])
     async def complaints() -> list[ComplaintView]:
@@ -830,7 +758,6 @@ def build_governance_router(get_deps: Callable[[], GovernanceDeps]) -> APIRouter
             for e in reversed(entries)
         ]
 
-    # -- voting: elections ----------------------------------------------------
 
     @router.get("/voting/elections", response_model=list[ElectionSummaryView])
     async def elections() -> list[ElectionSummaryView]:
@@ -845,7 +772,7 @@ def build_governance_router(get_deps: Callable[[], GovernanceDeps]) -> APIRouter
             summaries.append(election_summary(names, election, previous_pm))
             if election.result is not None:
                 previous_pm = election.result.pm_agent_id
-        summaries.reverse()  # newest first, matching every other feed here
+        summaries.reverse()
         return summaries
 
     @router.get("/voting/elections/{election_id}", response_model=ElectionDetailView)

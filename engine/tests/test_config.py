@@ -39,7 +39,6 @@ def clear_engine_env(monkeypatch):
 @pytest.fixture
 def clean_env(monkeypatch, tmp_path):
     clear_engine_env(monkeypatch)
-    # Point loads at an empty .env so the repo's real one cannot leak in.
     return tmp_path / "empty.env"
 
 
@@ -66,7 +65,6 @@ class TestAggregatedReport:
         assert any("MAX_TOKENS" in err for err in errors)
 
     def test_load_is_semantically_lenient(self, clean_env):
-        # No CDT_URL/CDT_KEY anywhere: load() still returns a Settings.
         s = Settings.load(env_path=clean_env)
         assert s.cdt_url == ""
 
@@ -127,12 +125,12 @@ class TestValidators:
 
     def test_nonnegative_ints(self):
         assert any("ASSET_LOG_RETENTION_DAYS" in e for e in self.check(asset_log_retention_days=-1))
-        assert self.check(asset_log_retention_days=0) == []  # 0 = sweep disabled
+        assert self.check(asset_log_retention_days=0) == []
 
     def test_positive_floats(self):
         assert any("CHANNEL_POLL_DEFAULT_S" in e for e in self.check(channel_poll_default_s=0.0))
         assert any("LC_BATCH_INTERVAL_HOURS" in e for e in self.check(lc_batch_interval_hours=-1.0))
-        assert self.check(channel_grace_s=0.0) == []  # zero grace is allowed
+        assert self.check(channel_grace_s=0.0) == []
 
     def test_enums(self):
         assert any("SUBPROCESS_SCRUB_MODE" in e for e in self.check(subprocess_scrub_mode="loose"))
@@ -149,7 +147,7 @@ class TestValidators:
             for e in self.check(ad_encryption_key=base64.urlsafe_b64encode(b"x" * 16).decode())
         )
         assert any("AD_ENCRYPTION_KEY" in e for e in self.check(ad_encryption_key="garbage!"))
-        assert self.check(ad_encryption_key="") == []  # empty = feature off
+        assert self.check(ad_encryption_key="") == []
 
     def test_cors_origins(self):
         assert self.check(cors_origins=["*"]) == []
@@ -186,12 +184,8 @@ class TestValidators:
         assert self.check(embedding_model="custom-embed", embedding_dim=768) == []
 
     def test_embedding_dim_alone_is_rejected(self):
-        # The inverse trap: a dim override with the default model would make
-        # embeddings.py silently truncate/pad every vector to the wrong
-        # length. Must fail validation, not sail through.
         errors = self.check(embedding_dim=768)
         assert any("EMBEDDING_DIM" in e and "EMBEDDING_MODEL" in e for e in errors)
-        # Both unset (herald default model + default dim) is fine.
         assert self.check(embedding_dim=0) == []
 
 

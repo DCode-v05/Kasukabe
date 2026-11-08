@@ -26,8 +26,6 @@ from src.sandbox.permissions import ToolSource
 logger = logging.getLogger(__name__)
 
 
-# Reusable callables for ToolDef boolean fields — avoids creating
-# identical lambda objects at every registration site.
 def ALWAYS_SAFE(_: dict[str, Any]) -> bool:
     return True
 
@@ -44,7 +42,7 @@ class ToolDef:
     description: str
     input_schema: dict[str, Any]
     handler: Callable[[dict[str, Any]], Awaitable[str]]
-    source: ToolSource = ToolSource.INTERNAL  # overridden at registration time
+    source: ToolSource = ToolSource.INTERNAL
     is_concurrency_safe: Callable[[dict[str, Any]], bool] = field(
         default_factory=lambda: lambda _: False
     )
@@ -53,33 +51,11 @@ class ToolDef:
         default_factory=lambda: lambda _: False
     )
     interrupt_behavior: InterruptBehavior = InterruptBehavior.BLOCK
-    # Optional runtime query.  When set, overrides the static field above
-    # and receives the current tool_input so behavior can vary per call
-    # (symmetry with ``is_concurrency_safe`` / ``is_read_only``).  Raises
-    # are caught and fall back to BLOCK.
     interrupt_behavior_fn: Callable[[dict[str, Any]], InterruptBehavior] | None = None
-    # True for tools that execute commands/code in a subprocess (bash, python).
-    # When such a tool errors in a parallel batch, sibling tools are cancelled
-    # via the sibling abort token — mimicking the TypeScript reference behaviour
-    # where only Bash errors nuke siblings (because commands have implicit
-    # dependency chains, e.g. mkdir fail → subsequent writes pointless).
-    # Read/list/search tools default to False: one file-read failing should not
-    # abort an independent sibling file-read.
     is_command_execution: bool = False
     context_modifier_fn: Callable[[dict[str, Any], str], dict[str, Any] | None] | None = None
     get_summary: Callable[[dict[str, Any]], str | None] | None = None
-    # When True, the tool is advertised to the model but its full schema is
-    # not eager-loaded into the initial system prompt. Anthropic's Beta
-    # tool-search surfaces it on demand. Use for rarely-called heavy-schema
-    # tools to cut cache-write tokens on cold turns without removing the
-    # capability. Default ``False`` keeps every existing tool eager-loaded
-    # and identical to today's behavior.
     defer_loading: bool = False
-    # Structured identity for asset (ad:) tools. The wire name
-    # ``ad:{server}.{action}`` is a display string; carrying the parts avoids
-    # every consumer re-deriving them, and carries the one part the wire name
-    # does not encode at all - which connection was used. Empty for non-asset
-    # tools.
     server_name: str = ""
     action_name: str = ""
     connection_id: str = ""
@@ -236,7 +212,6 @@ def partition_tool_calls(
             try:
                 is_safe = bool(tool.is_concurrency_safe(tc.input))
             except Exception:
-                # Conservative: treat any exception as not safe.
                 logger.warning(
                     "is_concurrency_safe raised for tool %s; treating as unsafe",
                     tc.name,
@@ -245,7 +220,6 @@ def partition_tool_calls(
                 is_safe = False
 
         if is_safe and batches and batches[-1].is_concurrency_safe:
-            # Extend the current concurrent batch.
             batches[-1].calls.append(tc)
         else:
             batches.append(ToolBatch(is_concurrency_safe=is_safe, calls=[tc]))
@@ -253,8 +227,6 @@ def partition_tool_calls(
     return batches
 
 
-# Read-only tools that are safe to run in parallel — they never mutate state.
-# Mirrors isConcurrencySafe=True in the TypeScript reference for the same tool set.
 CONCURRENCY_SAFE_TOOLS: frozenset[str] = frozenset(
     {
         "search_content",
@@ -290,10 +262,6 @@ async def hydrate_tools(ud_full: Any = None) -> ToolRegistry:
         name = definition.get("name", "?")
         source_code = definition.get("source_code")
 
-        # Decode the interface defensively. A single malformed catalog row
-        # used to raise JSONDecodeError out here, killing the loop and
-        # silently dropping every tool that came after it. Skip the bad
-        # row instead so the rest of the registry still hydrates.
         interface = definition.get("interface", {})
         if isinstance(interface, str):
             try:
@@ -310,7 +278,6 @@ async def hydrate_tools(ud_full: Any = None) -> ToolRegistry:
             logger.warning("Tool '%s' has no source_code — skipping", name)
             continue
 
-        # Exec source_code in a clean module namespace (trusted platform code)
         try:
             module = types.ModuleType(f"tool_{name}")
             exec(source_code, module.__dict__)
@@ -323,7 +290,6 @@ async def hydrate_tools(ud_full: Any = None) -> ToolRegistry:
             logger.warning("Tool '%s' has no callable handler() — skipping", name)
             continue
 
-        # Read tool metadata from the catalog definition with safe defaults.
         is_safe: bool = definition.get("is_concurrency_safe", name in CONCURRENCY_SAFE_TOOLS)
         is_ro: bool = definition.get("is_read_only", False)
         is_destructive: bool = definition.get("is_destructive", False)

@@ -9,9 +9,8 @@ from world.crime.models import CaseOutcome, CrimeKind, OutcomeKind, WitnessEvent
 
 
 def test_hours_to_ticks_matches_design_ten_minute_tick() -> None:
-    # DESIGN.md section 1: tick = 10 game-minutes -> 6 ticks/hour.
     assert hours_to_ticks(1.0) == 6
-    assert hours_to_ticks(24.0) == 144  # one full game-day
+    assert hours_to_ticks(24.0) == 144
     assert hours_to_ticks(0.5) == 3
 
 

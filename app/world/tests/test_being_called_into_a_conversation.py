@@ -74,19 +74,11 @@ def read_by(agent_id: str, payload: dict) -> str:
         type="agent.conversation.opened",
         tick=37,
         payload=payload,
-        # Guarded because this helper is fed deliberately malformed
-        # rosters below. The live perception system computes this from
-        # `interrupt_policy`, which always returns a collection, so the
-        # bad shapes can only arrive from a replayed or hand-edited
-        # record - which is exactly what the renderer has to survive.
         involves_self=agent_id in (roster if isinstance(
             (roster := payload.get("involved_agent_ids")), (list, tuple, set)) else ()),
         for_agent_id=agent_id,
     )
     return format_heard_event(event, NAMES, here=payload.get("location_id"))
-
-
-# -- It reads as an invitation ---------------------------------------
 
 
 def test_an_invitee_is_told_in_words() -> None:
@@ -124,9 +116,6 @@ def test_the_invitee_is_not_listed_among_the_others() -> None:
     assert text.count("Ainsley Holloway") == 0
 
 
-# -- And it gives no orders ------------------------------------------
-
-
 def test_it_tells_nobody_to_speak() -> None:
     """Atlas drove its members round a loop after announcing. That loop is
     what ROADMAP Law 2 forbids, and a line here reading "it is your turn"
@@ -134,9 +123,6 @@ def test_it_tells_nobody_to_speak() -> None:
     lowered = read_by("n02", opened()).lower()
     for order in ("your turn", "you must", "you should", "join it", "reply", "answer them"):
         assert order not in lowered, f"the invitation gives an order: {order!r}"
-
-
-# -- The convener and the passer-by ----------------------------------
 
 
 def test_the_convener_is_not_told_they_were_invited() -> None:
@@ -152,9 +138,6 @@ def test_somebody_merely_nearby_reads_it_as_news_not_an_invitation() -> None:
     text = read_by("n09", opened())
     assert "{" not in text
     assert "with you" not in text.lower()
-
-
-# -- Shapes it has to survive ----------------------------------------
 
 
 def test_a_conversation_opened_with_no_topic_still_renders() -> None:

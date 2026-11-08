@@ -67,9 +67,6 @@ def test_the_key_gate_is_gone_and_the_reason_is_written_down() -> None:
     """
     script = (APP / "run-election.sh").read_text(encoding="utf-8")
 
-    # The expansion, not the bare name: the comment block that explains the
-    # removal has to say what was removed, and a test that cannot tell an
-    # explanation from a gate would forbid writing one down.
     assert "${CONFIRM_KEY_ROTATED" not in script, (
         "the key gate is back - if that is deliberate, this test and the "
         "comment block explaining the removal need revisiting together"

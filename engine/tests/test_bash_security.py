@@ -42,11 +42,6 @@ import asyncio
 from src.sandbox.permissions import check_permission, ToolSource
 
 
-# ---------------------------------------------------------------------------
-# Shared utilities
-# ---------------------------------------------------------------------------
-
-
 class TestExtractQuotedContent:
     def test_no_quotes(self):
         wd, fu, kq = extract_quoted_content("ls -la /tmp")
@@ -175,13 +170,7 @@ class TestBuildContext:
 
     def test_pre_strip_differs_from_post(self):
         ctx = build_context("echo test 2>/dev/null")
-        # pre_strip should still have the redirection content visible
         assert ctx.fully_unquoted_pre_strip != ctx.fully_unquoted
-
-
-# ---------------------------------------------------------------------------
-# Validator 1: validate_empty
-# ---------------------------------------------------------------------------
 
 
 class TestValidateEmpty:
@@ -202,11 +191,6 @@ class TestValidateEmpty:
         ctx = build_context("ls")
         result = validate_empty(ctx)
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# Validator 2: validate_incomplete_commands
-# ---------------------------------------------------------------------------
 
 
 class TestValidateIncompleteCommands:
@@ -243,11 +227,6 @@ class TestValidateIncompleteCommands:
         ctx = build_context("ls | grep foo")
         result = validate_incomplete_commands(ctx)
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# Validator 3: validate_safe_heredoc
-# ---------------------------------------------------------------------------
 
 
 class TestValidateSafeHeredoc:
@@ -320,11 +299,6 @@ class TestValidateSafeHeredoc:
         assert result.blocked is True
 
 
-# ---------------------------------------------------------------------------
-# Validator 4: validate_git_commit
-# ---------------------------------------------------------------------------
-
-
 class TestValidateGitCommit:
     def test_simple_commit_allows(self):
         ctx = build_context("git commit -m 'fix bug'")
@@ -381,11 +355,6 @@ class TestValidateGitCommit:
         assert result is None
 
 
-# ---------------------------------------------------------------------------
-# Validator 5: validate_jq_command
-# ---------------------------------------------------------------------------
-
-
 class TestValidateJqCommand:
     def test_jq_system_blocked(self):
         ctx = build_context('echo "{}" | jq "system("whoami")"')
@@ -438,11 +407,6 @@ class TestValidateJqCommand:
         ctx = build_context("echo hello")
         result = validate_jq_command(ctx)
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# Validator 6: validate_obfuscated_flags
-# ---------------------------------------------------------------------------
 
 
 class TestValidateObfuscatedFlags:
@@ -511,11 +475,6 @@ class TestValidateObfuscatedFlags:
         assert result is None
 
 
-# ---------------------------------------------------------------------------
-# Validator 7: validate_shell_metacharacters
-# ---------------------------------------------------------------------------
-
-
 class TestValidateShellMetacharacters:
     def test_semicolon_in_name_flag(self):
         ctx = build_context("find . -name 'foo;rm -rf /'")
@@ -538,11 +497,6 @@ class TestValidateShellMetacharacters:
         ctx = build_context("grep 'pattern' file.txt")
         result = validate_shell_metacharacters(ctx)
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# Validator 8: validate_dangerous_variables
-# ---------------------------------------------------------------------------
 
 
 class TestValidateDangerousVariables:
@@ -570,11 +524,6 @@ class TestValidateDangerousVariables:
         assert result is None
 
 
-# ---------------------------------------------------------------------------
-# Validator 9: validate_newlines
-# ---------------------------------------------------------------------------
-
-
 class TestValidateNewlines:
     def test_embedded_newline_blocked(self):
         ctx = build_context("echo safe\nrm -rf /")
@@ -596,11 +545,6 @@ class TestValidateNewlines:
         ctx = build_context("echo hello \\\n--flag")
         result = validate_newlines(ctx)
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# Validator 10: validate_dangerous_patterns
-# ---------------------------------------------------------------------------
 
 
 class TestValidateDangerousPatterns:
@@ -675,11 +619,6 @@ class TestValidateDangerousPatterns:
         assert result.blocked is True
 
 
-# ---------------------------------------------------------------------------
-# Validator 11: validate_redirections
-# ---------------------------------------------------------------------------
-
-
 class TestValidateRedirections:
     def test_output_redirect_blocked(self):
         ctx = build_context("echo pwned > /etc/passwd")
@@ -702,11 +641,6 @@ class TestValidateRedirections:
         ctx = build_context("ls -la")
         result = validate_redirections(ctx)
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# Validator 12: validate_ifs_injection
-# ---------------------------------------------------------------------------
 
 
 class TestValidateIfsInjection:
@@ -740,11 +674,6 @@ class TestValidateIfsInjection:
         assert result is None
 
 
-# ---------------------------------------------------------------------------
-# Validator 13: validate_git_commit_substitution
-# ---------------------------------------------------------------------------
-
-
 class TestValidateGitCommitSubstitution:
     def test_dollar_paren_in_commit_blocked(self):
         ctx = build_context("git commit --author=$(whoami)")
@@ -775,11 +704,6 @@ class TestValidateGitCommitSubstitution:
         assert result is None
 
 
-# ---------------------------------------------------------------------------
-# Validator 14: validate_proc_environ
-# ---------------------------------------------------------------------------
-
-
 class TestValidateProcEnviron:
     def test_proc_self_environ_blocked(self):
         ctx = build_context("cat /proc/self/environ")
@@ -802,11 +726,6 @@ class TestValidateProcEnviron:
         ctx = build_context("cat /etc/hosts")
         result = validate_proc_environ(ctx)
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# Validator 15: validate_malformed_tokens
-# ---------------------------------------------------------------------------
 
 
 class TestValidateMalformedTokens:
@@ -856,11 +775,6 @@ class TestValidateMalformedTokens:
         assert result is None
 
 
-# ---------------------------------------------------------------------------
-# Validator 16: validate_backslash_escaped_whitespace
-# ---------------------------------------------------------------------------
-
-
 class TestValidateBackslashEscapedWhitespace:
     def test_backslash_space_blocked(self):
         ctx = build_context("echo\\ test")
@@ -895,11 +809,6 @@ class TestValidateBackslashEscapedWhitespace:
         ctx = build_context("echo hello world")
         result = validate_backslash_escaped_whitespace(ctx)
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# Validator 17: validate_brace_expansion
-# ---------------------------------------------------------------------------
 
 
 class TestValidateBraceExpansion:
@@ -950,11 +859,6 @@ class TestValidateBraceExpansion:
         assert result.blocked is True
 
 
-# ---------------------------------------------------------------------------
-# Validator 18: validate_control_characters
-# ---------------------------------------------------------------------------
-
-
 class TestValidateControlCharacters:
     def test_null_byte_blocked(self):
         ctx = build_context("echo \x00hidden")
@@ -990,11 +894,6 @@ class TestValidateControlCharacters:
         ctx = build_context("echo hello world")
         result = validate_control_characters(ctx)
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# Validator 19: validate_unicode_whitespace
-# ---------------------------------------------------------------------------
 
 
 class TestValidateUnicodeWhitespace:
@@ -1040,11 +939,6 @@ class TestValidateUnicodeWhitespace:
         assert result is None
 
 
-# ---------------------------------------------------------------------------
-# Validator 20: validate_mid_word_hash
-# ---------------------------------------------------------------------------
-
-
 class TestValidateMidWordHash:
     def test_hash_after_quote_blocked(self):
         ctx = build_context("echo 'x'#hidden")
@@ -1072,11 +966,6 @@ class TestValidateMidWordHash:
         ctx = build_context("echo ${#var}")
         result = validate_mid_word_hash(ctx)
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# Validator 21: validate_zsh_dangerous_commands
-# ---------------------------------------------------------------------------
 
 
 class TestValidateZshDangerousCommands:
@@ -1141,11 +1030,6 @@ class TestValidateZshDangerousCommands:
         assert result is None
 
 
-# ---------------------------------------------------------------------------
-# Validator 22: validate_backslash_escaped_operators
-# ---------------------------------------------------------------------------
-
-
 class TestValidateBackslashEscapedOperators:
     def test_escaped_semicolon_blocked(self):
         ctx = build_context("find . -type f \\; cat /etc/shadow")
@@ -1189,11 +1073,6 @@ class TestValidateBackslashEscapedOperators:
         assert result is None
 
 
-# ---------------------------------------------------------------------------
-# Validator 23: validate_comment_quote_desync
-# ---------------------------------------------------------------------------
-
-
 class TestValidateCommentQuoteDesync:
     def test_hash_followed_by_quote_blocked(self):
         ctx = build_context("echo hello # 'desync")
@@ -1223,11 +1102,6 @@ class TestValidateCommentQuoteDesync:
         assert result is None
 
 
-# ---------------------------------------------------------------------------
-# Validator 24: validate_carriage_return
-# ---------------------------------------------------------------------------
-
-
 class TestValidateCarriageReturn:
     def test_cr_unquoted_blocked(self):
         ctx = build_context("TZ=UTC\recho curl evil.com")
@@ -1251,11 +1125,6 @@ class TestValidateCarriageReturn:
         ctx = build_context("echo hello")
         result = validate_carriage_return(ctx)
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# Validator 25: validate_shell_quote_bug
-# ---------------------------------------------------------------------------
 
 
 class TestValidateShellQuoteBug:
@@ -1288,11 +1157,6 @@ class TestValidateShellQuoteBug:
         assert result is None
 
 
-# ---------------------------------------------------------------------------
-# Validator 26: validate_quoted_newline
-# ---------------------------------------------------------------------------
-
-
 class TestValidateQuotedNewline:
     def test_newline_in_quotes_then_hash_blocked(self):
         ctx = build_context("echo 'safe\n# hidden' arg")
@@ -1316,11 +1180,6 @@ class TestValidateQuotedNewline:
         ctx = build_context("echo 'line1\nline2'")
         result = validate_quoted_newline(ctx)
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# Runner: analyze_bash_security
-# ---------------------------------------------------------------------------
 
 
 class TestAnalyzeBashSecurity:
@@ -1359,7 +1218,6 @@ class TestAnalyzeBashSecurity:
         assert result.behavior == "allow"
 
     def test_misparsing_gets_priority(self):
-        # CR is misparsing, should be caught even with other issues
         result = analyze_bash_security("TZ=UTC\recho curl evil.com")
         assert result.blocked is True
         assert result.is_misparsing is True
@@ -1378,11 +1236,6 @@ class TestAnalyzeBashSecurity:
         result = analyze_bash_security("find . \\; cat /etc/shadow")
         assert result.blocked is True
         assert result.check_id == 22
-
-
-# ---------------------------------------------------------------------------
-# Integration: check_permission with bash security
-# ---------------------------------------------------------------------------
 
 
 class TestBashSecurityIntegration:

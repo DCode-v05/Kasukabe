@@ -50,7 +50,6 @@ def test_an_election_can_open_when_the_sim_does(tmp_path) -> None:
     s = Scenario.load(write(tmp_path, body))
 
     assert s.election_opening_tick() == 36, "the election opens on the tick the run starts"
-    # 6 ticks to the game-hour: candidacy 36-60, campaign 60-84, voting 84-108.
     assert s.election_phase_ticks() == (36, 60, 84, 108)
     fields = s.charter_overrides()
     assert fields["candidacy_window_days"] == pytest.approx(1 / 6)

@@ -24,9 +24,6 @@ from pathlib import Path
 
 import pytest
 
-# The surfaces an operator or a report actually reads to decide whether the
-# town is healthy. A silent default in any of these is indistinguishable
-# from good news.
 VITALS_ROUTES = ["world_state", "world_vitals", "agent_detail"]
 
 FORBIDDEN_FIELDS = ["hour", "minute", "dormant", "alive", "is_dormant", "health"]
@@ -63,7 +60,6 @@ def test_no_vitals_route_reads_a_field_through_a_default(field: str) -> None:
     reported as fact."""
     for name, code in _route_bodies().items():
         needle = f'getattr({{}}, {field!r}'
-        # any getattr naming this field with a third argument
         for call in ast.walk(ast.parse(code)):
             if not isinstance(call, ast.Call):
                 continue
@@ -78,7 +74,7 @@ def test_no_vitals_route_reads_a_field_through_a_default(field: str) -> None:
                     f"({ast.unparse(call)}). If the field is ever missing this "
                     "reports the default as a measurement."
                 )
-        assert needle or True  # keeps the loop honest when a route has no calls
+        assert needle or True
 
 
 def test_the_two_known_instances_stay_fixed() -> None:

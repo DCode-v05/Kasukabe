@@ -52,9 +52,6 @@ class ActivityPolicy:
         self.lc = lc_scheduler
         self.raven_track = raven_track
         self.installed = False
-        # Keep strong refs to fire-and-forget sweep tasks so Python's GC
-        # cannot collect them mid-flight (CPython best practice).  Tasks
-        # self-remove via ``discard`` when they complete.
         self.pending_tasks: set[asyncio.Task] = set()
 
     def install(self) -> None:
@@ -95,9 +92,6 @@ class ActivityPolicy:
         elif new == "active" and old in ("idle", "away", "disconnected"):
             await self.on_reconnect()
 
-    # ------------------------------------------------------------------
-    # Per-transition actions
-    # ------------------------------------------------------------------
 
     async def on_idle(self) -> None:
         """User paused — opportunistic window for heavy background work.
@@ -150,9 +144,6 @@ class ActivityPolicy:
         except Exception:
             logger.debug("lc.resume failed on reconnect", exc_info=True)
 
-    # ------------------------------------------------------------------
-    # Observability
-    # ------------------------------------------------------------------
 
     async def record_to_raven(self, event: ActivityStateChanged) -> None:
         if self.raven_track is None:

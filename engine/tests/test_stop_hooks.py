@@ -43,11 +43,6 @@ def make_input(**overrides) -> StopHookInput:
     return StopHookInput(**defaults)
 
 
-# =============================================================================
-# Unit tests — hook-prevent notice formatter
-# =============================================================================
-
-
 class TestFormatHookPreventNotice:
     def test_no_reasons_renders_generic_notice(self):
         agg = AggregatedStopResult()
@@ -65,11 +60,6 @@ class TestFormatHookPreventNotice:
         agg = AggregatedStopResult(stop_reasons=["", "real-reason", ""])
         assert "real-reason" in format_hook_prevent_notice(agg)
         assert "; ;" not in format_hook_prevent_notice(agg)
-
-
-# =============================================================================
-# Unit tests — strict boolean flag parser
-# =============================================================================
 
 
 class TestParseBoolFlag:
@@ -107,11 +97,6 @@ class TestParseBoolFlag:
             parse_bool("MY_FLAG", "maybe")
 
 
-# =============================================================================
-# Unit tests — registry + individual hook implementations
-# =============================================================================
-
-
 class TestStopHookRegistry:
     @pytest.mark.asyncio
     async def test_empty_registry_zero_overhead(self):
@@ -138,7 +123,6 @@ class TestStopHookRegistry:
         await reg.execute_all(make_input())
         elapsed = time.monotonic() - t0
 
-        # Serial would be ~0.6s; parallel should stay under 0.5s comfortably.
         assert elapsed < 0.5, f"hooks did not run in parallel: {elapsed:.3f}s"
 
     @pytest.mark.asyncio
@@ -157,7 +141,6 @@ class TestStopHookRegistry:
         result = await reg.execute_all(make_input())
         assert result.prevent_continuation is True
         assert "safety" in result.stop_reasons
-        # Both hooks recorded for observability
         assert len(result.hook_outcomes) == 2
         names = {o["name"] for o in result.hook_outcomes}
         assert names == {"fast", "slow"}
@@ -166,7 +149,7 @@ class TestStopHookRegistry:
     async def test_timeout_is_fail_open(self):
         async def sleepy(_):
             await asyncio.sleep(2.0)
-            return StopHookResult(prevent_continuation=True)  # would block if it reached us
+            return StopHookResult(prevent_continuation=True)
 
         reg = StopHookRegistry()
         reg.register("slow", CallableStopHook(sleepy), timeout_s=0.1)
@@ -216,7 +199,6 @@ class TestStopHookRegistry:
         reg.register("y_fast", CallableStopHook(fast_y))
 
         result = await reg.execute_all(make_input())
-        # Order follows registration (x_slow, y_fast), NOT completion (y_fast first)
         assert result.blocking_errors == ["X", "Y"]
 
     @pytest.mark.asyncio
@@ -245,11 +227,6 @@ class TestStopHookRegistry:
         assert reg.has_hooks() is True
         reg.unregister("temp")
         assert reg.has_hooks() is False
-
-
-# =============================================================================
-# Unit tests — CommandStopHook
-# =============================================================================
 
 
 class TestCommandStopHook:
@@ -320,12 +297,6 @@ class TestCommandStopHook:
             CommandStopHook([])
 
 
-# =============================================================================
-# Unit tests — PromptStopHook (uses a tiny fake adapter — not a mock of the
-# system under test, just a stub LLM to exercise the parse/render logic)
-# =============================================================================
-
-
 class StubLLM:
     def __init__(self, reply: str):
         self.reply = reply
@@ -371,15 +342,10 @@ class TestPromptStopHook:
     @pytest.mark.asyncio
     async def test_bad_template_is_fail_open(self):
         llm = StubLLM("{}")
-        # {unknown_field} is not a StopHookInput key
         hook = PromptStopHook(llm, "Check: {unknown_field}")
         result = await hook.execute(make_input())
         assert result.prevent_continuation is False
 
-
-# =============================================================================
-# Integration tests — real LLM adapter through bootstrap
-# =============================================================================
 
 LIVE = bool(os.environ.get("CDT_URL")) and bool(os.environ.get("CDT_KEY"))
 live_only = pytest.mark.skipif(
@@ -391,9 +357,6 @@ def live_settings() -> Settings:
     settings = Settings.load()
     settings.sqlite_db_path = ":memory:"
     settings.catalog_dir = str(Path(__file__).parent.parent / "catalog")
-    # Embeddings now route via citadel; no separate provider/key handling.
-    # EmbeddingService.is_real returns False when cdt_url/cdt_key missing
-    # → falls back to zero vectors automatically.
     return settings
 
 
@@ -450,8 +413,6 @@ class TestStopHookIntegration:
             assert len(hook_events) >= 1
             assert any(e.prevented for e in hook_events)
 
-            # User-visible notice must include the hook's stop_reason so
-            # the user can see WHY the loop ended (Asana acceptance #6).
             assert isinstance(result, str)
             assert "Stopped by hook" in result
             assert "test-abort" in result
@@ -466,7 +427,7 @@ class TestStopHookIntegration:
 
         state, report, tid, thread = await boot_with_task()
         try:
-            call_log: list[bool] = []  # captures stop_hook_active flag per call
+            call_log: list[bool] = []
 
             async def block_once(inp: StopHookInput) -> StopHookResult:
                 call_log.append(inp.stop_hook_active)
@@ -488,8 +449,6 @@ class TestStopHookIntegration:
                 thread_id=tid,
             )
 
-            # Hook must have been invoked at least twice (once without the
-            # active flag, once with the active flag set by the retry guard).
             assert len(call_log) >= 2
             assert call_log[0] is False
             assert any(flag is True for flag in call_log[1:])
@@ -510,8 +469,6 @@ class TestStopHookIntegration:
 
             async def always_block(inp: StopHookInput) -> StopHookResult:
                 call_count["n"] += 1
-                # Always blocks, but the loop's stop_hook_active guard
-                # must cap the retry at exactly one.
                 return StopHookResult(blocking_error="keep going")
 
             thread.stop_hooks.register("always_block", CallableStopHook(always_block))
@@ -520,7 +477,6 @@ class TestStopHookIntegration:
                 message="Say hi.",
                 thread_id=tid,
             )
-            # Loop must have exited naturally, not hung or blown the turn cap.
             assert isinstance(result, str)
         finally:
             await shutdown(state)
@@ -560,7 +516,6 @@ class TestStopHookIntegration:
                 thread_id=tid,
             )
 
-            # Hook must NOT have been invoked, and no StopHookExecuted event.
             assert hook_calls["n"] == 0
             hook_events = [e for e in events if isinstance(e, StopHookExecuted)]
             assert hook_events == []
@@ -599,22 +554,6 @@ class TestStopHookIntegration:
             assert all(e.hook_outcomes for e in hook_events)
         finally:
             await shutdown(state)
-
-
-# =============================================================================
-# Retry bounds through the REAL agent loop, no credentials and no mocks of the
-# loop itself. Only the LLM adapter is substituted; the registry, the
-# turn-boundary sweeps, the stop_hook_active guard, the overflow ladder and
-# CompactionOrchestrator.reactive_compact are all the production objects.
-#
-# These pin the two bounds documented in the reactive_compact caller contract
-# (compaction_orchestrator.py): a blocking hook forces exactly one retry, and
-# the reactive-compaction ladder fails loudly instead of spiraling. A blocking
-# stop hook re-enters the turn loop, which restarts the overflow ladder at tier
-# 0; that restart is only safe because both bounds hold, so a regression in
-# either one is what turns hook retries into a compact -> 413 -> block ->
-# compact loop that burns API calls.
-# =============================================================================
 
 
 class ScriptedAdapter:
@@ -707,8 +646,6 @@ class TestStopHookRetryBounds:
 
         await th.agent_loop("hi", options=RequestOptions(query_source="foreground"))
 
-        # Exactly one retry: the first sweep blocks and re-enters the turn
-        # loop, the second sees stop_hook_active and cannot block again.
         assert adapter.attempts == 2, f"expected 1 retry, got {adapter.attempts - 1}"
         assert seen_active == [False, True]
 
@@ -721,8 +658,6 @@ class TestStopHookRetryBounds:
         from src.engine_core.schema import RequestOptions
         from src.errors import EngineError, ErrorCode
 
-        # Messages here are one short user turn, so every tier (mechanical,
-        # guard, emergency) is a no-op and made_progress stays False.
         adapter = ScriptedAdapter(raises=Exception("prompt is too long"))
         th = await make_loop_thread(db, adapter, "sess-hook-overflow-bound")
 
@@ -738,7 +673,5 @@ class TestStopHookRetryBounds:
             await th.agent_loop("hi", options=RequestOptions(query_source="foreground"))
 
         assert ei.value.code == ErrorCode.CONTEXT_OVERFLOW_UNRECOVERABLE
-        # One model call: the tier sweep escalated without re-hitting the API.
         assert adapter.attempts == 1
-        # No turn boundary was reached, so no hook retry could extend this.
         assert hook_calls["n"] == 0

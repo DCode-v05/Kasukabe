@@ -52,11 +52,6 @@ from world.map.loader import load_ville_map
 from world.map.model import BuildingCategory, ResourceKind, WorldMap
 from world.map.tiled_json import build_world_map_from_tiled, load_tiled_map
 
-# DESIGN.md section 1's genesis-active building list, in this module's
-# vocabulary. STREET has no Sector (WorldMap.is_street), so it is not a
-# gate any sector's classification needs to pass - it is listed here only
-# so callers that want "every genesis-active category" in one place
-# (a future tool-registry gate, say) get the complete set including it.
 GENESIS_ACTIVE_CATEGORIES: frozenset[BuildingCategory] = frozenset(
     {
         BuildingCategory.HOUSE,
@@ -72,15 +67,6 @@ GENESIS_ACTIVE_CATEGORIES: frozenset[BuildingCategory] = frozenset(
     }
 )
 
-# Every one of the base Ville map's 19 sectors, classified by hand against
-# DESIGN.md section 1's genesis list, plus the 5 sectors this module mints
-# itself (see expansion.py's *_SECTOR_NAME constants). Checked exhaustively
-# against the real data (this task's own investigation of
-# matrix/special_blocks/sector_blocks.csv confirms exactly these 19 names,
-# no more, no fewer) - a name not in this table falls through to
-# FALLBACK_KEYWORD_RULES below, which exists for sectors a future map
-# expansion introduces that this table was never updated for, not for the
-# base map itself.
 KNOWN_SECTOR_CATEGORIES: dict[str, frozenset[BuildingCategory]] = {
     "artist's co-living space": frozenset({BuildingCategory.HOUSE}),
     "Arthur Burton's apartment": frozenset({BuildingCategory.HOUSE}),
@@ -102,20 +88,11 @@ KNOWN_SECTOR_CATEGORIES: dict[str, frozenset[BuildingCategory]] = {
     "Tamara Taylor and Carmen Ortiz's house": frozenset({BuildingCategory.HOUSE}),
     "Moreno family's house": frozenset({BuildingCategory.HOUSE}),
     "Lin family's house": frozenset({BuildingCategory.HOUSE}),
-    # Institutionally owned student housing, not a family home - grouped
-    # with the college rather than BuildingCategory.HOUSE so the
-    # institution that runs it (Oak Hill College) governs both.
     "Dorm for Oak Hill College": frozenset({BuildingCategory.COLLEGE}),
     GOVERNMENT_SECTOR_NAME: frozenset({BuildingCategory.GOVERNMENT}),
     TEMPLE_SECTOR_NAME: frozenset({BuildingCategory.TEMPLE}),
 }
 
-# Ordered (keyword, category) fallback rules for a sector name this
-# module has never seen (KNOWN_SECTOR_CATEGORIES misses it): a licensed
-# builder's newly registered sector name, or a future map's different
-# naming. All matching keywords apply (a name can hit more than one rule,
-# same as "The Willows Market and Pharmacy" hits both grocery and
-# pharmacy by hand above), keyword checks are case-insensitive substrings.
 FALLBACK_KEYWORD_RULES: tuple[tuple[str, BuildingCategory], ...] = (
     ("pub", BuildingCategory.PUB),
     ("cafe", BuildingCategory.CAFE),
@@ -137,21 +114,6 @@ FALLBACK_KEYWORD_RULES: tuple[tuple[str, BuildingCategory], ...] = (
     ("apartment", BuildingCategory.HOUSE),
     ("co-living", BuildingCategory.HOUSE),
     ("family", BuildingCategory.HOUSE),
-    # ── what the town builds for itself (GROW-15) ─────────────────────
-    #
-    # `MapService.stamp_building` names a built sector "{purpose} ({owner})"
-    # - "smithy (n15)". None of the keywords above appears in that, so a
-    # building the town raised classified as NOTHING, and an unclassified
-    # sector is inactive by design (see apply_genesis_config). Since
-    # `location_api` filters on `sector.active`, the town could build a
-    # smithy, walk to it and forge in it - and the first resume would
-    # quietly close it, with no error anywhere.
-    #
-    # This only became reachable when the four locks on building came off
-    # (GROW-01 to GROW-04), which is why nothing had hit it.
-    #
-    # A workshop is a workplace, so OFFICE - the same category "store" and
-    # "shop" already map to. The civic ones get the category they are.
     ("mill", BuildingCategory.OFFICE),
     ("sawmill", BuildingCategory.OFFICE),
     ("smithy", BuildingCategory.OFFICE),
@@ -280,7 +242,6 @@ def build_kasukabe_genesis_parts(
     tiled = load_tiled_map(ville_dir / "visuals" / "the_ville_jan7.json")
 
     zone_ids = append_kasukabe_genesis_zones(tiled, blocks, depth=strip_depth)
-    # Join the town to itself before anything tries to walk it.
     open_walkable_corridors(tiled)
 
     world = build_world_map_from_tiled(tiled, blocks)

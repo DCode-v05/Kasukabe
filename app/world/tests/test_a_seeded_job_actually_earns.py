@@ -87,8 +87,6 @@ def test_seeding_promises_does_not_pay_them() -> None:
     block = source[source.index("def _seed_wages"):]
     block = block[: block.index("async def _seed_business")]
 
-    # the ASSIGNMENT form, not the word: the docstring explains both fields
-    # and explaining them is the opposite of setting them.
     assert "paid_sim=" not in block, "genesis pays a wage nobody earned"
     assert "accrued_sim=" not in block, "genesis accrues before a day has passed"
     assert "wage_sim=OPENING_WAGE_SIM" in block

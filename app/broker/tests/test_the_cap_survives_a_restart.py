@@ -41,8 +41,6 @@ def _no_leaked_aws_profile(monkeypatch) -> None:
 
 def _settings(tmp_path) -> BrokerSettings:
     return BrokerSettings(
-        # Real mode: mock mode has no durable store, so there is no
-        # prior spend to recover and the seeding correctly does nothing.
         mock_mode=False,
         trace_sqlite_path=str(tmp_path / "trace.db"),
         spend_cap_usd=10.0,
@@ -86,7 +84,7 @@ def _write_a_prior_spend(settings: BrokerSettings, nano: int) -> None:
 
 def test_a_restart_remembers_what_the_run_already_spent(tmp_path) -> None:
     settings = _settings(tmp_path)
-    _write_a_prior_spend(settings, nano=4_000_000_000)   # $4 of a $10 cap
+    _write_a_prior_spend(settings, nano=4_000_000_000)
 
     service = build_service(settings)
 

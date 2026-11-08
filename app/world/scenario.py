@@ -43,8 +43,6 @@ TICKS_PER_GAME_HOUR = TICKS_PER_DAY // 24
 
 SEATS = ("prime_minister", "minister")
 
-# Charter defaults (world/charter/models.py). Repeated here only as the
-# numbers a scenario is checked against when it does not set them itself.
 DEFAULT_PM_SEATS = 1
 DEFAULT_MINISTER_SEATS = 4
 DEFAULT_SUFFRAGE_MIN_AGE = 18
@@ -67,7 +65,7 @@ class WorldPlan:
     genesis: str | None = None
     start_tick: int = 0
     stop_tick: int | None = None
-    cadence: float | None = None          # scheduler_target_fraction
+    cadence: float | None = None
     budget_cap_usd: float | None = None
     max_game_days: int | None = None
     tick_interval_s: float | None = None
@@ -124,7 +122,6 @@ class Scenario:
     report: dict[str, Any] = field(default_factory=dict)
     source_path: str = ""
 
-    # ---------------------------------------------------------------- reading
 
     @classmethod
     def load(cls, path: str | Path) -> "Scenario":
@@ -183,7 +180,6 @@ class Scenario:
             raise ValueError("; ".join(errors))
         return scenario
 
-    # ------------------------------------------------------------- validating
 
     def problems(self) -> list[str]:
         """Every reason this scenario could not be run, in one list."""
@@ -275,14 +271,13 @@ class Scenario:
                            f"suffrage_min_age of {min_age}, and could not hold a seat")
         return out
 
-    # ----------------------------------------------------------------- asking
 
     def genesis_path(self) -> Path | None:
         """The cast file, found from the working directory or the app root."""
         if not self.world.genesis:
             return None
         given = Path(self.world.genesis)
-        here = Path(__file__).resolve().parents[1]      # app/
+        here = Path(__file__).resolve().parents[1]
         for candidate in (given, Path.cwd() / given, here / given):
             if candidate.is_file():
                 return candidate

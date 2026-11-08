@@ -63,9 +63,6 @@ def make_agent(**overrides: object) -> AgentLifeRecord:
     return AgentLifeRecord(**base)  # type: ignore[arg-type]
 
 
-# ── is_dependent ───────────────────────────────────────────────────────
-
-
 def test_is_dependent_true_for_minor() -> None:
     assert is_dependent(make_agent(age_years=10.0)) is True
 
@@ -80,9 +77,6 @@ def test_is_dependent_false_for_working_age_adult() -> None:
 
 def test_is_dependent_false_just_under_pension_age() -> None:
     assert is_dependent(make_agent(age_years=float(PENSION_MINIMUM_AGE) - 0.1)) is False
-
-
-# ── per_agent_upkeep / compute_household_bill ──────────────────────────
 
 
 def test_per_agent_upkeep_uniform_regardless_of_dependent_status() -> None:
@@ -125,9 +119,6 @@ def test_compute_household_bill_zero_when_no_alive_members() -> None:
     assert bill.breakdowns == []
 
 
-# ── earner_burden / summarize_household_upkeep ─────────────────────────
-
-
 def test_earner_burden_splits_evenly_across_earners() -> None:
     e1 = make_agent(agent_id="e1", age_years=30.0)
     e2 = make_agent(agent_id="e2", age_years=40.0)
@@ -144,8 +135,6 @@ def test_earner_burden_remainder_goes_to_first_payers_in_list_order() -> None:
     e1 = make_agent(agent_id="e1", age_years=30.0)
     e2 = make_agent(agent_id="e2", age_years=40.0)
     e3 = make_agent(agent_id="e3", age_years=50.0)
-    # 3 earners * 90 splits evenly with no remainder - add one more
-    # dependent so the total isn't a clean multiple of the earner count.
     minor = make_agent(agent_id="minor", age_years=8.0)
     bill = compute_household_bill("h1", day=0, members=[e1, e2, e3, minor])
 
@@ -153,7 +142,7 @@ def test_earner_burden_remainder_goes_to_first_payers_in_list_order() -> None:
 
     assert sum(burden.values()) == bill.total_sim
     values = sorted(burden.values())
-    assert values[-1] - values[0] <= 1  # remainder spread by at most 1 unit
+    assert values[-1] - values[0] <= 1
 
 
 def test_earner_burden_falls_back_to_dependents_when_no_earners() -> None:
@@ -184,9 +173,6 @@ def test_summarize_household_upkeep_bundles_bill_and_burden() -> None:
     assert summary.burden_sim == {"earner": summary.bill.total_sim}
 
 
-# ── collect_household_upkeep ────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_collect_household_upkeep_pays_in_full_from_single_earner(
     economy: InMemoryEconomy,
@@ -214,8 +200,8 @@ async def test_collect_household_upkeep_pools_across_multiple_earners(
 ) -> None:
     e1 = make_agent(agent_id="e1", age_years=30.0)
     e2 = make_agent(agent_id="e2", age_years=40.0)
-    economy.sim_balances["e1"] = 10  # can only cover a sliver
-    economy.sim_balances["e2"] = 10_000  # covers the rest
+    economy.sim_balances["e1"] = 10
+    economy.sim_balances["e2"] = 10_000
     bill = compute_household_bill("h1", day=0, members=[e1, e2])
 
     outcome = await collect_household_upkeep(bill, economy)
@@ -248,7 +234,7 @@ async def test_collect_household_upkeep_partial_payment_on_shortfall(
 ) -> None:
     earner = make_agent(agent_id="earner", age_years=30.0)
     minor = make_agent(agent_id="minor", age_years=8.0)
-    economy.sim_balances["earner"] = 5  # far short of the bill
+    economy.sim_balances["earner"] = 5
     bill = compute_household_bill("h1", day=0, members=[earner, minor])
 
     outcome = await collect_household_upkeep(bill, economy)
@@ -256,7 +242,7 @@ async def test_collect_household_upkeep_partial_payment_on_shortfall(
     assert outcome.paid_in_full is False
     assert outcome.amount_paid_sim == 5
     assert outcome.shortfall_sim == bill.total_sim - 5
-    assert economy.sim_balances["earner"] == 0  # took what little there was
+    assert economy.sim_balances["earner"] == 0
     assert outcome.events[0].type == "economy.upkeep.defaulted"
 
 
@@ -274,16 +260,11 @@ async def test_collect_household_upkeep_zero_bill_is_trivially_paid(
     assert economy.debits == []
 
 
-# ── effective_work_capacity ──────────────────────────────────────────────
-
-
 def test_effective_work_capacity_full_when_well_fed() -> None:
     assert effective_work_capacity(HealthState(), HungerState()) == 1.0
 
 
 def test_effective_work_capacity_mild_penalty_below_severe_threshold() -> None:
-    # ECON-16: capacity follows HUNGER, not arrears. A resident who ate
-    # today works at full strength however far behind the rent is.
     hunger = HungerState(days_since_meal=1)
     assert effective_work_capacity(HealthState(), hunger) == pytest.approx(
         HUNGER_MILD_WORK_CAPACITY_MULTIPLIER
@@ -295,12 +276,7 @@ def test_effective_work_capacity_no_double_penalty_once_ailment_reflects_severit
     health = HealthState(current_ailment=ailment)
     hunger = HungerState(consecutive_unpaid_days=HUNGER_SEVERE_UNPAID_DAYS_THRESHOLD)
 
-    # SHORT's own work-capacity multiplier (0.5, health.py) applies once,
-    # not stacked with the mild-hunger multiplier on top of it.
     assert effective_work_capacity(health, hunger) == health_work_capacity(health)
-
-
-# ── advance_hunger ───────────────────────────────────────────────────────
 
 
 def test_advance_hunger_noop_for_dead_agent() -> None:
@@ -325,9 +301,6 @@ def test_advance_hunger_paid_in_full_keeps_streak_at_zero_with_no_events() -> No
 
 def test_advance_hunger_paid_after_hungry_resets_and_emits_relief() -> None:
     agent = make_agent()
-    # ECON-16: hungry means DAYS SINCE A MEAL. Seeding only the
-    # arrears counter now describes a resident behind on rent who has
-    # eaten perfectly well, and relief is rightly not emitted for that.
     hungry = HungerState(consecutive_unpaid_days=1, days_since_meal=1)
     updated, hunger, events = advance_hunger(
         random.Random(0), agent, hungry, day=5, paid_in_full=True
@@ -377,7 +350,7 @@ def test_advance_hunger_does_not_stack_a_second_ailment_if_already_sick() -> Non
 
     updated, _, events = advance_hunger(random.Random(0), agent, hunger, day=1, paid_in_full=False)
 
-    assert updated.health.current_ailment is existing  # untouched, not overwritten
+    assert updated.health.current_ailment is existing
     assert all(e.type != "health.ailment.onset" for e in events)
 
 
@@ -414,12 +387,7 @@ def test_advance_hunger_dormancy_is_idempotent_once_already_dormant() -> None:
 
     agent, hunger, _ = advance_hunger(random.Random(0), agent, hunger, day=3, paid_in_full=False)
 
-    # mark_dormant's own idempotency (death.py) keeps the original
-    # timestamp - a second unpaid day does not restart the 24-hour clock.
     assert agent.dormancy.dormant_since_hours == GameClock.at_day(2).total_hours
-
-
-# ── run_daily_upkeep_tick ────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -462,7 +430,6 @@ async def test_run_daily_upkeep_tick_household_starves_together(
     """
     minor = make_agent(agent_id="minor", age_years=8.0)
     retired = make_agent(agent_id="retired", age_years=75.0)
-    # no sim balance for either - the bill goes entirely unpaid
 
     result = await run_daily_upkeep_tick(
         random.Random(0), "h1", 0, [minor, retired], {}, economy, PopulationDials()
@@ -471,9 +438,6 @@ async def test_run_daily_upkeep_tick_household_starves_together(
     assert result.outcome.paid_in_full is False
     assert result.updated_hunger["minor"].consecutive_unpaid_days == 1
     assert result.updated_hunger["retired"].consecutive_unpaid_days == 1
-
-
-# ── The proof: a real multi-game-day simulation against the real Ledger ──
 
 
 class LedgerEconomyAdapter:
@@ -542,22 +506,11 @@ async def test_simulation_earning_household_solvent_dependents_only_household_st
     )
     all_agent_ids = ["earner", "earner_dependent", "starved_minor", "starved_elder"]
 
-    # Real genesis: agent_usd_cents=0 for these four keeps the $1000 USD
-    # invariant intact with any number of test agents (it does not need
-    # to be exactly the production 250) while still exercising the real
-    # genesis() code path and its own invariant check.
     await ledger.genesis(
         all_agent_ids, agent_usd_cents=0, treasury_usd_cents=TOTAL_USD_CENTS, tick=0
     )
-    ledger.check_invariant()  # holds immediately after genesis
+    ledger.check_invariant()
 
-    # The starving household gets a small nest egg that cannot outlast
-    # its bill; the solvent household starts with nothing and earns its
-    # way through instead, via a real ledger.pay_wage() each day, paid
-    # out of a treasury sim reserve funded here the same way a baby
-    # blessing mints sim from nothing (DESIGN.md section 3) - sim
-    # currency is not part of the USD invariant, so minting the town's
-    # starting sim float this way never risks the check below.
     await ledger.mint_sim("starved_minor", 50, tick=0, reason=TransactionReason.GENESIS)
     await ledger.mint_sim("starved_elder", 50, tick=0, reason=TransactionReason.GENESIS)
     await ledger.mint_sim(TREASURY_ACCOUNT_ID, 10_000, tick=0, reason=TransactionReason.GENESIS)
@@ -567,7 +520,7 @@ async def test_simulation_earning_household_solvent_dependents_only_household_st
     solvent_members = [earner, earner_dependent]
     starving_members = [starved_minor, starved_elder]
 
-    daily_wage = UPKEEP_TOTAL_SIM_PER_DAY * 2 + 20  # comfortably covers both solvent members
+    daily_wage = UPKEEP_TOTAL_SIM_PER_DAY * 2 + 20
 
     for day in range(4):
         economy = LedgerEconomyAdapter(ledger, tick=day)
@@ -589,20 +542,16 @@ async def test_simulation_earning_household_solvent_dependents_only_household_st
         starving_members = starving_result.updated_members
         hunger.update(starving_result.updated_hunger)
 
-        ledger.check_invariant()  # the $1000 USD invariant survives every sim-only day
+        ledger.check_invariant()
 
-    # Solvent household: never missed a payment, no hunger, no sickness,
-    # no dormancy, both members alive.
     for member in solvent_members:
         assert member.alive is True
         assert member.dormancy.is_dormant is False
         assert member.health.current_ailment is None
         assert hunger[member.agent_id].consecutive_unpaid_days == 0
 
-    # Starving household: on schedule per the hunger ladder - by day 3
-    # (index 2, the third unpaid day) both dependents are marked dormant.
     for member in starving_members:
-        assert member.alive is True  # not dead yet, only dormant
+        assert member.alive is True
         assert member.dormancy.is_dormant is True
         assert member.health.current_ailment is not None
         assert member.health.current_ailment.kind is AilmentKind.SHORT
@@ -610,10 +559,6 @@ async def test_simulation_earning_household_solvent_dependents_only_household_st
     dormant_since = starving_members[0].dormancy.dormant_since_hours
     assert dormant_since == GameClock.at_day(HUNGER_DORMANCY_UNPAID_DAYS_THRESHOLD - 1).total_hours
 
-    # Now prove the EXISTING dormancy/death path actually finishes the
-    # job: 24 game-hours after dormancy onset, check_dormancy_death (from
-    # death.py, unmodified) fires, and run_hourly_life_tick (from
-    # tick.py, unmodified) turns that into a real death.
     death_hour = dormant_since + 24.0
     now = GameClock(total_hours=death_hour)
     assert check_dormancy_death(random.Random(0), starving_members[0].dormancy, now, dials) is True
@@ -627,9 +572,6 @@ async def test_simulation_earning_household_solvent_dependents_only_household_st
         assert updated.death_cause is DeathCause.USD_ZERO_UNREVIVED
         assert any(e.type == "agent.died" for e in events)
 
-    # Final sanity: the ledger never halted and the USD invariant still
-    # holds after everything above (all of which only ever touched sim
-    # currency - upkeep never moves a USD cent).
     assert ledger.halted is False
     ledger.check_invariant()
     assert ledger.usd_total() == TOTAL_USD_CENTS

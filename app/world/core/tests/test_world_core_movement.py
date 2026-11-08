@@ -22,9 +22,6 @@ from world.core.perception import LocationIndex
 from world.map.model import TileCoord, WorldMap, build_world_map
 from world.map.pathfinding import PathfindingError
 
-# app/world/core/tests/test_world_core_movement.py -> parents[4] is the
-# kasukabe/ repo root, matching world/map/tests/conftest.py's own
-# VILLE_DIR computation (same directory depth).
 VILLE_DIR = (
     Path(__file__).resolve().parents[4]
     / "smallville"
@@ -36,18 +33,6 @@ VILLE_DIR = (
 )
 
 
-# -- fixtures -----------------------------------------------------------
-#
-# detour_world: a wall sits directly between start and goal, so any code
-# that moved an agent in a straight line (a "slide through walls" bug)
-# would visibly cross it. Every walkable tile here is street (sector 0),
-# which keeps the tick math trivial (1 tick per tile) for the tests that
-# only care about stepping/contiguity/collision, not the speed model.
-#
-#   y=0: # # # # #
-#   y=1: . . # . .
-#   y=2: . . . . .
-#
 DETOUR_WIDTH = 5
 DETOUR_HEIGHT = 3
 DETOUR_COLLISION = [
@@ -77,12 +62,6 @@ def detour_world() -> WorldMap:
     )
 
 
-# mixed_speed_world: a 1-tile-tall strip, (1, 0) is inside a sector (off
-# street) so crossing it costs TICKS_PER_OFF_STREET_TILE while (0, 0) and
-# (2, 0) are street.
-#
-#   y=0: . R .   (R = inside "The Room", sector 1)
-#
 MIXED_SPEED_COLLISION = [0, 0, 0]
 MIXED_SPEED_SECTOR = [0, 1, 0]
 
@@ -106,12 +85,6 @@ def mixed_speed_world() -> WorldMap:
     )
 
 
-# two_zone_world: same wall/detour shape as detour_world, but row 1 and
-# row 2 are two distinct named sectors ("Corridor North" / "Corridor
-# South") instead of both being undifferentiated street. Exists
-# specifically so a walk's location_id is observable changing zone to
-# zone (detour_world's every tile resolves to the single "street" bucket,
-# which is realistic but useless for proving a location_id transition).
 TWO_ZONE_SECTOR = [
     0, 0, 0, 0, 0,
     2, 2, 2, 2, 2,
@@ -163,9 +136,6 @@ def assert_contiguous_and_collision_free(world: WorldMap, path: list[TileCoord])
         assert dx + dy == 1, f"non-contiguous step from {a} to {b}"
 
 
-# -- start_journey --------------------------------------------------------
-
-
 def test_start_journey_computes_a_contiguous_collision_free_route(detour_world: WorldMap) -> None:
     system = MovementSystem(detour_world)
     start, goal = TileCoord(0, 1), TileCoord(4, 1)
@@ -177,8 +147,6 @@ def test_start_journey_computes_a_contiguous_collision_free_route(detour_world: 
     assert journey.path[0] == start
     assert journey.path[-1] == goal
     assert_contiguous_and_collision_free(detour_world, journey.path)
-    # The wall directly between start and goal - a straight line would
-    # cross it; the real route must detour around it instead.
     assert TileCoord(2, 1) not in journey.path
     assert system.has_active_journey("agent-1")
 
@@ -192,17 +160,13 @@ def test_start_journey_already_there_needs_no_ticks(detour_world: WorldMap) -> N
     assert journey is not None
     assert journey.arrived
     assert journey.path == [here]
-    # Nothing to advance - already-arrived journeys are not tracked.
     assert not system.has_active_journey("agent-1")
     assert system.advance(tick=1) == []
 
 
 def test_start_journey_unreachable_destination_returns_none(detour_world: WorldMap) -> None:
-    # Wall the whole middle row off from a would-be goal by picking a
-    # target with no walkable path back (unwalkable goal - an ordinary
-    # "can't get there" outcome per find_path's own contract).
     system = MovementSystem(detour_world)
-    unwalkable_goal = TileCoord(0, 0)  # top row is solid wall
+    unwalkable_goal = TileCoord(0, 0)
 
     journey = system.start_journey("agent-1", TileCoord(0, 1), unwalkable_goal)
 
@@ -219,7 +183,7 @@ def test_start_journey_invalid_start_raises(detour_world: WorldMap) -> None:
 def test_start_journey_replaces_an_in_progress_journey(detour_world: WorldMap) -> None:
     system = MovementSystem(detour_world)
     system.start_journey("agent-1", TileCoord(0, 1), TileCoord(4, 1))
-    system.advance(tick=1)  # take one step down the first route
+    system.advance(tick=1)
 
     new_journey = system.start_journey("agent-1", TileCoord(0, 2), TileCoord(4, 2))
 
@@ -237,26 +201,6 @@ def test_cancel_journey_stops_advancing_the_agent(detour_world: WorldMap) -> Non
     assert system.advance(tick=1) == []
 
 
-# -- advance(): tick-by-tick stepping -------------------------------------
-
-
-
-# ── the speed model was recalibrated; these tests moved with it ─────────
-#
-# advance() used to cross exactly one tile per tick. At ten game-minutes a
-# tick that is one tile per ten minutes, and the longest route on the real
-# 140x130 town took 404 ticks - 67 game-hours of continuous walking. In a
-# live run the median journey was 68 ticks and residents said so in
-# dialogue: "Five hours walking, never reaching the College."
-#
-# A resident now crosses a STRIDE per tick (40 street tiles, 20 off it),
-# and every tile of that stride still publishes its own agent.moved in
-# order. The guarantees these tests were written to protect are unchanged
-# and still asserted below: a contiguous collision-free route, no crossing
-# a blocked tile, mid-route visibility to another agent, deterministic
-# ordering, and time proportional to distance. What changed is the
-# constant, so the tests assert the invariant rather than the number.
-
 def test_advance_reports_every_tile_of_the_route_in_order(detour_world: WorldMap) -> None:
     """Was "exactly one tile per tick". A stride now covers several tiles,
     but every one of them is still reported, in path order, so the event
@@ -264,7 +208,7 @@ def test_advance_reports_every_tile_of_the_route_in_order(detour_world: WorldMap
     system = MovementSystem(detour_world)
     journey = system.start_journey("agent-1", TileCoord(0, 1), TileCoord(4, 1))
     assert journey is not None
-    total_steps = len(journey.path) - 1  # every tile after the start
+    total_steps = len(journey.path) - 1
 
     visited_tiles: list[TileCoord] = []
     arrivals = 0
@@ -282,7 +226,6 @@ def test_advance_reports_every_tile_of_the_route_in_order(detour_world: WorldMap
     assert visited_tiles == journey.path[1:]
     assert arrivals == 1
     assert not system.has_active_journey("agent-1")
-    # Nothing left to advance once arrived.
     assert system.advance(tick=total_steps + 1) == []
 
 
@@ -350,17 +293,12 @@ def test_advance_multiple_agents_are_independent_and_ordered_deterministically(
 
     events = system.advance(tick=1)
 
-    # Each agent may contribute several tiles in one tick now, so compare
-    # the ORDER agents first appear rather than a one-event-each list.
     seen: list[str] = []
     for event in events:
         who = event.payload["agent_id"]
         if who not in seen:
             seen.append(who)
     assert seen == ["agent-a", "agent-b"]
-
-
-# -- speed model: "realistic time proportional to distance" ---------------
 
 
 def test_off_street_tile_takes_longer_to_cross_than_a_street_tile(
@@ -372,8 +310,6 @@ def test_off_street_tile_takes_longer_to_cross_than_a_street_tile(
     assert journey is not None
     assert journey.path == [TileCoord(0, 0), TileCoord(1, 0), TileCoord(2, 0)]
 
-    # Rough ground is still slower than a road: a resident covers fewer
-    # tiles per tick off-street. That is the property; the constants moved.
     from world.core.movement import (
         OFF_STREET_TILES_PER_TICK,
         STREET_TILES_PER_TICK,
@@ -388,7 +324,6 @@ def test_off_street_tile_takes_longer_to_cross_than_a_street_tile(
             else OFF_STREET_TILES_PER_TICK
         )
         assert stride_length(mixed_speed_world, tile) == expected
-    # This fixture has one of each, so the two speeds really are exercised.
     kinds = {mixed_speed_world.is_street(t) for t in journey.path}
     assert kinds == {True, False}
 
@@ -408,22 +343,14 @@ def test_arrival_is_never_instant_for_a_multi_tile_journey(detour_world: WorldMa
     system = MovementSystem(detour_world)
     journey = system.start_journey("agent-1", TileCoord(0, 1), TileCoord(4, 1))
     assert journey is not None
-    assert len(journey.path) > 2  # a real multi-tile walk, not an adjacent hop
+    assert len(journey.path) > 2
 
-    # A four-tile hop across a room is now inside a single stride, and a
-    # resident really can cross a room in under ten game-minutes. What must
-    # never be instant is a journey longer than one stride - asserted on
-    # the real town in
-    # test_walking_across_the_real_town_is_contiguous_collision_free_and_takes_many_ticks.
     from world.core.movement import STREET_TILES_PER_TICK
 
     assert len(journey.path) - 1 <= STREET_TILES_PER_TICK
     events = system.advance(tick=1)
     assert [e.payload["agent_id"] for e in events] == ["agent-1"] * len(events)
     assert events[-1].payload["arrived"] is True
-
-
-# -- default_location_id / en-route perception via LocationIndex ----------
 
 
 def test_default_location_id_uses_sector_name_or_street(mixed_speed_world: WorldMap) -> None:
@@ -452,9 +379,6 @@ async def test_walking_agent_is_visible_to_a_perceiving_agent_en_route(two_zone_
 
     system = MovementSystem(two_zone_world)
     start = TileCoord(0, 1)
-    # An agent always has a last-known location before it starts walking
-    # (it is leaving FROM somewhere) - seed that the same way any prior
-    # agent.spawned/agent.moved event already would have.
     locations.place("walker", default_location_id(two_zone_world, start))
     journey = system.start_journey("walker", start, TileCoord(4, 1))
     assert journey is not None
@@ -464,10 +388,6 @@ async def test_walking_agent_is_visible_to_a_perceiving_agent_en_route(two_zone_
     tick = 0
     while system.has_active_journey("walker"):
         tick += 1
-        # Sample after EVERY tile, not once per tick. A resident now
-        # crosses a stride of tiles within one tick, so a per-tick sample
-        # sees only where they finished - which would report a walk across
-        # a small map as a teleport when the event stream shows otherwise.
         for event in system.advance(tick):
             await event_bus.publish(event)
             current = locations.location_of("walker")
@@ -478,11 +398,8 @@ async def test_walking_agent_is_visible_to_a_perceiving_agent_en_route(two_zone_
 
     assert perceived_en_route
     assert None not in seen_locations
-    assert len(set(seen_locations)) > 1  # location actually changed, not stuck
+    assert len(set(seen_locations)) > 1
     assert locations.location_of("walker") == journey.destination_location_id
-
-
-# -- across-town proof against the real Ville map --------------------------
 
 
 def test_walking_across_the_real_town_is_contiguous_collision_free_and_takes_many_ticks(
@@ -523,14 +440,7 @@ def test_walking_across_the_real_town_is_contiguous_collision_free_and_takes_man
     assert_contiguous_and_collision_free(ville_world, all_tiles)
     assert all_tiles == journey.path
     assert arrived_at == journey.destination_tile
-    # Arrival is not instant: dozens of ticks (10 game-minutes each) pass
-    # for a genuinely cross-town walk, not zero and not one.
     assert tick == estimate_travel_ticks(ville_world, journey.path)
-    # Was "> 50 ticks". That assertion WAS the defect: a cross-town walk
-    # taking more than fifty ticks is more than eight game-hours, and the
-    # worst route on this map took 404. What must still hold is that the
-    # walk is real - several ticks, watchable, never instant - and that it
-    # fits inside the travel budget the town is designed around.
     assert tick > 1, "a walk across town must not complete in a single tick"
     assert tick <= 12, f"crossing town took {tick} ticks - over two game-hours"
 
@@ -545,17 +455,10 @@ def test_start_journey_to_location_unknown_sector_returns_none(ville_world: Worl
     assert journey is None
 
 
-# -- checkpoint round trip -------------------------------------------------
-
-
 def test_snapshot_restore_round_trips_an_in_progress_journey(detour_world: WorldMap) -> None:
     system = MovementSystem(detour_world)
     journey = system.start_journey("agent-1", TileCoord(0, 1), TileCoord(4, 1))
     assert journey is not None
-    # Snapshot before the first advance, not after it. A stride now covers
-    # this whole four-tile route in one tick, so advancing first ends the
-    # journey and there is nothing in progress left to round-trip - the
-    # test would have passed vacuously on an empty snapshot.
     assert system.has_active_journey("agent-1")
 
     snapshot = system.snapshot()
@@ -572,7 +475,6 @@ def test_snapshot_restore_round_trips_an_in_progress_journey(detour_world: World
     assert restored_journey.ticks_remaining == original_journey.ticks_remaining
     assert restored_journey.destination_location_id == original_journey.destination_location_id
 
-    # And the restored system keeps advancing identically from here.
     remaining_ticks = len(original_journey.path) - 1
     for tick in range(2, remaining_ticks + 2):
         original_events = system.advance(tick)

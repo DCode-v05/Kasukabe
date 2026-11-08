@@ -26,11 +26,6 @@ from world.life.models import Household
 from world.wiring import WorldConfig, build_world_server
 from world.tests.map_assets import needs_the_map
 
-# TOOL-27. This module needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped, and red for environment hides real regressions inside the
-# noise - which is how TOOL-09 stayed invisible for a whole cycle.
 pytestmark = needs_the_map
 
 
@@ -41,8 +36,6 @@ def make_client(server) -> TestClient:
     )
     return TestClient(app)
 
-
-# -- the arithmetic, directly ---------------------------------------------
 
 def test_runway_is_balance_over_the_daily_bill():
     assert runway_days(900, 90) == 10
@@ -77,8 +70,6 @@ def test_household_shape_is_named_from_composition():
     assert household_shape(0, 0) == "empty"
 
 
-# -- 19.1 -----------------------------------------------------------------
-
 @pytest.mark.asyncio
 async def test_per_agent_survival_covers_the_whole_town():
     server = await build_world_server(WorldConfig())
@@ -98,8 +89,6 @@ async def test_a_dead_agent_reads_as_deceased_not_as_broke():
     rows = {r["agent_id"]: r for r in make_client(server).get("/family/agents").json()}
     assert rows[victim]["status"] == "deceased"
 
-
-# -- 19.2 -----------------------------------------------------------------
 
 @pytest.mark.asyncio
 async def test_household_solvency_uses_the_real_upkeep_bill():
@@ -129,12 +118,9 @@ async def test_solvency_is_the_combined_balance_because_the_household_is_billed_
     assert row["combined_sim"] == expected
 
 
-# -- 19.3 -----------------------------------------------------------------
-
 @pytest.mark.asyncio
 async def test_the_watchlist_floats_the_closest_to_the_edge_to_the_top():
     server = await build_world_server(WorldConfig())
-    # drain one household so it is genuinely the worst off
     doomed = next(iter(server.world.households.values()))
     for member in doomed.member_ids:
         account = server.world.ledger.accounts.get(member)
@@ -151,8 +137,6 @@ async def test_the_watchlist_can_be_limited():
     server = await build_world_server(WorldConfig())
     assert len(make_client(server).get("/family/at-risk?limit=3").json()) == 3
 
-
-# -- 19.4 -----------------------------------------------------------------
 
 @pytest.mark.asyncio
 async def test_the_wealth_board_ranks_richest_and_poorest():
@@ -175,8 +159,6 @@ async def test_a_real_transfer_shows_up_as_a_giver_and_an_earner():
     assert board["biggest_givers"][0]["subject_id"] == giver
     assert board["biggest_earners"][0]["subject_id"] == taker
 
-
-# -- 19.5 -----------------------------------------------------------------
 
 @pytest.mark.asyncio
 async def test_the_family_tree_carries_a_live_balance_on_every_node():
@@ -213,8 +195,6 @@ async def test_an_unknown_agent_is_a_404_not_a_500():
     server = await build_world_server(WorldConfig())
     assert make_client(server).get("/family/tree/nobody").status_code == 404
 
-
-# -- 19.6 -----------------------------------------------------------------
 
 @pytest.mark.asyncio
 async def test_money_flow_aggregates_the_ledgers_own_transactions():

@@ -56,16 +56,14 @@ def test_exchange_conserves_value_exactly_for_every_whole_cent_amount(cents: int
     recovered_cents = sim_to_usd_cents(sim_amount)
 
     assert recovered_cents == cents
-    # And the inverse holds too: reconstructing sim from the recovered
-    # cents lands exactly back on the amount we started with.
     assert recovered_cents * SIM_PER_USD_CENT == sim_amount
 
 
 def test_exchange_rejects_a_partial_cent_instead_of_rounding() -> None:
     """A sim amount that is not an exact multiple of SIM_PER_USD_CENT
     must never be silently rounded away; it is rejected outright."""
-    partial = SIM_PER_USD_CENT // 2 or 1  # smallest guaranteed non-multiple
-    assert SIM_PER_USD_CENT % 2 == 0  # sanity: 100 is even, so this really is a fraction
+    partial = SIM_PER_USD_CENT // 2 or 1
+    assert SIM_PER_USD_CENT % 2 == 0
     with pytest.raises(ValueError):
         sim_to_usd_cents(SIM_PER_USD_CENT + partial)
 

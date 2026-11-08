@@ -34,11 +34,6 @@ from __future__ import annotations
 
 from typing import Any
 
-# Tool class base scores. Tuned so that Read-class tools fall under
-# the 0.6 threshold (medium-risk band) and Search-class tools fall
-# under the 0.3 threshold (low-risk band). Edit/Write-class tools
-# stay above both bands so they are not collapsed until the session
-# is in true emergency territory.
 TOOL_CLASS_EDIT = {
     "Edit",
     "Write",
@@ -146,19 +141,14 @@ def score_message_importance(
     role = getattr(message, "role", "")
     content = getattr(message, "content", "")
 
-    # User messages without tool results: pinned critical.
     if role == "user" and not contains_tool_result(content):
         return 1.0
 
-    # Recency: newer messages score higher. Guard against total<=0.
     if total > 1:
         recency_bonus = RECENCY_WEIGHT * (position / (total - 1))
     else:
         recency_bonus = 0.0
 
-    # Pick a base from the message's dominant content type. When a
-    # message contains multiple block types (rare but possible) we take
-    # the max — the most load-bearing block sets the floor.
     base = 0.0
     has_tool_result = False
     tool_result_text_len = 0
@@ -183,14 +173,9 @@ def score_message_importance(
         if base == 0.0:
             base = BASE_TOOL_RESULT
 
-    # Short tool results are even more expendable.
     if has_tool_result and tool_result_text_len < SHORT_TOOL_RESULT_CHARS:
         base *= SHORT_RESULT_MULTIPLIER
 
-    # Error keywords push the score up regardless of content type —
-    # error recovery is always load-bearing. Reuses Message.text()
-    # which already walks TextBlocks at the top level and inside
-    # ToolResultBlock.content.
     text_fn = getattr(message, "text", None)
     text = text_fn() if callable(text_fn) else ""
     modifier = ERROR_MULTIPLIER if text and has_error_keyword(text) else 1.0

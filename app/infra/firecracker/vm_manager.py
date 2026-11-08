@@ -45,7 +45,7 @@ class UnitRuntime:
     handle: ProcessHandle
     client: FirecrackerApiClient
     status: UnitStatus
-    spec: UnitSpec | None  # None after a cold restore() with no prior start()
+    spec: UnitSpec | None
 
 
 def netmask_for_cidr(cidr: str) -> str:
@@ -98,12 +98,6 @@ class VMManager:
         self._launcher = launcher
         self._snapshot_store = snapshot_store
         self._resources = resource_pool or ResourcePool(settings)
-        # Defaults to a no-op: every test in this track (and every
-        # FakeFirecrackerProcessLauncher-backed manager, which never opens
-        # a real network device to begin with, see process.py) must never
-        # touch this host's or a CI runner's real network stack or need
-        # CAP_NET_ADMIN just to run `pytest`. build_real_supervisor()
-        # below is the only place a real one gets wired in.
         self._network = network_provisioner or NullNetworkProvisioner()
         self._units: dict[str, UnitRuntime] = {}
 
@@ -122,10 +116,6 @@ class VMManager:
             )
 
         resources = self._resources.allocate(spec.unit_id)
-        # Tap device must exist before configure_network_interface() below
-        # asks Firecracker to attach to it by name - Firecracker itself
-        # never creates the host-side device, only attaches to one that
-        # already exists (tap_provisioner.py's module docstring).
         await self._network.create_tap(resources, self._settings.bridge_name)
         handle = await self._launcher.launch(
             spec.unit_id, resources.api_socket_path, resources.run_dir
@@ -250,10 +240,6 @@ class VMManager:
         try:
             await rt.client.create_snapshot(str(local_snapshot), str(local_memfile))
         finally:
-            # Resume even if create_snapshot raised: a paused unit that
-            # silently stays paused after a failed snapshot attempt is a
-            # worse failure mode during a live genesis run than a
-            # snapshot we simply retry.
             await rt.client.resume()
 
         return await self._snapshot_store.upload(
@@ -266,11 +252,6 @@ class VMManager:
             await self.stop(unit_id)
 
         resources = self._resources.allocate(unit_id)
-        # Same tap name as the original start() (resources.py derives it
-        # deterministically from unit_id, not a counter) - re-created here
-        # because self.stop() above (if this unit was live) already tore
-        # the previous one down, and a cold restore after a manager
-        # restart never had one at all.
         await self._network.create_tap(resources, self._settings.bridge_name)
         local_snapshot, local_memfile = await self._snapshot_store.download(
             handle, dest_dir=resources.run_dir
@@ -330,10 +311,6 @@ class VMManager:
         )
         errors = [(uid, r) for uid, r in zip(unit_ids, results) if isinstance(r, Exception)]
         if errors:
-            # Every other unit still got a stop() attempt (gather ran them
-            # all concurrently, not sequentially) - one unit's teardown
-            # failure never blocks the other 249's, but it must not be
-            # swallowed silently during a live genesis run either.
             raise RuntimeError(
                 "shutdown_all: "
                 + "; ".join(f"{uid} failed to stop: {err}" for uid, err in errors)

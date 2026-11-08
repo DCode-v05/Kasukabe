@@ -36,9 +36,6 @@ async def _want(registry, world, who, tool="mend_nets"):
         pass
 
 
-# ── D.1 the loop closes ───────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_one_agents_frustration_is_not_a_town_gap() -> None:
     """A single agent's refusal is usually that agent being in the wrong
@@ -136,9 +133,6 @@ async def test_the_feedback_can_be_switched_off_entirely() -> None:
 
     world.gap_feedback = GapFeedback(enabled=False)
     assert world.gap_feedback.notice_for(world, "ada") is None
-
-
-# ── D.2 revision ──────────────────────────────────────────────────────
 
 
 async def _with_skill(seed=310):
@@ -251,7 +245,6 @@ async def test_an_invented_tool_can_be_revised_and_engines_notice() -> None:
     assert result.result["version"] == 2
     assert registry.version > version_before, "engines must refetch"
     assert len(world.custom_tools["work_stand"].superseded_steps) == 1
-    # And the live tool really does the new thing.
     before = world.inventory.quantity("ada", "wheat")
     await registry.execute(world, "ada", "work_stand", {})
     assert world.inventory.quantity("ada", "wheat") == before + 2
@@ -275,9 +268,6 @@ async def test_a_patented_tools_disclosed_steps_cannot_be_swapped() -> None:
         await registry.execute(world, "ada", "revise_tool", {
             "name": "patented",
             "steps": [{"tool_name": "look_around", "params": {}}]})
-
-
-# ── D.4 trade secrets ─────────────────────────────────────────────────
 
 
 async def _with_business(seed=330):

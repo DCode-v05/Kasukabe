@@ -33,25 +33,6 @@ class Business(BaseModel):
     employee_agent_ids: set[str] = Field(default_factory=set)
     location_id: str
     active: bool = True
-    # TOOL-02: the workshop gates this business's premises satisfy.
-    #
-    # `craft` gates on "mill", "sawmill", "smithy", "carpentry",
-    # "loom_house"; `cook` on "kitchen". Those six were bare strings with no
-    # ground under them: no map sector, no tile, nothing that registers
-    # itself there. `locations.py:87-95` says they name "where a *built* one
-    # is expected to register itself" and nothing ever did, because
-    # `build_structure` has been unreachable since it was written (TOOL-10).
-    #
-    # So the miller stood at `business:b_mill` - her own mill - and `craft`
-    # told her she was not at a mill. Run 23: `craft` refused 18 of 23, four
-    # of them `location:mill`, and `cook` 2 of 2. The baker's only route to
-    # her own oven was `move("kitchen")`, an opaque jump into an empty
-    # string-room no customer could find, bake, and jump back.
-    #
-    # A trade happens where the trade's premises are. This is the operator's
-    # decision of 2026-09-03: the shop provides the workshop, rather than
-    # six stamped sectors on the genesis strip or making the town build them
-    # before anyone can bake. The second town still builds the second mill.
     provides_workshops: set[str] = Field(default_factory=set)
 
 
@@ -102,12 +83,8 @@ class WagePromise(BaseModel):
     every_days: int = 1
     promised_tick: int = 0
     last_paid_tick: int | None = None
-    # Everything the promise has come due for since it was made.
     accrued_sim: int = 0
-    # Everything actually handed over against it.
     paid_sim: int = 0
-    # Day boundaries this promise has already been accrued for, so a
-    # reconciliation that runs twice does not bill twice.
     accrued_through_day: int | None = None
 
     @property
@@ -218,19 +195,8 @@ class Goal(BaseModel):
     created_tick: int = 0
     deadline_tick: int | None = None
     parent_id: str | None = None
-    # What would count as done: a tool called, an item held, an amount
-    # earned. Optional, because a resident may want something it cannot
-    # yet describe as a condition.
     done_when: dict[str, Any] = Field(default_factory=dict)
     evidence: list[str] = Field(default_factory=list)
-    # LIFE-01. Which stage of life this was wanted in.
-    #
-    # A student's goal is to pass; the same person in work wants
-    # something else, and not because they changed their mind - because
-    # what they are changed. Without this the town cannot tell a goal
-    # somebody has given up from one that simply stopped belonging to
-    # them, and a resident that came of age kept pursuing what it wanted
-    # as a child because nothing ever said otherwise.
     set_in_stage: str | None = None
 
 
@@ -263,8 +229,6 @@ class Intention(BaseModel):
     text: str
     set_tick: int = 0
     done_when_tool: str | None = None
-    # "08:30", so the perception line can say when without the reader
-    # having to convert ticks.
     set_clock: str = ""
 
 
@@ -376,9 +340,6 @@ class TileOwnership(BaseModel):
     owner_id: str
     owner_class: OwnerClass = OwnerClass.GOVERNMENT
     acquired_at_tick: int = 0
-    # Set when this tile arrived through a land expansion rather than
-    # existing at genesis, so `auction_land` can tell the two apart -
-    # section 31.2 scopes the auction to "newly petitioned/expanded land".
     from_expansion: bool = False
 
 
@@ -394,10 +355,6 @@ class Bequest(BaseModel):
     heir_id: str
     sim_share: int = Field(default=0, ge=0)
     tiles: list[tuple[int, int]] = Field(default_factory=list)
-    # C1. A tool invented once could never reach a third resident, and the
-    # one way diffusion could go BACKWARDS was an inventor dying with
-    # everything they had thought of. Named here rather than assumed, so a
-    # resident decides who gets what it built.
     tools: list[str] = Field(default_factory=list)
     skills: list[str] = Field(default_factory=list)
 
@@ -439,16 +396,6 @@ class Building(BaseModel):
     started_tick: int
     completion_tick: int
     status: BuildingStatus = BuildingStatus.UNDER_CONSTRUCTION
-    # GROW-18. DESIGN section 2: "construction occupies the crew for time
-    # proportional to size". It did not. `completion_tick` was
-    # `now + area * 6` and nothing else was ever required - no crew, no
-    # hands, no `keep_doing`, and no building verb in `CONTINUABLE_TOOLS`.
-    # A licensed builder could start a smithy and walk away, and the town
-    # would hand them a finished smithy six ticks per tile later.
-    #
-    # `labour_ticks_required` is the same arithmetic the deadline uses, so
-    # a crew working every tick finishes exactly when the old countdown
-    # would have. What changed is that somebody has to do it.
     labour_ticks_required: int = 0
     labour_ticks_done: int = 0
 
@@ -493,55 +440,11 @@ class CrimeCase(BaseModel):
     kind: CrimeCaseKind
     tick: int
     filer_or_actor_agent_id: str
-    # Who the town ACCUSES. `arrest` and `rule` act on this and nothing
-    # else. Empty means the case is open and nobody has been named yet,
-    # which is the honest state of a fresh theft: the town knows it was
-    # robbed, not by whom. `file_complaint` is how a name gets here.
     against_agent_id: str = ""
     description: str
-    # What the ACT did: "succeeded" / "failed" for a theft, None for a
-    # complaint. Written by the tool that opened the case.
     outcome: str | None = None
-    # What the COURT decided: "fine" / "jail" / "dismiss", or None while
-    # the case is still open.
-    #
-    # These were one field, and the conflation made the justice chain
-    # impossible twice over. `steal` always sets `outcome` - "succeeded" or
-    # "failed", the theft's own result - and `rule` refused any case whose
-    # `outcome` was not None as "already ruled on". So every theft arrived
-    # at the courthouse pre-judged with the word "succeeded", and
-    # `arrest`'s list of open cases (`c.outcome is None`) never contained a
-    # single theft.
-    #
-    # Nobody hit it because `steal`, `arrest` and `rule` have never been
-    # called in a run - the seats have been vacant since genesis (GOV-01).
-    # It would have fired on the first prosecution the town attempted.
     verdict: str | None = None
 
-    # GOV-02: the case used to be filed against the VICTIM.
-    #
-    # `steal` wrote `against_agent_id=storage.owner_id` - the person who
-    # was robbed. `arrest` requires `case.against_agent_id == params.
-    # agent_id` and `rule` fines `against_agent_id`. So the only person a
-    # police officer could arrest on a theft case was the person the theft
-    # was committed against, and a fine took the victim's money. The
-    # `arrest` description promises the opposite in as many words: "`steal`
-    # opens one by itself".
-    #
-    # One field was doing three jobs badly. `against_agent_id` above keeps
-    # the one it should have had - the ACCUSED - and these two carry the
-    # other two:
-    #
-    #   victim_agent_id  - who was wronged. Never a defendant.
-    #   ground_truth_perpetrator_id - who actually did it.
-    #
-    # Ground truth is written once, by the act itself, and NO TOOL RETURNS
-    # IT. That is the whole point. DESIGN section 6 wants police who
-    # investigate rather than know, and the false-conviction rate (ROADMAP
-    # question 20) is unmeasurable unless the suspect and the perpetrator
-    # can differ. The live path could not express a wrong conviction at
-    # all - not because the town was just, but because it only ever had
-    # one name per case, and that name was the victim's.
     victim_agent_id: str | None = None
     ground_truth_perpetrator_id: str | None = None
 
@@ -561,21 +464,8 @@ PARAM_TYPE_PYTHON: dict[ParamType, type] = {
 }
 
 
-# PROG-02. The comparisons a program step may condition on. A closed set,
-# named here rather than parsed out of a string, because the difference
-# between "data the world replays" and "code the world runs" is exactly
-# whether the set of things it can do is finite and written down.
-#
-# No arithmetic, no boolean algebra, no nesting. A resident that needs
-# "if the shelf is empty AND I hold flour" writes two guarded steps, and
-# the second one reads the first one's result - which costs it nothing it
-# was not already paying and keeps every branch visible in the trace.
 CONDITION_OPS = frozenset({
     "==", "!=", "<", "<=", ">", ">=", "in", "not_in", "truthy", "falsy",
-    # TOOL-31. "Does this line mention bread" - the test a `returns`
-    # selector needs, because the town answers a great many questions in
-    # sentences (`look_around`'s `prices_here` is a list of them) and
-    # `in` reads the other way round. Still a comparison, still closed.
     "contains", "not_contains",
 })
 
@@ -601,13 +491,6 @@ class StepCondition(BaseModel):
     not already own.
     """
 
-    # Both sides are `Any` and for the same reason: a reference is a
-    # string that happens to start with `$` or `@`, and everything else
-    # is a literal. Typing `left` as `str` would have made the two sides
-    # behave differently - a number could be compared against but never
-    # compared FROM - and a resident hitting that asymmetry would have
-    # been told its condition failed validation with nothing about which
-    # half of it the world objected to.
     left: Any
     op: str
     right: Any = None
@@ -682,25 +565,10 @@ class CustomToolDefinition(BaseModel):
     creator_agent_id: str
     param_schema: dict[str, ParamType] = Field(default_factory=dict)
     steps: list[ToolStep]
-    # TOOL-31. What one call of this tool ANSWERS with, on top of the
-    # account of what it did. Each entry is a reference (`@bound.field`,
-    # `$param`) or one closed selector (`from`/`where`/`take`) - see
-    # `program.resolve_answer`. Empty for every tool filed before this
-    # existed, which replays exactly as it did.
     returns: dict[str, Any] = Field(default_factory=dict)
     patent_application_id: str | None = None
     approved: bool = False
-    # Part E: the tick this tool was filed. `SkillDefinition` has carried
-    # `created_tick` since Part B, but an invented TOOL carried none, so
-    # "rope-making - Ada Gray - tick 412" was unanswerable from live state.
-    # It was only ever in `tools_registry.registered_tick`, which lives in
-    # the trace store - a database the viewer does not read and should not
-    # have to, to answer a question about the town as it stands right now.
     created_tick: int = 0
-    # Part D, matching SkillDefinition: a revision keeps what the tool used to
-    # do. Stored as raw step dicts rather than ToolStep so a superseded shape
-    # survives even if ToolStep itself gains required fields later - history
-    # that stops loading is not history.
     version: int = 1
     superseded_steps: list[list[dict[str, Any]]] = Field(default_factory=list)
     revised_tick: int | None = None
@@ -776,36 +644,8 @@ class ToolInvocationRecord(BaseModel):
     tick: int
     params: dict[str, Any] = Field(default_factory=dict)
     owner_id: str | None = None
-    # PROG-01. Which decision this call belonged to.
-    #
-    # Every step of a composite already landed in this log, and nothing
-    # said they were one act. A report could count six calls and could
-    # not say they were six acts bought with ONE model call - which is
-    # the only figure that answers whether programmatic tool calling is
-    # worth having. `docs/runs/WIRING-AND-TOOL-CALLING-AUDIT.md` section 7
-    # puts this first for exactly that reason: it is cheap, it changes no
-    # behaviour, and without it no run can measure the thing.
-    #
-    # None on an ordinary call. A resident that walks to the mill by hand
-    # made a decision per call and there is no program to name.
     program_id: str | None = None
-    # 0 on the wrapper call itself, 1..n on the steps it ran. A wrapper
-    # carries `program_id` too, so the whole program is one `group by`
-    # and the wrapper is the row with step 0 - which is also what makes
-    # "one model call bought how many acts" a subtraction rather than a
-    # join.
     program_step: int | None = None
-
-
-# ── Part B: skills as authored workflows ─────────────────────────────────
-#
-# A skill is NOT a composite tool. `CustomToolDefinition` above is replayed by
-# the registry - one call in, every step executed, no judgement in between. A
-# skill is a document the AGENT walks: it is shown the steps in its prompt and
-# chooses each one, so it can abandon a workflow halfway when the world turns
-# out not to match the preconditions. That difference is the whole point (see
-# DESIGN, "Tools and skills are different entities"), and it is why these are
-# separate records rather than a flag on the one above.
 
 
 class SkillStep(BaseModel):
@@ -818,7 +658,7 @@ class SkillStep(BaseModel):
     """
 
     order: int
-    kind: str  # "tool" | "skill" | "check"
+    kind: str
     ref: str | None = None
     note: str = ""
 
@@ -839,27 +679,12 @@ class SkillDefinition(BaseModel):
     steps: list[SkillStep] = Field(default_factory=list)
     discounts_tools: list[str] = Field(default_factory=list)
     governmental: bool = False
-    # ACTIVE: followable now. PENDING_COUNCIL: a standing order waiting on the
-    # amendment it was filed as - see skillify's docstring.
     status: str = "ACTIVE"
     amendment_id: str | None = None
     created_tick: int = 0
-    # Part D: revisions keep their history. Version 1 is the original filing;
-    # each revise_skill supersedes the live definition and pushes the previous
-    # one here. Retained rather than overwritten because "what did this agent
-    # think this job was, before it learned better" is the question that makes
-    # a revision interesting - a skill that silently mutates leaves no trace
-    # that anybody changed their mind.
     version: int = 1
     superseded: list[SkillDefinition] = Field(default_factory=list)
     revised_tick: int | None = None
-    # Part D: a procedure can be a trade secret, exactly as an invented tool
-    # already could (`define_business_tool`). "public" is the default and the
-    # common case; "business"/"organization" pair with `owner_id`.
-    #
-    # Mirrors tools_registry's own namespace column rather than inventing a
-    # second vocabulary, so "what does this business know that others do not"
-    # is one question across tools and skills instead of two.
     namespace: str = "public"
     owner_id: str | None = None
 
@@ -878,7 +703,7 @@ class SkillProgress(BaseModel):
 
     agent_id: str
     skill_name: str
-    next_step: int  # index into SkillDefinition.steps of the step expected next
+    next_step: int
     started_tick: int
     last_advance_tick: int
 
@@ -904,5 +729,4 @@ class ToolRefusalRecord(BaseModel):
     tick: int
     unmet_requirement: str
     detail: str = ""
-
 

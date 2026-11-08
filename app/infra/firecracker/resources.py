@@ -66,7 +66,6 @@ class ResourcePool:
         self.settings = settings
         self.cid_pool_size = cid_pool_size
         self._network = ipaddress.ip_network(settings.network_cidr, strict=True)
-        # Usable host count minus network/broadcast/bridge address itself.
         self._ip_pool_size = self._network.num_addresses - 3
         if self._ip_pool_size < 1:
             raise ResourceError(

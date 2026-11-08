@@ -35,8 +35,6 @@ async def test_giselles_purchase_is_refused_and_moves_nothing(world, registry):
 @pytest.mark.asyncio
 async def test_a_purchase_within_the_ceiling_goes_through(world, registry):
     await spawn_agent(world, "a0047", COMPLEX, starting_sim=5000)
-    # The store pays out of the treasury's USD, and a bare test world starts
-    # with none (the same line `test_a_zero_margin_changes_nothing` needs).
     world.ledger.get_account(TREASURY_ACCOUNT_ID).usd_cents = 100_000
     energy_before = world.ledger.usd_balance("a0047")
 

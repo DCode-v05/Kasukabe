@@ -63,11 +63,6 @@ from game.realsim import RealSimController
 from game.relay import ConnectionHub
 from game.world_client import HttpWorldClient, Place, SpendStatus, WorldClient, WorldClientError
 
-# Where a live, occupied, unrecognised place draws. township_zone_for
-# returns None for a string it cannot classify - correct for a string that
-# might not be a place at all - but a location that arrived on a snapshot IS
-# a place, and the resident standing in it has to appear on the map.
-# "29 of 30 on Bedrock", with no way to see the thirtieth, was this hole.
 LAST_RESORT_ZONE = "townsquare"
 
 
@@ -82,8 +77,6 @@ def _drawable_zone(location_id: str | None) -> tuple[str | None, bool]:
         return LAST_RESORT_ZONE, False
     return zone, exact
 
-# Matches `from "./x.js"` / `import "./x.js"` / `import("./x.js")` with a
-# relative specifier only - bare and absolute specifiers are left alone.
 MODULE_IMPORT_RE = re.compile(r'(from\s+|import\s*\(?\s*|src=)"(\.{1,2}/[^"?]+\.js)"')
 
 logger = logging.getLogger("game.server")
@@ -95,10 +88,7 @@ def build_world_client(settings: GameSettings) -> WorldClient:
     live against a real booted world/ container for this pass (see
     world_client.py's module docstring for exactly what was curled and
     what came back)."""
-    # Real world server, always. MockWorldClient is still constructed by
-    # game/tests/*.py directly - what is gone is the product ever
-    # choosing it, so a running map cannot be showing invented people.
-    if settings.mock_mode:  # tests only; unreachable from the environment
+    if settings.mock_mode:
         return MockWorldClient(settings)
     return HttpWorldClient(settings)
 
@@ -108,14 +98,6 @@ def _roster_ids(raw: str) -> set[str]:
     return set(re.findall(r'\{"id":"([^"]+)"', raw))
 
 
-# What the viewer needs to draw somebody. Kept beside the builder rather
-# than in it so the two cannot drift: game/static/js/township/
-# build_characters.py writes the same keys at build time.
-#
-# UI-27: this used to name `build_agents.py`, a SECOND generator that wrote
-# the same `agents.js` from the same genesis file with a different set of
-# keys. Whichever ran last won, and `agents.js`'s own header named the other
-# one. Deleted 2026-09-05; `build_characters.py` is the only builder.
 _OCC_DAY_ZONE = {
     "miner": "oreoutcrop", "farmer": "farmland", "forester": "forest",
     "baker": "bakery", "trader": "marketrow", "artisan": "tradeoffices",
@@ -138,19 +120,6 @@ async def _cast_rows_from_world(client: WorldClient) -> list[dict[str, Any]]:
     except Exception:  # noqa: BLE001 - no cast is better than a wrong one
         return []
 
-    # The world's own /agents payload, not game.contracts.AgentDetail.
-    #
-    # AgentDetail is a narrow view built for the inspector: it carries
-    # wallets, position and an action, and drops household, spouse, kin,
-    # traits and habits. The roster needs those, and the world serves them -
-    # the first draft of this asked AgentDetail for household_id and
-    # sim_balance, got neither, and served ten residents penniless and
-    # homeless.
-    # Per agent, not the list route: /agents omits bio, spouse, parents,
-    # children, traits and habits - everything that makes a resident card
-    # worth opening - and only /agents/{id} carries them. One request each is
-    # affordable for a cast this size and the result is cached below until
-    # the cast changes.
     raw_by_id: dict[str, dict[str, Any]] = {}
     fetch = getattr(client, "_get", None)
     if fetch is not None:
@@ -176,8 +145,6 @@ async def _cast_rows_from_world(client: WorldClient) -> list[dict[str, Any]]:
         rows.append({
             "id": agent.agent_id,
             "n": agent.display_name or agent.agent_id,
-            # No genesis alias: this IS the run's cast, so the two cannot
-            # disagree and there is no second name to show.
             "rn": agent.display_name or agent.agent_id,
             "org": "world",
             "age": int(agent.age_years or 0),
@@ -185,12 +152,7 @@ async def _cast_rows_from_world(client: WorldClient) -> list[dict[str, Any]]:
             "occ": occupation,
             "br": "working",
             "dz": _OCC_DAY_ZONE.get(occupation, "townsquare"),
-            # AgentDetail carries `wallets`, not loose balance fields - the
-            # first draft of this guessed at household_id/sim_balance and
-            # served every resident penniless and homeless.
             "hh": extra.get("household_id") or "",
-            # The world renders the enum as "MaritalStatus.MARRIED"; the
-            # viewer wants the word.
             "ms": str(extra.get("marital_status") or "single").rsplit(".", 1)[-1].lower(),
             "sp": extra.get("spouse_id") or "",
             "nk": len(extra.get("children_ids") or []),
@@ -220,8 +182,6 @@ def create_app(
     resolved_settings = settings or GameSettings.load_validated()
     resolved_world_client = world_client or build_world_client(resolved_settings)
     hub = ConnectionHub(resolved_world_client, resolved_settings.replay_buffer_size)
-    # Owns at most one live Bedrock run, started from the map's Real sim
-    # button. Per-app, not module-global, so tests get their own.
     realsim = RealSimController()
 
     def live_world_client():
@@ -258,8 +218,6 @@ def create_app(
         hub.start()
         yield
         await hub.stop()
-        # A run outlives this process otherwise: its own process group
-        # holding port 8100 and one engine per agent, and it is SPENDING.
         await realsim.stop()
         await resolved_world_client.close()
 
@@ -281,32 +239,6 @@ def create_app(
             logger.warning("game.server: snapshot fetch from world/ failed: %s", exc)
             raise HTTPException(status_code=502, detail=str(exc)) from exc
 
-    # ── UI-08: one upstream fan-out per window, however many ask ───────
-    #
-    # `/api/township/live` costs `/health` + `/world/state` + `/agents` +
-    # `/world/activity` upstream, and the `/agents` row for 20-50
-    # residents carries skills and workflow documents. `/api/engine`
-    # repeats three of those and adds two broker calls.
-    #
-    # Both are polled twice over: `township-v2.js` every 2 s and
-    # `live-cast.js` every 10 s hit the live feed, and `/api/engine` goes
-    # every 2 s. That is ~2.5 requests a second to the game server per
-    # OPEN TAB, and roughly 8 upstream requests a second to a world
-    # process that is simultaneously serving every engine's tool calls -
-    # a world where 10 turns per run were already being discarded at the
-    # 120-second dispatch limit.
-    #
-    # A window shorter than the fastest poller, so the browser's own
-    # cadence is unchanged and nothing on screen goes stale, but two
-    # pollers and ten tabs collapse into one fetch. Single-flight as well
-    # as cached: without the lock, N callers arriving on a cold cache all
-    # start their own fan-out, which is exactly the burst this is for.
-    # KEYED ON THE WORLD, not on the route alone. The Real-sim button
-    # swaps `live_world_client()` mid-process, and a key that ignored that
-    # would keep serving the previous town for a whole window - so the map
-    # would show the old world for a beat after the run started, which is
-    # the bug UI-20 just fixed arriving through a different door. A test
-    # caught exactly that.
     LIVE_FEED_TTL_S = 1.0
 
     class _Shared:
@@ -323,9 +255,6 @@ def create_app(
                 return hit[1]
             lock = self._locks.setdefault(key, asyncio.Lock())
             async with lock:
-                # Re-check inside the lock: whoever held it may have just
-                # filled the cache, and the whole point is that the second
-                # caller does not repeat the work.
                 hit = self._entries.get(key)
                 if hit is not None and time.monotonic() - hit[0] < ttl:
                     return hit[1]
@@ -367,24 +296,9 @@ def create_app(
         describe nothing real, so the page must never present them as a
         live engine however plausible the ids look.
         """
-        # Taken from the constructed CLIENT, not settings.mock_mode:
-        # create_app(world_client=...) lets a caller inject a client that
-        # disagrees with the setting (every game/tests/*.py does exactly
-        # that), and in precisely that case the flag would report the
-        # opposite of what is being served. The object is the truth; the
-        # setting is only how it was chosen.
         active_client = live_world_client()
         source = "mock" if isinstance(active_client, MockWorldClient) else "world"
 
-        # Layer 3: are the agents in that world backed by real engine
-        # subprocesses, or by MockAgentGateway? `source` cannot answer it -
-        # a perfectly real world server still says nothing about how its
-        # agents think - so it is asked separately and reported separately.
-        #
-        # getattr, not a direct call: WorldClient is a structural Protocol
-        # and game/tests/*.py inject minimal doubles that predate this
-        # method. A missing method means "cannot say" (None), which the
-        # viewer shows as unknown rather than guessing either way.
         get_provenance = getattr(active_client, "get_provenance", None)
         cognition: str | None = None
         inference: str | None = None
@@ -403,16 +317,9 @@ def create_app(
             return JSONResponse(
                 content={"connected": False, "source": source, "cognition": cognition,
                          "inference": inference, "tick": None, "bound": 0, "agents": [],
-                         # UI-04: same keys on both branches. A missing key
-                         # and a null one read identically in JS, and the
-                         # viewer's rule turns on "did the world say".
                          "government": None,
                          "detail": str(exc)}
             )
-        # What each resident is doing, joined onto the SAME poll as their
-        # position - a second call would disagree by a tick and nobody could
-        # tell why. A world too old to have the route leaves this empty and
-        # the card falls back to the health/dormancy line, as it always did.
         activity: dict[str, Any] = {}
         get_activity = getattr(active_client, "get_activity", None)
         if get_activity is not None:
@@ -421,12 +328,6 @@ def create_app(
             except Exception:  # noqa: BLE001 - the map must not need this
                 activity = {}
 
-        # UI-04. Who really holds the five seats. On the SAME poll as the
-        # positions for the same reason activity is: the viewer draws a sash
-        # on the map and a name in the Government book, and those two must
-        # not be a tick apart. A world too old to have the route, or one
-        # with no election yet, leaves this None - which the viewer shows as
-        # "no government" rather than filling the seats itself.
         government: dict[str, Any] | None = None
         get_government = getattr(active_client, "get_government", None)
         if get_government is not None:
@@ -442,43 +343,21 @@ def create_app(
             rows.append({
                 "id": agent.agent_id,
                 "zone": zone,
-                # False means "drawn, but the district is a guess" - the card
-                # says so rather than asserting a position the town never gave.
                 "zone_exact": exact,
                 "location_id": agent.position.location_id,
-                # The health/dormancy line stays first when it is set:
-                # "unwell (fever)" outranks "harvesting wheat" on a card
-                # meant to tell you why a resident has stopped.
                 "action": agent.current_action or doing.get("doing"),
-                # The tail behind that line - what the click opens.
                 "doing": doing.get("doing"),
                 "doing_tick": doing.get("at_tick"),
                 "recent": doing.get("recent") or [],
                 "utterance": agent.current_utterance,
                 "alive": agent.is_alive,
                 "dormant": agent.is_dormant,
-                # Part E.1/E.2/E.5, carried on the row the viewer already
-                # polls. `following` is what the roster shows as "step 4/7"
-                # and what puts the mid-workflow mark on the map; `skills`
-                # is the document the Skills tab renders. One poll, one
-                # instant - a second call for these would disagree with the
-                # position above by a tick and nobody could tell why.
                 "skills": agent.skills,
                 "following": agent.following,
-                # Who the WORLD says this is. A subset genesis renumbers the
-                # town, so the viewer's built-in roster can name a different
-                # person for the same id - and an engine-bound resident must
-                # be identified by the run, not by the model.
                 "name": agent.display_name,
                 "age_years": agent.age_years,
                 "occupation": agent.occupation,
                 "sex": agent.sex,
-                # UI-04. The money the WORLD holds for this resident. The
-                # viewer ranked town wealth off its own build-time wage
-                # table while this sat unread on the row - so the "Wealthiest"
-                # leaderboard was a property of the wage constants, not of
-                # the run. None (not 0) when the world did not say, because
-                # only that case may fall back to the model.
                 "sim_balance": (
                     agent.wallets.sim_balance if agent.wallets else None
                 ),
@@ -489,20 +368,11 @@ def create_app(
         return JSONResponse(content={
             "connected": True,
             "source": source,
-            # "engine" = real sim_main subprocesses; "mock" = faked;
-            # "none" = a world with no engines; null = the world did not say.
             "cognition": cognition,
-            # "bedrock" = real completions; "mock" = canned text; null =
-            # not reported. Independent of cognition: real engines fed
-            # canned completions look identical from here without it.
             "inference": inference,
             "tick": snap.tick,
-            # UI-04: {prime_minister, ministers, terms_served} or None.
             "government": government,
             "bound": sum(1 for r in rows if r["zone"]),
-            # How much of the town is executing a written procedure rather
-            # than improvising. Watching this fraction rise across a run is
-            # the clearest single signal that authored skills are catching on.
             "following": sum(1 for r in rows if r["following"]),
             "agents": rows,
         })
@@ -684,28 +554,14 @@ def create_app(
             "broker": {"live": False, "reason": None, "lanes": [],
                        "spent_micros": None, "spent_usd": None, "cap_usd": None,
                        "state": None},
-            # COPIED, not imported: game/ is presentation only and does not
-            # import broker/ (app/CONVENTIONS.md). Source of truth is
-            # broker/config.py's MODEL_ALLOWLIST - if these two drift, the
-            # readout names a model nobody is calling. Held by
-            # game/tests/test_engine_status.py::test_model_names_match_the_broker.
             "models": {"cognition": "moonshotai.kimi-k2.5",
                        "background": "deepseek.v3.2"},
-            # The survival run's own scoreboard, carried here so the panel
-            # needs one poll rather than two - and so it keeps reading
-            # correctly after the watcher has stopped the run and the world
-            # it was counting has gone.
             "realsim": realsim.status(),
         }
 
-        # ── the world: who exists, and is anything thinking behind them ──
         client = live_world_client()
         source = "mock" if isinstance(client, MockWorldClient) else "world"
         out["world"]["source"] = source
-        # get_provenance, not get_cognition: this tree returns BOTH axes
-        # from one /health call, because cognition alone cannot answer the
-        # question this readout exists for. Real engines fed canned
-        # completions report cognition="engine" and are not thinking.
         get_provenance = getattr(client, "get_provenance", None)
         if get_provenance is not None:
             try:
@@ -725,18 +581,13 @@ def create_app(
                 "connected": True,
                 "tick": snap.tick,
                 "reported": len(agents),
-                # `bound` is the number the viewer can actually place on the
-                # township map - the honest denominator for "agents you are
-                # watching", which is not the same as "agents that exist".
                 "bound": sum(1 for a in agents
                              if _drawable_zone(a.position.location_id)[0]),
                 "alive": sum(1 for a in agents if a.is_alive),
                 "dormant": sum(1 for a in agents if a.is_dormant),
-                # Doing something this tick, as opposed to merely existing.
                 "acting": sum(1 for a in agents if a.current_action),
             })
 
-        # ── the broker: which lanes are up, and what has been spent ──────
         base = _os.environ.get("BROKER_BASE_URL", "http://127.0.0.1:8200").rstrip("/")
         try:
             async with _httpx.AsyncClient(timeout=2.0) as client:
@@ -801,13 +652,6 @@ def create_app(
         micros = d.get("spent_micros")
         if micros is None and d.get("spent_usd") is not None:
             micros = round(float(d["spent_usd"]) * 1_000_000)
-        # The RUN's budget, not the broker's ceiling. run-scenario.sh sets the
-        # broker $5 above the runner's cap so the end-of-run learning drain has
-        # room, so the broker's own cap_usd is $65 on a $60 run - and an
-        # operator reading "of $65.00" on the HUD is reading a number nobody
-        # chose. RUN_BUDGET_USD is what was actually asked for; without it the
-        # broker's figure is still shown, because a wrong label is worse than
-        # an unlabelled one.
         run_budget = _os.environ.get("RUN_BUDGET_USD")
         try:
             run_budget = float(run_budget) if run_budget else None
@@ -926,27 +770,12 @@ def create_app(
         await hub.register(websocket)
         try:
             while True:
-                # The browser never sends anything meaningful over this
-                # socket (it is a server-push relay - static/js/ws_client.js
-                # never calls send()); this await just blocks until the
-                # browser tab closes or the connection otherwise drops,
-                # which is exactly the signal this handler needs to clean
-                # up and return.
                 await websocket.receive_text()
         except WebSocketDisconnect:
             pass
         finally:
             hub.unregister(websocket)
 
-    # Mounted last and at "/" so every route declared above still matches
-    # first - Starlette checks routes in registration order, and a mount
-    # only catches whatever no earlier route claimed. html=True serves
-    # static/index.html for "/" and lets the browser 404 naturally on a
-    # bad asset path instead of falling through to index.html (SPA-style
-    # catch-all routing would be wrong here: there is exactly one page).
-    # Changes whenever the process restarts, which in this project means
-    # whenever the image was rebuilt - exactly the moment stale modules must
-    # be dropped.
     build_id = str(int(time.time()))
 
     @app.middleware("http")
@@ -967,17 +796,6 @@ def create_app(
         path = request.url.path
         if not (path.endswith((".js", ".html")) or path == "/"):
             return response
-        # UI-19. The generated cast is exempt.
-        #
-        # `agents.js` is ~1.7 MB and is SERVED FROM A DYNAMIC ROUTE, so
-        # every request for it was fully buffered, decoded to str, regex-
-        # scanned, re-encoded and re-sent - per request, per browser tab,
-        # on the hot path of the page a person actually watches.
-        #
-        # And for nothing: the rewrite exists to version RELATIVE ES-module
-        # specifiers so a rebuilt image is re-fetched, and `agents.js`
-        # contains no imports at all. It is one `const AGENTS = [...]`.
-        # Its route already sets its own cache headers.
         if path.endswith("/agents.js"):
             return response
         body = b"".join([chunk async for chunk in response.body_iterator])
@@ -1017,11 +835,6 @@ def create_app(
             response.headers["Pragma"] = "no-cache"
         return response
 
-    # UI-10: keyed on a fingerprint of WHO the cast is and what they are
-    # called, not just on the set of ids. A rename or a newborn reusing an
-    # id left the browser holding a stale 1.7 MB document indefinitely,
-    # because the id set - the only thing the old key looked at - had not
-    # changed.
     def _cast_fingerprint(snapshot) -> str:
         """Who the cast is, and what the viewer draws them as (UI-10).
 
@@ -1038,11 +851,6 @@ def create_app(
         )
         return hashlib.sha256("\n".join(rows).encode("utf-8")).hexdigest()
 
-    # UI-10: keyed on a fingerprint of WHO the cast is and what they are
-    # called, not just on the set of ids. A rename or a newborn reusing an
-    # id left the browser holding a stale 1.7 MB document indefinitely,
-    # because the id set - the only thing the old key looked at - had not
-    # changed.
     _cast_cache: dict[str, object] = {"key": None, "body": None}
 
     @app.get("/js/township/agents.js")
@@ -1073,27 +881,9 @@ def create_app(
         if client is not None:
             try:
                 snapshot = await client.get_snapshot()
-                # `agent_id`, not `id` - the Snapshot contract names it
-                # that way, and guessing wrong here fails silently: the
-                # except below swallows it and the whole 314-cast is served,
-                # which is exactly the bug this route exists to fix.
                 live_ids = {a.agent_id for a in (snapshot.agents or [])}
-                # UI-10: the cache key. Ids alone miss a rename and a
-                # newborn who reuses an id, so the browser kept a stale
-                # document until the id SET changed - which it rarely does.
                 cast_fingerprint = _cast_fingerprint(snapshot)
             except Exception as exc:  # noqa: BLE001 - see below
-                # UI-10. A blip is not an empty town.
-                #
-                # This used to fall through to the `not live_ids` branch and
-                # serve `const AGENTS = []`, which the browser then CACHES
-                # as a document - so one momentary hiccup while the world
-                # was restarting left the page permanently showing a town
-                # with nobody in it, and a reload was the only cure.
-                #
-                # 503 + Retry-After is the difference between "there is
-                # nobody" and "ask me again in a second". The empty cast
-                # below stays, for the case it is actually true.
                 logger.warning("world unreachable while serving the cast: %s", exc)
                 return Response(
                     status_code=503,
@@ -1102,14 +892,6 @@ def create_app(
                     headers={"Retry-After": "2", "Cache-Control": "no-store"},
                 )
         if not live_ids:
-            # No run bound: serve an EMPTY cast, not 314 invented residents.
-            #
-            # The build-time cast is the last mock in the viewer. Shipping it
-            # when nothing is running fills the map, the roster and every
-            # figure with people who are not in any simulation - and there is
-            # no way for a reader to tell them from the real ones. An empty
-            # town is the honest picture of "nothing is running", and the
-            # panels already say so in words.
             head_only = raw[: raw.find("const AGENTS = ")]
             return Response(
                 head_only
@@ -1123,17 +905,6 @@ def create_app(
         if _cast_cache["key"] == cast_fingerprint and _cast_cache["body"]:
             return Response(_cast_cache["body"], media_type="application/javascript")
 
-        # A cast the build-time roster has never heard of.
-        #
-        # agents.js holds the 314 residents of world/genesis.json. A run
-        # against any OTHER cast - genesis_10.json's ten neighbours, ids
-        # n01..n10 - intersects it in nothing, so the filter below produced
-        # an empty array and the viewer drew an empty town while ten engines
-        # were demonstrably alive.
-        #
-        # The world knows who these people are. Building the rows from it is
-        # the only honest source: no build step to remember, and every field
-        # is the run's own rather than a stranger's borrowed for the shape.
         if not (live_ids & _roster_ids(raw)):
             rows = await _cast_rows_from_world(client)
             if rows:
@@ -1148,10 +919,6 @@ def create_app(
                 _cast_cache["key"], _cast_cache["body"] = cast_fingerprint, body
                 return Response(body, media_type="application/javascript")
 
-        # Locate the array by bracket-matching, not by searching for "];".
-        # rpartition finds the LAST one in the file - well past the array -
-        # so the reassembled file was not parseable JavaScript at all:
-        # `AGENTS` came out undefined and the viewer went blank.
         marker = "const AGENTS = "
         at = raw.find(marker)
         start = raw.find("[", at) if at >= 0 else -1
@@ -1192,10 +959,6 @@ def create_app(
         for a in everyone:
             if a.get("id") not in live_ids:
                 continue
-            # Adopt the running world's name. agents.js is a different draw of
-            # the town and calls a0039 "Felix Ward" where this run says "Ezra
-            # Lund"; the prose carries it too, so the sentence is rewritten
-            # rather than left contradicting its own heading.
             real = names.get(a["id"])
             if real and real != a.get("n"):
                 was = a.get("n") or ""
@@ -1212,8 +975,6 @@ def create_app(
                         a[field] = v
             kept.append(a)
         if not kept:
-            # None of the run's ids are in this cast: an empty town would be
-            # worse than the whole one.
             return Response(raw, media_type="application/javascript")
 
         out = head + json.dumps(kept, separators=(",", ":")) + tail

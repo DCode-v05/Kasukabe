@@ -64,7 +64,6 @@ def test_the_dispatcher_files_it_before_re_raising() -> None:
     block = src[i: i + 2200]
 
     assert "record_broken_tool(world, actor_id, tool_name, exc)" in block
-    # the bare `raise` statement, not the word "raising" in a comment
     bare_raise = block.index("\n            raise\n")
     assert block.index("record_broken_tool") < bare_raise, (
         "the failure is re-raised before it is recorded"

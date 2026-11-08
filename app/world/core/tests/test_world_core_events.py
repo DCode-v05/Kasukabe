@@ -41,20 +41,20 @@ from world.core.events import EventBus, WorldEvent, validate_event_type
 )
 def test_every_convention_example_type_is_valid(event_type: str) -> None:
     assert validate_event_type(event_type) is None
-    WorldEvent(type=event_type, tick=0)  # must not raise
+    WorldEvent(type=event_type, tick=0)
 
 
 @pytest.mark.parametrize(
     "event_type",
     [
-        "world",  # 1 segment
-        "world.tick.advanced.extra",  # 4 segments
-        "World.tick.advanced",  # uppercase
-        "world.Tick.advanced",  # uppercase mid-segment
-        "world.tick.advanced-thing",  # hyphen, not underscore
-        "unknown_domain.thing.happened",  # not in KNOWN_DOMAINS
-        "world..advanced",  # empty segment
-        "1world.tick.advanced",  # segment starting with a digit
+        "world",
+        "world.tick.advanced.extra",
+        "World.tick.advanced",
+        "world.Tick.advanced",
+        "world.tick.advanced-thing",
+        "unknown_domain.thing.happened",
+        "world..advanced",
+        "1world.tick.advanced",
     ],
 )
 def test_invalid_event_types_rejected(event_type: str) -> None:
@@ -130,7 +130,7 @@ async def test_one_failing_subscriber_does_not_block_others() -> None:
     bus.subscribe("agent", broken)
     bus.subscribe("agent", healthy)
 
-    await bus.emit("agent.moved", tick=1)  # must not raise
+    await bus.emit("agent.moved", tick=1)
 
     assert received == ["agent.moved"]
 
@@ -156,7 +156,7 @@ def test_unsubscribe_unknown_callback_is_noop() -> None:
     async def handler(event: WorldEvent) -> None:
         pass
 
-    bus.unsubscribe("agent", handler)  # never subscribed; must not raise
+    bus.unsubscribe("agent", handler)
 
 
 def test_subscribe_rejects_unknown_domain() -> None:
@@ -216,4 +216,4 @@ async def test_replay_isolates_callback_errors() -> None:
         if event.tick == 1:
             raise RuntimeError("boom")
 
-    await bus.replay(broken)  # must not raise despite the tick=1 failure
+    await bus.replay(broken)

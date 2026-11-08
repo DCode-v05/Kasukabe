@@ -37,7 +37,7 @@ class TestTrivialInputGate:
             "good morning",
             "Good Morning!!",
             "bye",
-            "short one",  # under the length floor
+            "short one",
         ],
     )
     def test_trivial(self, message):
@@ -48,7 +48,7 @@ class TestTrivialInputGate:
         [
             "fix the failing test in tests/test_config.py",
             "what changed in the catalog sync module?",
-            "hello world program in rust please",  # greeting prefix, real ask
+            "hello world program in rust please",
             "summarize yesterday's incident",
         ],
     )
@@ -105,8 +105,6 @@ class TestPrefetchAccounting:
         async def run():
             stub = make_coordinator_stub(SpySearch())
             await Coordinator.prefetch_memory(stub, "a real message", usage=UsageAccumulator())
-            # After the prefetch, the ambient context must NOT carry the
-            # prefetch accumulator.
             return usage_tracker_var.get(None)
 
         assert asyncio.run(run()) is None

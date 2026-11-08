@@ -111,8 +111,6 @@ def build_real_world_stub(
         async def places() -> list[dict]:
             return [
                 {"place_id": "town-hall", "name": "Town Hall", "category": "government", "tile_x": 10, "tile_y": 20},
-                # A malformed entry (no tile_y) - the client must skip
-                # this one without failing the whole list.
                 {"name": "Broken Place", "category": "office", "tile_x": 5},
             ]
 
@@ -140,17 +138,12 @@ def build_client(app: FastAPI) -> HttpWorldClient:
     return client
 
 
-# ── get_snapshot ─────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_get_snapshot_against_the_real_route_shape() -> None:
     client = build_client(build_real_world_stub())
     snap = await client.get_snapshot()
     assert snap.tick == 42
     assert {a.agent_id for a in snap.agents} == {"a0039", "a0100"}
-    # map_tiled_json comes from the local genesis Tiled JSON, not world/
-    # (no live map route exists yet - see world_client.py's docstring).
     assert snap.map_tiled_json["width"] == 140
     assert snap.map_tiled_json["height"] == 100
     await client.http.aclose()
@@ -160,7 +153,7 @@ async def test_get_snapshot_against_the_real_route_shape() -> None:
 async def test_get_snapshot_prefers_world_state_over_state_summary() -> None:
     client = build_client(build_real_world_stub(with_world_state=True))
     snap = await client.get_snapshot()
-    assert snap.tick == 999  # /world/state's tick, not /state/summary's 42
+    assert snap.tick == 999
     await client.http.aclose()
 
 
@@ -171,9 +164,6 @@ async def test_get_snapshot_maps_real_agent_fields_honestly() -> None:
     by_id = {a.agent_id: a for a in snap.agents}
 
     normal = by_id["a0039"]
-    # No display name in the real payload - falls back to the literal
-    # agent_id, never a fabricated name (world_client.py's own docstring
-    # on why).
     assert normal.display_name == "a0039"
     assert normal.sprite_key == sprite_key_for("a0039")
     assert normal.position.location_id == "home:h0043"
@@ -256,9 +246,6 @@ async def test_get_snapshot_raises_when_world_is_unreachable() -> None:
     await client.http.aclose()
 
 
-# ── get_agent_detail ─────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_get_agent_detail_against_the_real_route_shape() -> None:
     client = build_client(build_real_world_stub())
@@ -296,9 +283,6 @@ async def test_get_agent_detail_raises_on_other_error_status() -> None:
     await client.http.aclose()
 
 
-# ── get_places ───────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_get_places_falls_back_to_genesis_catalog_on_404() -> None:
     client = build_client(build_real_world_stub(with_places=False))
@@ -312,7 +296,6 @@ async def test_get_places_falls_back_to_genesis_catalog_on_404() -> None:
 async def test_get_places_uses_the_real_route_when_present() -> None:
     client = build_client(build_real_world_stub(with_places=True))
     places = await client.get_places()
-    # The malformed second entry (no tile_y) is skipped, not fatal.
     assert len(places) == 1
     assert places[0].name == "Town Hall"
     assert places[0].category == "government"
@@ -333,9 +316,6 @@ async def test_get_places_raises_on_non_404_non_200() -> None:
     with pytest.raises(WorldClientError):
         await client.get_places()
     await client.http.aclose()
-
-
-# ── get_spend_status ─────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -370,9 +350,6 @@ async def test_get_spend_status_raises_on_non_404_non_200() -> None:
     with pytest.raises(WorldClientError):
         await client.get_spend_status()
     await client.http.aclose()
-
-
-# ── stream_events ────────────────────────────────────────────────────
 
 
 class FakeSocket:
@@ -421,10 +398,8 @@ async def test_stream_events_yields_parsed_wire_events(monkeypatch: pytest.Monke
     received = []
     async for received_event in client.stream_events():
         received.append(received_event)
-        await client.close()  # stop after one event, mirrors a caller closing the client
+        await client.close()
 
-    # A clean first-ever connect yields no synthetic connection event -
-    # nothing was ever lost.
     assert len(received) == 1
     assert received[0].type == "world.tick.advanced"
     await client.http.aclose()

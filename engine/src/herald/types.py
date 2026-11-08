@@ -24,12 +24,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 
-# ── Constants ──────────────────────────────────────────────────────
-
 SUPER_THINKING_BUDGET = 32_768
 THINKING_LATCH_BUDGET = 1_024
-
-# ── Message content blocks ──────────────────────────────────────────
 
 
 @dataclass(frozen=True)
@@ -96,7 +92,6 @@ class ThinkingBlock:
     is_redacted: bool = False
 
 
-# Union of all content block types
 ContentBlock = (
     TextBlock | ToolUseBlock | ToolResultBlock | ThinkingBlock | ImageBlock | PersistedBlock
 )
@@ -132,12 +127,7 @@ def flatten_tool_result_content_to_text(
             parts.append(sub.text)
         elif isinstance(sub, PersistedBlock):
             parts.append(format_persisted_block_xml(sub))
-        # ImageBlock contributes nothing — providers that need to log
-        # the drop do so at their own call site.
     return "\n\n".join(parts)
-
-
-# ── Messages ────────────────────────────────────────────────────────
 
 
 @dataclass(frozen=True)
@@ -163,9 +153,6 @@ class Message:
     role: str
     content: str | list[ContentBlock]
     timestamp: float | None = None
-    # compare=False so metadata stays out of __eq__/__hash__ — preserves the
-    # frozen-dataclass hash contract (dict is unhashable) and makes two
-    # otherwise-identical messages equal regardless of their tag annotation.
     metadata: dict = field(default_factory=dict, compare=False)
     api_message_id: str | None = field(default=None, compare=False)
 
@@ -219,9 +206,6 @@ def messages_have_image(messages: "list[Message]") -> bool:
     return any(message_has_image(m) for m in messages)
 
 
-# ── Tool definitions ────────────────────────────────────────────────
-
-
 @dataclass(frozen=True)
 class ToolDef:
     """A tool the model can call. Schema uses standard JSON Schema.
@@ -239,12 +223,6 @@ class ToolDef:
     defer_loading: bool = False
 
 
-# ── Tool name sanitization (provider adapter boundary) ─────────────
-#
-# Internal tool names use ad:server.action (colons, dots). Every supported
-# provider — Anthropic (^[a-zA-Z0-9_-]{1,128}$), OpenAI, Gemini — rejects
-# these characters. Sanitize outbound, reverse inbound at the provider edge.
-
 TOOL_NAME_UNSAFE = re.compile(r"[^a-zA-Z0-9_-]")
 
 
@@ -260,9 +238,6 @@ def build_tool_name_map(tools: list["ToolDef"]) -> dict[str, str]:
     the model's tool call responses back to internal names.
     """
     return {sanitize_tool_name(t.name): t.name for t in tools}
-
-
-# ── Response types ──────────────────────────────────────────────────
 
 
 class StopReason(str, Enum):
@@ -328,9 +303,6 @@ class StreamEvent:
     message_id: str = ""
 
 
-# ── Prompt cache types ─────────────────────────────────────────────
-
-
 @dataclass(frozen=True)
 class SystemPromptBlock:
     """One section of the structured system prompt.
@@ -352,8 +324,8 @@ class SystemPromptBlock:
     """
 
     text: str
-    cache_scope: str | None = None  # engine-internal: "global" | None
-    ttl: str | None = None  # wire: "5m" | "1h"; default 5m if None
+    cache_scope: str | None = None
+    ttl: str | None = None
 
 
 def flatten_system_blocks(system: "list[SystemPromptBlock] | None") -> str:

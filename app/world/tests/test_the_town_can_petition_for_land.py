@@ -35,8 +35,6 @@ from world.charter.engine import create_genesis_charter_engine
 from world.charter.models import GovernmentState
 
 
-# ── the default is unchanged ─────────────────────────────────────────────
-
 @pytest.mark.asyncio
 async def test_seats_are_still_vacant_by_default() -> None:
     """Every run so far was made this way. A default that seeded a
@@ -62,8 +60,6 @@ async def test_a_named_caretaker_sits() -> None:
         "seat-gated verb still refuses and the pipeline is still shut"
     )
 
-
-# ── an appointment is not a term ─────────────────────────────────────────
 
 @pytest.mark.asyncio
 async def test_the_caretaker_has_served_no_terms() -> None:
@@ -103,8 +99,6 @@ def test_an_elected_government_is_not_a_caretaker() -> None:
     assert elected.caretaker is False
     assert elected.is_caretaker_seat("a0007") is False
 
-
-# ── both gates, not one ──────────────────────────────────────────────────
 
 @pytest.mark.asyncio
 async def test_the_caretaker_can_actually_file_a_petition() -> None:
@@ -166,8 +160,6 @@ async def test_with_no_caretaker_nobody_can_petition_at_all() -> None:
             now_tick=10,
         )
 
-
-# ── the parameter reaches the store ──────────────────────────────────────
 
 def test_the_caretaker_is_threaded_all_the_way_from_genesis() -> None:
     """A parameter that stops at the first boundary is a fold that never
@@ -232,8 +224,5 @@ async def test_a_booted_runner_really_seats_the_caretaker(tmp_path) -> None:
         assert state.caretaker is True
         assert state.terms_served == {}
     else:
-        # The shipped genesis names nobody, which is the documented
-        # default. The assertion that matters is that boot did not raise
-        # and the seats are as they have always been.
         assert state.pm_agent_id is None
         assert state.caretaker is False

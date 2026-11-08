@@ -78,12 +78,6 @@ def check_elderly_death(rng: random.Random, age_years: float, dials: PopulationD
     return roll_death(rng, base_probability=ELDERLY_DAILY_HAZARD, dials=dials)
 
 
-# The three ways a resident stops being able to think, in the words the
-# run report prints in its Cause column. Three different findings about a
-# town: one spent its own wallet, one was found already below the line by
-# the tick sweep, one was stopped mid-shift. The 50-agent run recorded 37
-# dormancies and could tell them apart for none of them, because the event
-# carried no cause at all.
 DORMANCY_CAUSES = {
     "spent": "spent its last cent thinking - a debit left the wallet at $0",
     "swept": "found at $0 by the tick sweep, with no energy bought since",
@@ -161,10 +155,6 @@ async def revive(
     return updated, [event]
 
 
-# Sanity check that the revival exchange math actually matches DESIGN.md's
-# "10,000 sim-currency -> $1 API credit" rate, evaluated at import time so
-# a constants.py edit that breaks the rate fails loudly instead of quietly
-# skewing revivals.
 assert REVIVAL_COST_SIM // EXCHANGE_SIM_PER_USD_CENT == 100, (
     "revival fee no longer converts to exactly $1 of USD credit at the "
     "10,000-sim-per-dollar exchange rate DESIGN.md section 3 specifies"

@@ -23,21 +23,20 @@ from typing import Any, Awaitable, Callable
 
 logger = logging.getLogger(__name__)
 
-# ── Guardrail Constants ────────────────────────────────────────────
 
-SAFETY_MARGIN = 1.2  # 20% buffer for token estimation inaccuracy
-SEARCH_RESULTS_CAP = 10_000  # max tokens from search.py at initial assembly
-TOOL_RESULT_CAP = 8_000  # max tokens per individual tool result
-RESERVE_FLOOR = 25_000  # tokens always kept free for LLM output
-COMPACTION_THRESHOLD = 0.80  # fire compaction at 80% of context window
-PRESERVE_RECENT = 15  # messages kept verbatim during compaction
-AD_TOOL_SCHEMA_CAP = 0.10  # max 10% of context window for AD tool schemas
-SUB_AGENT_RESULT_CAP = 500  # max tokens for sub-agent summaries to parent
-TOOL_RESULTS_BUDGET_RATIO = 0.50  # tool results can consume at most 50% of context
-COMPACTION_OUTPUT_RESERVE = 4_000  # tokens reserved for compaction summary output
-PERSIST_TOKEN_THRESHOLD = 4_000  # only persist tool results above this token count
-PER_TURN_TOOL_RESULTS_CAP = 0.25  # tool results from one turn can use at most 25% of context
-PER_RESULT_MAX_CHARS = 40_000  # single tool result hard cap (~20K tokens at dense rate)
+SAFETY_MARGIN = 1.2
+SEARCH_RESULTS_CAP = 10_000
+TOOL_RESULT_CAP = 8_000
+RESERVE_FLOOR = 25_000
+COMPACTION_THRESHOLD = 0.80
+PRESERVE_RECENT = 15
+AD_TOOL_SCHEMA_CAP = 0.10
+SUB_AGENT_RESULT_CAP = 500
+TOOL_RESULTS_BUDGET_RATIO = 0.50
+COMPACTION_OUTPUT_RESERVE = 4_000
+PERSIST_TOKEN_THRESHOLD = 4_000
+PER_TURN_TOOL_RESULTS_CAP = 0.25
+PER_RESULT_MAX_CHARS = 40_000
 SOURCE_TOOL_RESULT = "tool_result"
 
 FEATURE_CACHE_STABLE_REPLACEMENTS = "FEATURE_CACHE_STABLE_REPLACEMENTS"
@@ -256,8 +255,6 @@ SNIPPABLE_TOOLS = frozenset(
 WRITE_TOOLS = frozenset({"file_write", "file_edit"})
 
 
-# ── Media stripping ────────────────────────────────────────────────
-
 MEDIA_TYPES = frozenset({"image", "document"})
 
 
@@ -337,9 +334,6 @@ def strip_media_blocks(
     return new_blocks, changed
 
 
-# ── Token estimation ───────────────────────────────────────────────
-
-
 def estimate_tokens(text: str) -> int:
     """Rough token estimate: ~4 chars per token, with 1.2x safety margin."""
     return max(1, int(len(text) / 4 * SAFETY_MARGIN))
@@ -390,7 +384,7 @@ def block_content_text(block: Any) -> str:
         elif isinstance(sub, PersistedBlock):
             parts.append(sub.summary)
         elif isinstance(sub, ImageBlock):
-            pass  # contributes nothing to the text view
+            pass
     return "\n\n".join(parts)
 
 
@@ -422,8 +416,6 @@ def estimate_messages_tokens(messages: list) -> int:
                     )
     return total
 
-
-# ── Tool result capping ───────────────────────────────────────────
 
 TAIL_PATTERNS = (
     "error",
@@ -457,7 +449,7 @@ def cap_tool_result(result: str, content_id: str = "") -> str:
     if estimate_tokens_dense(result) <= TOOL_RESULT_CAP:
         return result
 
-    cap_chars = int(TOOL_RESULT_CAP / SAFETY_MARGIN * 2)  # Reverse dense estimation
+    cap_chars = int(TOOL_RESULT_CAP / SAFETY_MARGIN * 2)
     note = persist_note(result, content_id=content_id)
 
     if has_important_tail(result):
@@ -468,9 +460,6 @@ def cap_tool_result(result: str, content_id: str = "") -> str:
         return head + f"\n\n... [middle truncated.{note}] ...\n\n" + tail
 
     return result[:cap_chars] + f"\n\n[Result truncated.{note}]"
-
-
-# ── Per-turn aggregate tool result budget ────────────────────────
 
 
 def cap_turn_tool_results(
@@ -489,7 +478,7 @@ def cap_turn_tool_results(
     budget_tokens = int(context_window * PER_TURN_TOOL_RESULTS_CAP)
     name_map = tool_names or {}
 
-    entries: list[tuple[int, int, ToolResultBlock]] = []  # (index, tokens, block)
+    entries: list[tuple[int, int, ToolResultBlock]] = []
     for i, block in enumerate(tool_results):
         if not isinstance(block, ToolResultBlock) or block.is_error:
             continue
@@ -517,10 +506,6 @@ def cap_turn_tool_results(
             continue
 
         target_chars = max(200, (tokens - trim_tokens) * 2)
-        # Trimming collapses any list-content back to a string — the
-        # gut/snip path doesn't preserve block structure, and the
-        # truncated note carries enough context for the model to know
-        # what happened.
         block_text = block_content_text(block)
         note = persist_note(block_text)
 
@@ -545,9 +530,6 @@ def cap_turn_tool_results(
     return new_results
 
 
-# ── Sub-agent result capping ──────────────────────────────────────
-
-
 def cap_sub_agent_result(result: str) -> str:
     """Cap a sub-agent's result summary to SUB_AGENT_RESULT_CAP tokens."""
     tokens = estimate_tokens(result)
@@ -557,9 +539,6 @@ def cap_sub_agent_result(result: str) -> str:
     char_limit = SUB_AGENT_RESULT_CAP * 4
     truncated = result[:char_limit]
     return truncated + "..."
-
-
-# ── Search results capping ────────────────────────────────────────
 
 
 def cap_search_results(items: list[dict], key: str = "description") -> list[dict]:
@@ -576,9 +555,6 @@ def cap_search_results(items: list[dict], key: str = "description") -> list[dict
     return result
 
 
-# ── AD tool schema capping ────────────────────────────────────────
-
-
 def filter_ad_tools_by_budget(
     tools: list[dict[str, Any]],
     context_window: int = 200_000,
@@ -593,7 +569,6 @@ def filter_ad_tools_by_budget(
     """
     cap_tokens = int(context_window * AD_TOOL_SCHEMA_CAP)
 
-    # Sort by relevance (highest first) if scores available
     if relevance_scores:
         tools = sorted(
             tools, key=lambda t: relevance_scores.get(t.get("name", ""), 0.0), reverse=True
@@ -624,8 +599,6 @@ def filter_ad_tools_by_budget(
     return loaded, deferred
 
 
-# ── Snip pre-pass ─────────────────────────────────────────────────
-
 FILE_PATH_RE = re.compile(r'(/[^\s"\',:)\]]+)')
 
 
@@ -643,9 +616,7 @@ def extract_file_path(tool_name: str, tool_input: dict) -> str | None:
     return path
 
 
-# Each element: (result_msg_idx, tool_use_id, tool_name, tool_input, result_content)
 ToolPairEntry = tuple[int, str, str, dict, str]
-# Write events from assistant messages: (msg_idx, tool_name, file_path)
 WriteEvent = tuple[int, str, str]
 
 
@@ -883,13 +854,6 @@ def group_by_message_id(messages: list) -> list[list] | None:
         role = getattr(msg, "role", "")
         msg_id = getattr(msg, "api_message_id", None)
 
-        # Boundary fires when a new assistant message begins a new API round.
-        # ID check is the primary gate: the provider captures response.id on
-        # the stop event (src/herald/provider.py yields StreamEvent with
-        # message_id) and the agent loop threads it via turn_message_id in
-        # src/engine_core/thread.py into Message.api_message_id. Role-transition
-        # is the fallback when IDs are missing (restored history, non-Anthropic
-        # providers without native IDs, test fixtures).
         is_boundary = False
         if role == "assistant":
             if last_assistant_id is not None and msg_id is not None:
@@ -1010,9 +974,6 @@ def snip_prepass(messages: list) -> list:
     return new_messages
 
 
-# ── Compaction ─────────────────────────────────────────────────────
-
-
 def needs_compaction(
     used_tokens: int,
     context_window: int = 200_000,
@@ -1118,26 +1079,21 @@ def compact_messages(
     if len(messages) <= preserve_recent:
         return messages
 
-    # Split into old and recent
     old_messages = messages[:-preserve_recent] if preserve_recent > 0 else messages
     recent_messages = messages[-preserve_recent:] if preserve_recent > 0 else []
 
-    # Pass 1: gut tool results in old messages
     gutted = []
     for msg in old_messages:
         gutted.append(gut_tool_results(msg))
 
     compacted = gutted + recent_messages
 
-    # Check if still over budget
     used_after = estimate_messages_tokens(compacted)
     if used_after < threshold:
         logger.debug("Compaction pass-1: gutted tool results, %d -> %d tokens", used, used_after)
         return compacted
 
-    # Pass 2: drop oldest messages until under budget
     while len(compacted) > preserve_recent + 1 and estimate_messages_tokens(compacted) >= threshold:
-        # Remove the second message (keep first as original user request)
         if len(compacted) > 1:
             compacted.pop(1)
         else:
@@ -1151,9 +1107,6 @@ def compact_messages(
     )
 
     return compacted
-
-
-# ── Emergency compaction (overflow recovery) ─────────────────────
 
 
 def emergency_compact(
@@ -1171,11 +1124,8 @@ def emergency_compact(
     """
     from src.herald.types import Message as LLMMessage
 
-    # Pass 1: gut all tool results
     gutted = [gut_tool_results(msg) for msg in messages]
 
-    # Pass 2: keep first group + trailing groups that cover at least preserve_recent messages.
-    # Round-safe: never splits an assistant response from its tool results.
     groups = group_by_api_round(gutted)
     if len(groups) > 2:
         trailing: list = []
@@ -1187,7 +1137,6 @@ def emergency_compact(
     elif len(gutted) > preserve_recent + 1:
         gutted = [gutted[0]] + gutted[-preserve_recent:]
 
-    # Pass 3: truncate oversized individual messages (handles both str and list content)
     max_per_msg = context_window // 4
     final = []
     for msg in gutted:
@@ -1203,7 +1152,6 @@ def emergency_compact(
                     )
                 )
             else:
-                # List content — gut it to just text blocks, truncated
                 from src.herald.types import TextBlock
 
                 text_parts = []
@@ -1229,9 +1177,6 @@ def emergency_compact(
 
     logger.info("Emergency compaction: %d -> %d messages", len(messages), len(final))
     return final
-
-
-# ── Tool use/result pairing repair ───────────────────────────────
 
 
 def repair_tool_use_result_pairing(messages: list) -> list:
@@ -1268,15 +1213,11 @@ def repair_tool_use_result_pairing(messages: list) -> list:
     while i < len(messages):
         msg = messages[i]
 
-        # ── User message handling ──
         if msg.role != "assistant":
             if msg.role == "user" and isinstance(msg.content, list):
                 last_in_result = result[-1] if result else None
                 has_tool_results = any(isinstance(b, ToolResultBlock) for b in msg.content)
 
-                # Orphaned tool_results: user message with tool_results but no
-                # preceding assistant in the output. Happens on resume when
-                # transcript starts mid-turn, or after compaction drops an assistant.
                 if has_tool_results and (
                     last_in_result is None or last_in_result.role != "assistant"
                 ):
@@ -1310,7 +1251,6 @@ def repair_tool_use_result_pairing(messages: list) -> list:
             i += 1
             continue
 
-        # ── Assistant message: dedup tool_use IDs ──
         if isinstance(msg.content, list):
             per_msg_use_ids: set[str] = set()
             final_content = []
@@ -1379,7 +1319,6 @@ def repair_tool_use_result_pairing(messages: list) -> list:
         if next_msg is not None and next_msg.role == "user" and isinstance(next_msg.content, list):
             content = list(next_msg.content)
 
-            # Orphaned/duplicate results cause API 400s; clean before sending
             if orphaned_ids or has_duplicate_results:
                 seen_tr_ids: set[str] = set()
                 filtered = []
@@ -1413,9 +1352,8 @@ def repair_tool_use_result_pairing(messages: list) -> list:
                         api_message_id=next_msg.api_message_id,
                     )
                 )
-            i += 2  # consumed next_msg
+            i += 2
         else:
-            # API requires every tool_use to have a matching tool_result
             if synthetic_blocks:
                 result.append(
                     LLMMessage(
@@ -1489,9 +1427,6 @@ def generate_tombstone_results(
     return tombstones
 
 
-# ── Tool result aggregate guard ──────────────────────────────────
-
-
 def guard_tool_results(
     messages: list,
     context_window: int = 200_000,
@@ -1512,13 +1447,11 @@ def guard_tool_results(
     budget = int(context_window * TOOL_RESULTS_BUDGET_RATIO)
     use_cache = replacement_state is not None and cache_stable_replacements_enabled()
 
-    # Collect all tool result positions and their token cost.
-    # Partition into: must_reapply (cached replacement), frozen (seen, not replaced), fresh (new).
     must_reapply: list[
         tuple[int, int, str, str]
-    ] = []  # (msg_idx, block_idx, tool_use_id, cached_stub)
+    ] = []
     frozen_tokens = 0
-    fresh_entries: list[tuple[int, int, int, str]] = []  # (msg_idx, block_idx, tokens, tool_use_id)
+    fresh_entries: list[tuple[int, int, int, str]] = []
 
     for i, msg in enumerate(messages):
         if not isinstance(msg.content, list):
@@ -1532,7 +1465,7 @@ def guard_tool_results(
                 tokens = estimate_tokens_dense(block_text)
 
                 if use_cache:
-                    assert replacement_state is not None  # use_cache ⟹ state present
+                    assert replacement_state is not None
                     cached = replacement_state.get_cached_replacement(tu_id)
                     if cached is not None:
                         must_reapply.append((i, j, tu_id, cached))
@@ -1543,7 +1476,6 @@ def guard_tool_results(
 
                 fresh_entries.append((i, j, tokens, tu_id))
 
-    # Re-apply cached replacements (byte-identical for prompt cache stability)
     reapply_total = 0
     if must_reapply:
         messages = shallow_copy_messages(messages)
@@ -1560,9 +1492,8 @@ def guard_tool_results(
     fresh_total = sum(t for _, _, t, _ in fresh_entries)
     total = frozen_tokens + fresh_total + reapply_total
     if total <= budget:
-        # Mark all fresh entries as seen (frozen for future turns)
         if use_cache:
-            assert replacement_state is not None  # use_cache ⟹ state present
+            assert replacement_state is not None
             for _, _, _, tu_id in fresh_entries:
                 replacement_state.mark_seen(tu_id)
         return messages
@@ -1573,7 +1504,7 @@ def guard_tool_results(
     for i, j, tokens, tu_id in fresh_entries:
         if total <= budget:
             if use_cache:
-                assert replacement_state is not None  # use_cache ⟹ state present
+                assert replacement_state is not None
                 replacement_state.mark_seen(tu_id)
             continue
         block = messages[i].content[j]
@@ -1587,7 +1518,7 @@ def guard_tool_results(
             total -= tokens
             total += estimate_tokens_dense(stub)
             if use_cache:
-                assert replacement_state is not None  # use_cache ⟹ state present
+                assert replacement_state is not None
                 replacement_state.record_replacement(tu_id, stub)
 
     logger.debug(
@@ -1607,8 +1538,6 @@ def guard_tool_results(
 
     return messages
 
-
-# ── LLM-based summarization ──────────────────────────────────────
 
 SUMMARIZATION_TIMEOUT_S = 60.0
 
@@ -1640,8 +1569,6 @@ def drop_oldest_rounds(msgs: list, token_gap: int | None = None) -> list | None:
     """Drop oldest API round groups. Uses token gap for precise count when available."""
     from src.herald.types import Message as LLMMessage
 
-    # Strip our own synthetic marker from a previous retry before grouping,
-    # otherwise it becomes its own group 0 and the drop stalls.
     inp = msgs
     if (
         inp
@@ -1752,7 +1679,6 @@ async def summarize_old_messages(
 
     messages_to_summarize = strip_media_from_messages(list(messages))
 
-    # system_prompt and tools_schema don't change between PTL retries
     fixed_tokens = (
         estimate_system_tokens(system_prompt)
         + (sum(estimate_tokens(str(t)) for t in tools_schema) if tools_schema else 0)
@@ -1942,5 +1868,4 @@ async def compact_messages_with_summary(
         if new_used < threshold:
             return result
 
-    # Fallback to mechanical compaction
     return compact_messages(messages, context_window, preserve_recent)

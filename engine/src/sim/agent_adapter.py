@@ -48,11 +48,6 @@ from src.sim.pinned_boot import SimEngineState
 
 logger = logging.getLogger(__name__)
 
-# The world's own clock: `world/core/clock.py` divides a game-day into 144
-# ten-game-minute ticks. Only used as the fallback when a caller does not
-# send `game_day`, and named rather than inlined so the assumption is
-# visible - a hard-coded 144 buried in an expression is how a night
-# quietly becomes something other than a night.
 TICKS_PER_DAY = 144
 
 
@@ -91,14 +86,8 @@ class TickResponse(BaseModel):
     is_sleeping: bool
     reply: str
     learning_ran: bool
-    # B3. The world owns the wallet and therefore owns the sentence a
-    # resident reads about it; the engine reports what it used and lets the
-    # world decide what to say. See world/call_budget.py.
     steps_used: int = 0
     budget_hit: bool = False
-    # ENG-24. What the night's reflection actually changed, not that it
-    # was attempted - run 22's lesson, where "20 of 20 consolidated" sat
-    # over zero written rows because `result is not None` read as success.
     reflected: bool = False
     goal_revisions: int = 0
 
@@ -121,15 +110,6 @@ class LearnResponse(BaseModel):
     thread_id: str
     learning_ran: bool
     runs_triggered: int
-    # What the batch actually ENCODED, not merely that it was attempted.
-    #
-    # Run 22 drained twenty of twenty residents 235ms after the broker
-    # halted dispatch, reported "20 of 20 consolidated", and wrote zero
-    # knowledge rows while 7,138 signals stayed unconsolidated. Every
-    # model call the pipeline made was refused, the pipeline returned a
-    # result object anyway, and `result is not None` read that as success.
-    # A green line over work that did not happen is worse than a red one,
-    # because nobody investigates it.
     knowledge_written: int = 0
     errors: int = 0
 
@@ -165,8 +145,6 @@ class BackgroundLearning:
 
     def __init__(self, gate: Any) -> None:
         self._gate = gate
-        # Held so the task is not garbage-collected mid-flight: asyncio
-        # keeps only a weak reference to a running task.
         self._task: asyncio.Task | None = None
         self._landed = False
 
@@ -220,11 +198,6 @@ class BackgroundLearning:
             result = await self._gate.on_tick(is_sleeping)
             return result is not None
         except Exception as exc:  # noqa: BLE001
-            # `SimLearningGate._run` already swallows a pipeline failure,
-            # but this is now an unawaited task, and an unawaited task that
-            # raises is a warning at interpreter shutdown that nobody
-            # reads. A failed consolidation must not be able to reach the
-            # turn, and it cannot reach it from here.
             logger.warning("background learning batch failed: %s", exc)
             return False
 
@@ -232,19 +205,10 @@ class BackgroundLearning:
 class HealthResponse(BaseModel):
     agent_id: str
     thread_id: str
-    # WIRE-02. How this engine's link to the world has been behaving.
-    #
-    # Zeroes on a healthy engine, so a runner reading it sees nothing
-    # until there is something to see. Run `deni-a6f9eb4-5h` lost 97
-    # calls to transport with no instrument anywhere reporting it.
     world_calls_attempted: int = 0
     world_calls_refused: int = 0
     world_transport_failures: int = 0
     world_transport_recovered: int = 0
-    # Singular by design: every herald consumer this agent has (main thread
-    # and learning centre alike) is pinned to this one model id. Two fields
-    # here would misstate the architecture even if both held the same
-    # value - see src/sim/model_profile.py's module docstring.
     model: str
 
 
@@ -255,15 +219,9 @@ def build_sim_agent_app(engine: SimEngineState) -> FastAPI:
 
     app = FastAPI(title=f"kasukabe-sim-agent-{engine.profile.agent_id}")
 
-    # ENG-17. The one place a learning batch is started, so there is one
-    # answer to "is a batch running" and one place that answer is kept.
-    # Put on app.state so a caller (and a test) can wait for it without
-    # reaching into the route's closure.
     learning = BackgroundLearning(engine.learning_gate)
     app.state.background_learning = learning
 
-    # ENG-24. Same reasoning as the line above: one object, one answer to
-    # "has this resident reflected tonight", reachable from a test.
     reflect_on_goals = GoalReflection(engine)
     app.state.goal_reflection = reflect_on_goals
 
@@ -279,27 +237,6 @@ def build_sim_agent_app(engine: SimEngineState) -> FastAPI:
 
     @app.post("/tick", response_model=TickResponse)
     async def tick(req: TickRequest) -> TickResponse:
-        # CORE-11. A tick that arrives while a turn is running is REFUSED,
-        # not queued.
-        #
-        # What happened before: `send_tick` takes `_turn_lock`, so a second
-        # POST blocked on it. The runner's `asyncio.wait_for` gave up after
-        # `tick_timeout_s` and marked the agent decided - but uvicorn does
-        # not cancel a handler when its client disconnects, so the first
-        # turn kept running and kept being billed, and the second request
-        # kept waiting. Three ticks later the runner POSTed again, that
-        # request queued behind the same lock, and when it finally ran it
-        # ran a turn against a perception several ticks stale. Money spent,
-        # actions taken late, and `timed_out_ticks` incremented with no way
-        # to attribute the late tool calls to anything. Run 23: ten turns.
-        #
-        # 409 rather than 429: this is not a rate limit the caller should
-        # back off and retry on a timer, it is a statement that the
-        # resource is in a conflicting state right now. The runner reads it
-        # as "still busy" and skips the resident for this tick, which is
-        # the same outcome its timeout-based guess reached - except in
-        # milliseconds instead of `tick_timeout_s`, and by knowing instead
-        # of assuming.
         if engine.turn_in_flight:
             raise HTTPException(
                 status_code=409,
@@ -316,24 +253,7 @@ def build_sim_agent_app(engine: SimEngineState) -> FastAPI:
             )
 
         if req.is_sleeping:
-            # No interactive LLM calls while asleep (DESIGN.md section 1) -
-            # only the sleep-onset learning batch, on the same kimi-k2.5
-            # model, may run. It is awaited: there is no turn on this path,
-            # so there is no turn latency for it to spend.
             ran = await learning.run_while_asleep()
-            # ENG-24, §5.3: "sleep reflection posts revise_goals once per
-            # resident per night on the LC adapter."
-            #
-            # AFTER the learning batch, not before: the batch is what
-            # turns the day's signals into something durable, and a
-            # resident reflecting on a day it has not consolidated yet is
-            # reflecting on less. Both are sleep work and neither has a
-            # turn waiting on it, so the order is free to be the right
-            # one.
-            #
-            # Its failures never reach this response as an exception -
-            # `reflect` swallows them and reports - because a night's
-            # thinking is not worth losing the learning batch over.
             night = req.game_day if req.game_day is not None else req.tick // TICKS_PER_DAY
             reflection = await reflect_on_goals.reflect(night)
             return TickResponse(
@@ -346,11 +266,6 @@ def build_sim_agent_app(engine: SimEngineState) -> FastAPI:
                 goal_revisions=reflection.revisions,
             )
 
-        # Awake: the turn first, and the batch after it and off the wire.
-        #
-        # ENG-17. This used to await the gate HERE, before the turn, so a
-        # resident's dispatch window was spent consolidating yesterday
-        # before it was allowed to act today. See BackgroundLearning.
         reply = await engine.send_tick(req.perception, call_budget=req.call_budget)
         learning.start_after_the_turn()
         return TickResponse(
@@ -358,14 +273,6 @@ def build_sim_agent_app(engine: SimEngineState) -> FastAPI:
             tick=req.tick,
             is_sleeping=False,
             reply=reply,
-            # What LANDED, not what was just started. This field used to be
-            # hardcoded False, which was true while the gate only fired at
-            # sleep onset and became a lie the moment the waking interval
-            # was wired - a batch could run on an awake tick and every run
-            # report would still say the town learned nothing. The runner
-            # reads exactly this field (HttpAgentGateway.send_tick), so it
-            # must report a result the engine actually has: a batch started
-            # on this tick is reported on the next.
             learning_ran=learning.take_landed(),
             steps_used=engine.last_turn_steps,
             budget_hit=engine.last_turn_hit_budget,
@@ -385,33 +292,11 @@ def build_sim_agent_app(engine: SimEngineState) -> FastAPI:
         None, and a shutdown path that can fail is a shutdown path that
         leaves engines running.
         """
-        # ENG-17. The drain now has to consider a batch it did not start:
-        # since the awake batch runs in the background, one may still be
-        # writing when the runner calls this, and the process is killed
-        # seconds after it answers.
         await learning.settle()
         result = await engine.learning_gate.trigger_extra()
-        # ENG-13. `learning_ran` meant two different things on the two
-        # routes - `/tick` reported "a batch was attempted", `/learn`
-        # reported "something was written" - and the sim suite was red on
-        # the difference. One meaning now, the stricter one, on both.
-        #
-        # `learning_ran` now means "something was learned", not "a batch was
-        # attempted" - see LearnResponse for the run that made the
-        # distinction necessary.
         written = int(getattr(result, "knowledge_written", 0) or 0)
         episodes = int(getattr(result, "episodes_created", 0) or 0)
         failures = list(getattr(result, "errors", []) or [])
-        # ENG-01. A batch that wrote nothing BECAUSE nothing was configured
-        # is a different failure from a batch that had nothing to say, and
-        # for 23 runs the two looked identical from here.
-        #
-        # `MemorySystem` raises RuntimeError on a write to a None component;
-        # the pipeline catches those into `errors` and carries on. So a
-        # resident could burn 55-108K input tokens on a consolidation batch,
-        # return 6 output tokens, write not one row, and report a clean
-        # `learning_ran=False` that read as "quiet morning". Run 22 left
-        # 7,138 signals unconsolidated exactly this way.
         if failures and all(_is_unconfigured(f) for f in failures):
             logger.error(
                 "learning wrote NOTHING because its stores are not "

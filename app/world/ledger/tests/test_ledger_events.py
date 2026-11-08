@@ -15,7 +15,7 @@ from world.ledger.tests.ledger_factories import RecordingEventSink, build_genesi
 async def test_a_usd_move_emits_debited_then_credited() -> None:
     sink = RecordingEventSink()
     ledger = await build_genesis_ledger(["a1", "a2"], agent_usd_cents=200, event_sink=sink)
-    sink.events.clear()  # drop genesis's own events, they're not this test's concern
+    sink.events.clear()
 
     await ledger.move(
         from_account_id="a1",
@@ -50,9 +50,6 @@ async def test_invariant_violation_emits_the_tripwire_event() -> None:
     sink = RecordingEventSink()
     ledger = Ledger(event_sink=sink)
 
-    # Genesis now DEFINES the total (any cohort size is a valid closed
-    # economy), so the violation has to be provoked the way a real one
-    # happens: money appearing after the economy is sealed.
     await ledger.genesis(["a1"], agent_usd_cents=200, treasury_usd_cents=TOTAL_USD_CENTS)
     ledger.accounts["a1"].usd_cents += 200
 

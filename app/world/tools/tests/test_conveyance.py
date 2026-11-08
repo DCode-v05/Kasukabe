@@ -53,9 +53,6 @@ async def _invented(
     return name
 
 
-# ── holding is real now ───────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_an_invented_tool_is_not_the_whole_towns(world: WorldState, registry) -> None:
     """The premise of every other test here.
@@ -69,9 +66,6 @@ async def test_an_invented_tool_is_not_the_whole_towns(world: WorldState, regist
     assert world.holders_of(name, world.tick()) == {"ada"}
     with pytest.raises(ToolNotFoundError):
         await registry.execute(world, "stranger", name, {"dest": "temple"})
-
-
-# ── licensing ─────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -196,9 +190,6 @@ async def test_you_cannot_license_what_you_do_not_own(
     assert "Ada Gray" in str(exc.value)
 
 
-# ── selling ───────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_sold_tool_is_called_under_the_new_owner_and_the_record_follows(
     world: WorldState, registry
@@ -214,7 +205,6 @@ async def test_a_sold_tool_is_called_under_the_new_owner_and_the_record_follows(
     assert world.tool_owner(name) == "bram"
     await registry.execute(world, "bram", name, {"dest": "temple"})
     assert world.location_of("bram") == "temple"
-    # And the seller is out. They sold it.
     with pytest.raises(ToolNotFoundError):
         await registry.execute(world, "ada", name, {"dest": "park"})
 
@@ -238,9 +228,6 @@ async def test_a_licence_survives_the_sale_of_the_tool(
 
     await registry.execute(world, "nell", name, {"dest": "temple"})
     assert world.location_of("nell") == "temple"
-
-
-# ── teaching, and the third pair of hands ─────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -334,9 +321,6 @@ async def test_a_licensee_may_call_it_but_not_pass_it_on(
     assert "licence lets you call it" in str(exc.value)
 
 
-# ── inheritance ───────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_will_can_name_a_tool_and_only_your_own(
     world: WorldState, registry
@@ -392,9 +376,6 @@ def _definition(creator: str):
         steps=[ToolStep(tool_name="rest", params={})],
         approved=True,
     )
-
-
-# ── the record ────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio

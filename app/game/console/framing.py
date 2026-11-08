@@ -29,10 +29,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-# How much evidence each confidence label needs, in days of observed
-# history. Chosen so the labels mean what section 19.7's own example means
-# by them - its "high confidence" is quoted as resting on "the last 10 days
-# of income data", so that is what HIGH costs here.
 HIGH_CONFIDENCE_DAYS = 10
 MODERATE_CONFIDENCE_DAYS = 5
 MEDIUM_CONFIDENCE_DAYS = 2
@@ -72,7 +68,7 @@ class Framed:
     answer: str
     confidence: str
     basis: str
-    severity: str = "info"          # info | watch | critical
+    severity: str = "info"
     breakdown: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -193,7 +189,6 @@ def frame_treasury(treasury: dict[str, Any], policy: dict[str, Any], days_observ
         answer = "The town is broke. It cannot pay a wage or a pension until money comes in."
         severity = "critical"
     elif net < 0 and out > 0:
-        # Only meaningful once there is spending to compare against.
         runway = balance // max(1, abs(net) // max(1, days_observed or 1))
         answer = (
             f"The town is spending more than it collects. At this rate the treasury "

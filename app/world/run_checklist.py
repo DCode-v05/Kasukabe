@@ -99,7 +99,6 @@ def score(trace_db: str, reading: "dict | None" = None) -> list[dict]:
     days = max((last - first) / TICKS_PER_DAY, 1 / TICKS_PER_DAY) if ticks else 0.0
     resident_days = residents * days
 
-    # ── gates ─────────────────────────────────────────────────────────
     utt = t.rows("select speaker_agent_id, listener_agent_id, conversation_id, content, tick "
                  "from utterances order by tick")
     by_conv: dict[str, list[tuple]] = {}
@@ -150,7 +149,6 @@ def score(trace_db: str, reading: "dict | None" = None) -> list[dict]:
     ratio = (statistics.median(inputs[-third:]) / statistics.median(inputs[:third])) if third else 0
     rows.append(_row("N10", "last third ≤ 1.25× first", f"{ratio:.2f}×", ratio <= 1.25 if third else None))
 
-    # ── the economy ───────────────────────────────────────────────────
     day_of = lambda tick: (tick or 0) // TICKS_PER_DAY  # noqa: E731
     covered = sorted({day_of(k) for k in ticks if (k % TICKS_PER_DAY) >= 36})
     daily = Counter(day_of(d["_tick"]) for d in deals)
@@ -202,7 +200,6 @@ def score(trace_db: str, reading: "dict | None" = None) -> list[dict]:
     rows.append(_row("ECON-14", "a posted price changes", f"{repriced} reprice(s) of {len(posts)} post(s)",
                      repriced >= 1))
 
-    # ── the state ─────────────────────────────────────────────────────
     tallies = t.events("politics.election.tallied")
     seated = [e for e in tallies if (e.get("result") or {}).get("pm_agent_id") or e.get("pm_agent_id")]
     rows.append(_row("GOV-1", "an election completes and seats fill", f"{len(tallies)} tallied, "
@@ -236,20 +233,12 @@ def score(trace_db: str, reading: "dict | None" = None) -> list[dict]:
                      f"{scorable} scorable conviction(s)" if justice else "no justice reading",
                      scorable >= 1 if justice else None))
 
-    # ── questions a run answers directly ──────────────────────────────
     n6_talked = sum(1 for conv, lines in by_conv.items() if conv and any(re.search(r"\b\d+\b", u[3] or "")
                                                                         for u in lines))
     n6_settled = len({d.get("conversation_id") for d in deals if d.get("conversation_id")})
     rows.append(_row("N6", "agreements become acts (reported)", f"{n6_settled} conversation(s) settled a deal, "
                      f"of {n6_talked} that named a number", True if utt else None))
     rows.append(_row("N15", "a day 2 is reached", f"days covered: {covered}", len(covered) >= 2 if covered else None))
-    # "for > 50% of RESIDENTS", so the denominator is residents and the
-    # numerator has to be residents too. It used to be the number of TIMES
-    # the commonest goal text was set, which counts one resident renewing
-    # the same goal sixteen times as sixteen residents - and `agent.goal.set`
-    # fires on every renewal, including the ones `goal_lifecycle` raises from
-    # a need. election30 read "47 distinct of 85" and was scored not held on
-    # a town where no goal was shared by more than a handful of people.
     set_goals = [
         (e.get("agent_id"), (e.get("text") or e.get("goal") or "").strip().lower())
         for e in t.events("agent.goal.set")
@@ -276,9 +265,6 @@ def score(trace_db: str, reading: "dict | None" = None) -> list[dict]:
     gifts = sum(1 for e in transfers if e.get("reason") == "gift")
     rows.append(_row("X19", "someone gives to someone (reported)", f"{gifts} gift(s)", gifts >= 1))
 
-    # ── the instrument, re-measured ───────────────────────────────────
-    # X2: the fix ledger. Each defect fixed since the 50-resident run gets its
-    # verdict here - the refusal it produced, counted again.
     refusals = (reading.get("refusals") or {}).get("refusals") if isinstance(reading.get("refusals"), dict) \
         else reading.get("refusals")
     if refusals:

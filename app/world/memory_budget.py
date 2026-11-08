@@ -26,61 +26,11 @@ from pathlib import Path
 import sys
 from dataclasses import dataclass
 
-# Measured on 2026-08-26, macOS 15 / M1, engine venv.
-#
-# The two backends are not close, and the gap is the reason the namespace one
-# exists. A separate OS process pays for the Python interpreter and the
-# engine's imports every single time (~56 MB of it); engines sharing one
-# process pay that once.
-#
-#   separate process per engine ......    48 MB each   (6 live engines, ps RSS)
-#   namespaced in one process ........     2.8 MB each  (30 real engines booted)
-#
-# The 48 MB is measured from a running town, not from an import: the first
-# draft of this constant said 110 MB, which was an import-plus-guess and made
-# the preflight refuse runs that would have fitted comfortably.
-#
-# The namespace figure is rounded up from a measured 2.81 MB. Guessing low
-# here produces exactly the crash this module exists to prevent, so both
-# numbers carry headroom over what was observed.
-# 48 MB is what a freshly booted engine costs, and it is NOT what it costs an
-# hour later. Measured on this project twice, on the same code:
-#
-#   at boot ..........  ~53 MB each  (30 engines, 1.58 GiB total, docker stats)
-#   under load .......  ~550 MB each (10 engines, 5.19 GiB total, /proc VmRSS;
-#                                     largest single engine 655 MB)
-#
-# Both readings are correct; they are taken at different times. Budgeting on
-# the boot figure is what makes a thirty-engine run pass preflight and then
-# exhaust the machine in hour three, which is the exact failure this module
-# exists to prevent - so the budget is the steady-state number.
-# A third reading, on a third platform, taken while writing this note:
-#
-#   macOS, ps RSS ....  39 MB each (30 engines, 1.2 GB total, game-day 4;
-#                                   median 37 MB, largest 76 MB)
-#
-# All three are honest. They disagree because they are different operating
-# systems, not different opinions: the Linux/container readings above pay for
-# a copy of the interpreter and its imports per engine with no page sharing,
-# and macOS shares those pages between thirty children of one parent.
-#
-# So this constant is a FALLBACK, not the answer. `measured_mb_per_engine()`
-# below reads what the engines on THIS machine actually cost and preflight
-# prefers it whenever there is a run to measure. A single global number could
-# only ever be wrong on two platforms out of three - budget high enough to be
-# safe on Linux and it refuses a thirty-engine run that macOS runs in 1.2 GB;
-# budget for macOS and it exhausts a Linux box in hour three.
 MB_PER_ENGINE_PROCESS = 550
 MB_PER_ENGINE_NAMESPACE = 4
 
-# What `check()` assumes when nobody says. The namespace backend is the
-# default in run_genesis, so this matches it.
 MB_PER_ENGINE = MB_PER_ENGINE_NAMESPACE
 
-# The fixed cost of the shared process itself under the namespace backend -
-# one interpreter plus the engine's imports, paid once however many agents
-# run. Ignoring it would under-report a 5-agent run by more than the agents
-# cost.
 NAMESPACE_BASE_MB = 70
 
 RESERVED_SYSTEM_MB = 512
@@ -132,9 +82,6 @@ def available_mb() -> int:
     a preflight check that gets skipped."""
     if sys.platform == "darwin":
         try:
-            # Free + inactive: inactive pages are reclaimable, and excluding
-            # them would under-report free memory badly on a Mac that has been
-            # up for a while.
             out = subprocess.run(["vm_stat"], capture_output=True, text=True, timeout=5).stdout
             page = 4096
             free = inactive = 0
@@ -150,12 +97,6 @@ def available_mb() -> int:
         except (OSError, ValueError, subprocess.SubprocessError):
             pass
     if sys.platform == "win32":
-        # GlobalMemoryStatusEx via ctypes, because this module deliberately
-        # takes no psutil dependency. Without this branch every probe below
-        # misses on Windows - there is no /proc/meminfo and no os.sysconf -
-        # and the function returned its 1 TB "block nothing" fallback, so the
-        # memory check silently passed no matter how many engines were asked
-        # for. An inert guard is worse than no guard: it reads as PASS.
         try:
             import ctypes
 
@@ -186,9 +127,6 @@ def available_mb() -> int:
                     return int(line.split()[1]) // 1024
     except OSError:
         pass
-    # Unknown: fall back to total RAM if we can get it, else a number that
-    # blocks nothing. Refusing a run because we could not read a counter would
-    # be worse than the crash.
     total = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") // (1024 * 1024) if hasattr(os, "sysconf") else 0
     return total or 10 ** 6
 
@@ -227,9 +165,6 @@ def free_disk_mb(path: str) -> int:
     except OSError:
         return 10 ** 6
 
-# The engine's own command line, as run_genesis spawns it. Matching on this
-# rather than on "python" keeps the world server, the broker and the reporter
-# out of a figure that is meant to be per-ENGINE.
 ENGINE_PROCESS_MARKER = "src.sim.sim_main"
 
 
@@ -336,17 +271,6 @@ def engines_from_ps_output(out: str, marker: str = ENGINE_PROCESS_MARKER) -> tup
     return len(sizes_kb), round(sum(sizes_kb) / len(sizes_kb) / 1024)
 
 
-# Where the last per-engine measurement taken on THIS machine is kept.
-#
-# measured_mb_per_engine() can only read engines that are running, and at
-# preflight there are none - so a fresh boot fell back to the constant, which
-# is the Linux-under-load figure. On this Mac that refused a ten-engine run
-# ("10 engines need about 5500 MB") while the same ten engines had just been
-# measured at 33 MB each. The constant is not wrong; it is wrong HERE, and
-# the machine already knows better.
-#
-# Kept beside the trace store rather than in the repo: it is a fact about
-# this computer, not about the code.
 MEASUREMENT_PATH = Path("data/.engine-memory.json")
 
 
@@ -360,7 +284,7 @@ def remember_measurement(engines: int, mb_each: int, path: Path = MEASUREMENT_PA
             encoding="utf-8",
         )
     except OSError:
-        pass  # a reading we cannot save is not worth failing a run over
+        pass
 
 
 def last_measurement(path: Path = MEASUREMENT_PATH) -> int | None:

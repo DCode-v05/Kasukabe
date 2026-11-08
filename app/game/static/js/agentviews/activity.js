@@ -1,8 +1,3 @@
-// Agent Activity tab: what one agent is doing right now - action and
-// why, location, who is with it, schedule status, wallets, health,
-// skills, relationships, live utterances. DESIGN.md section 8's "Agent
-// activity viewer" bullet.
-
 import { fetchAgentActivity } from "./api.js";
 import { el, escapeHtml, fmtCents, fmtTick, setError, setLoading, statusBadge } from "./dom.js";
 import { getSelectedAgent } from "./state.js";
@@ -94,9 +89,6 @@ function render(a) {
     </div>`;
 }
 
-// Delegate the in-body "view reasoning" button since it's re-rendered
-// every load(); wire it once per render via event delegation on the
-// stable container instead of re-querying after every innerHTML swap.
 document.addEventListener("click", (evt) => {
   if (evt.target && evt.target.id === "btn-open-reasoning") goToReasoningTab();
 });

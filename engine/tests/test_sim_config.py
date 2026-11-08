@@ -45,10 +45,6 @@ def test_sim_env_points_at_the_broker_and_pins_every_role_to_the_one_model(tmp_p
     assert env["DISPATCH_MODEL_ALTERNATIVE"] == MODEL_ID
     assert env["LC_MODEL"] == MODEL_ID
     assert env["FALLBACK_MODEL"] == ""
-    # FORK_SUBAGENT and FEATURE_TOOL_USE_SUMMARY are NOT here: they bypass
-    # Settings entirely (raw os.environ reads), so sim_env()'s dict - which
-    # only ever reaches Settings.build_from_env - cannot carry them. See
-    # raw_process_env() and test_raw_process_env_disables_fork_and_the_ui_only_tool_summary.
     assert "FORK_SUBAGENT" not in env
 
 
@@ -80,9 +76,6 @@ def test_raw_process_env_disables_fork_and_the_ui_only_tool_summary(tmp_path):
     assert raw == {
         "FORK_SUBAGENT": "false",
         "FEATURE_TOOL_USE_SUMMARY": "false",
-        # ENG-02, 2026-09-04: history is bounded in the seam, so the engine
-        # must stop rewriting the prefix. Without this every call took the
-        # emergency-compaction path - see sim/bounded_history.py.
         "DISABLE_AUTO_COMPACT": "1",
     }
 
@@ -119,7 +112,7 @@ def test_fork_deny_rules_cover_every_forking_tool():
     assert named == set(FORK_DENIED_TOOLS)
     assert "spawn_sub_agent" in named
     for rule in rules:
-        assert rule["pattern"] == ""  # matches unconditionally, not a subset of inputs
+        assert rule["pattern"] == ""
 
 
 def test_build_settings_wires_deny_rules_and_creates_september_home(tmp_path):
@@ -199,7 +192,7 @@ def test_validate_sim_settings_flags_missing_deny_rules(tmp_path, monkeypatch):
     monkeypatch.setenv("FORK_SUBAGENT", "false")
     profile = make_profile(tmp_path)
     settings = build_settings(profile)
-    settings.deny_rules = []  # simulate a caller that skipped build_settings' wiring
+    settings.deny_rules = []
 
     errors = validate_sim_settings(settings)
     assert any("deny_rules" in e for e in errors)
@@ -215,9 +208,6 @@ def test_validate_sim_settings_aggregates_every_problem_at_once(tmp_path, monkey
 
     errors = validate_sim_settings(settings)
     assert len(errors) >= 3
-
-
-# ── the waking interval, and the call site that never passed it ────────
 
 
 def test_the_waking_interval_defaults_to_something_that_actually_runs():
@@ -291,9 +281,6 @@ def test_the_boot_path_passes_the_interval_to_the_gate():
     source = inspect.getsource(pinned_boot.boot_sim_engine)
     assert "SimLearningGate(" in source
     assert "awake_interval_ticks" in _gate_construction(source)
-
-
-# ── the ablation arm reaching the engine ──────────────────────────────
 
 
 def test_an_engine_told_nothing_is_in_the_full_arm():

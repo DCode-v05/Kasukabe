@@ -28,7 +28,7 @@ class RecordingClient:
 @pytest.fixture
 def store() -> tuple[TraceStore, RecordingClient]:
     client = RecordingClient()
-    trace = TraceStore.__new__(TraceStore)          # no PayloadArchiver needed here
+    trace = TraceStore.__new__(TraceStore)
     import asyncio
 
     trace.client = client

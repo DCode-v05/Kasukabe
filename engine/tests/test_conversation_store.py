@@ -132,7 +132,6 @@ class TestConversationStore:
     async def test_corrupt_json_partial_recovery(self, store, db):
         await store.ensure_conversation("thread-1")
         await store.save_message("thread-1", 0, "user", json.dumps("Hello"))
-        # Inject a corrupt message directly
         await db.execute(
             "INSERT INTO conversation_messages (thread_id, seq, role, content_json) VALUES (?, ?, ?, ?)",
             ("thread-1", 1, "assistant", "{invalid json!!!"),
@@ -141,7 +140,6 @@ class TestConversationStore:
         await store.save_message("thread-1", 2, "user", json.dumps("Still here"))
 
         msgs = await store.load_messages("thread-1")
-        # Corrupt message at seq=1 is skipped
         assert len(msgs) == 2
         assert msgs[0]["seq"] == 0
         assert msgs[1]["seq"] == 2
@@ -167,7 +165,6 @@ class TestConversationStore:
         assert msgs1[0]["content"] == "Thread 1 msg"
         assert msgs2[0]["content"] == "Thread 2 msg"
 
-    # ── save_thread_index / read paths (migration 015) ─────────────
 
     @pytest.mark.asyncio
     async def test_save_and_load_thread_index(self, store):

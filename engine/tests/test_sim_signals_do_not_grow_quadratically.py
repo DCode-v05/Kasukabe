@@ -94,8 +94,6 @@ def test_an_entry_with_no_timestamp_is_not_silently_dropped():
     class _NoTimestamp:
         content = "x"
 
-    # Sorts as "" which is <= the mark, so it WOULD be dropped - this test
-    # records that as a known limit rather than pretending otherwise.
     kept = store.only_new("t", [_NoTimestamp()])
     assert kept == [], (
         "if this starts passing, entries without a timestamp are being kept "

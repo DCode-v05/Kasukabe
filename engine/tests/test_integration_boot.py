@@ -19,31 +19,6 @@ from pathlib import Path
 from src.config import Settings
 from src.bootstrap import bootstrap, shutdown, EngineState, BootReport
 
-# THERE IS NO CITADEL IN THIS TEST, so it says so rather than dialling one.
-#
-# WHAT THIS FILE USED TO DO. `cdt_url` pointed at `http://citadel-test`, a
-# hostname that does not resolve. `bootstrap()` calls
-# `catalog_sync.initialize`, which pulls /v1/models, and a faulthandler dump
-# caught the process parked in `socket.getaddrinfo`. The whole file hung and
-# emitted NO output at all - not even collection. Fifteen tests that could
-# never report anything, in a suite that called itself green without them.
-#
-# Measured, after the DNS wait was removed: one bootstrap took 95.4 seconds,
-# and shutdown took 0.0. Fifteen of those is why no ordinary timeout ever saw
-# the end of this file. The cost is the embedding client, which shares
-# `cdt_url`, carries `timeout=30.0`, and gets septemberai's default
-# `max_retries=2` - three attempts with backoff, on every boot.
-#
-# WHY THE FIX IS AT THE CONSUMERS. An empty CDT_URL/CDT_KEY would have been
-# the plainest way to say "no citadel", and `Settings` refuses it outright:
-# "CDT_URL is required". Patching httpx does not work either, and was tried
-# first - the catalog client is septemberai's and builds its own transport.
-# So the coordinates stay and the two consumers are told, in the fixture
-# below.
-#
-# The loopback port is kept anyway, as a second line: if a future consumer
-# starts dialling without going through either of those seams, it is refused
-# by the kernel in microseconds instead of waiting out a DNS timeout.
 UNREACHABLE_CITADEL = "http://127.0.0.1:1"
 
 
@@ -78,16 +53,6 @@ def there_is_no_citadel(monkeypatch):
         embeddings.EmbeddingService, "is_real", property(lambda self: False)
     )
 
-# bwrap is Linux-only, and the sandbox tests below assert on a provider
-# literally named "local-bwrap". Without the binary the provisioning await
-# never completes - the event loop sits idle in `select` forever rather than
-# raising - so the test does not fail, it hangs, and takes the rest of the
-# file with it.
-#
-# Probing for the binary rather than sniffing the platform, the same way
-# conftest's `can_load_seccomp_bpf` decides about seccomp: "it doesn't sniff
-# Mac/Windows/Linux strings; it just checks whether the syscall actually
-# works." A Linux box without bwrap installed gets the same honest skip.
 needs_bwrap = pytest.mark.skipif(
     shutil.which("bwrap") is None,
     reason="bwrap is not installed; the local-bwrap sandbox cannot be provisioned",
@@ -129,7 +94,6 @@ class TestBootstrap:
             assert state.sandbox_provider is not None
             assert state.sandbox_provider.name == "local-bwrap"
             assert state.sandbox_session is not None
-            # The workspace tools live in the SHARED registry every thread uses.
             for name in (
                 "bash",
                 "python",
@@ -162,7 +126,6 @@ class TestBootstrap:
         state, report = await bootstrap(settings=settings)
         try:
             assert report.subsystems.get("migrations") is True
-            # Verify tables exist
             tables = await state.db.fetch(
                 "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
             )
@@ -199,7 +162,6 @@ class TestBootstrap:
         try:
             assert state.working_memory is not None
             assert report.subsystems.get("working_memory") is True
-            # Write and read
             from src.memory.working_memory import EntryType
 
             await state.working_memory.write("task-1", EntryType.MESSAGE_USER, "Hello integration")
@@ -360,7 +322,6 @@ class TestResumeStateAndTrajectory:
         settings = make_test_settings()
         state, report = await bootstrap(settings=settings)
         try:
-            # Insert an orphan user_skill referencing a non-existent platform skill
             import uuid
 
             await state.db.execute(
@@ -369,18 +330,14 @@ class TestResumeStateAndTrajectory:
             )
             await state.db.commit()
 
-            # Verify it exists
             count = await state.db.fetchval(
                 "SELECT count(*) FROM user_skills WHERE platform_skill_name = ?",
                 ("deleted_platform_skill",),
             )
             assert count == 1
 
-            # Re-bootstrap — orphan cleanup should remove it
             state2, report2 = await bootstrap(settings=settings)
             try:
-                # Note: state2 uses :memory: so it's a fresh DB — orphan was in state's DB
-                # This test verifies the cleanup code path runs without error
                 assert report2.subsystems.get("orphan_cleanup") is True
             finally:
                 await shutdown(state2)

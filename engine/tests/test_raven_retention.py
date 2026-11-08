@@ -11,7 +11,6 @@ class TestRetention:
     @pytest.mark.asyncio
     async def test_old_events_rolled_up_and_dropped(self, db):
         store = RavenStore(db)
-        # Insert events "40 days ago" (timestamp < now - 30d cutoff)
         old_ts = 100.0
         await store.track(
             TokenUsageEvent(model="m", input_tokens=100, output_tokens=50, timestamp=old_ts)

@@ -43,22 +43,12 @@ from src.sandbox.sed_validation import SedBehavior, check_sed_constraints
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# ToolSource — where the tool runs
-# ---------------------------------------------------------------------------
-
-
 class ToolSource(Enum):
-    INTERNAL = "internal"  # engine tools: ask_user, checkpoint, plan, etc.
-    SANDBOXED = "sandboxed"  # bash, code execution — runs inside bwrap
-    PLATFORM = "platform"  # file operations on host filesystem
-    MCP = "mcp"  # ad:* tools when unsandboxed — external API, zero containment
-    NETWORK = "network"  # web_fetch, web_search
-
-
-# ---------------------------------------------------------------------------
-# ToolAction — what the tool does
-# ---------------------------------------------------------------------------
+    INTERNAL = "internal"
+    SANDBOXED = "sandboxed"
+    PLATFORM = "platform"
+    MCP = "mcp"
+    NETWORK = "network"
 
 
 class ToolAction(Enum):
@@ -69,31 +59,12 @@ class ToolAction(Enum):
     DESTRUCTIVE = "destructive"
 
 
-# ---------------------------------------------------------------------------
-# PermissionMode — changes how check_permission() behaves
-# ---------------------------------------------------------------------------
-
-
 class PermissionMode(Enum):
-    DEFAULT = "default"  # current behavior: reads auto-allow, writes ask user
-    READ_ONLY = "read_only"  # only search/read allowed, all else denied silently
-    DONT_ASK = "dont_ask"  # if permission required, deny instead of prompting
-    ACCEPT_EDITS = "accept_edits"  # user has pre-approved file edits for the session;
-    # sed -i falls through the safe-substitution allowlist
-    # instead of being escalated to ask. Read by the sed
-    # validator at step 4.5. Other mode semantics (step 5.9)
-    # are unchanged: ACCEPT_EDITS is scoped to the sed -i
-    # gate, and every other gate treats it as DEFAULT.
-    BYPASS = "bypass"  # autonomous: auto-allow everything EXCEPT the
-    # bypass-immune deny gates (catastrophic patterns,
-    # steps 1–1.7) and explicit DENY rules. No prompts.
-    # The supported mode for headless / agentic runs.
-    # Opt-in per request — never the default.
-
-
-# ---------------------------------------------------------------------------
-# PermissionBehavior — what a rule does when matched
-# ---------------------------------------------------------------------------
+    DEFAULT = "default"
+    READ_ONLY = "read_only"
+    DONT_ASK = "dont_ask"
+    ACCEPT_EDITS = "accept_edits"
+    BYPASS = "bypass"
 
 
 class PermissionBehavior(Enum):
@@ -146,36 +117,20 @@ def resolve_permission_mode(requested: PermissionMode) -> PermissionMode:
     return requested
 
 
-# ---------------------------------------------------------------------------
-# Permission rules
-# ---------------------------------------------------------------------------
-
-
 @dataclass
 class PermissionRule:
-    tool: str  # tool name, prefix ("ad:*"), or "*"
-    pattern: str = ""  # regex against serialized tool input
-    behavior: PermissionBehavior = PermissionBehavior.DENY  # allow / deny / ask
+    tool: str
+    pattern: str = ""
+    behavior: PermissionBehavior = PermissionBehavior.DENY
     reason: str = ""
-    # One of PermissionProvenance's values (septemberai / engine / user / managed),
-    # or HardDeny. See src/sandbox/permission_store.py.
     source: str = "user"
 
 
-# Backward-compat alias — existing code creating DenyRule(tool=..., reason=...) still works
 DenyRule = PermissionRule
 
 
-# Catastrophic denials nothing may override. Defined here rather than alongside
-# PermissionProvenance because this is the lower module (permission_store imports
-# from it, not the reverse) and because the constant belongs next to the rules
-# that embody it. Deliberately NOT a provenance value: it is an invariant above
-# the authority ladder, not a tier on it.
 HardDeny = "hard_deny"
 
-# The provenance a rule gets when the user themself grants it (allow_always /
-# deny_always). Mirrors PermissionProvenance.USER, which lives in permission_store;
-# duplicating the literal here avoids a circular import at module scope.
 USER_PROVENANCE = "user"
 
 
@@ -213,7 +168,6 @@ HARDCODED_DENIALS: list[PermissionRule] = [
     ),
 ]
 
-# Pre-compiled regex cache for deny rule patterns (avoids re-compiling on every tool call)
 COMPILED_PATTERNS: dict[str, re.Pattern[str]] = {}
 
 
@@ -230,10 +184,6 @@ def get_compiled_pattern(pattern: str) -> re.Pattern[str] | None:
     except re.error:
         return None
 
-
-# ---------------------------------------------------------------------------
-# Path validation — blocks dangerous file paths before tool execution
-# ---------------------------------------------------------------------------
 
 SENSITIVE_PATHS: frozenset[str] = frozenset(
     {
@@ -262,14 +212,9 @@ BLOCKED_PATHS: frozenset[str] = frozenset(
     }
 )
 
-# Shell config files and protected directories — canonical source is
-# src/sandbox/path_safety.py. Re-exported here for backward compatibility and
-# for the defense-in-depth layer inside validate_path() below. The real gate
-# is step 1.6 in check_permission() which runs BEFORE user rule evaluation.
 DANGEROUS_FILES: frozenset[str] = PATH_SAFETY_DANGEROUS_FILES
 DANGEROUS_DIRECTORIES: frozenset[str] = PATH_SAFETY_DANGEROUS_DIRS
 
-# Pre-computed at module load — avoids per-call realpath/expanduser and set rebuilds
 BLOCKED_RESOLVED: dict[str, str] = {
     p: os.path.realpath(os.path.expanduser(p)) for p in BLOCKED_PATHS
 }
@@ -335,13 +280,11 @@ def validate_path(
     check blocked/sensitive/dangerous on both original and resolved paths,
     enforce allowed_roots.
     """
-    # 1. Reject empty
     if not path or not path.strip():
         return PathValidationResult(allowed=False, reason="Empty path")
 
     clean = path.strip().strip("\"'")
 
-    # 2. Reject shell expansion syntax (TOCTOU risk) — $VAR, `cmd`, %VAR%, =cmd
     if "$" in clean or "`" in clean or "%" in clean:
         return PathValidationResult(
             allowed=False,
@@ -355,7 +298,6 @@ def validate_path(
             reason="Zsh equals expansion syntax in path",
         )
 
-    # 3. Reject UNC paths (credential leak on Windows)
     if clean.startswith("\\\\") or clean.startswith("//"):
         return PathValidationResult(
             allowed=False,
@@ -363,7 +305,6 @@ def validate_path(
             reason="UNC paths are blocked",
         )
 
-    # 4. Reject unsafe tilde variants (~user, ~+, ~-)
     if clean.startswith("~") and len(clean) > 1 and clean[1] != "/":
         return PathValidationResult(
             allowed=False,
@@ -371,7 +312,6 @@ def validate_path(
             reason="Unsafe tilde expansion variant",
         )
 
-    # 5. Reject glob patterns in write operations
     if operation in ("write", "create") and any(c in clean for c in "*?["):
         return PathValidationResult(
             allowed=False,
@@ -379,25 +319,20 @@ def validate_path(
             reason="Glob patterns not allowed in write operations",
         )
 
-    # 6. Expand tilde
     expanded = os.path.expanduser(clean)
 
-    # 7. Resolve to absolute
     absolute = os.path.abspath(expanded)
 
-    # 8. Canonicalize — resolve symlinks
     try:
         canonical = os.path.realpath(absolute)
     except (OSError, ValueError) as e:
         logger.debug("Could not resolve symlinks for %s: %s", absolute, e)
         canonical = absolute
 
-    # Build both paths to check (original absolute + canonical) for symlink defense
     paths_to_check = [canonical]
     if absolute != canonical:
         paths_to_check.append(absolute)
 
-    # 9. Check BLOCKED_PATHS (always denied) — case-insensitive
     for blocked, blocked_resolved in BLOCKED_RESOLVED.items():
         for p in paths_to_check:
             if path_match(p, blocked_resolved):
@@ -407,7 +342,6 @@ def validate_path(
                     reason=f"Blocked path: {blocked}",
                 )
 
-    # 10. Check SENSITIVE_PATHS — case-insensitive
     for sensitive, sensitive_resolved in SENSITIVE_RESOLVED.items():
         for p in paths_to_check:
             if path_match(p, sensitive_resolved):
@@ -423,7 +357,6 @@ def validate_path(
                     reason=f"Sensitive path read: {sensitive}",
                 )
 
-    # 11. Check dangerous files and directories on both paths
     for p in paths_to_check:
         result = check_dangerous_filename(p, operation)
         if result is not None:
@@ -432,7 +365,6 @@ def validate_path(
         if result is not None:
             return result
 
-    # 12. Check allowed_roots (if configured)
     if allowed_roots:
         in_allowed = False
         for root in allowed_roots:
@@ -451,44 +383,30 @@ def validate_path(
     return PathValidationResult(allowed=True, resolved_path=canonical)
 
 
-# ---------------------------------------------------------------------------
-# Permission matrix: (source, action) -> requires_permission
-# ---------------------------------------------------------------------------
-
 PERMISSION_MATRIX: dict[tuple[ToolSource, ToolAction], bool] = {
-    # INTERNAL: engine tools are safe by design
     (ToolSource.INTERNAL, ToolAction.SEARCH): False,
     (ToolSource.INTERNAL, ToolAction.READ): False,
     (ToolSource.INTERNAL, ToolAction.WRITE): False,
     (ToolSource.INTERNAL, ToolAction.EXECUTE): False,
     (ToolSource.INTERNAL, ToolAction.DESTRUCTIVE): False,
-    # SANDBOXED: contained by bwrap, only writes/destructive need permission
     (ToolSource.SANDBOXED, ToolAction.SEARCH): False,
     (ToolSource.SANDBOXED, ToolAction.READ): False,
     (ToolSource.SANDBOXED, ToolAction.WRITE): True,
     (ToolSource.SANDBOXED, ToolAction.EXECUTE): False,
     (ToolSource.SANDBOXED, ToolAction.DESTRUCTIVE): True,
-    # PLATFORM: host filesystem, no containment
     (ToolSource.PLATFORM, ToolAction.SEARCH): False,
     (ToolSource.PLATFORM, ToolAction.READ): False,
     (ToolSource.PLATFORM, ToolAction.WRITE): True,
     (ToolSource.PLATFORM, ToolAction.EXECUTE): True,
     (ToolSource.PLATFORM, ToolAction.DESTRUCTIVE): True,
-    # MCP (unsandboxed AD tools): no containment, most restrictive
     (ToolSource.MCP, ToolAction.SEARCH): False,
     (ToolSource.MCP, ToolAction.READ): False,
     (ToolSource.MCP, ToolAction.WRITE): True,
     (ToolSource.MCP, ToolAction.EXECUTE): True,
     (ToolSource.MCP, ToolAction.DESTRUCTIVE): True,
-    # NETWORK: web tools, read-only by design
     (ToolSource.NETWORK, ToolAction.SEARCH): False,
     (ToolSource.NETWORK, ToolAction.READ): False,
 }
-
-
-# ---------------------------------------------------------------------------
-# PermissionResult
-# ---------------------------------------------------------------------------
 
 
 @dataclass
@@ -499,31 +417,12 @@ class PermissionResult:
     action: ToolAction = ToolAction.SEARCH
     matched_rule: PermissionRule | None = None
     needs_user_confirmation: bool = False
-    new_rule: PermissionRule | None = None  # rule to persist for "Always" choices
-    persist: bool = False  # True when new_rule should be written to disk
-    suggested_rule: str = ""  # human-readable description of "Always" rule
-    # Human-readable "why allowed" string appended to the tool result
-    # by the post-tool injection pipeline. Mirrors src's
-    # PermissionAllowDecision.acceptFeedback. Empty on deny.
+    new_rule: PermissionRule | None = None
+    persist: bool = False
+    suggested_rule: str = ""
     feedback: str = ""
-    # Provider-neutral content blocks (e.g. images pasted during a
-    # permission prompt) that ride the decision into the tool result.
-    # Dispatcher: thread.py:append_permission_content_block.
-    # Propagated on both allow and deny.
     content_blocks: list[dict] = field(default_factory=list)
-    # Sed edit attribution: when step 4.5 allows a `sed -i` command in
-    # ACCEPT_EDITS mode, `parse_sed_edit` extracts the target file, the
-    # pattern, replacement, and flags. Downstream audit / edit-tracking
-    # consumers read this field to render the change as a file edit
-    # instead of an opaque bash invocation. `None` for non-sed commands
-    # and for sed commands that do not have `-i` or did not match the
-    # simple single-expression / single-file attributable shape.
     sed_edit_info: SedEditInfo | None = None
-
-
-# ---------------------------------------------------------------------------
-# Denial tracking — prevents infinite retry loops on denied tools
-# ---------------------------------------------------------------------------
 
 
 class DenialLimitExceeded(Exception):
@@ -534,10 +433,10 @@ class DenialLimitExceeded(Exception):
 class DenialResult:
     """Result from DenialTracker.record_denial(). Presence signals fallback to prompting."""
 
-    injection: str  # message appended to tool result
-    hit_total_limit: bool  # True → total threshold was hit
-    total_count: int = 0  # total denials at time of result
-    recent_tools: str = ""  # formatted recent tool names for caller use
+    injection: str
+    hit_total_limit: bool
+    total_count: int = 0
+    recent_tools: str = ""
 
 
 @dataclass
@@ -597,7 +496,6 @@ class DenialTracker:
     def reset(self):
         """Reset for new execute() call (new user message)."""
         self.consecutive = 0
-        # NOTE: total does NOT reset — it's session-wide
 
     def reset_total(self):
         """Reset total after user reviews at the total threshold."""
@@ -605,11 +503,6 @@ class DenialTracker:
         self.consecutive = 0
 
 
-# ---------------------------------------------------------------------------
-# Action classification
-# ---------------------------------------------------------------------------
-
-# Internal engine tools — classified by known behaviour
 INTERNAL_SEARCH_TOOLS = frozenset(
     {
         "ask_user",
@@ -626,12 +519,10 @@ INTERNAL_SEARCH_TOOLS = frozenset(
 INTERNAL_WRITE_TOOLS = frozenset({"create_skill"})
 INTERNAL_EXECUTE_TOOLS = frozenset({"spawn_sub_agent"})
 
-# All engine-internal tool names (union of above) — used by thread.py for source assignment
 INTERNAL_TOOL_NAMES = INTERNAL_SEARCH_TOOLS | INTERNAL_WRITE_TOOLS | INTERNAL_EXECUTE_TOOLS
 
 NETWORK_TOOL_NAMES = frozenset({"web_fetch", "web_search"})
 
-# MCP / AD tool name prefix heuristics
 MCP_READ_PREFIXES = ("get_", "list_", "search_", "read_", "fetch_", "find_", "query_")
 MCP_WRITE_PREFIXES = (
     "create_",
@@ -647,7 +538,6 @@ MCP_WRITE_PREFIXES = (
 )
 MCP_DESTRUCTIVE_PREFIXES = ("drop_", "destroy_", "purge_", "remove_")
 
-# Classification mapping for sandboxed commands
 CLS_TO_ACTION = {
     "DESTRUCTIVE": ToolAction.DESTRUCTIVE,
     "WRITE": ToolAction.WRITE,
@@ -655,7 +545,6 @@ CLS_TO_ACTION = {
     "SEARCH": ToolAction.SEARCH,
 }
 
-# Platform tool classification
 PLATFORM_READ_TOOLS = frozenset({"file_read", "glob", "grep"})
 PLATFORM_WRITE_TOOLS = frozenset({"file_write", "file_edit"})
 
@@ -663,7 +552,6 @@ PLATFORM_WRITE_TOOLS = frozenset({"file_write", "file_edit"})
 def classify_action(tool_name: str, tool_input: dict[str, Any], source: ToolSource) -> ToolAction:
     """Classify the action type of a tool call from its name, input, and source."""
 
-    # Internal engine tools — known classification
     if source == ToolSource.INTERNAL:
         if tool_name in INTERNAL_SEARCH_TOOLS:
             return ToolAction.SEARCH
@@ -671,21 +559,13 @@ def classify_action(tool_name: str, tool_input: dict[str, Any], source: ToolSour
             return ToolAction.WRITE
         if tool_name in INTERNAL_EXECUTE_TOOLS:
             return ToolAction.EXECUTE
-        return ToolAction.SEARCH  # safe default for unknown internal tools
+        return ToolAction.SEARCH
 
-    # Network tools — always read/search
     if source == ToolSource.NETWORK:
         return ToolAction.SEARCH
 
-    # MCP / AD tools — heuristic from tool name (strip ad: prefix)
     if source == ToolSource.MCP:
         bare_name = tool_name.split(":", 1)[-1] if ":" in tool_name else tool_name
-        # An ad: tool is named {server_name}.{action_name}, so the verb lives in
-        # the action segment. Matching prefixes against the whole compound made
-        # every real connector name miss: "notion.list_pages" does not start
-        # with "list_", so it fell through to EXECUTE and demanded approval for
-        # a plain read. Match the last dot-segment, which is the action even
-        # when the server name or the action itself contains a dot.
         action_segment = bare_name.rsplit(".", 1)[-1] if "." in bare_name else bare_name
         verb = action_segment.lower()
         if verb.startswith(MCP_DESTRUCTIVE_PREFIXES):
@@ -694,9 +574,8 @@ def classify_action(tool_name: str, tool_input: dict[str, Any], source: ToolSour
             return ToolAction.WRITE
         if verb.startswith(MCP_READ_PREFIXES):
             return ToolAction.READ
-        return ToolAction.EXECUTE  # conservative default for unknown MCP tools
+        return ToolAction.EXECUTE
 
-    # Platform tools
     if source == ToolSource.PLATFORM:
         if tool_name in PLATFORM_READ_TOOLS:
             return ToolAction.READ
@@ -704,7 +583,6 @@ def classify_action(tool_name: str, tool_input: dict[str, Any], source: ToolSour
             return ToolAction.WRITE
         return ToolAction.EXECUTE
 
-    # Sandboxed tools (bash, python, code execution)
     if source == ToolSource.SANDBOXED:
         command = tool_input.get("command", "") or tool_input.get("code", "")
         if isinstance(command, str) and command.strip():
@@ -715,14 +593,8 @@ def classify_action(tool_name: str, tool_input: dict[str, Any], source: ToolSour
     return ToolAction.EXECUTE
 
 
-# ---------------------------------------------------------------------------
-# Deny rule matching
-# ---------------------------------------------------------------------------
-
-
 def match_rule(rule: PermissionRule, tool_name: str, serialized_input: str) -> bool:
     """Check if a permission rule matches the given tool call."""
-    # Tool name matching
     if rule.tool != "*":
         if rule.tool.endswith("*"):
             prefix = rule.tool[:-1]
@@ -731,7 +603,6 @@ def match_rule(rule: PermissionRule, tool_name: str, serialized_input: str) -> b
         elif rule.tool != tool_name:
             return False
 
-    # Pattern matching against serialized input (uses pre-compiled cache)
     if rule.pattern:
         compiled = get_compiled_pattern(rule.pattern)
         if compiled is None:
@@ -743,13 +614,7 @@ def match_rule(rule: PermissionRule, tool_name: str, serialized_input: str) -> b
     return True
 
 
-# Backward-compat alias
 match_deny_rule = match_rule
-
-
-# ---------------------------------------------------------------------------
-# Helper: build suggested rule description for user prompt
-# ---------------------------------------------------------------------------
 
 
 def build_suggested_rule(
@@ -768,13 +633,6 @@ def build_suggested_rule(
     return f"{verb} {tool_name}"
 
 
-# ---------------------------------------------------------------------------
-# Rule-match feedback strings
-# ---------------------------------------------------------------------------
-
-# Keyed on the current vocabulary only. Legacy source strings reach it through
-# normalize_source in build_rule_feedback, so the list of old names lives in one
-# place (permission_store.LEGACY_SOURCE_MAP) rather than being mirrored here.
 RULE_SOURCE_TIER: dict[str, str] = {
     "hard_deny": "system",
     "septemberai": "system",
@@ -807,10 +665,6 @@ MATRIX_FEEDBACK: dict[tuple[ToolSource, ToolAction], str] = {
     for (s, a) in PERMISSION_MATRIX
 }
 
-
-# ---------------------------------------------------------------------------
-# Ask-user request / reply helpers
-# ---------------------------------------------------------------------------
 
 AskUserParams = str | dict
 AskUserReply = str | dict
@@ -862,13 +716,7 @@ def parse_ask_response(raw: Any) -> tuple[str, str, list[dict]]:
         if not isinstance(blocks, list):
             blocks = []
         return decision, feedback, blocks
-    # Plain string (backward compat path)
     return str(raw).strip().lower(), "", []
-
-
-# ---------------------------------------------------------------------------
-# The pipeline
-# ---------------------------------------------------------------------------
 
 
 async def check_permission(
@@ -880,7 +728,7 @@ async def check_permission(
     allowed_roots: list[str] | None = None,
     permission_mode: PermissionMode = PermissionMode.DEFAULT,
     *,
-    deny_rules: list[PermissionRule] | None = None,  # deprecated alias for rules
+    deny_rules: list[PermissionRule] | None = None,
     permission_request_fn: Callable[[dict[str, Any]], Awaitable[str | None]] | None = None,
 ) -> PermissionResult:
     """Check whether a tool call is permitted.
@@ -924,12 +772,10 @@ async def check_permission(
       6.   Permission matrix lookup
       7.   User prompt with 4 choices (allow / allow_always / deny / deny_always)
     """
-    # Merge rules: explicit rules param takes precedence; deny_rules is deprecated compat
     all_rules = rules if rules is not None else (deny_rules or [])
 
     serialized = str(tool_input)
 
-    # Step 1: Hardcoded denials (bypass-immune)
     for rule in HARDCODED_DENIALS:
         if match_rule(rule, tool_name, serialized):
             logger.warning(
@@ -944,7 +790,6 @@ async def check_permission(
                 matched_rule=rule,
             )
 
-    # Step 1.5: AST-based bash security analysis (bypass-immune)
     if source == ToolSource.SANDBOXED:
         command = tool_input.get("command", "") or tool_input.get("code", "")
         if isinstance(command, str) and command.strip():
@@ -964,14 +809,8 @@ async def check_permission(
                     source=source,
                 )
 
-    # Step 1.55: Hoisted so step 1.6 can scope its gate on action.
     action = classify_action(tool_name, tool_input, source)
 
-    # Step 1.6: Bypass-immune dangerous-target gate.
-    # SANDBOXED ignores the classified action because command_classifier
-    # doesn't model every shell idiom (e.g. `dd if=... of=...` falls through
-    # to SEARCH); the mere presence of an extracted write target is itself
-    # the write signal.
     hit_path: str | None = None
     hit: PathSafetyResult | None = None
 
@@ -1006,19 +845,6 @@ async def check_permission(
             action=action,
         )
 
-    # Step 1.7: Bypass-immune dangerous-removal gate (SANDBOXED bash only).
-    # Catches rm/rmdir/unlink on catastrophic target paths (root, home,
-    # /etc-class, wildcards, Windows drive roots) by path, not by flags.
-    # Runs after step 1.6 and before user rule evaluation — a hit here
-    # cannot be overridden by any allow rule, permission mode, hook, or
-    # user prompt. Gated on FEATURE_DANGEROUS_REMOVAL (default: on);
-    # setting it to the literal case-insensitive string "false" turns the
-    # whole gate into a no-op, at which point the HARDCODED_DENIALS regex
-    # at step 1 is the only remaining guard for `rm -rf /`.
-    #
-    # Cheap substring pre-check mirrors step 4.5's `"sed" in command`
-    # gate: skip the compound split + tokenisation for the overwhelming
-    # majority of bash calls that contain no removal command at all.
     if source == ToolSource.SANDBOXED and dangerous_removal_enabled():
         command = tool_input.get("command", "") or tool_input.get("code", "")
         if (
@@ -1027,9 +853,6 @@ async def check_permission(
             and ("rm" in command or "unlink" in command)
         ):
             cwd = tool_input.get("cwd") or os.getcwd()
-            # Walk every compound-command segment independently — a
-            # compound like `rm /tmp/safe; rm /etc` must hard-deny the
-            # whole line because ANY segment is catastrophic.
             for segment in split_compound_commands(command):
                 tokens = tokenize_command(segment)
                 if not tokens:
@@ -1056,8 +879,6 @@ async def check_permission(
                         action=action,
                     )
 
-    # Evaluate user rules in priority order: DENY > ALLOW > ASK
-    # Single pass — collect first match per behavior, then apply priority
     matched_deny: PermissionRule | None = None
     matched_allow: PermissionRule | None = None
     matched_ask_rule: PermissionRule | None = None
@@ -1071,12 +892,6 @@ async def check_permission(
         elif rule.behavior == PermissionBehavior.ASK and matched_ask_rule is None:
             matched_ask_rule = rule
 
-    # An explicit ASK rule is an operator's deliberate "stop and check with me",
-    # and it outranks every auto-allow below, bypass mode included. It used to be
-    # computed AFTER the allow/bypass/sandbox returns, so none of those paths
-    # could see it: an operator's "ask before touching billing" was silently
-    # inert in the one mode headless runs actually use. Computed here so every
-    # fast-path allow can honour it.
     ask_forced = matched_ask_rule is not None
 
     if matched_deny is not None:
@@ -1094,10 +909,6 @@ async def check_permission(
             matched_rule=matched_deny,
         )
 
-    # Step 2.4: Bypass mode. After the bypass-immune deny gates (steps 1–1.7) and
-    # explicit DENY rules above, auto-allow without prompting. Catastrophic patterns
-    # and operator denies still block; everything else runs. This is the supported
-    # autonomous/headless mode (no permission-prompt hang). Opt-in per request only.
     if permission_mode == PermissionMode.BYPASS and not ask_forced:
         logger.info("Permission ALLOWED (bypass mode): tool=%s action=%s", tool_name, action)
         return PermissionResult(
@@ -1107,10 +918,6 @@ async def check_permission(
             feedback=allow_feedback("bypass permission mode", tool_name),
         )
 
-    # Step 2.5: Sandbox auto-allow (SYSTEM_ALLOW).
-    # When running inside sandbox and FEATURE_SANDBOX_AUTO_ALLOW is enabled,
-    # safe read-only commands are auto-allowed without prompting. User DENY
-    # rules (step 2) still block — this only fires when no deny matched.
     if source == ToolSource.SANDBOXED and not ask_forced:
         command = tool_input.get("command", "") or tool_input.get("code", "")
         if isinstance(command, str) and command.strip():
@@ -1132,11 +939,6 @@ async def check_permission(
                     ),
                 )
 
-    # ASK beats ALLOW. A persisted "always allow", or any broad allow rule, must
-    # not shadow a narrower operator ASK rule for the same call: the operator
-    # asked to be consulted and neither party would ever see that it did not
-    # happen. Mirrors CC, whose whole-tool ask check returns before the allow
-    # check is reached.
     if matched_allow is not None and not ask_forced:
         logger.info(
             "Permission ALLOWED (rule): tool=%s reason=%s source=%s",
@@ -1153,30 +955,9 @@ async def check_permission(
         )
     sed_ask_reason: str | None = None
 
-    # Step 4.5: Sed-specific safety validator (mirrors src bashPermissions.ts).
-    # Walks every sub-command in a compound command line and runs the
-    # validator on any whose base is `sed`. Gated on the FEATURE_SED_VALIDATION
-    # env var (default on). Deliberately placed after user ALLOW rules so a
-    # broad user allow rule can bypass it — literal src reading. A denylist
-    # hit is therefore NOT bypass-immune; the bypass-immune gates are step
-    # 1.5 (AST bash security) and step 1.6 (dangerous-path gate).
-    #
-    # Compound-command semantics:
-    #   - ANY sed sub-command hitting ASK → force step 7 prompt for the whole
-    #     compound (ask_forced = True).
-    #   - ALL sed sub-commands passing AND the compound is a single command
-    #     (no pipeline/sequence operators) → early auto-allow. A standalone
-    #     sed call is the common case and auto-allow preserves backward
-    #     compatibility with pre-compound step 4.5 behavior.
-    #   - ALL sed sub-commands passing in a TRUE compound → do not auto-allow;
-    #     let the rest of the pipeline (mode enforcement, matrix, prompt)
-    #     handle the non-sed parts. The sed gate is cleared, nothing more.
     sed_edit_info: SedEditInfo | None = None
     if source == ToolSource.SANDBOXED and sed_validation_enabled():
         command = tool_input.get("command", "") or tool_input.get("code", "")
-        # Cheap substring pre-check: skip the O(n) compound split and
-        # tokenisation for the overwhelming majority of commands that
-        # contain no sed at all. Saves per-call work on the agent hot path.
         if isinstance(command, str) and "sed" in command:
             sub_strings = split_compound_commands(command)
             sed_subcommands = find_sed_subcommands(sub_strings)
@@ -1192,16 +973,9 @@ async def check_permission(
                         if sed_ask_reason is None:
                             sed_ask_reason = sed_result.reason
                         continue
-                    # PASSTHROUGH: attribute the first `-i` sed sub-command
-                    # that has an attributable shape. Multi-file or
-                    # multi-expression sed commands return None and fall
-                    # back to opaque bash attribution.
                     if sed_edit_info is None:
                         sed_edit_info = parse_sed_edit(sub_tokens)
                 if sed_ask_reason is None and not ask_forced and len(sub_strings) == 1:
-                    # Standalone sed, all sub-commands safe → auto-allow.
-                    # Compound commands fall through so non-sed parts are
-                    # still gated by the rest of the pipeline.
                     logger.debug(
                         "Permission ALLOWED (sed validator passthrough): command=%.80s",
                         command,
@@ -1214,7 +988,6 @@ async def check_permission(
                         feedback=allow_feedback("sed safe-pattern validator"),
                     )
 
-    # Step 5.5: Path validation for PLATFORM tools with file paths
     if source == ToolSource.PLATFORM:
         file_path = tool_input.get("file_path") or tool_input.get("path") or ""
         if file_path:
@@ -1234,7 +1007,6 @@ async def check_permission(
                     action=action,
                 )
 
-    # Step 5.9: Permission mode enforcement
     mode = (
         permission_mode
         if permission_mode == PermissionMode.DEFAULT
@@ -1243,7 +1015,6 @@ async def check_permission(
 
     if mode == PermissionMode.READ_ONLY:
         if action not in (ToolAction.SEARCH, ToolAction.READ):
-            # Rescue path: allowlist check for sandboxed tools
             if source == ToolSource.SANDBOXED:
                 command = tool_input.get("command", "") or tool_input.get("code", "")
                 if isinstance(command, str) and command.strip() and is_command_read_only(command):
@@ -1277,12 +1048,10 @@ async def check_permission(
                 feedback=allow_feedback("READ_ONLY mode", f"{action.value} is read-safe"),
             )
 
-    # Step 6: Permission matrix lookup
     requires_permission = PERMISSION_MATRIX.get((source, action))
     if requires_permission is None:
         requires_permission = True
 
-    # Auto-allow if no permission required AND no ASK rule forcing a prompt
     if not requires_permission and not ask_forced:
         return PermissionResult(
             allowed=True,
@@ -1291,12 +1060,9 @@ async def check_permission(
             feedback=MATRIX_FEEDBACK[(source, action)],
         )
 
-    # Step 7: Permission required (or ASK rule forced) — prompt user or fail-closed
     suggested = build_suggested_rule(tool_name, tool_input, PermissionBehavior.ALLOW)
 
     if ask_user_fn is None:
-        # PermissionRequest hook path — for headless agents that have registered
-        # a hook to delegate permission decisions to external code.
         if permission_request_fn is not None:
             try:
                 hook_decision = await permission_request_fn(
@@ -1326,7 +1092,6 @@ async def check_permission(
                         source=source,
                         action=action,
                     )
-                # Unknown decision → fall through to fail-closed
 
         logger.info(
             "Permission DENIED (no ask_user, fail-closed): tool=%s source=%s action=%s",
@@ -1346,7 +1111,6 @@ async def check_permission(
             suggested_rule=suggested,
         )
 
-    # DONT_ASK: silently deny instead of prompting
     if mode == PermissionMode.DONT_ASK:
         logger.info(
             "Permission DENIED (DONT_ASK mode): tool=%s source=%s action=%s",
@@ -1361,7 +1125,6 @@ async def check_permission(
             action=action,
         )
 
-    # Prompt user with 4 choices
     if matched_ask_rule and matched_ask_rule.reason:
         ask_reason = f" (rule: {matched_ask_rule.reason})"
     elif sed_ask_reason:

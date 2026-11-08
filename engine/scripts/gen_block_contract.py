@@ -52,25 +52,17 @@ from src.engine_core.blocks import (
 )
 from src.errors import ErrorCode, EngineError, ERROR_META
 
-# ---------------------------------------------------------------------------
-# Fixed, deterministic constants for fixtures (never datetime.now / random).
-# ---------------------------------------------------------------------------
 
 FIXED_TS = "2020-01-01T00:00:00+00:00"
 FIXED_SEQ = 1
-FIXED_TURN = "turn_fixture"          # the BlockSerializer scope/turn id for fixtures
-FIXED_THREAD = "thread_fixture"      # the thread_id stamped on fixtures that carry none
+FIXED_TURN = "turn_fixture"
+FIXED_THREAD = "thread_fixture"
 
-# Engine root = parent of the directory holding this script (…/engine).
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONTRACT_DIR = os.path.join(ROOT, "contract")
 MD_PATH = os.path.join(CONTRACT_DIR, "block-types.md")
 FIXTURES_PATH = os.path.join(CONTRACT_DIR, "fixtures", "blocks.jsonl")
 
-
-# ---------------------------------------------------------------------------
-# Helpers — all pure, all deterministic.
-# ---------------------------------------------------------------------------
 
 def group_name(btype: str) -> str:
     """The display group for a block type — read from the live gate buckets +
@@ -89,7 +81,7 @@ def group_name(btype: str) -> str:
         return "system"
     if btype in ("memory", "file", "subprocess", "session"):
         return "audit"
-    return "outcome"  # error, done
+    return "outcome"
 
 
 def gate_label(btype: str) -> str:
@@ -152,7 +144,7 @@ def placeholder_value(annotation: str):
     if a.startswith("Literal["):
         first = a[len("Literal["):-1].split(",")[0].strip()
         return first.strip("'").strip('"')
-    if a == "SpawnSite":          # Literal alias for spawn sites
+    if a == "SpawnSite":
         return "sandbox_exec"
     if a == "GapType":
         return None
@@ -170,7 +162,7 @@ def placeholder_value(annotation: str):
         return []
     if a == "str":
         return ""
-    return None  # unknown / forward-ref scalar — safe default
+    return None
 
 
 def build_event(cls):
@@ -195,8 +187,6 @@ def fixture_block(btype: str) -> Block:
     if cls is not None:
         block = serializer.fold(build_event(cls))
     else:
-        # Safety net for a future type added to BLOCK_TYPES before its event
-        # lands: a minimal placeholder keeps the SDK parser fixture present.
         block = Block(
             type=btype,
             payload={"url": ""},
@@ -275,8 +265,6 @@ def id_rule(btype: str) -> str:
     }.get(btype, f"per-turn singleton: `{btype}:{{turn_id}}`")
 
 
-# Event fields the fold pops OUT of the payload per block type (they only
-# scope the envelope id). Kept in sync with BlockSerializer.stamp_discriminator.
 POPPED_FIELDS: dict[str, tuple[str, ...]] = {
     "voice": ("turn_id",),
     "image": ("block_id",),
@@ -303,10 +291,6 @@ def field_lines(cls, btype: str = "") -> list[str]:
     return lines
 
 
-# ---------------------------------------------------------------------------
-# render_markdown — the contract doc, pure + deterministic.
-# ---------------------------------------------------------------------------
-
 def render_markdown() -> str:
     """The full contract/block-types.md content, built from the live code."""
     out: list[str] = []
@@ -325,7 +309,6 @@ def render_markdown() -> str:
       "union over these types.")
     w("")
 
-    # -- envelope + frame --------------------------------------------------
     w("## The `Block` envelope")
     w("")
     w("```python")
@@ -362,7 +345,6 @@ def render_markdown() -> str:
       "`v` add stays the deferred, additive upgrade path. The SDK must not require a `v` field.")
     w("")
 
-    # -- the types table ---------------------------------------------------
     w(f"## The {len(BLOCK_TYPES)} types")
     w("")
     w("| # | group | type | gate | contributing event class(es) | discriminator key | id rule |")
@@ -382,7 +364,6 @@ def render_markdown() -> str:
           f"{class_cell} | {disc_cell} | {id_rule(btype)} |")
     w("")
 
-    # -- per-type payload fields ------------------------------------------
     w("## Per-type payload fields")
     w("")
     w("For each block type, every contributing event dataclass and its fields "
@@ -411,7 +392,6 @@ def render_markdown() -> str:
                 w(f"  {line}")
         w("")
 
-    # -- synthesized envelopes --------------------------------------------
     w("## Synthesized envelopes")
     w("")
     w("`done` and `error` are not folded from events — they are synthesized at the "
@@ -447,7 +427,6 @@ def render_markdown() -> str:
     w("```")
     w("")
 
-    # -- voice + media semantics -------------------------------------------
     w("## Voice + media semantics")
     w("")
     w("`voice` is speakable narration text, not audio: the model narrates inline, the "
@@ -474,7 +453,6 @@ def render_markdown() -> str:
       "private hosts) before emission — the product may render it directly.")
     w("")
 
-    # -- fail-open rule ----------------------------------------------------
     w("## Fail-open rule (the SDK must mirror it)")
     w("")
     w("`passes_gates()` returns `True` for any block `type` it does not recognize "
@@ -483,7 +461,6 @@ def render_markdown() -> str:
       "passes through to the consumer rather than being discarded.")
     w("")
 
-    # -- error contract ----------------------------------------------------
     w("## ErrorCode contract")
     w("")
     w("Every `ErrorCode` and its `(http_status, retryable, default message)` from "
@@ -494,7 +471,6 @@ def render_markdown() -> str:
     for code in ErrorCode:
         meta = ERROR_META.get(code)
         if meta is None:
-            # Every code should have meta; surface a gap loudly rather than hide it.
             w(f"| `{code.value}` | — | — | *(no ERROR_META entry)* |")
             continue
         status, retryable, message = meta
@@ -503,10 +479,6 @@ def render_markdown() -> str:
 
     return "\n".join(out) + "\n"
 
-
-# ---------------------------------------------------------------------------
-# render_fixtures — one SSE frame per type + done + error, pure + deterministic.
-# ---------------------------------------------------------------------------
 
 def render_fixtures() -> list[str]:
     """One SSE frame string per block type (in BLOCK_TYPES order), then a
@@ -546,10 +518,6 @@ def error_fixture_frame() -> str:
     block.ts = FIXED_TS
     return sse_frame(block, FIXED_SEQ)
 
-
-# ---------------------------------------------------------------------------
-# main — write the artifacts.
-# ---------------------------------------------------------------------------
 
 def main() -> None:
     os.makedirs(os.path.dirname(FIXTURES_PATH), exist_ok=True)

@@ -35,8 +35,6 @@ sigint_count: int = 0
 failsafe_handle: asyncio.TimerHandle | None = None
 drain_callbacks: list[Callable[[], Awaitable[None]]] = []
 handlers_installed: bool = False
-# None = exception handlers not installed.  sys.excepthook is always set
-# to a non-None callable by the runtime, so None is a safe sentinel.
 prior_excepthook: Callable[..., None] | None = None
 
 
@@ -77,14 +75,13 @@ def setup_signal_handlers(register_sigint: bool = True) -> None:
             if loop.is_running():
                 loop.create_task(graceful_shutdown(exit_code))
             else:
-                # No loop running (e.g., pre-boot signal) — just exit
                 sys.exit(exit_code)
         except RuntimeError:
             sys.exit(exit_code)
 
     def handle_sigterm(signum: int, frame: object) -> None:
         logger.info("SIGTERM received — initiating graceful shutdown")
-        schedule_shutdown(143)  # 128 + 15
+        schedule_shutdown(143)
 
     def handle_sigint(signum: int, frame: object) -> None:
         global sigint_count
@@ -97,7 +94,7 @@ def setup_signal_handlers(register_sigint: bool = True) -> None:
 
     def handle_sighup(signum: int, frame: object) -> None:
         logger.info("SIGHUP received — initiating graceful shutdown")
-        schedule_shutdown(129)  # 128 + 1
+        schedule_shutdown(129)
 
     signal.signal(signal.SIGTERM, handle_sigterm)
     if register_sigint:
@@ -163,7 +160,6 @@ def install_exception_handlers() -> None:
         if loop.get_exception_handler() is not asyncio_exception_handler:
             loop.set_exception_handler(asyncio_exception_handler)
     except RuntimeError:
-        # No running loop — caller should re-invoke once a loop exists.
         pass
 
     logger.debug("Exception handlers installed (sys.excepthook + asyncio)")
@@ -182,16 +178,12 @@ async def graceful_shutdown(exit_code: int = 0) -> None:
 
     logger.info("Graceful shutdown started (exit_code=%d)", exit_code)
 
-    # Arm failsafe: max(5s, number_of_cleanup_fns * per_fn_timeout + 3.5s).
-    # Ensures the process always exits even if a cleanup deadlocks.
     from src.infra.cleanup_registry import cleanup_count
 
     cleanup_budget = cleanup_count() * 2.0
     failsafe_delay = max(5.0, cleanup_budget + 3.5)
     arm_failsafe(exit_code, failsafe_delay)
 
-    # Run pre-shutdown drain callbacks (SSE queue sentinel, input resolution).
-    # Each callback is bounded at 30s; failures are logged and skipped.
     for cb in drain_callbacks:
         try:
             await asyncio.wait_for(cb(), timeout=30.0)
@@ -200,7 +192,6 @@ async def graceful_shutdown(exit_code: int = 0) -> None:
         except Exception as e:
             logger.warning("drain callback failed: %s", e)
 
-    # Run infra cleanup registry in LIFO order (2s per function).
     from src.infra.cleanup_registry import run_cleanups
 
     await run_cleanups()

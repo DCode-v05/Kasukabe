@@ -36,8 +36,6 @@ def test_roll_death_false_when_draw_above_scaled_probability() -> None:
 
 
 def test_roll_death_probability_is_capped_at_one() -> None:
-    # base_probability * multiplier can exceed 1.0; must still clamp so a
-    # too-eager multiplier never becomes a >100% chance.
     dials = PopulationDials(death_hazard_multiplier=5.0)
     assert roll_death(AlwaysDies(), base_probability=0.5, dials=dials) is True
 

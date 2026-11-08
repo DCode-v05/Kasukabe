@@ -59,17 +59,10 @@ async def booted_under_the_scenario(tmp_path: Path):
         if getattr(runner.config, f, None) is not None
     })
     await runner.boot(resume=False)
-    # `civic_notice_for` reads `charter_cache`, which `charter_tick` fills
-    # once a tick and which is empty at boot - so a notice read straight
-    # after booting is None, for a seat-holder and everyone else alike.
-    # One tick is what a resident would have had before its first turn.
     from world.core.clock import timestamp_for
 
     await runner.charter_tick(timestamp_for(runner.config.start_tick))
     return runner
-
-
-# ── the line itself ─────────────────────────────────────────────────────
 
 
 def test_a_seat_holder_is_told_the_seat_and_the_verbs():
@@ -119,9 +112,6 @@ def test_the_line_states_what_a_seat_may_do_and_never_what_to_do():
         assert not leaked, f"the notice tells a seat-holder what to do: {leaked}"
         for plan in ("you must", "you need to", "go and", "make sure"):
             assert plan not in text, f"{plan!r} is an instruction, not a fact"
-
-
-# ── it reaches a real seat-holder ───────────────────────────────────────
 
 
 @pytest.mark.asyncio

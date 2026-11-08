@@ -131,11 +131,6 @@ async def run(bundle: dict, stores: dict) -> dict:
     )
 
 
-# ---------------------------------------------------------------------------
-# Baseline: clean bundle imports fully
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_clean_bundle_imports_successfully(stores):
     db = stores["_db"]
@@ -151,11 +146,6 @@ async def test_clean_bundle_imports_successfully(stores):
     assert int(ks_count or 0) == 1
 
 
-# ---------------------------------------------------------------------------
-# Soul trait guard
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_secret_in_soul_trait_value_raises(stores):
     db = stores["_db"]
@@ -169,7 +159,6 @@ async def test_secret_in_soul_trait_value_raises(stores):
     assert FAKE_AWS not in str(exc_info.value)
     assert exc_info.value.where == "portability-import-soul"
 
-    # No soul trait written.
     trait_count = await db.fetchval("SELECT count(*) FROM evolved_soul")
     assert int(trait_count or 0) == 0
 
@@ -184,11 +173,6 @@ async def test_secret_in_soul_trait_name_raises(stores):
 
     assert "GitHub PAT" in str(exc_info.value)
     assert exc_info.value.where == "portability-import-soul"
-
-
-# ---------------------------------------------------------------------------
-# Episode guard
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
@@ -219,11 +203,6 @@ async def test_secret_in_episode_description_raises(stores):
     assert exc_info.value.where == "portability-import-episode"
 
 
-# ---------------------------------------------------------------------------
-# Knowledge guard
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_secret_in_knowledge_content_raises(stores):
     db = stores["_db"]
@@ -250,11 +229,6 @@ async def test_secret_in_knowledge_subject_raises(stores):
 
     assert "GitHub PAT" in str(exc_info.value)
     assert exc_info.value.where == "portability-import-knowledge"
-
-
-# ---------------------------------------------------------------------------
-# Social graph node guard
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
@@ -311,17 +285,11 @@ async def test_secret_in_node_name_raises(stores):
     assert exc_info.value.where == "portability-import-social-node"
 
 
-# ---------------------------------------------------------------------------
-# Social graph edge guard
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_secret_in_edge_user_perspective_raises(stores):
     """Edge guard fires even when node ref exists; no edge is written."""
     db = stores["_db"]
     bundle = clean_bundle()
-    # Add a second node so the edge has valid refs.
     bundle["social_graph"]["nodes"].append(make_node("node-2", "Bob"))
     bundle["social_graph"]["edges"].append(
         make_edge(
@@ -360,11 +328,6 @@ async def test_secret_in_edge_contexts_raises(stores):
     assert exc_info.value.where == "portability-import-social-edge"
 
 
-# ---------------------------------------------------------------------------
-# where label correctness — verifies the scanner reports the right site
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "section,field,value,expected_where",
@@ -387,7 +350,6 @@ async def test_where_label_identifies_correct_section(
 
     if section == "soul_trait_value":
         bundle["evolved_soul"][0]["value"] = f"cred: {FAKE_AWS}"
-        # Clear other sections so we hit this one first.
         bundle["episodes"] = []
         bundle["knowledge"] = []
         bundle["social_graph"] = {"nodes": [], "edges": []}
@@ -414,18 +376,12 @@ async def test_where_label_identifies_correct_section(
     assert exc_info.value.where == expected_where
 
 
-# ---------------------------------------------------------------------------
-# Atomicity — pre-scan rejects the *whole* bundle, no partial writes
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_secret_in_last_record_writes_nothing(stores):
     """A secret in the final record of a multi-record bundle must roll back
     every prior section — no episodes, no knowledge, no traits, no nodes."""
     db = stores["_db"]
     bundle = clean_bundle()
-    # Add a second clean episode so we have 2 episodes, 1 with a secret.
     bundle["episodes"].append(
         {
             "key": "second-clean",
@@ -435,7 +391,6 @@ async def test_secret_in_last_record_writes_nothing(stores):
             "created_at": None,
         }
     )
-    # Add a clean knowledge entry then a poisoned one — secret is at the end.
     bundle["knowledge"].append(
         make_knowledge(
             "rotation policy",
@@ -447,7 +402,6 @@ async def test_secret_in_last_record_writes_nothing(stores):
         await run(bundle, stores)
     assert exc_info.value.where == "portability-import-knowledge"
 
-    # Critical: every prior section must be empty. Pre-scan rejects atomically.
     assert int(await db.fetchval("SELECT count(*) FROM evolved_soul") or 0) == 0
     assert int(await db.fetchval("SELECT count(*) FROM episodes") or 0) == 0
     assert int(await db.fetchval("SELECT count(*) FROM knowledge_store") or 0) == 0
@@ -489,5 +443,4 @@ async def test_first_matching_section_wins_where_label(stores):
 
     with pytest.raises(SecretDetectedError) as exc_info:
         await run(bundle, stores)
-    # Episodes scanned before knowledge → episode is the reported site.
     assert exc_info.value.where == "portability-import-episode"

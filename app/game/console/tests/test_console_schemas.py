@@ -95,7 +95,7 @@ def test_spend_status_rejects_pools_that_do_not_sum_to_budget() -> None:
     with pytest.raises(ValidationError):
         SpendStatusView(
             burned_usd_cents=100,
-            treasury_usd_cents=49_000,  # off by 900 - invariant violated
+            treasury_usd_cents=49_000,
             wallets_usd_cents=50_000,
             budget_total_usd_cents=100_000,
             tick_index=1,

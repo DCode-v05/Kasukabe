@@ -53,21 +53,11 @@ from __future__ import annotations
 
 from typing import Any
 
-# tool -> {what a resident wrote: what the tool calls it}
-#
-# Every entry below was observed in a real session log. Adding one that
-# was not is how a synonym table becomes a guessing layer: a resident
-# that writes `price` for `bid_sim` and gets `ask_sim` has been silently
-# misunderstood, which is the defect this module exists to end.
 SYNONYMS: dict[str, dict[str, str]] = {
     "post_price": {
-        # The run-killer. Five residents, every one of them.
         "business_id": "on_behalf_of_business",
         "business": "on_behalf_of_business",
         "for_business": "on_behalf_of_business",
-        # "price" alone is ambiguous between ask and bid - but every
-        # observed use was a seller pricing its own stock, and the tool
-        # refuses when both are absent anyway.
         "price": "ask_sim",
         "price_sim": "ask_sim",
         "sell_price": "ask_sim",
@@ -106,10 +96,6 @@ SYNONYMS: dict[str, dict[str, str]] = {
         "from_agent_id": "seller_id",
         "seller_agent_id": "seller_id",
         "seller": "seller_id",
-        # 25 recorded successes wrote this, and `seller_id` has always been
-        # allowed to name a business - "A4 lets seller_id/buyer_id be a
-        # business OR a co-located person" (primitives/commerce.py). The
-        # resident named the right thing in the wrong word.
         "business_id": "seller_id",
         "shop_id": "seller_id",
         "qty": "quantity",
@@ -118,8 +104,6 @@ SYNONYMS: dict[str, dict[str, str]] = {
         "to_agent_id": "buyer_id",
         "buyer_agent_id": "buyer_id",
         "buyer": "buyer_id",
-        # The commonest spelling in the whole corpus: 57 recorded successes
-        # naming the shop being sold to. Same rule as `buy` above.
         "business_id": "buyer_id",
         "shop_id": "buyer_id",
         "qty": "quantity",
@@ -139,8 +123,6 @@ SYNONYMS: dict[str, dict[str, str]] = {
     "describe_place": {"place": "place_id", "location_id": "place_id",
                        "name": "place_id"},
     "quote_action_cost": {
-        # `params` for `call_params`, written once in a smoke run and
-        # refused. The shorter word is the one a model reaches for.
         "params": "call_params",
         "arguments": "call_params",
         "args": "call_params",
@@ -166,9 +148,6 @@ def repair(tool_name: str, raw: dict[str, Any]) -> tuple[dict[str, Any], list[st
     for key, value in raw.items():
         target = table.get(key)
         if target is None or target in raw:
-            # `target in raw` - the resident gave the real name too, so
-            # its own value wins and the synonym is dropped rather than
-            # overwriting it.
             out[key] = value
             continue
         out[target] = value
@@ -184,9 +163,5 @@ def unknown_parameters(params_model: Any, raw: dict[str, Any]) -> list[str]:
     """
     if not isinstance(raw, dict):
         return []
-    # Direct, not a three-argument getattr: every `ToolSpec.params_model`
-    # is a pydantic model and always has `model_fields`. A default here
-    # could only ever hide a rename, and would silently switch this whole
-    # guard off - which is the defect it exists to prevent.
     fields = set(params_model.model_fields)
     return sorted(key for key in raw if key not in fields)

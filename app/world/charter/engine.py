@@ -59,7 +59,5 @@ async def create_genesis_charter_engine(
     "the clock is running"), not something this factory should assume.
     """
     store = CharterStore()
-    # GROW-12: None keeps the documented default - seats vacant until
-    # the first election. A genesis file that names a caretaker gets one.
     await seed_genesis(store, genesis_tick, event_sink, caretaker_pm_agent_id, charter_fields)
     return CharterEngine(store, event_sink)

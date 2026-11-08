@@ -31,27 +31,18 @@ if TYPE_CHECKING:
     from src.memory.soul import Soul
 
 
-# ── Prompt section types ───────────────────────────────────────────
-
-
 class SectionStability(Enum):
     """How cacheable a prompt section is across turns."""
 
-    STABLE = "stable"  # compute once per session, scope=global, global_cache_ttl (default 1h)
-    DYNAMIC = "dynamic"  # compute once per session, ephemeral only
-    VOLATILE = "volatile"  # recompute every turn
+    STABLE = "stable"
+    DYNAMIC = "dynamic"
+    VOLATILE = "volatile"
 
 
 DYNAMIC_BOUNDARY = "__SYSTEM_PROMPT_DYNAMIC_BOUNDARY__"
 
 logger = logging.getLogger(__name__)
 
-# Soul source-of-truth: the catalog volume (set by bootstrap via
-# set_core_soul()). The packaged copy under src/engine_core/core_soul.json
-# is a dev/test fallback only — loaded at import so tests that import
-# consciousness without running bootstrap still see *some* soul. In a
-# deployed container the catalog mount overrides it before any request
-# is served. The two files MUST stay in sync; CI should diff them.
 CORE_SOUL_PATH = Path(__file__).resolve().parent.parent / "engine_core" / "core_soul.json"
 CORE_SOUL: dict[str, Any] = {}
 try:
@@ -228,18 +219,8 @@ class ConsciousnessManager:
         self.social_graph = social_graph
         self.episodic = episodic_memory
         self.knowledge = knowledge_store
-        # TTL written on the global (cross-user) cacheable prompt prefix.
-        # Default "1h" preserves prior behavior; bootstrap passes
-        # settings.global_cache_ttl so deploys with short one-off contexts
-        # can drop to "5m" (1.25x cache-write vs 2x for 1h). The value is the
-        # same for every turn in a session, so the cache-break detector's
-        # ttl-aware hash (prompt_cache_break_detection.record_prompt_state)
-        # stays stable — no false SERVER_TTL/content breaks.
         self.global_cache_ttl = global_cache_ttl
         self.cache: dict[str, ConsciousnessContext] = {}
-        # Prompt section state — consciousness owns the section lifecycle.
-        # Sections are registered once by the thread, memoized per stability
-        # class, and invalidated alongside consciousness on compact/clear.
         self.sections: list[tuple[str, SectionStability, Callable[[], str]]] = []
         self.section_cache: dict[str, str] = {}
 
@@ -276,7 +257,6 @@ class ConsciousnessManager:
         self.cache.clear()
         self.section_cache.clear()
 
-    # ── Prompt section lifecycle ────────────────────────────────────
 
     def register_section(
         self,

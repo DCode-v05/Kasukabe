@@ -9,16 +9,16 @@ from broker.errors import ModelNotAllowedError
 
 @pytest.mark.parametrize("model_id", MODEL_ALLOWLIST)
 def test_allowed_models_pass(model_id: str) -> None:
-    check_model_allowed(model_id)  # must not raise
+    check_model_allowed(model_id)
 
 
 @pytest.mark.parametrize(
     "model_id",
     [
         "anthropic.claude-3-opus",
-        "moonshotai.kimi-k2",  # close but not exact
-        "MOONSHOTAI.KIMI-K2.5",  # case must match exactly
-        "deepseek.v3.2 ",  # trailing whitespace is a different string
+        "moonshotai.kimi-k2",
+        "MOONSHOTAI.KIMI-K2.5",
+        "deepseek.v3.2 ",
         "",
     ],
 )

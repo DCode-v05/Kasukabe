@@ -41,7 +41,7 @@ def test_location_index_remove() -> None:
 
 def test_location_index_remove_unknown_agent_is_noop() -> None:
     index = LocationIndex()
-    index.remove("ghost")  # must not raise
+    index.remove("ghost")
 
 
 def test_location_index_snapshot_restore_round_trip() -> None:
@@ -97,7 +97,7 @@ async def test_location_index_ignores_malformed_event(caplog: pytest.LogCaptureF
     index.attach(bus)
 
     with caplog.at_level(logging.WARNING):
-        await bus.emit("agent.moved", tick=1, payload={"agent_id": "a1"})  # no location_id
+        await bus.emit("agent.moved", tick=1, payload={"agent_id": "a1"})
 
     assert index.location_of("a1") is None
     assert "location_id" in caplog.text
@@ -212,7 +212,7 @@ async def test_perception_respects_hearing_window() -> None:
     await bus.emit("business.contract.won", tick=3, payload={"location_id": "cafe"})
 
     assert len(system.build_perception("a1", tick=3).heard_events) == 1
-    assert system.build_perception("a1", tick=4).heard_events == []  # outside the 1-tick window
+    assert system.build_perception("a1", tick=4).heard_events == []
 
 
 def test_perception_system_rejects_zero_hearing_window() -> None:
@@ -227,7 +227,7 @@ def test_perception_ambient_matches_clock_calendar() -> None:
     locations = LocationIndex()
     system = PerceptionSystem(locations, bus)
 
-    perception = system.build_perception("a1", tick=144)  # exactly one day elapsed
+    perception = system.build_perception("a1", tick=144)
 
     assert perception.ambient.game_day == 1
     assert perception.ambient.hour == 0
@@ -240,7 +240,7 @@ async def test_perception_attach_interrupts_scheduler_on_targeted_event() -> Non
     locations = LocationIndex()
     system = PerceptionSystem(locations, bus)
     scheduler = AgentScheduler(SchedulerConfig(target_fraction=1 / 10))
-    scheduler.register_agent("victim", current_tick=0)  # next_decision_tick=1, not due at tick 0
+    scheduler.register_agent("victim", current_tick=0)
     system.attach(scheduler)
 
     assert scheduler.due_agents(0) == []
@@ -256,7 +256,7 @@ async def test_perception_attach_ignores_events_naming_nobody() -> None:
     locations = LocationIndex()
     system = PerceptionSystem(locations, bus)
     scheduler = AgentScheduler(SchedulerConfig(target_fraction=1 / 10))
-    scheduler.register_agent("bystander", current_tick=0)  # next_decision_tick=1
+    scheduler.register_agent("bystander", current_tick=0)
     system.attach(scheduler)
 
     await bus.emit("world.tick.advanced", tick=0, payload={"game_day": 0})

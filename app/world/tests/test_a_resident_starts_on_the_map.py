@@ -66,4 +66,4 @@ async def test_a_town_with_no_map_still_boots(tmp_path, monkeypatch):
     runner = _runner(tmp_path)
     await runner.boot()
     runner.map_service = None
-    runner.stand_them_on_a_tile("n01", "home:h_quarry")   # must not raise
+    runner.stand_them_on_a_tile("n01", "home:h_quarry")

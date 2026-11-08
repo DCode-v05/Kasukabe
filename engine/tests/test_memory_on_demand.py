@@ -40,9 +40,6 @@ class _Pipeline:
         return {"batch": self.runs}
 
 
-# ── the cadence: learning that does not wait for a night ──────────────
-
-
 def test_the_sleep_edge_still_runs_a_batch() -> None:
     """The behaviour that already existed must not regress: falling asleep
     is still the moment a day is consolidated."""
@@ -107,17 +104,11 @@ def test_a_batch_that_raises_does_not_end_the_turn() -> None:
         assert asyncio.run(gate.on_tick(False)) is None
 
 
-# ── memory on demand: the second question ─────────────────────────────
-
-
 def test_the_tool_exists_and_is_read_only() -> None:
     from src.sim.memory_query import build_search_memory_tool
 
     spec = build_search_memory_tool(search=None)
     assert spec.name == "search_memory"
-    # Both are PREDICATES in this engine - `Callable[[dict], bool]` - not
-    # flags, so that a tool can be read-only for one input and not another.
-    # `search_memory` is read-only for every input there is.
     assert spec.is_read_only({}) is True
     assert spec.is_concurrency_safe({}) is True, (
         "a read-only recall that serialises a parallel batch is a bottleneck "
@@ -157,13 +148,6 @@ def test_it_returns_what_the_frozen_retrieval_returns() -> None:
     search = _Search()
     spec = build_search_memory_tool(search=search)
     out = asyncio.run(spec.handler({"query": "who buys planks"}))
-    # ENG-15: the raw question no longer reaches FTS5. It was read there
-    # as query SYNTAX, not words - an apostrophe or a question mark was a
-    # syntax error, and a colon made the token before it a column name.
-    # Every one of those was swallowed into "Nothing in memory matches
-    # that", so a resident asking its own memory a plain question was told
-    # it had no such memory. This test asserted the raw string went
-    # through, which is exactly the behaviour the finding is about.
     assert search.asked == ['"who" OR "buys" OR "planks"']
     assert "planks" in out
 

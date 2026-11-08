@@ -28,7 +28,6 @@ from dataclasses import dataclass, field
 
 logger = logging.getLogger(__name__)
 
-# ── Landlock constants (linux/landlock.h) ──────────────────────────
 
 LANDLOCK_ACCESS_FS_EXECUTE = 1 << 0
 LANDLOCK_ACCESS_FS_WRITE_FILE = 1 << 1
@@ -43,10 +42,9 @@ LANDLOCK_ACCESS_FS_MAKE_SOCK = 1 << 9
 LANDLOCK_ACCESS_FS_MAKE_FIFO = 1 << 10
 LANDLOCK_ACCESS_FS_MAKE_BLOCK = 1 << 11
 LANDLOCK_ACCESS_FS_MAKE_SYM = 1 << 12
-LANDLOCK_ACCESS_FS_REFER = 1 << 13  # ABI v2
-LANDLOCK_ACCESS_FS_TRUNCATE = 1 << 14  # ABI v3
+LANDLOCK_ACCESS_FS_REFER = 1 << 13
+LANDLOCK_ACCESS_FS_TRUNCATE = 1 << 14
 
-# Convenience bitmasks
 FS_READ_ONLY = (
     LANDLOCK_ACCESS_FS_EXECUTE | LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_READ_DIR
 )
@@ -60,9 +58,8 @@ FS_READ_WRITE = (
     | LANDLOCK_ACCESS_FS_MAKE_SYM
     | LANDLOCK_ACCESS_FS_TRUNCATE
 )
-FS_ALL_V1 = (1 << 13) - 1  # All v1 access rights (bits 0-12)
+FS_ALL_V1 = (1 << 13) - 1
 
-# Landlock syscall numbers
 SYSCALL_LANDLOCK_CREATE_RULESET = {"x86_64": 444, "aarch64": 444}
 SYSCALL_LANDLOCK_ADD_RULE = {"x86_64": 445, "aarch64": 445}
 SYSCALL_LANDLOCK_RESTRICT_SELF = {"x86_64": 446, "aarch64": 446}
@@ -75,7 +72,7 @@ class LandlockRule:
     """A filesystem access rule."""
 
     path: str
-    access: int  # bitmask of LANDLOCK_ACCESS_FS_* constants
+    access: int
 
 
 @dataclass
@@ -83,7 +80,7 @@ class LandlockProfile:
     """A set of Landlock rules."""
 
     rules: list[LandlockRule] = field(default_factory=list)
-    handled_access: int = FS_ALL_V1  # bitmask of access rights the ruleset handles
+    handled_access: int = FS_ALL_V1
 
 
 def is_linux() -> bool:
@@ -122,7 +119,6 @@ def detect_landlock_abi_version() -> int:
     try:
         libc = ctypes.CDLL("libc.so.6", use_errno=True)
         nr = SYSCALL_LANDLOCK_CREATE_RULESET[arch]
-        # landlock_create_ruleset(NULL, 0, LANDLOCK_CREATE_RULESET_VERSION)
         abi = libc.syscall(nr, 0, 0, LANDLOCK_CREATE_RULESET_VERSION)
         if abi < 0:
             landlock_abi_cached = 0
@@ -161,24 +157,19 @@ def default_sandbox_profile(workspace: str, runtimes_path: str | None = None) ->
     """
     rules: list[LandlockRule] = []
 
-    # Workspace: full read-write
     rules.append(LandlockRule(path=workspace, access=FS_READ_WRITE))
 
-    # System libs: read + execute
     for path in ["/usr", "/lib", "/bin"]:
         if os.path.exists(path):
             rules.append(LandlockRule(path=path, access=FS_READ_ONLY))
     if os.path.exists("/lib64"):
         rules.append(LandlockRule(path="/lib64", access=FS_READ_ONLY))
 
-    # Bundled runtimes: read + execute
     if runtimes_path and os.path.exists(runtimes_path):
         rules.append(LandlockRule(path=runtimes_path, access=FS_READ_ONLY))
 
-    # Temp: read-write
     rules.append(LandlockRule(path="/tmp", access=FS_READ_WRITE))
 
-    # Dev: read only (for /dev/null, /dev/urandom)
     rules.append(
         LandlockRule(
             path="/dev",
@@ -186,7 +177,6 @@ def default_sandbox_profile(workspace: str, runtimes_path: str | None = None) ->
         )
     )
 
-    # Proc: read only
     rules.append(
         LandlockRule(
             path="/proc",
@@ -194,13 +184,6 @@ def default_sandbox_profile(workspace: str, runtimes_path: str | None = None) ->
         )
     )
 
-    # handled_access must be a SUPERSET of every bit used by any rule —
-    # Landlock's add_rule syscall returns EINVAL otherwise. We compute the
-    # union from the rules so future additions can't drift out of sync.
-    # FS_READ_WRITE includes ABI v3 bits like LANDLOCK_ACCESS_FS_TRUNCATE
-    # (bit 14), which is outside FS_ALL_V1 (bits 0-12). The kernel will
-    # silently ignore bits it doesn't support, so it's safe to include
-    # them in handled_access on older kernels too.
     handled = 0
     for rule in rules:
         handled |= rule.access
@@ -340,6 +323,5 @@ def landlock_bwrap_integration(
         logger.warning("landlock: failed to write wrapper: %s", e)
         return None
 
-    # Inside bwrap, workspace is mounted at /workspace
     sandbox_wrapper = "/workspace/.landlock_wrapper.py"
     return [python_bin, sandbox_wrapper] + original_cmd

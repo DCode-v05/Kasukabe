@@ -18,11 +18,11 @@ async def test_single_heir_receives_the_full_estate() -> None:
 
     transactions = await ledger.settle_inheritance("deceased", ["heir"], tick=10)
 
-    assert ledger.usd_balance("heir") == 400  # own 200 + inherited 200
-    assert ledger.sim_balance("heir") == 2_000  # own 1,000 + inherited 1,000
+    assert ledger.usd_balance("heir") == 400
+    assert ledger.sim_balance("heir") == 2_000
     assert ledger.usd_balance("deceased") == 0
     assert ledger.sim_balance("deceased") == 0
-    assert len(transactions) == 2  # one USD leg, one SIM leg
+    assert len(transactions) == 2
 
 
 @pytest.mark.asyncio
@@ -34,9 +34,6 @@ async def test_estate_splits_evenly_across_heirs() -> None:
 
     await ledger.settle_inheritance("deceased", ["heir1", "heir2", "heir3"], tick=10)
 
-    # 201 // 3 = 67 each, remainder 201 - 3*67 = 0, so treasury sees
-    # nothing here; the uneven-split case with a real remainder is
-    # test_estate_remainder_escheats_when_split_is_uneven below.
     assert ledger.usd_balance("heir1") == 201 + 67
     assert ledger.usd_balance("heir2") == 201 + 67
     assert ledger.usd_balance("heir3") == 201 + 67
@@ -48,8 +45,6 @@ async def test_estate_remainder_escheats_when_split_is_uneven() -> None:
     ledger = await build_genesis_ledger(
         ["deceased", "heir1", "heir2", "heir3"], agent_usd_cents=200, sim_per_agent=100
     )
-    # deceased's sim (100) does not divide evenly by 3 heirs: 100 // 3 =
-    # 33 each, remainder 1.
     treasury_sim_before = ledger.sim_balance(TREASURY_ACCOUNT_ID)
 
     await ledger.settle_inheritance("deceased", ["heir1", "heir2", "heir3"], tick=10)
@@ -106,7 +101,6 @@ async def test_unknown_heir_raises_before_any_money_moves() -> None:
     with pytest.raises(AccountNotFoundError):
         await ledger.settle_inheritance("deceased", ["nobody"], tick=10)
 
-    # Nothing moved: the deceased account still holds its full estate.
     assert ledger.usd_balance("deceased") == 200
     assert ledger.sim_balance("deceased") == 500
     assert ledger.get_account("deceased").closed is False

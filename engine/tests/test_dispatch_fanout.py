@@ -23,8 +23,6 @@ from src.engine_core.events import TextDelta
 from src.engine_core.schema import Dispatch, DispatchSegment, ThreadIndexEntry
 
 
-# Gates every segment ran under, in completion order: (thread_id, gates).
-# Reset per coordinator by make_coordinator.
 GATES_LOG: list = []
 
 
@@ -148,7 +146,6 @@ class TestFanOut:
         assert len(coord.execution_log) == 3
         assert ("thread-a", "ask one") in coord.execution_log
         assert ("thread-b", "ask three") in coord.execution_log
-        # The open segment ran on a freshly minted thread.
         new_runs = [r for r in coord.execution_log if r[1] == "ask two"]
         assert len(new_runs) == 1 and new_runs[0][0] not in ("thread-a", "thread-b")
         assert "done:" in result
@@ -169,7 +166,6 @@ class TestFanOut:
         start = asyncio.get_event_loop().time()
         await coord.handle_input("one and two")
         elapsed = asyncio.get_event_loop().time() - start
-        # Two 50ms turns: parallel finishes near 50ms, serial near 100ms.
         assert elapsed < 0.09, f"turns serialized ({elapsed:.3f}s)"
 
     @pytest.mark.asyncio
@@ -301,7 +297,6 @@ class TestReturnedVerdicts:
         assert len(routing) == 1
         verdicts = [s["verdict"] for s in routing[0].segments]
         assert verdicts == ["open", "claimed"]
-        # Engine-origin: speaks for the engine, not for a thread.
         assert routing[0].thread_id == ""
 
 
@@ -328,7 +323,6 @@ class TestStatusVerdict:
 
         assert coord.execution_log == []
         assert "in flight" in answer
-        # The MAIN adapter wrote it, and it was told never to expose internals.
         assert coord.adapter.prompts
         system_text = coord.adapter.prompts[0][1][0].text
         assert "one voice" in system_text.lower()

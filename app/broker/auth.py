@@ -61,24 +61,6 @@ def sign_agent_token(agent_id: str, secret: str) -> str:
     return f"{agent_id}.{mac}"
 
 
-# INFRA-05. Which peers may use an UNSIGNED credential.
-#
-# With no AUTH_SHARED_SECRET the broker trusts the bearer token's agent_id
-# field as-is, so any process that can open a socket to it can bill any
-# resident's wallet by naming them. The comment on
-# `BrokerSettings.auth_shared_secret` justifies that default as correct
-# "for the current single-host deployment ... there is no network boundary
-# between herald and broker to defend against yet".
-#
-# That is a sound argument and nothing enforced it.
-# `infra/systemd/kasukabe-broker.service` binds `0.0.0.0:8200` for the
-# microVM bridge, and `start-genesis.sh` runs uvicorn with
-# `--host 0.0.0.0`, so the premise was false on both of the deployments
-# that exist.
-#
-# Enforced against the ACTUAL PEER rather than against a mirrored copy of
-# the bind address: a setting that restates the truth without being the
-# truth is its own defect, and there is nothing here to keep in sync.
 LOOPBACK_PEERS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
 
 
@@ -98,12 +80,6 @@ def resolve_agent_id(
     token = extract_bearer_token(headers)
 
     if not auth_shared_secret:
-        # INFRA-05: unsigned is a LOCAL convenience, not a deployment mode.
-        # `peer=None` means the caller did not say, which is every existing
-        # in-process caller and every test - those are local by
-        # construction. A caller that knows the peer and reports a remote
-        # one is refused, because on that path naming a resident is the
-        # whole of the authentication.
         if peer is not None and peer not in LOOPBACK_PEERS:
             raise AuthenticationError(
                 f"unsigned credentials are accepted from this host only, and "

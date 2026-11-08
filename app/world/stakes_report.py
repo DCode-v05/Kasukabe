@@ -28,23 +28,6 @@ from typing import Any, Iterable, Mapping, Sequence
 from world.core.clock import TICKS_PER_DAY
 from world.task_label import label_for_turn
 
-# ── the task label (evaluation spec section 4) ────────────────────────
-#
-# C1 - "median tokens per turn, per task label, per resident: day 5 vs
-# day 1" - cannot be measured without one, and no turn carried one.
-#
-# Assigned DETERMINISTICALLY FROM THE TRACE, never by a model. A label a
-# model assigns is a second thing to validate, and a learning-curve
-# measurement whose x-axis is itself a model output is not a measurement.
-
-# EVAL-04. The four tool-class literals that used to live here are gone.
-# They were a second, drifting copy of `world/task_label.py`'s sets -
-# `LOOK_TOOLS` had no `move` and no `rest`, so identical turns were
-# labelled differently depending on which module asked. The categories now
-# have one home, derived from `DEFAULT_SCHEDULE` rather than restated, so
-# a tool added to the town is classified without anybody remembering to
-# update a literal here as well.
-
 
 def task_label(
     tools_called: Sequence[str],
@@ -76,9 +59,6 @@ def task_label(
         continuing_tool=continuing_tool,
         intention_tool=intention_tool,
     )
-
-
-# ── the report sections ───────────────────────────────────────────────
 
 
 def _payload(event: Mapping[str, Any]) -> Mapping[str, Any]:
@@ -150,7 +130,6 @@ class PriceReport:
     first_post_tick: int | None
     posts: int
     withdrawals: int
-    # item -> day -> [ask, ...] across every holder that priced it
     asks_by_item_by_day: dict[str, dict[int, list[int]]] = field(default_factory=dict)
     sales_at_a_posted_price: int = 0
     sales_at_a_spoken_price: int = 0
@@ -238,8 +217,6 @@ def stakes(events: Sequence[Mapping[str, Any]]) -> StakesReport:
         dormant_agents={str(_payload(e).get("agent_id")) for e in dormant},
         revivals=len(revived),
         revivals_by_household=household,
-        # S4 asks for the household-versus-stranger split, and Engel 2011's
-        # dictator-game mean of about 28% is the figure it sits beside.
         revivals_by_stranger=len(revived) - household,
         revival_payers={str(_payload(e).get("payer_id")) for e in revived},
     )
@@ -345,11 +322,6 @@ class DiffusionReport:
     teachings: int
     inheritances: int
     holders_by_tool: dict[str, set[str]]
-    # A taught SKILL is diffusion too, and this report could not see one.
-    # The 50-agent run said "Nothing anybody invented reached anybody
-    # else" about a town where `Quick Harvest` was taught by its author to
-    # a second resident who then walked it 16 times: `teach_skill` emits
-    # `agent.skill.taught`, and only `business.tool.*` was ever counted.
     skill_teachings: int = 0
     holders_by_skill: dict[str, set[str]] = field(default_factory=dict)
 
@@ -414,7 +386,6 @@ def diffusion(events: Sequence[Mapping[str, Any]]) -> DiffusionReport:
 class LearningReport:
     """C1 and C5: what the town spent per task, and what it was told."""
 
-    # (resident, label) -> day -> [tokens, ...]
     tokens: dict[tuple[str, str], dict[int, list[int]]]
     corrections_emitted: int
 

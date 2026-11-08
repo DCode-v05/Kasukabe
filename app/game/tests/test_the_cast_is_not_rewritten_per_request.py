@@ -51,8 +51,6 @@ def test_the_rewrite_never_runs_for_the_cast(monkeypatch) -> None:
     from game import server
     from game.config import GameSettings
 
-    # `re.Pattern.sub` is read-only, so the pattern OBJECT is swapped for a
-    # wrapper that counts and delegates.
     calls: list[int] = []
     real = server.MODULE_IMPORT_RE
 
@@ -73,7 +71,6 @@ def test_the_rewrite_never_runs_for_the_cast(monkeypatch) -> None:
         "every request for it"
     )
 
-    # And the rewrite is still alive for the modules that need it.
     client.get("/")
     assert calls, "the module-versioning rewrite stopped running entirely"
 

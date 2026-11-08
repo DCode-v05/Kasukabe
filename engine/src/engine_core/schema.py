@@ -28,9 +28,6 @@ if TYPE_CHECKING:
     from src.engine_core.agent_summarizer import SummarizerConfig
 
 
-# --- Enums ---
-
-
 class ThreadState(str, Enum):
     INITIALIZING = "initializing"
     IDLE = "idle"
@@ -43,9 +40,6 @@ class EdgeType(str, Enum):
     DATA_DEPENDENCY = "data_dependency"
     ORDERING = "ordering"
     CONDITIONAL = "conditional"
-
-
-# --- Sub-models for per-node resource references ---
 
 
 class AgentRef(BaseModel):
@@ -81,11 +75,8 @@ class AssetRef(BaseModel):
 class ExpectedOutput(BaseModel):
     """What a node should produce — used by Coordinator for validation."""
 
-    type: str = "text"  # text, structured_data, confirmation, etc.
+    type: str = "text"
     description: str = ""
-
-
-# --- Charter-level sub-models ---
 
 
 class ModelSpec(BaseModel):
@@ -99,42 +90,34 @@ class ModelSpec(BaseModel):
     reason: str = ""
 
 
-# --- Edge condition for conditional branching ---
-
-
 class EdgeCondition(BaseModel):
     """Condition for conditional edges — evaluates against from-node output."""
 
     field: str
-    operator: str  # equals, not_equals, contains, not_contains, exists, not_exists
+    operator: str
     value: Any = None
-
-
-# --- Core schema models ---
 
 
 class Node(BaseModel):
     node_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    node_type: str = "task"  # extensible — currently only "task" nodes exist
-    label: str  # What this agent/skill does (goal for the autonomous loop)
-    todo_label: str = ""  # Short display label for progress output
+    node_type: str = "task"
+    label: str
+    todo_label: str = ""
 
-    # Per-node resource assignments (full architecture format)
     agent: AgentRef | None = None
     skills: list[SkillRef] = Field(default_factory=list)
     tools: list[ToolRef] = Field(default_factory=list)
     assets: list[AssetRef] = Field(default_factory=list)
     actions: list[str] = Field(
         default_factory=list
-    )  # AD action names for PTC (e.g. "gmail.send_email")
+    )
 
     expected_output: ExpectedOutput = Field(default_factory=ExpectedOutput)
 
-    # Per-node constraints
-    priority: str = "medium"  # high / medium / low
+    priority: str = "medium"
     timeout_ms: int = 120000
     max_retries: int = 1
-    escalation_policy: str = "never"  # always / on_error / never
+    escalation_policy: str = "never"
     model_override: ModelSpec | None = None
 
     def model_post_init(self, context: object) -> None:
@@ -143,11 +126,11 @@ class Node(BaseModel):
 
 
 class Edge(BaseModel):
-    from_node: str  # node_id of predecessor
-    to_node: str  # node_id of successor
+    from_node: str
+    to_node: str
     edge_type: EdgeType = EdgeType.ORDERING
-    data_flow: str | None = None  # what data passes along this edge
-    condition: EdgeCondition | None = None  # for conditional edges
+    data_flow: str | None = None
+    condition: EdgeCondition | None = None
 
 
 class Charter(BaseModel):
@@ -161,9 +144,6 @@ class Charter(BaseModel):
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 
-# --- DAG validation and traversal ---
-
-
 def validate_dag(charter: Charter) -> list[str]:
     """Validate charter is a proper DAG. Returns list of errors (empty = valid)."""
     errors: list[str] = []
@@ -174,19 +154,16 @@ def validate_dag(charter: Charter) -> list[str]:
 
     node_ids = {n.node_id for n in charter.nodes}
 
-    # Check edges reference valid nodes
     for edge in charter.edges:
         if edge.from_node not in node_ids:
             errors.append(f"Edge references unknown from_node: {edge.from_node}")
         if edge.to_node not in node_ids:
             errors.append(f"Edge references unknown to_node: {edge.to_node}")
 
-    # Validate conditional edges have conditions
     for edge in charter.edges:
         if edge.edge_type == EdgeType.CONDITIONAL and edge.condition is None:
             errors.append(f"Conditional edge {edge.from_node}->{edge.to_node} has no condition")
 
-    # Check for cycles via topological sort (Kahn's algorithm)
     in_degree: dict[str, int] = {nid: 0 for nid in node_ids}
     adjacency: dict[str, list[str]] = {nid: [] for nid in node_ids}
     for edge in charter.edges:
@@ -238,9 +215,6 @@ def topological_sort(charter: Charter) -> list[Node]:
     return ordered
 
 
-# --- Task-index entry for routing ---
-
-
 @dataclass
 class ThreadIndexEntry:
     """Structured summary of a persistent thread for routing decisions."""
@@ -254,32 +228,15 @@ class ThreadIndexEntry:
     recent_turns: list[str] = field(default_factory=list)
     turn_count: int = 0
     last_activity: str = ""
-    # Pinned threads are owned by the product layer: never a routing target,
-    # never reaped, waiting periods never expire. Survives restart via the
-    # conversations row.
     pinned: bool = False
 
 
-# --- Dispatch: how one input is triaged into work ---
-
-# An input is not a task. One message can carry several pieces of work, or
-# none. Triage segments it and gives each segment a verdict:
-#
-#   continue  - belongs to one existing thread (follow-up, correction, steering)
-#   open      - new work, unrelated to every thread
-#   recall    - a question about one thread's work; that thread answers it
-#   claimed   - best match is a pinned thread; the product layer owns it, so
-#               the segment is returned unexecuted for the caller to resolve
-#   contested - fits two or more threads comparably; also returned unexecuted
-#   status    - asks about the overall state of work; answered at the front
 VERDICTS = frozenset(
     {"continue", "open", "recall", "claimed", "contested", "status"}
 )
 
-# Verdicts whose segment the coordinator executes on a thread.
 EXECUTABLE_VERDICTS = frozenset({"continue", "open", "recall"})
 
-# Verdicts that name an existing thread as their target.
 TARGETED_VERDICTS = frozenset({"continue", "recall"})
 
 
@@ -309,9 +266,6 @@ class Dispatch:
     def returned(self) -> list[DispatchSegment]:
         """Segments handed back to the caller instead of executed."""
         return [s for s in self.segments if s.verdict in ("claimed", "contested")]
-
-
-# --- Loop control and exit ---
 
 
 class LoopExitReason(str, Enum):
@@ -348,16 +302,8 @@ class RequestOptions:
     super_thinking: bool = False
     permission_mode: str = "default"
     query_source: str = "foreground"
-    # Per-request output token budget (API alternative to "+500k" shorthand
-    # in the message text). Text shorthand wins when both are present.
     token_budget: int | None = None
-    # Per-request content ingestion override. When True, large media in this
-    # request is chunked even if the global CONTENT_INGESTION_ENABLED is off.
-    # When None, defers to the global flag.
     content_ingestion: bool | None = None
-    # Explicit model id for this request. When set and available, Herald is
-    # bypassed and this model serves every turn. Unavailable ids fall back to
-    # the default router (warned, not hard-failed).
     model: str | None = None
 
     def __post_init__(self) -> None:
@@ -426,9 +372,6 @@ def create_root_chain(query_source: str = "foreground") -> QueryChainTracking:
     )
 
 
-# --- Thread result types (agentic execution output) ---
-
-
 class TokenUsage(BaseModel):
     input_tokens: int = 0
     output_tokens: int = 0
@@ -439,7 +382,7 @@ class TokenUsage(BaseModel):
 class NodeCheckpoint(BaseModel):
     node_id: str
     label: str
-    status: str  # pending, in_progress, completed, skipped
+    status: str
     output: str
     timestamp: str = ""
 
@@ -453,15 +396,9 @@ class SubAgentResult(BaseModel):
     tool_calls: list[Any]
     duration_ms: int
     token_usage: TokenUsage
-    # Set when the sub-agent ran in fork mode (parent-prefix cache sharing).
     fork_label: str = ""
-    # Fraction of input tokens served from the Anthropic prompt cache.
-    # 0.0 when there is no prior cache or when provider usage omits cache fields.
     cache_hit_rate: float = 0.0
-    # How the run ended. One of: completed, cancelled, budget_exhausted,
-    # turns_exhausted, error.
     exit_reason: str = "completed"
-    # Cumulative USD cost for this sub-agent (0.0 when catalog pricing is absent).
     cost_usd: float = 0.0
 
 
@@ -492,16 +429,11 @@ class ObservabilityConfig:
 
 @dataclass
 class ForkConfig:
-    context_messages: "list[Any] | None" = None  # list[LLMMessage] | None
+    context_messages: "list[Any] | None" = None
     label: str | None = None
     skip_cache_write: bool | None = None
-    # Wall-clock ceiling in seconds. When set, a watchdog task triggers
-    # cancel_token.cancel("fork_timeout") at expiry — the running turn
-    # finishes naturally, then the loop exits via the cancel path.
     timeout_s: float | None = None
-    # Per-message streaming callback. Invoked once per assistant turn with
-    # the freshly-built LLMMessage. Errors swallowed; never breaks the loop.
-    on_message: "Any | None" = None  # Callable[[LLMMessage], Awaitable[None] | None]
+    on_message: "Any | None" = None
 
 
 class ExitReason(str, Enum):
@@ -524,19 +456,14 @@ class AgentDefinition(BaseModel):
     """
 
     name: str
-    agent_type: str = "general"  # explore | plan | verify | general
+    agent_type: str = "general"
     system_prompt: str = ""
-    model_id: str = ""  # empty = inherit parent model
-    # Optional override list of tool names this agent can access. When empty,
-    # the AgentType-based filter decides. When present, intersects the filter
-    # result (caller cannot promote tools the type forbids).
+    model_id: str = ""
     allowed_tools: list[str] = Field(default_factory=list)
-    # Per-agent resource ceilings.
-    max_turns: int | None = None  # None = AgentType default
-    max_budget_usd: float | None = None  # None = AgentType default
-    max_output_tokens: int | None = None  # None = no cap
-    permission_mode: str = ""  # empty = AgentType default
-    # Async by default (run_async) vs sync (run).
+    max_turns: int | None = None
+    max_budget_usd: float | None = None
+    max_output_tokens: int | None = None
+    permission_mode: str = ""
     run_async_default: bool = False
 
     @classmethod
@@ -651,7 +578,7 @@ class ThreadResult(BaseModel):
     final_text: str
     node_checkpoints: dict[str, NodeCheckpoint] = Field(default_factory=dict)
     sub_agent_results: list[SubAgentResult] = Field(default_factory=list)
-    status: str  # completed, failed, replanned
+    status: str
     exit_reason: str = "completed"
     last_model_stop: str = ""
     num_turns: int = 0

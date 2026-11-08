@@ -38,28 +38,14 @@ from datetime import datetime, timezone
 
 from src.security.secret_scanner import get_scanner
 
-# Context vars — set once per request or per engine lifetime.
-# All log lines automatically include these when set.
 request_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("request_id", default="")
 user_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("user_id", default="")
-# engine_id is set once at boot from settings.engine_id (when the
-# orchestrator passes ENGINE_ID env in). Lets log lines and traces be
-# correlated back to a specific engine pod across the full stack:
-# bap-engine -> engine container -> citadel -> upstream provider.
 engine_id_var: contextvars.ContextVar[str] = contextvars.ContextVar("engine_id", default="")
 
 
-# Per-field byte budget. Orchestrator tail-reads these files; a single
-# 2MB traceback would starve the ring buffer and stall the reader. 8k is
-# comfortably larger than any intended log line but small enough to bound
-# worst-case disk usage.
 MAX_FIELD_CHARS = 8000
 
 
-# Standard LogRecord attributes set by `logging`. Anything outside this set
-# came from the caller via `logger.info(msg, extra={...})` and is worth
-# scanning. Kept in sync with CPython's `logging.LogRecord.__init__` plus
-# the optional `taskName` attribute added by the 3.12 asyncio integration.
 RESERVED_RECORD_ATTRS = frozenset(
     {
         "args",
@@ -174,6 +160,5 @@ def configure_logging(level: str = "INFO") -> None:
     root.addHandler(handler)
     root.setLevel(getattr(logging, level.upper(), logging.INFO))
 
-    # Quiet noisy third-party loggers
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)

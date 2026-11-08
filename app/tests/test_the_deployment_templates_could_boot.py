@@ -53,7 +53,6 @@ def _read_by(module: Path) -> set[str]:
 def test_the_broker_template_sets_only_what_the_broker_reads() -> None:
     declared = _declared(ENV_DIR / "broker.env.example")
     read = _read_by(APP / "broker" / "config.py")
-    # AWS_* are consumed by boto3 itself, not by our config parser.
     unread = {name for name in declared - read if not name.startswith("AWS_")}
     assert not unread, (
         f"INFRA-04: broker.env.example sets {sorted(unread)}, which "
@@ -103,9 +102,6 @@ def test_no_template_still_warns_about_a_deleted_component() -> None:
         )
 
 
-# ── the units ──────────────────────────────────────────────────────────
-
-
 def test_the_world_unit_boots_a_real_world() -> None:
     unit = (UNIT_DIR / "kasukabe-world.service").read_text(encoding="utf-8")
     exec_line = next(l for l in unit.splitlines() if l.startswith("ExecStart="))
@@ -141,9 +137,6 @@ def test_the_genesis_unit_has_an_env_file_that_exists() -> None:
 
 def test_the_genesis_template_sets_only_what_the_runner_reads() -> None:
     declared = _declared(ENV_DIR / "genesis.env.example")
-    # The runner AND what it boots: `OPERATOR_TOKEN` is read by
-    # `world/admin_api.py`, which run_genesis mounts. A template variable
-    # is honest if ANY module in the process it configures reads it.
     read = (
         _read_by(APP / "world" / "run_genesis.py")
         | _read_by(APP / "world" / "admin_api.py")

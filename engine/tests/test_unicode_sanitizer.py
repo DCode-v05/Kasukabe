@@ -10,11 +10,6 @@ from src.security.unicode_sanitizer import (
 )
 
 
-# ===================================================================
-# sanitize_unicode — unit tests
-# ===================================================================
-
-
 class TestSanitizeUnicode:
     def test_clean_ascii_unchanged(self):
         assert sanitize_unicode("Hello, world!") == "Hello, world!"
@@ -27,7 +22,6 @@ class TestSanitizeUnicode:
         result = sanitize_unicode(text)
         assert result == text
 
-    # -- NFKC normalization --
 
     def test_nfkc_fullwidth_a(self):
         assert sanitize_unicode("\uff21") == "A"
@@ -38,7 +32,6 @@ class TestSanitizeUnicode:
     def test_nfkc_fullwidth_digits(self):
         assert sanitize_unicode("\uff10\uff11\uff12") == "012"
 
-    # -- Null byte --
 
     def test_null_byte_stripped(self):
         assert sanitize_unicode("he\x00llo") == "hello"
@@ -46,7 +39,6 @@ class TestSanitizeUnicode:
     def test_multiple_null_bytes_stripped(self):
         assert sanitize_unicode("\x00a\x00b\x00") == "ab"
 
-    # -- Zero-width characters --
 
     def test_zero_width_space(self):
         assert sanitize_unicode("he\u200bllo") == "hello"
@@ -63,19 +55,16 @@ class TestSanitizeUnicode:
     def test_rtl_mark(self):
         assert sanitize_unicode("he\u200fllo") == "hello"
 
-    # -- Directional formatting --
 
     def test_directional_overrides_all_five(self):
         text = "\u202a\u202b\u202c\u202d\u202eHello"
         assert sanitize_unicode(text) == "Hello"
 
-    # -- Directional isolates --
 
     def test_directional_isolates_all_four(self):
         text = "\u2066\u2067\u2068\u2069Hello"
         assert sanitize_unicode(text) == "Hello"
 
-    # -- BOM --
 
     def test_bom_stripped(self):
         assert sanitize_unicode("\ufeffHello") == "Hello"
@@ -83,12 +72,10 @@ class TestSanitizeUnicode:
     def test_bom_mid_string(self):
         assert sanitize_unicode("He\ufeffllo") == "Hello"
 
-    # -- Soft hyphen (Cf category) --
 
     def test_soft_hyphen(self):
         assert sanitize_unicode("hy\u00adphen") == "hyphen"
 
-    # -- Private use area (BMP) --
 
     def test_bmp_private_use(self):
         assert sanitize_unicode("a\ue000b\ue001c") == "abc"
@@ -96,7 +83,6 @@ class TestSanitizeUnicode:
     def test_bmp_private_use_end(self):
         assert sanitize_unicode("a\uf8ffb") == "ab"
 
-    # -- Supplementary private use (all-plane coverage) --
 
     def test_supplementary_private_use(self):
         result = sanitize_unicode("a\U000f0000b")
@@ -106,7 +92,6 @@ class TestSanitizeUnicode:
         result = sanitize_unicode("a\U00100000b")
         assert result == "ab"
 
-    # -- Tag characters: THE ASCII Smuggling vector --
 
     def test_tag_language_tag(self):
         assert sanitize_unicode("a\U000e0001b") == "ab"
@@ -124,13 +109,11 @@ class TestSanitizeUnicode:
         result = sanitize_unicode("safe" + tag_hello + "text")
         assert result == "safetext"
 
-    # -- Interlinear annotation anchors (Cf) --
 
     def test_interlinear_annotation(self):
         text = "a\ufff9b\ufffac\ufffbd"
         assert sanitize_unicode(text) == "abcd"
 
-    # -- Mixed attacks --
 
     def test_mixed_legitimate_and_dangerous(self):
         assert sanitize_unicode("Hello\u200bworld") == "Helloworld"
@@ -140,7 +123,6 @@ class TestSanitizeUnicode:
         result = sanitize_unicode(text)
         assert result == "Hello"
 
-    # -- Idempotent --
 
     def test_idempotent(self):
         vectors = [
@@ -155,7 +137,6 @@ class TestSanitizeUnicode:
             twice = sanitize_unicode(once)
             assert once == twice, f"Not idempotent for {v!r}"
 
-    # -- Preserves legitimate non-ASCII --
 
     def test_preserves_emoji(self):
         text = "Hello 👋🌍"
@@ -185,18 +166,14 @@ class TestSanitizeUnicode:
         text = "สวัสดี"
         assert sanitize_unicode(text) == text
 
-    # -- Error cases --
 
     def test_stuck_loop_raises_value_error(self, monkeypatch):
-        # Setting MAX_ITERATIONS to 0 makes the while loop never execute,
-        # then the guard check (iterations >= MAX_ITERATIONS → 0 >= 0) fires.
         import src.security.unicode_sanitizer as mod
 
         monkeypatch.setattr(mod, "MAX_ITERATIONS", 0)
         with pytest.raises(ValueError, match="did not converge"):
             sanitize_unicode("test\u200b")
 
-    # -- Performance --
 
     def test_large_ascii_input_fast(self):
         import time
@@ -206,7 +183,7 @@ class TestSanitizeUnicode:
         result = sanitize_unicode(text)
         elapsed = time.monotonic() - start
         assert result == text
-        assert elapsed < 0.01  # <10ms
+        assert elapsed < 0.01
 
     def test_large_mixed_input_completes(self):
         import time
@@ -216,12 +193,7 @@ class TestSanitizeUnicode:
         result = sanitize_unicode(base)
         elapsed = time.monotonic() - start
         assert "\u200b" not in result
-        assert elapsed < 0.5  # <500ms generous bound
-
-
-# ===================================================================
-# sanitize_value — unit tests
-# ===================================================================
+        assert elapsed < 0.5
 
 
 class TestSanitizeValue:
@@ -278,7 +250,6 @@ class TestSanitizeValue:
         for _ in range(60):
             data = {"nested": data}
         result = sanitize_value(data)
-        # Unwrap and check deepest value.
         current = result
         for _ in range(60):
             current = current["nested"]
@@ -294,11 +265,6 @@ class TestSanitizeValue:
     def test_list_of_strings(self):
         result = sanitize_value(["a\u200b", "b\u200c", "c\u200d"])
         assert result == ["a", "b", "c"]
-
-
-# ===================================================================
-# UnicodeSanitizationMiddleware — integration tests
-# ===================================================================
 
 
 @pytest.fixture
@@ -372,7 +338,6 @@ class TestMiddleware:
 
     @pytest.mark.asyncio
     async def test_json_body_null_byte_stripped(self, client):
-        # json.dumps can't encode null bytes, so construct raw JSON manually.
         raw = b'{"message": "he\\u0000llo"}'
         resp = await client.post(
             "/echo",
@@ -473,8 +438,6 @@ class TestMiddleware:
             "/echo",
             json={"message": "test\u200b"},
         )
-        # /echo only handles POST, so PUT returns 405 — verify middleware
-        # didn't crash by checking we get a valid HTTP response.
         assert resp.status_code in (200, 405)
 
     @pytest.mark.asyncio
@@ -484,7 +447,6 @@ class TestMiddleware:
             data = {"n": data}
         resp = await client.post("/echo", json=data)
         assert resp.status_code == 200
-        # Verify the deepest value was actually sanitized.
         current = resp.json()
         for _ in range(55):
             current = current["n"]

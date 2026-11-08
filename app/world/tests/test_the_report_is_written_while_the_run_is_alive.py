@@ -42,7 +42,6 @@ def test_the_launcher_refreshes_the_report_while_the_run_goes() -> None:
     assert re.search(r'REPORT_EVERY="\$\{REPORT_EVERY:-120\}"', text), (
         "the default refresh should be 120s and overridable"
     )
-    # the loop must run the generator, not just sleep
     loop = text[text.index("REPORT_EVERY="): text.index("LIVE_REPORT=$!")]
     assert "world.run_report" in loop
 

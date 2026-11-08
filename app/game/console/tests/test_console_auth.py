@@ -42,7 +42,5 @@ def test_tokens_match_rejects_different_strings() -> None:
 
 
 def test_tokens_match_rejects_when_expected_is_empty() -> None:
-    # An unconfigured server-side token must never compare true against
-    # anything, including another empty string a caller might send.
     assert tokens_match("", "") is False
     assert tokens_match("abc", "") is False

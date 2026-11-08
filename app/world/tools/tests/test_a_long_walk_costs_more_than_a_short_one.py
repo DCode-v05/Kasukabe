@@ -22,16 +22,8 @@ import pytest
 from world.tools.tests.conftest import spawn_agent
 from world.tests.map_assets import needs_the_map
 
-# TOOL-27. This module needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped, and red for environment hides real regressions inside the
-# noise - which is how TOOL-09 stayed invisible for a whole cycle.
 pytestmark = needs_the_map
 
-# The two genesis sectors farthest apart on the real map - 113 tiles of
-# Manhattan distance between their entry points, per test_movement.py's
-# own note. Far enough that no rounding makes the two prices meet.
 FAR_A = "Johnson Park"
 FAR_B = "Oak Hill College"
 
@@ -69,7 +61,6 @@ async def test_distance_is_what_makes_one_walk_dearer_than_another(world, regist
     for who in ("near", "far"):
         world.ledger.get_account(who).sim_units = 10_000
 
-    # "near" is already standing at the destination; "far" is across town.
     near_cost = await _walk_cost(world, registry, "near", FAR_B)
     far_cost = await _walk_cost(world, registry, "far", FAR_B)
 
@@ -91,9 +82,6 @@ async def test_asking_again_is_not_billed_as_a_second_journey(world, registry) -
     world.ledger.get_account("asker").sim_units = 10_000
 
     first = await _walk_cost(world, registry, "asker", FAR_B)
-    # Walk some of it. Without this the remaining leg IS the whole route
-    # and an identical price is the honest answer, not a bug - the first
-    # draft of this test asserted otherwise and was wrong about the code.
     world.movement.advance(world.tick() + 1)
     again = await _walk_cost(world, registry, "asker", FAR_B)
 

@@ -58,9 +58,6 @@ async def booted(tmp_path, monkeypatch):
     return runner, tmp_path
 
 
-# ── the tick a run stopped on ─────────────────────────────────────────
-
-
 def _stand_at(runner, tick: int) -> None:
     runner.tick_engine.clock.tick_index = tick
     runner.world_state.current_tick = tick
@@ -85,7 +82,7 @@ async def test_it_beats_the_last_midnight(booted) -> None:
     """The whole point: a resume must find the stop, not the day boundary
     before it. 106 ticks of a paid-for morning sit between them."""
     runner, _ = booted
-    await runner.tick_engine.checkpoints.write(144, 1)     # the day-boundary one
+    await runner.tick_engine.checkpoints.write(144, 1)
     _stand_at(runner, 250)
 
     await runner.shutdown()
@@ -101,10 +98,7 @@ async def test_a_failed_final_checkpoint_does_not_stop_the_shutdown(booted) -> N
         raise RuntimeError("no")
 
     runner.tick_engine.checkpoints.write = boom
-    await runner.shutdown()          # must not raise
-
-
-# ── the residents' memories ───────────────────────────────────────────
+    await runner.shutdown()
 
 
 def _a_town_with_memories(tmp_path) -> Path:
@@ -122,7 +116,7 @@ def test_the_memories_come_back_when_the_home_root_is_gone(tmp_path) -> None:
     archive_engine_homes(homes, checkpoints)
     import shutil
 
-    shutil.rmtree(homes)                       # /tmp, cleared between runs
+    shutil.rmtree(homes)
 
     restored = restore_engine_homes(homes, checkpoints)
 

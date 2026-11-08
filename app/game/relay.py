@@ -57,13 +57,6 @@ class ConnectionHub:
         except asyncio.CancelledError:
             raise
         except Exception:
-            # world_client.stream_events() is documented to reconnect on
-            # its own (world_client.py's HttpWorldClient.stream_events
-            # docstring) and never raise except on close(); reaching here
-            # means that contract was broken somewhere upstream. Log and
-            # stop pumping rather than silently going dark with no error
-            # anywhere - a hung relay with no browser updates and no log
-            # line is the worst failure mode for a live operator console.
             logger.exception("game.relay: event pump crashed, no more events will be relayed")
 
     async def broadcast(self, event: WireEvent) -> None:

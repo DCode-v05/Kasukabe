@@ -24,10 +24,6 @@ BRIEF = {
     "workplace": "Kasukabe Ore Outcrop",
     "food_units": 0,
     "sim_balance": 2242,
-    # `GenesisRunner.roster_entry`'s shape: the id is in the brackets and
-    # the trade follows. A roster that named everybody and numbered nobody
-    # was a list a resident could read and not act on - see
-    # `world/tools/names.py` and NAME-01.
     "household": ["Ainsley Holloway (n02), trader", "Perrin Holloway (n04), student"],
     "townspeople": ["Wren Thorne (n06), farmer", "Marta Thorne (n07), baker"],
 }

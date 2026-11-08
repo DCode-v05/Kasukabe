@@ -142,9 +142,6 @@ async def test_a_refusing_step_still_rolls_the_whole_call_back(world, registry):
             "description": "one good step and one the world will refuse",
             "steps": [
                 {"tool_name": "look_around"},
-                # A refusal that does not depend on where anybody is
-                # standing: this resident holds no bread, and `eat` says
-                # so before anything happens.
                 {"tool_name": "eat", "params": {"item": "bread"}},
             ],
         },

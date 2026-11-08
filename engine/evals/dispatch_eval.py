@@ -101,7 +101,6 @@ INDEX_ENTRIES = {
 
 KNOWN_IDS = set(INDEX_ENTRIES)
 
-# name, input, expected segments, expected verdicts, blocking
 CASES = [
     ("smalltalk", "hi", 1, {"status"}, False),
     (
@@ -192,12 +191,6 @@ def call_gemini(model, system, user, key):
         "contents": [{"role": "user", "parts": [{"text": user}]}],
         "generationConfig": {"responseMimeType": "application/json"},
     }
-    # Two ways in, and they take different headers. API keys go in
-    # x-goog-api-key and come in more than one shape: the classic AIza... and
-    # the newer AI Studio AQ.... OAuth access tokens are bearers and start
-    # ya29.. Assume an API key unless it looks like a bearer - the failure mode
-    # of guessing wrong is a 401 that reads like a bad credential rather than a
-    # misplaced one, which sends you looking in the wrong place entirely.
     headers = {"content-type": "application/json"}
     if key.startswith("ya29."):
         headers["authorization"] = f"Bearer {key}"
@@ -290,9 +283,6 @@ def main():
 
     print(f"\n{passes}/{len(CASES)} passed")
     if not_verbatim:
-        # The parser catches this at runtime and falls back to the whole input,
-        # so it is not fatal - but a model that paraphrases is one that will
-        # keep costing segments their scope.
         print(f"paraphrased instead of cutting: {', '.join(not_verbatim)}")
     if blocking_failures:
         print(f"BLOCKING: {', '.join(blocking_failures)}")

@@ -19,9 +19,6 @@ from src.herald.types import (
 )
 
 
-# ── Anthropic ──────────────────────────────────────────────────────
-
-
 class TestAnthropicToolResultContent:
     def test_string_content_passes_through(self):
         out = tool_result_to_wire("hello world")
@@ -70,9 +67,6 @@ class TestAnthropicToolResultContent:
         assert "</persisted-output>" in out[0]["text"]
 
     def test_blocks_to_wire_legacy_string_unchanged(self):
-        # The outer blocks_to_wire walker must preserve string
-        # tool_result content for backward compatibility with every
-        # legacy call site that hasn't migrated to ToolResultBuilder.
         blocks = [ToolResultBlock(tool_use_id="t1", content="legacy")]
         out = blocks_to_wire(blocks)
         assert out == [
@@ -117,9 +111,6 @@ class TestAnthropicToolResultContent:
         ]
         out = blocks_to_wire(blocks)
         assert out[0]["is_error"] is True
-
-
-# ── End-to-end: rule-match feedback reaches provider payload ───────
 
 
 class TestPermissionFeedbackEndToEnd:

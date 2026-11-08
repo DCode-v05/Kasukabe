@@ -33,11 +33,6 @@ from world.tools.state import WorldState
 from .conftest import in_conversation, move_agent, spawn_agent
 from world.tests.map_assets import needs_the_map
 
-# TOOL-27. This module needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped, and red for environment hides real regressions inside the
-# noise - which is how TOOL-09 stayed invisible for a whole cycle.
 pytestmark = needs_the_map
 
 BAKERY_AT = "Kasukabe Town Square"
@@ -75,20 +70,17 @@ async def _mill(world: WorldState, *, owner: str = "n13") -> Business:
     return business
 
 
-# ── the resolver itself ───────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_every_spelling_the_town_uses_finds_the_same_business(world):
     bakery = await _bakery(world)
 
     for spelling in (
-        "b_bakery",  # the key world.businesses is actually keyed on
-        "business:b_bakery",  # what genesis, the brief and post_price print
-        "Thorne's Bakery",  # the registered name
-        "thornes bakery",  # the name, as a resident would type it
-        "Kasukabe Town Square",  # the premises it stands at
-        "bakery",  # one distinctive word
+        "b_bakery",
+        "business:b_bakery",
+        "Thorne's Bakery",
+        "thornes bakery",
+        "Kasukabe Town Square",
+        "bakery",
     ):
         assert resolve_business(world, spelling) is bakery, spelling
 
@@ -106,11 +98,7 @@ async def test_an_ambiguous_name_is_declined_rather_than_guessed(world):
         location_id=MILL_AT,
     )
 
-    # "bakery" now picks out two. The resolver returns nothing and the
-    # caller raises the same NotFoundError it always raised.
     assert resolve_business(world, "bakery") is None
-    # The exact key still wins outright - folding must never swallow a
-    # name the town actually has.
     assert resolve_business(world, "b_bakery").business_id == "b_bakery"
 
 
@@ -120,9 +108,6 @@ async def test_a_business_that_does_not_exist_still_refuses(world):
     assert resolve_business(world, "business:b_smithy") is None
     assert resolve_business(world, "") is None
     assert resolve_business(world, None) is None
-
-
-# ── the two run-23 refusals ───────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -146,9 +131,6 @@ async def test_the_baker_can_price_her_bread_using_the_id_the_world_printed(
         },
     )
 
-    # Posted, and posted under the canonical key - the record must carry
-    # the resolved id, not the resident's spelling (handshake 2: the
-    # perception text and the run report both read this).
     assert outcome.result["holder"] == bakery.business_id == "b_bakery"
 
 
@@ -166,7 +148,7 @@ async def test_a_customer_can_buy_using_the_id_the_world_printed(world, registry
     await spawn_agent(world, "n02", BAKERY_AT)
     before = world.ledger.sim_balance("n02")
 
-    in_conversation(world, "n02", "n05")   # a sale is agreed in conversation
+    in_conversation(world, "n02", "n05")
     outcome = await registry.execute(
         world,
         "n02",
@@ -194,11 +176,7 @@ async def test_the_shop_can_still_be_named_by_a_stranger_who_gets_it_wrong(
             "buy",
             {"seller_id": "the pie shop", "item": "bread", "quantity": 1},
         )
-    # The refusal has to name what would have worked.
     assert "b_bakery" in str(raised.value)
-
-
-# ── TOOL-19: two spellings of one room ────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -216,7 +194,7 @@ async def test_a_trade_is_not_refused_because_two_people_spell_the_room_apart(
     await spawn_agent(world, "n08", "government_complex")
     world.inventory.credit("n07", "wheat", 5)
 
-    in_conversation(world, "n07", "n08")   # a trade is agreed in conversation
+    in_conversation(world, "n07", "n08")
     outcome = await registry.execute(
         world,
         "n07",
@@ -256,9 +234,6 @@ async def test_a_trade_across_town_is_still_refused(world, registry):
         )
 
 
-# ── the wage and authoring surfaces key off the same id ───────────────
-
-
 @pytest.mark.asyncio
 async def test_wages_and_trade_secrets_take_the_prefixed_form_too(world, registry):
     """Every verb that takes a business id had the same defect."""
@@ -280,9 +255,6 @@ async def test_wages_and_trade_secrets_take_the_prefixed_form_too(world, registr
         {"business_id": "business:b_mill", "employee_id": "n03", "wage_sim": 40},
     )
     assert "b_mill|n03" in world.wage_promises
-
-
-# ── TOOL-11: a shop that is not the town hall ─────────────────────────
 
 
 @pytest.mark.asyncio
@@ -312,7 +284,6 @@ async def test_a_new_business_can_stand_somewhere_other_than_the_town_hall(
     )
 
     assert world.businesses["b_cafe"].location_id == "Hobbs Cafe"
-    # And it resolves by every spelling, like any other shop.
     assert resolve_business(world, "business:b_cafe").business_id == "b_cafe"
 
 

@@ -46,7 +46,6 @@ async def test_the_stakes_round_trip(tmp_path):
     adapter = runner.tick_engine.checkpoints.components["stakes"]
     blob = adapter.snapshot()
 
-    # Wipe, as a fresh boot would.
     runner.hunger_by_agent = {}
     runner.day_jobs_ran = {}
 
@@ -70,7 +69,7 @@ async def test_the_day_ledger_keeps_integer_days(tmp_path):
     adapter = runner.tick_engine.checkpoints.components["stakes"]
     import json
 
-    blob = json.loads(json.dumps(adapter.snapshot()))   # through the wire
+    blob = json.loads(json.dumps(adapter.snapshot()))
     runner.day_jobs_ran = {}
     adapter.restore(blob)
 

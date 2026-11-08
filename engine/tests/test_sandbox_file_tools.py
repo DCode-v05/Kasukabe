@@ -26,11 +26,6 @@ def make_handler(name: str, executor: SandboxExecutor):
     raise KeyError(f"Sandbox tool {name!r} not registered")
 
 
-# ---------------------------------------------------------------------------
-# write_file
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_write_file_clean_content_succeeds() -> None:
     ex = executor()
@@ -54,11 +49,6 @@ async def test_write_file_missing_path_returns_error() -> None:
     handler = make_handler("write_file", ex)
     result = await handler({"content": "some content"})
     assert result == "Error: path is required"
-
-
-# ---------------------------------------------------------------------------
-# file_edit — replacement semantics
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
@@ -96,9 +86,6 @@ async def test_file_edit_replace_all_substitutes_every_occurrence() -> None:
 
 @pytest.mark.asyncio
 async def test_file_edit_non_unique_old_string_errors_without_replace_all() -> None:
-    # Silent first-match replacement would let an agent editing
-    # `port: 8080` in a config where it appears twice mutate the wrong
-    # site. Require uniqueness or an explicit replace_all opt-in.
     ex = executor()
     (ex.workspace / "dup.txt").write_text("x x x", encoding="utf-8")
     handler = make_handler("file_edit", ex)

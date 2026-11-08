@@ -72,9 +72,6 @@ def said(role: str, text: str) -> dict:
     return {"role": role, "content": [{"type": "text", "text": text}]}
 
 
-# -- A healthy transcript is untouched --------------------------------
-
-
 def test_a_well_formed_exchange_passes_through_unchanged() -> None:
     messages = [
         said("user", "It is morning."),
@@ -105,9 +102,6 @@ def test_several_results_for_several_calls_are_kept() -> None:
         },
     ]
     assert legalise_transcript(messages) == messages
-
-
-# -- The orphan ------------------------------------------------------
 
 
 def test_an_orphan_result_becomes_text_rather_than_killing_the_turn() -> None:
@@ -157,9 +151,6 @@ def test_a_real_result_beside_an_orphan_keeps_the_real_one() -> None:
     assert "orphan" in " ".join(b.get("text", "") for b in blocks)
 
 
-# -- Alternation -----------------------------------------------------
-
-
 def test_consecutive_user_turns_are_merged() -> None:
     """run3's messages 4, 5 and 6. Converse requires alternating roles."""
     messages = [said("user", "one"), said("user", "two"), said("user", "three")]
@@ -188,9 +179,6 @@ def test_the_result_always_alternates() -> None:
     assert all(a != b for a, b in zip(roles, roles[1:])), roles
 
 
-# -- Wired to the path that builds the request ------------------------
-
-
 def test_messages_to_bedrock_accepts_the_shape_that_used_to_be_refused() -> None:
     """Gate 1. The whole point is that this reaches the real request
     builder: a legaliser nothing calls would leave the turn dying exactly
@@ -215,8 +203,6 @@ def test_a_genuinely_invalid_block_is_still_refused() -> None:
     with pytest.raises(InvalidRequestError):
         messages_to_bedrock([{"role": "user", "content": [{"type": "nonsense"}]}])
 
-
-# ── ENG-10: the repair is counted, not silent ───────────────────────────
 
 def test_a_rewrite_is_counted_and_logged(caplog) -> None:
     """ENG-10. The repair itself is right and is kept - it PRESERVES the

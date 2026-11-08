@@ -53,8 +53,6 @@ from rich.text import Text
 
 DEFAULT_BASE_URL = "http://127.0.0.1:8000"
 
-# The TUI is a power-user surface: open every gate so the stream shows the full
-# picture (reasoning, tools, crafts, and full telemetry incl. hook/memory).
 FULL_GATES: dict[str, Any] = {
     "craft": True,
     "craft_wait": True,
@@ -62,9 +60,6 @@ FULL_GATES: dict[str, Any] = {
     "telemetry": "full",
     "super_thinking": True,
 }
-
-
-# ── SSE parsing (mirrors harness/app.js) ──────────────────────────────────
 
 
 def parse_frame(raw: str) -> dict[str, Any]:
@@ -94,16 +89,13 @@ async def iter_sse(resp: httpx.Response):
                 yield parse_frame(raw)
 
 
-# ── Wire transport ────────────────────────────────────────────────────────
-
-
 class Wire:
     """Thin async client over the engine's HTTP/SSE wire."""
 
     def __init__(self, base_url: str, key: str, transport: Any = None) -> None:
         self.base = base_url.rstrip("/")
         self.key = key
-        self.transport = transport  # inject an httpx transport (e.g. ASGITransport) for tests
+        self.transport = transport
 
     def client(self, timeout: Any) -> httpx.AsyncClient:
         kwargs: dict[str, Any] = {"timeout": timeout}
@@ -170,7 +162,6 @@ class Wire:
             return r.json()
 
     async def health(self) -> dict:
-        # /health needs no auth and reports subsystem booleans.
         async with self.client(10) as client:
             r = await client.get(f"{self.base}/health")
             return r.json()
@@ -189,9 +180,6 @@ class Wire:
                 async for frame in iter_sse(resp):
                     if frame["event"] == "data":
                         on_data(json.loads(frame["data"]))
-
-
-# ── Widgets ───────────────────────────────────────────────────────────────
 
 
 class StatusBar(Static):
@@ -275,7 +263,6 @@ class ExecutionStream(RichLog):
         btype = block.get("type", "")
         p = block.get("payload", {}) or {}
 
-        # append-types accumulate; flush on newline
         if btype == "text":
             self.text_buf += p.get("text", "")
             while "\n" in self.text_buf:
@@ -447,9 +434,6 @@ class ExecutionStream(RichLog):
         )
 
 
-# ── App ─────────────────────────────────────────────────────────────────
-
-
 class EngineApp(App):
     TITLE = "September Engine — terminal client"
     CSS = """
@@ -492,7 +476,6 @@ class EngineApp(App):
         yield Input(placeholder="Message the engine…  (/help for commands)", id="input-bar")
         yield Footer()
 
-    # — lifecycle —
 
     async def on_mount(self) -> None:
         self.stream = self.query_one("#stream", ExecutionStream)
@@ -521,7 +504,6 @@ class EngineApp(App):
     def action_show_help(self) -> None:
         self.info.write(Text(HELP, style="cyan"))
 
-    # — input —
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         text = event.value.strip()
@@ -553,7 +535,6 @@ class EngineApp(App):
         if done.get("status") == "awaiting":
             self.awaiting_block_id = done.get("block_id", "")
         else:
-            # adopt the thread we just drove so follow-ups route to it
             tid = done.get("thread_id")
             if tid:
                 self.selected_thread_id = tid
@@ -577,7 +558,6 @@ class EngineApp(App):
         except Exception as e:
             self.stream.write(Text(f"  ✗ channel error: {e}", style="red"))
 
-    # — commands —
 
     async def handle_command(self, text: str) -> None:
         parts = text.split(maxsplit=1)
@@ -670,9 +650,6 @@ HELP = """Commands:
   /quit                  exit
   (/wm /memory /trace /tools /agents /actions — not on the wire in TUI v2)
 """
-
-
-# ── one-shot mode ─────────────────────────────────────────────────────────
 
 
 async def run_oneshot(wire: Wire, query: str) -> None:

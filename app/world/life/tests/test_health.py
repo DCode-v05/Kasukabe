@@ -46,9 +46,6 @@ class ScriptedRandom:
         return self._real.choice(seq)
 
 
-# Cumulative incidence bands, rarest first: terminal [0, .0008), long
-# [.0008, .0033), medium [.0033, .0133), short [.0133, .0533), healthy
-# [.0533, 1).
 def test_roll_daily_health_terminal_band_onsets_terminal() -> None:
     health, events = roll_daily_health(ScriptedRandom(0.0001), "a1", HealthState(), day=10)
 
@@ -182,7 +179,7 @@ async def test_treat_at_pharmacy_cures_short_ailment_and_debits_sim(
     treated, events = await treat_at_pharmacy(patient(ailment), day=0, economy=economy)
 
     assert treated.health.current_ailment is None
-    assert economy.sim_balances["a1"] == 500  # 1000 - 500 pharmacy fee
+    assert economy.sim_balances["a1"] == 500
     assert economy.debits == [("a1", 500, "pharmacy_treatment")]
     assert events[0].type == "health.ailment.treated"
 
@@ -198,7 +195,7 @@ async def test_treat_at_pharmacy_rejects_non_short_ailments(
     with pytest.raises(TreatmentUnavailableError):
         await treat_at_pharmacy(patient(ailment), day=0, economy=economy)
 
-    assert economy.debits == []  # no charge for an unavailable treatment
+    assert economy.debits == []
 
 
 @pytest.mark.asyncio

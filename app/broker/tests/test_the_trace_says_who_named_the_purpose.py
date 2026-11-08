@@ -83,9 +83,6 @@ def test_a_malformed_body_still_answers() -> None:
     assert purpose and source in {SOURCE_HEADER, SOURCE_MARKER, SOURCE_SHAPE}
 
 
-# ── it reaches the table ───────────────────────────────────────────────
-
-
 def _record(**over) -> TraceRecord:
     fields = dict(
         id=new_trace_id(), agent_id="a1", payer_agent_id="a1",

@@ -70,7 +70,6 @@ def text_of(accumulator: StreamAccumulator) -> str:
     )
 
 
-# A text response exactly as Bedrock actually sends one: no contentBlockStart.
 BARE_TEXT = [
     {"messageStart": {"role": "assistant"}},
     {"contentBlockDelta": {"contentBlockIndex": 0, "delta": {"text": "Morning, Wren. "}}},
@@ -79,9 +78,6 @@ BARE_TEXT = [
     {"messageStop": {"stopReason": "end_turn"}},
     {"metadata": {"usage": {"inputTokens": 900, "outputTokens": 14, "totalTokens": 914}, "metrics": {}}},
 ]
-
-
-# ── 4.2 Streaming assembly under adversarial event orders ────────────
 
 
 @pytest.mark.asyncio
@@ -208,9 +204,6 @@ async def test_stop_for_an_index_that_never_started_is_survivable() -> None:
     assert accumulator.stop_reason == "end_turn"
 
 
-# ── 4.2 / D2 Reasoning on the streaming path ─────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_reasoning_delta_becomes_a_thinking_block() -> None:
     """D2. The streaming translator has no reasoningContent branch at
@@ -305,9 +298,6 @@ async def test_redacted_reasoning_is_distinguishable_from_absent_reasoning() -> 
     assert [b["type"] for b in blocks] == ["redacted_thinking"]
 
 
-# ── 4.8 Billed and recorded cannot disagree ──────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_stream_billed_for_output_never_records_empty_content() -> None:
     """The invariant D1 violated 938 times. Spec threshold 9.4 is zero."""
@@ -347,9 +337,6 @@ def test_reconciliation_flags_a_body_whose_blocks_are_all_empty() -> None:
     assert problem is not None
 
 
-# ── 4.2 The accumulator's own tolerance, tested directly ─────────────
-
-
 def test_accumulator_creates_a_block_for_an_unstarted_delta() -> None:
     """Belt and braces. The translator is fixed to always emit a start,
     but a consumer that silently drops data when its input is imperfect
@@ -384,9 +371,6 @@ def test_accumulator_counts_deltas_it_saw() -> None:
         }
     )
     assert accumulator.delta_counts() == {"text": 3, "thinking": 1, "tool_use": 0}
-
-
-# ── 1 Gate 1: the check is reached by the production path ────────────
 
 
 def prepared_call_for(service: Any, agent_id: str = "a0001") -> PreparedCall:

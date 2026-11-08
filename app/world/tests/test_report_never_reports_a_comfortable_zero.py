@@ -79,9 +79,6 @@ def _store(tmp_path: Path, *, utterances: int, calls: int) -> str:
         marks = ", ".join("?" for _ in row)
         conn.execute(f"insert into {table} ({keys}) values ({marks})", list(row.values()))
 
-    # Residents first: utterances and calls carry foreign keys to them,
-    # and a report test whose town has no inhabitants is not a test of
-    # anything this report renders.
     for n in range(20):
         insert("agents", id=f"n{n:02d}", slug=f"n{n:02d}",
                display_name=f"Resident {n}", sex="female", usd_wallet_cents=600,
@@ -122,18 +119,10 @@ def test_an_empty_call_table_is_reported_as_missing_not_as_free(
     monkeypatch.setattr(rr, "get", lambda base, path: dict(WORLD_WITH_ACTIVITY)
                         if path.endswith("state") else {})
     db = _store(tmp_path, utterances=46, calls=0)
-    # An empty home root, so this reads THIS report's own text and not
-    # whatever the last real run left in /tmp/kasukabe-agents. Run 21's
-    # logs contain an agent's own tool result reading "$0.00 billed", which
-    # is a resident being told what its turn cost - a true sentence in a
-    # quoted transcript - and it failed an assertion about the money table.
     monkeypatch.setenv("KASUKABE_HOME_ROOT", str(tmp_path / "no-engines"))
 
     text = build("http://127.0.0.1:8100", db)
 
-    # The money table specifically. Scanning the whole document catches
-    # every "$0.00" a resident ever said out loud, which is not what this
-    # is about.
     table = text.split("## The run", 1)[-1].split("##", 1)[0]
     assert "$0.00" not in table, (
         "a run whose town spoke 46 times is not a $0.00 run; printing the "

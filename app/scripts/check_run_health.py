@@ -87,9 +87,6 @@ def _model(db: sqlite3.Connection, want: str | None, r: Report, only: bool = Fal
         r.add(OK, "model serving", served)
         return
     if only:
-        # The question is not "is it leading" but "did anything else serve a
-        # single call". Config says what should happen; the trace says what
-        # did, and only the trace can be checked from outside the process.
         strays = [(m, n, c) for m, n, c in rows if m != want]
         if strays:
             cost = sum(c or 0 for _, _, c in strays)
@@ -163,8 +160,6 @@ def _cameras(out: Path, views: int, stale_s: float, r: Report, finished: bool = 
             stalled.append(f"{d.name}: no frames")
             continue
         age = now - frames[-1].stat().st_mtime
-        # A finished run's frames are as old as the run. Freshness is only
-        # evidence while something is supposed to be writing them.
         ok = finished or age <= stale_s
         (fine if ok else stalled).append(
             f"{d.name}: {len(frames)} frames" + ("" if finished else f", {age:.0f}s old")
@@ -179,8 +174,6 @@ def _cameras(out: Path, views: int, stale_s: float, r: Report, finished: bool = 
     r.add(BAD if (stalled or len(dirs) != views) else OK, "cameras", detail)
 
     if finished:
-        # The mp4 is the deliverable once the run is over; mid-run its absence
-        # means nothing, because it is built at the end.
         made = [d.name for d in dirs if (d / "run.mp4").exists()]
         r.add(
             OK if len(made) == len(dirs) else BAD, "videos encoded",
@@ -244,7 +237,6 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     r = Report()
-    # mode=ro, like run_report: this must never be able to disturb a live run.
     db = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
     try:
         _residents(db, args.residents, r)

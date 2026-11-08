@@ -1,39 +1,6 @@
 <!doctype html>
-<!--
-  ============================================================================
-  UI-28: THIS PAGE IS THE v1 TOWNSHIP AND EVERYTHING ON IT IS SIMULATED.
 
-  It is kept for comparison against township-v2.html, and it is served at
-  /township.html on the live game server - so it is reachable during a real
-  run, and there is nothing in the rendering to tell a viewer that none of
-  what it shows came from that run.
 
-  Its residents walk a schedule this file invents. Its money, health,
-  government and conversations are computed in the browser. No world server
-  is consulted, and a run being live changes nothing on this page.
-
-  For the live town use township-v2.html, which binds to the world and says
-  so in its badge. Whether this page survives at all is operator decision
-  12 (docs/review/09-roadmap-and-acceptance.md): keep the file-only
-  showcase, or delete the browser simulation. Until that is answered it
-  stays, labelled.
-  ============================================================================
--->
-<!--
-  Kasukabe Township - the live isometric village for all 250 residents
-  (DESIGN.md section 8's Viewers, AGENT_LIFE_FRAMEWORK.md "The 250").
-  Self-contained and read-only: open this file straight off disk, or serve
-  game/static/ over http. Sibling pages: agents.html (agent views),
-  views.html (world/governance/social), console/static/index.html (the
-  separate, write-capable President/God console).
-
-  Population, families, occupations, personas, balances and the fiscal
-  constants are real, read from world/genesis.json and world/ledger/* at
-  build time (js/township/build_characters.py, which also writes one full
-  JSON file per resident into data/characters/). The daily schedule,
-  conversations and spend ticker are a deterministic client-side model - a
-  visualisation of the environment, not a socket into the Python engine.
--->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -60,7 +27,6 @@
       <span class="kicker">314 residents · live village</span>
     </div>
   </header>
-
 
 
   <div class="console">
@@ -213,7 +179,6 @@
     memory format after Park et al., <i>Generative Agents</i>, UIST ’23 · expert reflection after Park et al. 2024, <i>Generative Agent Simulations of 1,000 People</i>
   </footer>
 </div>
-
 
 
 <script src="js/township/agents.js"></script>

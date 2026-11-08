@@ -195,9 +195,6 @@ async def test_the_charge_ledger_does_not_leak_between_calls(town):
     assert world.charges_this_call == []
 
 
-# ── TOOL-06's other half: a step nobody checked until it ran ─────────
-
-
 @pytest.mark.asyncio
 async def test_a_step_naming_a_recipe_that_does_not_exist_is_refused_at_filing(town):
     """Junia's `mill_flour_run`, in its own terms.
@@ -222,7 +219,6 @@ async def test_a_step_naming_a_recipe_that_does_not_exist_is_refused_at_filing(t
     said = str(caught.value)
     assert "mill_flour_from_wheat" in said
     assert "no recipe" in said
-    # And it says what DOES exist, so the refusal teaches.
     assert "Some that exist:" in said
 
 

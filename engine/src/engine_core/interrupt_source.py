@@ -48,7 +48,6 @@ class InterruptSource:
         self.executors: "weakref.WeakSet[StreamingToolExecutor]" = weakref.WeakSet()
         self.installed = False
 
-    # ── Registration ─────────────────────────────────────────────
 
     def register(self, executor: "StreamingToolExecutor") -> None:
         self.executors.add(executor)
@@ -60,7 +59,6 @@ class InterruptSource:
     def active_count(self) -> int:
         return len(self.executors)
 
-    # ── Trigger ──────────────────────────────────────────────────
 
     def trigger(self, reason: str = "User interrupted") -> int:
         """Fan out ``cancel_interruptible`` to every registered executor.
@@ -81,7 +79,6 @@ class InterruptSource:
                 )
         return count
 
-    # ── Signal handler lifecycle ────────────────────────────────
 
     def install(self) -> bool:
         """Attach SIGINT to :meth:`trigger`.  Idempotent.
@@ -116,7 +113,6 @@ class InterruptSource:
         self.installed = False
 
 
-# Module-level singleton.  Lazy, so tests can reset via reset_for_tests().
 INSTANCE: InterruptSource | None = None
 
 

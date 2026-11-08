@@ -59,21 +59,12 @@ from typing import Any
 
 from world.tools.errors import NotFoundError
 
-# The params whose value names a person. Commerce's holders may also be a
-# business, which `resolve_business` answers first - and `to_owner_id` may be
-# the government, which is neither.
 _HOLDER_FIELDS = frozenset({"seller_id", "buyer_id", "to_owner_id"})
 
-# Person params whose name does not end in `agent_id`. Found by reading every
-# params model in `world/tools/primitives/`: these four take a resident and
-# were the only ones the suffix rule missed, so `teach_tool(student_id=
-# "Tobias")` was refused where `teach_skill(student_agent_id="Tobias")` was
-# understood - the same act, the same word, two answers.
 _PERSON_FIELDS = frozenset({"licensee_id", "student_id", "employee_id"})
 
 _ID_SHAPED = re.compile(r"^[a-z0-9_.:-]+$")
 
-# "Marta Thorne (n07)" -> "n07". What the world itself writes, read back.
 _LABELLED = re.compile(r"^(?P<name>.+?)\s*\((?P<id>[A-Za-z0-9_.-]+)\)$")
 
 
@@ -92,8 +83,6 @@ def label(world: Any, agent_id: str) -> str:
     return f"{world.agent_names.get(agent_id, agent_id)} ({agent_id})"
 
 
-# The old private spelling, kept because this module's own refusals read
-# better with it and several callers exist.
 _label = label
 
 
@@ -130,10 +119,6 @@ def resolve_person_references(world: Any, actor_id: str, tool_name: str, fields:
         reference = value.strip()
         if not reference or reference in world.agents:
             continue
-        # "Marta Thorne (n07)" - what `name_the_numbers` wrote, handed back.
-        # A resident repeating what the town told it must not be refused for
-        # it; that would be the world contradicting its own vocabulary, which
-        # is the whole defect this module exists to close.
         labelled = _LABELLED.match(reference)
         if labelled and labelled.group("id") in world.agents:
             resolved[key] = labelled.group("id")
@@ -153,10 +138,8 @@ def resolve_person_references(world: Any, actor_id: str, tool_name: str, fields:
                 ),
             )
         if _ID_SHAPED.match(reference):
-            continue  # an unknown id: the tool's own refusal answers it
+            continue
         if key in _HOLDER_FIELDS:
-            # Could be a shop spelt wrong ("the pie shop"). The tool's own
-            # refusal lists shops AND people, which this one cannot.
             continue
         here = sorted(
             agent_id for agent_id in world.agents
@@ -171,9 +154,6 @@ def resolve_person_references(world: Any, actor_id: str, tool_name: str, fields:
             ),
         )
     return resolved
-
-
-# ── outbound: the world says the name with the number ──────────────────────
 
 
 def _living_names(world: Any) -> dict[str, str]:
@@ -213,9 +193,6 @@ def _swap_ids(known: dict[str, str], pattern: re.Pattern[str], text: str) -> str
     def _swap(match: re.Match[str]) -> str:
         agent_id = match.group(1)
         name = known[agent_id]
-        # Already written the right way - "Marta Thorne (n07)" - by a hint
-        # that built its own label, or by a resident quoting us back. Left
-        # alone rather than nested into "Marta Thorne (Marta Thorne (n07))".
         before = text[: match.start()].rstrip()
         if before.endswith("(") and before[:-1].rstrip().endswith(name):
             return agent_id

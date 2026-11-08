@@ -20,9 +20,6 @@ from world.map.parcel import (
 )
 
 
-# -- compute_bill_of_materials ---------------------------------------------
-
-
 def test_single_tile_has_area_one_and_perimeter_four() -> None:
     bom = compute_bill_of_materials(frozenset({TileCoord(0, 0)}))
     assert bom == BillOfMaterials(timber=2, metal=4)
@@ -42,9 +39,6 @@ def test_bill_of_materials_rejects_empty_footprint() -> None:
         compute_bill_of_materials(frozenset())
 
 
-# -- is_contiguous -----------------------------------------------------------
-
-
 def test_single_tile_is_contiguous() -> None:
     assert is_contiguous(frozenset({TileCoord(0, 0)}))
 
@@ -58,15 +52,11 @@ def test_disconnected_tiles_are_not_contiguous() -> None:
 
 
 def test_diagonally_touching_tiles_are_not_contiguous() -> None:
-    # 4-connected only: a shared corner does not count.
     assert not is_contiguous(frozenset({TileCoord(0, 0), TileCoord(1, 1)}))
 
 
 def test_empty_footprint_is_not_contiguous() -> None:
     assert not is_contiguous(frozenset())
-
-
-# -- PlotRegistry.validate_claim / register ----------------------------------
 
 
 @pytest.fixture
@@ -75,7 +65,6 @@ def registry(tiny_world: WorldMap) -> PlotRegistry:
 
 
 def street_footprint() -> frozenset[TileCoord]:
-    # Row y=4 of the tiny fixture is open exterior street, sector-free.
     return frozenset({TileCoord(0, 4), TileCoord(1, 4)})
 
 
@@ -99,7 +88,6 @@ def test_register_rejects_out_of_bounds_tile(registry: PlotRegistry) -> None:
 
 
 def test_register_rejects_a_tile_inside_an_existing_sector(registry: PlotRegistry) -> None:
-    # (2, 2) is inside "Test House" - already a sector, not open land.
     footprint = frozenset({TileCoord(2, 2)})
     plot = Plot(id="plot-in-house", footprint=footprint, purpose="stall", owner="agent-1")
     with pytest.raises(PlotError):
@@ -107,14 +95,14 @@ def test_register_rejects_a_tile_inside_an_existing_sector(registry: PlotRegistr
 
 
 def test_register_rejects_an_unwalkable_tile(registry: PlotRegistry) -> None:
-    footprint = frozenset({TileCoord(0, 0)})  # a wall tile
+    footprint = frozenset({TileCoord(0, 0)})
     plot = Plot(id="plot-wall", footprint=footprint, purpose="stall", owner="agent-1")
     with pytest.raises(PlotError):
         registry.register(plot)
 
 
 def test_register_rejects_a_non_contiguous_footprint(registry: PlotRegistry) -> None:
-    footprint = frozenset({TileCoord(0, 4), TileCoord(4, 4)})  # both street, not touching
+    footprint = frozenset({TileCoord(0, 4), TileCoord(4, 4)})
     plot = Plot(id="plot-split", footprint=footprint, purpose="stall", owner="agent-1")
     with pytest.raises(PlotError):
         registry.register(plot)
@@ -145,13 +133,7 @@ def test_register_rejects_duplicate_plot_id(registry: PlotRegistry) -> None:
 def test_validate_claim_aggregates_every_problem(registry: PlotRegistry) -> None:
     footprint = frozenset({TileCoord(0, 0), TileCoord(999, 999)})
     errors = registry.validate_claim(footprint)
-    # unwalkable + inside-a-sector-free-but-out-of-bounds + not contiguous:
-    # at least the out-of-bounds tile and the contiguity break should both
-    # be reported, not just the first problem found.
     assert len(errors) >= 2
-
-
-# -- transfer / release / lookups --------------------------------------------
 
 
 def test_transfer_changes_the_owner(registry: PlotRegistry) -> None:

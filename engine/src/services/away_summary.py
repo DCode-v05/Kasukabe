@@ -42,12 +42,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Hard ceiling on recap length.  The reference impl asks for 1-3 sentences;
-# we set a generous token budget so the model has breathing room without
-# drifting into paragraphs.
 MAX_RECAP_TOKENS = 180
 
-# Soft timeout: a recap is cosmetic — if the LLM is slow, fall back.
 DEFAULT_TIMEOUT_S = 10.0
 
 
@@ -96,9 +92,6 @@ async def generate_away_summary(
         prompt = build_prompt(summary, last_user_message)
         message = Message(role="user", content=prompt)
 
-        # generate_with_tools enforces MAX_RECAP_TOKENS server-side — the
-        # recap is 1–3 sentences, a runaway model output would waste money.
-        # tools=[] so no tool loop; we just want bounded text.
         response = await asyncio.wait_for(
             llm.generate_with_tools(
                 messages=[message],

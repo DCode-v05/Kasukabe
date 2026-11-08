@@ -1,22 +1,6 @@
 #!/usr/bin/env bash
-# Kasukabe host-bringup, step 3 (RUNBOOK.md section 6).
-#
-# Run ON THE m5.metal INSTANCE itself (scp this file up, or copy/paste
-# once the repo is synced - see RUNBOOK.md section 6 for both paths):
-#   ssh -i ~/.ssh/<key>.pem ubuntu@<public-ip> 'bash -s' < app/infra/scripts/03-bootstrap-host.sh
-#
-# Installs everything the host needs BEFORE the repo is synced: system
-# packages, the `kasukabe` service user, uv (installed system-wide so
-# every user including `kasukabe` can see it), Caddy, and Litestream.
-# Idempotent - safe to re-run if a step fails partway.
 set -euo pipefail
 
-# Pinned to a known-good release rather than "latest" so a live run never
-# depends on GitHub's API at the wrong moment. This was the newest stable
-# tag as of this script's authoring - check
-# https://github.com/benbjohnson/litestream/releases before the real run
-# and bump if a newer one exists; do not blindly trust this pin is
-# current months later.
 LITESTREAM_VERSION="0.3.13"
 
 echo "== apt update/upgrade =="
@@ -29,10 +13,6 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
 	debian-keyring debian-archive-keyring apt-transport-https \
 	qemu-kvm bridge-utils iproute2
 
-# m5.metal is bare metal specifically so /dev/kvm is real hardware
-# virtualization, not nested (Firecracker's requirement) - this only
-# checks it is present, it does not configure any microVM networking or
-# rootfs (app/infra/firecracker/ owns that).
 if [ -e /dev/kvm ]; then
 	echo "/dev/kvm present - good, Firecracker track can proceed"
 else
@@ -46,9 +26,6 @@ sudo usermod -aG kvm kasukabe || true
 
 echo "== /opt/kasukabe layout =="
 sudo mkdir -p /opt/kasukabe/data
-# Owned by the SSH admin user for now so rsync (RUNBOOK.md section 6) can
-# write without sudo; 05-deploy-services.sh chowns app/ to kasukabe:kasukabe
-# right before installing the venv and starting services.
 sudo chown -R "$(whoami)":kasukabe /opt/kasukabe
 sudo chmod 750 /opt/kasukabe
 sudo chown kasukabe:kasukabe /opt/kasukabe/data

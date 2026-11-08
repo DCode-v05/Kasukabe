@@ -37,9 +37,6 @@ def _pool(**kw) -> LanePool:
     return build_lane_pool(_settings(**kw), lambda model, region: object())
 
 
-# ── the restriction itself ────────────────────────────────────────────
-
-
 def test_one_model_and_nothing_behind_it() -> None:
     pool = _pool(only_model=OPENAI_LUNA6_MODEL_ID)
 
@@ -66,9 +63,6 @@ def test_no_bedrock_model_survives_anywhere_in_the_order(call_class: CallClass) 
     assert pool.preference_for(call_class) == (OPENAI_LUNA6_MODEL_ID,)
 
 
-# ── the case that costs money when it is wrong ────────────────────────
-
-
 def test_a_model_that_cannot_be_served_refuses_to_boot() -> None:
     """No key means no OpenAI lane. Booting anyway would serve the whole run
     from Bedrock - the exact bill ONLY_MODEL was set to avoid - and it would
@@ -92,9 +86,6 @@ def test_the_refusal_is_not_silent_about_why_it_refuses() -> None:
         )
 
     assert "falling back" in str(caught.value).lower()
-
-
-# ── it must stay opt-in ───────────────────────────────────────────────
 
 
 def test_an_unset_only_model_changes_nothing() -> None:

@@ -39,8 +39,6 @@ async def test_run_daily_health_tick_recovers_before_rolling_a_new_illness() -> 
     ailment = Ailment(kind=AilmentKind.SHORT, onset_day=1, duration_days=1)
     agent = make_agent(health=HealthState(current_ailment=ailment))
 
-    # A rng whose first draw (recovery has no draw) lands well above every
-    # incidence band, so the only thing that happens this tick is recovery.
     updated, events = await run_daily_health_tick(random.Random(0), agent, day=2, dials=PopulationDials())
 
     assert updated.alive is True

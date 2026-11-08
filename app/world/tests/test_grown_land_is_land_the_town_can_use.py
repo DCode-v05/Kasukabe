@@ -79,8 +79,6 @@ def test_expand_land_opens_corridors_before_rebuilding_the_map() -> None:
     )
 
 
-# ── ownership ────────────────────────────────────────────────────────────
-
 class _Ground:
     """The three members `_record_the_new_ground` touches, and no more.
 
@@ -145,8 +143,6 @@ def test_an_existing_owner_is_not_overwritten() -> None:
 
     assert world.tile_owners[tile_key(1, 4)].owner_id == "a0007"
 
-
-# ── what the strip is for ────────────────────────────────────────────────
 
 @pytest.mark.parametrize(
     "purpose,kind,item",

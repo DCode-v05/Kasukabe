@@ -51,8 +51,5 @@ async def test_snapshot_does_not_touch_ledger_or_charter(world) -> None:
 
 @pytest.mark.asyncio
 async def test_game_clock_matches_tick_minutes(world) -> None:
-    # 144 ticks (one game-day, DESIGN.md section 1) must equal 24
-    # game-hours - the ratio state.py's game_clock() derives from
-    # core.clock.TICK_MINUTES rather than hardcoding.
     world.current_tick = 144
     assert world.game_clock().total_hours == 24.0

@@ -89,8 +89,6 @@ def test_the_drain_is_attempted_before_the_cap_halts_dispatch() -> None:
         spent = [0]
 
         class Gateway:
-            # The drain reserve now covers what the drain itself spends,
-            # one call per engine - so a fake needs a roster.
             ports_by_agent = {"n01": 9100}
 
             async def drain_learning(self):

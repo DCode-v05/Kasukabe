@@ -43,14 +43,12 @@ def test_same_agent_updates_share_one_id():
     )
     done = s.fold(SubAgentDone(thread_id="t", agent_id="agent_A", result_summary="ok"))
     assert start.id == prog.id == done.id == "sub_agent:agent_A"
-    # phase discriminator distinguishes the updates within the one block
     assert start.payload["phase"] == "start"
     assert prog.payload["phase"] == "progress"
     assert done.payload["phase"] == "done"
 
 
 def test_backgrounded_a_never_overwrites_progress_b():
-    # The exact race the id rule defends: A backgrounds while B reports progress.
     s = BlockSerializer("r1")
     a_bg = s.fold(
         SubAgentBackgrounded(
@@ -72,7 +70,7 @@ def test_backgrounded_a_never_overwrites_progress_b():
     )
     store: dict = {}
     store[a_bg.id] = a_bg
-    store[b_prog.id] = b_prog  # replace-by-id
+    store[b_prog.id] = b_prog
     assert len(store) == 2
     assert store["sub_agent:agent_A"].payload["phase"] == "backgrounded"
     assert store["sub_agent:agent_B"].payload["phase"] == "progress"

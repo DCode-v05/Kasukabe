@@ -98,8 +98,6 @@ async def test_snapshot_create_then_load_round_trips_configuration(
         assert Path(snap_path).exists()
         assert Path(mem_path).exists()
 
-    # A fresh process (fresh socket, fresh state machine) loading that
-    # snapshot must come up already configured with the same boot args.
     fresh_socket = str(tmp_path / "fresh-api.sock")
     from process import FakeFirecrackerProcessLauncher
 

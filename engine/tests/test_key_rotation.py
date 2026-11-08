@@ -68,11 +68,6 @@ from src.errors import EngineError, ErrorCode
 from src.key_rotation import expire_rotation, install_pending_key
 
 
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
-
-
 @pytest_asyncio.fixture(autouse=True)
 async def fresh_auth_state(tmp_path, monkeypatch):
     """Isolate AuthState + admin state, and point the engine root at a tmp dir.
@@ -86,7 +81,7 @@ async def fresh_auth_state(tmp_path, monkeypatch):
     reset_auth_state()
     reset_admin_state()
     monkeypatch.setenv("SEPTEMBER_HOME", str(tmp_path))
-    ensure_layout(tmp_path)  # boot does this; tests that write directly need it too
+    ensure_layout(tmp_path)
     yield
     reset_auth_state()
     reset_admin_state()
@@ -97,7 +92,7 @@ async def auth_state() -> AuthState:
     """AuthState initialised with a freshly-generated key."""
     key = generate_key()
     state = init_auth_state(hash_key(key))
-    state.current_key = key  # stash for test convenience
+    state.current_key = key
     return state
 
 
@@ -112,11 +107,6 @@ async def raven(db):
     raven_api.db_pool = None
 
 
-# ---------------------------------------------------------------------------
-# Helper
-# ---------------------------------------------------------------------------
-
-
 def make_key() -> str:
     return generate_key()
 
@@ -125,11 +115,6 @@ async def call_install(new_key: str, overlap_seconds: int = 60) -> dict:
     """Hash a plaintext key and call install_pending_key (the engine receives
     only the hex; the HTTP auth layer already validated the caller)."""
     return await install_pending_key(new_hash=hash_key(new_key), overlap_seconds=overlap_seconds)
-
-
-# ---------------------------------------------------------------------------
-# Unit tests
-# ---------------------------------------------------------------------------
 
 
 class TestInstallBasic:
@@ -157,7 +142,6 @@ class TestInstallExpires:
         new_key = make_key()
 
         await call_install(new_key, overlap_seconds=0)
-        # Yield control so the background expiry task can run.
         await asyncio.sleep(0)
 
         state = get_auth_state()
@@ -173,7 +157,6 @@ class TestInstallConcurrentRejected:
         new_key_1 = make_key()
         new_key_2 = make_key()
 
-        # First rotation — long overlap keeps it pending.
         await call_install(new_key_1, overlap_seconds=300)
 
         with pytest.raises(EngineError) as exc_info:
@@ -237,7 +220,6 @@ class TestInstallZeroOverlap:
         new_key = make_key()
 
         await call_install(new_key, overlap_seconds=0)
-        # Flush the event loop so the expiry task executes.
         await asyncio.sleep(0)
 
         state = get_auth_state()
@@ -253,7 +235,6 @@ class TestInstallEmitsTelemetry:
         result = await call_install(new_key, overlap_seconds=0)
         rotation_id = result["rotation_id"]
 
-        # Wait for expiry task (overlap=0 → immediate).
         await asyncio.sleep(0)
 
         started = await raven.events(since=0.0, kind="key_rotation_started")
@@ -279,7 +260,6 @@ class TestInstallZerosOldHash:
     async def test_install_zeros_old_hash(self, auth_state):
         """After expiry, the old primary_hash bytearray is filled with zeros."""
         state = get_auth_state()
-        # Hold a reference to the exact same bytearray object.
         old_primary_ref = state.primary_hash
 
         new_key = make_key()
@@ -364,8 +344,6 @@ class TestInstallPersistsHash:
 
         result = await install_pending_key(new_hash=new_hash, overlap_seconds=60)
 
-        # Immediately after install: the file either does not exist yet or still
-        # holds the OLD hash — never the new one (the new key is only pending).
         try:
             with open(auth.persisted_key_hash_path(), "r", encoding="utf-8") as f:
                 persisted = f.read().strip()
@@ -374,19 +352,11 @@ class TestInstallPersistsHash:
         except FileNotFoundError:
             pass
 
-        # Drive promotion directly (avoids a real 60s sleep): expire_rotation
-        # with overlap 0 runs the swap path immediately.
         state = get_auth_state()
         await expire_rotation(state, result["rotation_id"], 0, time.time())
 
-        # After promotion: /data reflects the new (now live) primary.
         with open(auth.persisted_key_hash_path(), "r", encoding="utf-8") as f:
             assert f.read().strip() == new_hash
-
-
-# ---------------------------------------------------------------------------
-# Admin auth (src/auth.py)
-# ---------------------------------------------------------------------------
 
 
 class TestAdminAuth:
@@ -407,11 +377,6 @@ class TestAdminAuth:
         assert verify_admin_key("anything") is False
 
 
-# ---------------------------------------------------------------------------
-# Integration tests
-# ---------------------------------------------------------------------------
-
-
 class TestInstallFullProductPath:
     @pytest.mark.asyncio
     async def test_install_full_product_path(self, auth_state):
@@ -420,20 +385,16 @@ class TestInstallFullProductPath:
         new_key = make_key()
         state = get_auth_state()
 
-        # Before rotation: only old key valid.
         assert verify_key_against_state(old_key, state)
         assert not verify_key_against_state(new_key, state)
 
-        # Install with non-zero overlap — both valid.
         result = await call_install(new_key, overlap_seconds=60)
         assert result["rotation_id"].startswith("rot_")
         assert verify_key_against_state(old_key, state)
         assert verify_key_against_state(new_key, state)
 
-        # Trigger expiry directly (avoids real sleep in tests).
         await expire_rotation(state, result["rotation_id"], 0, time.time())
 
-        # After expiry: only new key valid.
         assert not verify_key_against_state(old_key, state)
         assert verify_key_against_state(new_key, state)
 
@@ -481,12 +442,9 @@ class TestDurableHashPreferredOnBoot:
         old_key = auth_state.current_key
         new_key = make_key()
 
-        # Rotate (overlap=0 → immediate); the new hash lands in /data.
         await call_install(new_key, overlap_seconds=0)
         await asyncio.sleep(0)
 
-        # Simulate a restart: the env still names the OLD key, but /data holds
-        # the new hash. Tear down in-memory state, then re-resolve persisted-first.
         import os
 
         reset_auth_state()
@@ -526,9 +484,6 @@ class TestCorruptPersistedHashIgnoredOnBoot:
         env_key = make_key()
         env_hash = hash_key(env_key)
 
-        # Write a corrupt value to the persisted path (a 63-char hex string —
-        # one short of a valid digest — and confirm an alphabetic garbage value
-        # is rejected too).
         for corrupt in ("zzz", "a" * 63):
             with open(auth.persisted_key_hash_path(), "w", encoding="utf-8") as f:
                 f.write(corrupt)
@@ -550,7 +505,6 @@ class TestCorruptPersistedHashIgnoredOnBoot:
             if not key_hash_hex:
                 key_hash_hex = os.environ.get("ENGINE_KEY_HASH", "")
 
-            # No exception: the corrupt persisted value was skipped, env key used.
             assert key_hash_hex == env_hash
             assert is_valid_key_hash(key_hash_hex)
             init_auth_state(key_hash_hex)
@@ -607,7 +561,6 @@ class TestInstallDuringInflightStreaming:
 
         @app.post("/admin/install-pending-key")
         async def install(body: dict = Body(...), x_admin_key: str = Header(...)):
-            # Mirror src/server.py: admin auth at entry, EngineError -> HTTPException.
             if not verify_admin_key(x_admin_key):
                 raise HTTPException(status_code=401, detail="invalid admin key")
             try:
@@ -623,10 +576,6 @@ class TestInstallDuringInflightStreaming:
             new_key = make_key()
             streamed: list[str] = []
 
-            # Start the stream under the old key, rotate after the first chunk
-            # arrives (overlap=0, the harshest case — old key invalidated
-            # immediately for NEW requests), drain the rest.  The in-flight
-            # stream must complete without disconnection.
             async with c.stream("GET", "/stream", headers={"x-engine-key": old_key}) as resp:
                 assert resp.status_code == 200
                 rotated = False
@@ -648,7 +597,6 @@ class TestInstallDuringInflightStreaming:
             for i in range(self.TICK_COUNT):
                 assert f"data: {i}\n" in full, f"missing tick {i}; stream was cut short"
 
-            # Post-rotation: old key rejected, new key accepted — run both probes concurrently.
             r_old, r_new = await asyncio.gather(
                 c.get("/stream", headers={"x-engine-key": old_key}),
                 c.get("/stream", headers={"x-engine-key": new_key}),
@@ -657,11 +605,6 @@ class TestInstallDuringInflightStreaming:
                 "old key should be invalid for new requests post-rotation"
             )
             assert r_new.status_code == 200, "new key must work for new requests post-rotation"
-
-
-# ---------------------------------------------------------------------------
-# Route tests — POST /admin/install-pending-key through the real app
-# ---------------------------------------------------------------------------
 
 
 class TestInstallPendingKeyRoute:
@@ -675,8 +618,6 @@ class TestInstallPendingKeyRoute:
         import httpx
         import src.server as server
 
-        # Real engine + admin auth state. validate_admin reads the admin hash;
-        # the route then drives install_pending_key against the engine AuthState.
         engine_key = make_key()
         admin_key = make_key()
         init_auth_state(hash_key(engine_key))
@@ -719,7 +660,6 @@ class TestInstallPendingKeyRoute:
         import src.server as server
 
         init_auth_state(hash_key(make_key()))
-        # fresh_auth_state already reset admin state — leave it unconfigured.
 
         transport = httpx.ASGITransport(app=server.app)
         async with httpx.AsyncClient(transport=transport, base_url="http://test", timeout=5.0) as c:

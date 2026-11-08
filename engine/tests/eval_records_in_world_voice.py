@@ -52,11 +52,6 @@ CONCURRENCY = 4
 
 COPIED_RECORD = re.compile(r"(^|\n)\s*-\s*world:\w+\(")
 
-# The engine homes of the run. The trace cap cut ~19 messages from every one
-# of these bodies, leaving three records to copy where the live call had
-# about twelve, and the clipped replay did not reproduce the fault (1 copy in
-# 30 against 12 live). With the homes, each call's history is rebuilt from
-# the resident's own conversation store, exactly as `load_messages` served it.
 HOMES = os.environ.get("KASUKABE_REPLAY_HOMES", "")
 KEEP = int(os.environ.get("KASUKABE_HISTORY_MESSAGES", "24"))
 
@@ -118,7 +113,6 @@ def replayable_calls(db: str, samples: int) -> list[dict[str, Any]]:
     bodies = []
     for agent_id, created_at, raw, live in conn.execute(
         "select agent_id, created_at, request_body, response_body from llm_calls "
-        # created_at, not id: a trace id is a random `trc_<uuid>`.
         "where purpose='auto:agent_turn' and success=1 order by created_at"
     ):
         try:
@@ -133,8 +127,6 @@ def replayable_calls(db: str, samples: int) -> list[dict[str, Any]]:
                 continue
             body = {**body, "messages": history + [body["messages"][-1]]}
         try:
-            # What this very call did in the run, so the baseline is the same
-            # sample. Underscored, so `arms` never sends it.
             body["_live"] = verdict(json.loads(live))
         except (TypeError, ValueError):
             continue

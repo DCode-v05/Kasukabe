@@ -46,18 +46,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-# Tick = 10 game-minutes, 144 ticks/game-day (DESIGN.md section 1). Every
-# duration on the charter is authored in game-days (readable, matches
-# DESIGN.md's own units) and converted to ticks at the point of use so the
-# election engine only ever compares integers.
 TICKS_PER_GAME_DAY = 144
 
-# Location gates (DESIGN.md section 2: "every tool is location-gated").
-# The location engine itself (agent position, movement, collision) lives
-# in `world/core/movement.py` and `world/map/`; GROW-30, this used to say it
-# did not exist yet. charter/ still only knows the string it requires and
-# validates whatever the tool dispatcher passes in - the separation is
-# the same import boundary the module docstring describes, not a gap.
 LOCATION_TOWN_HALL = "town_hall"
 LOCATION_GOVERNMENT_COMPLEX = "government_complex"
 LOCATION_PATENT_OFFICE = "patent_office"
@@ -96,8 +86,6 @@ class Charter(BaseModel):
     version: int = 0
     genesis_tick: int = 0
 
-    # Election rules (DESIGN.md section 7: "Elections every 3 game-days:
-    # 1 Prime Minister + 4 ministers").
     election_interval_days: float = 3.0
     pm_seats: int = 1
     minister_seats: int = 4
@@ -105,58 +93,20 @@ class Charter(BaseModel):
     campaign_period_days: float = 1.0
     voting_window_days: float = 1.0
 
-    # Amendment threshold (DESIGN.md section 7: "3/5 vote"), stored as a
-    # fraction rather than a baked-in integer so it stays meaningful as
-    # seats itself is amended.
     amendment_threshold_numerator: int = 3
     amendment_threshold_denominator: int = 5
 
-    # Suffrage rules. DESIGN.md section 4 puts working age at 18-69 and
-    # gives every agent a household; genesis suffrage is the ordinary
-    # "adult resident votes" default a government can later narrow or
-    # widen by amendment.
     suffrage_min_age: int = 18
-    #: Whether every resident of suffrage age is required to vote.
-    #:
-    #: The 20-resident run of 28 September is the case for having it. Four
-    #: of twenty voted. The other sixteen were not uninformed: one of them
-    #: read "an election is open for voting... Standing: Ainsley Holloway
-    #: (n02), Delia Okonjo (n16)... Voting closes game-day 2, 15:00" on six
-    #: separate turns and went on working. A three-hour window and a named
-    #: deadline were not enough, because nothing ever said the vote was
-    #: THEIRS to cast.
-    #:
-    #: What this changes is what a resident is TOLD, not what it may do.
-    #: Nobody is voted for: a ballot cast by the world would be evidence of
-    #: nothing, and the whole point of counting votes here is that residents
-    #: chose to cast them. Off by default, so runs before and after stay
-    #: comparable; a scenario turns it on.
     compulsory_voting: bool = False
     suffrage_requires_residency: bool = True
 
-    # Term rules. DESIGN.md section 7: "Unlimited re-election" is the
-    # genesis default; `None` means no cap. A government can amend this
-    # to a positive integer to impose term limits on itself (or lift
-    # limits back to unlimited), same generic amendment path as anything
-    # else on this model.
     term_limit_terms: int | None = None
 
-    # Patent office fee (DESIGN.md section 2: "Must be registered at the
-    # government patent office (fee; reviewable; revocable)").
     patent_filing_fee_sim: int = 1_000
 
-    # Building/permit fees (DESIGN.md section 1: freeform building
-    # "Requires plot rights + government permit").
     permit_fee_sim: int = 200
     builder_license_fee_sim: int = 500
 
-    # The town's rules and regulations: every standing order in force, by the
-    # name of the governmental workflow that carries it (see tools/meta.py's
-    # `skillify`). A tuple, not a list, because Charter is frozen and a
-    # mutable default would let a caller edit the rulebook without an
-    # amendment - which is precisely the thing the amendment path exists to
-    # prevent. Empty at genesis: the town starts with no standing orders and
-    # writes its own.
     standing_orders: tuple[str, ...] = ()
 
     @property
@@ -181,12 +131,6 @@ class Charter(BaseModel):
 
     @model_validator(mode="after")
     def check_invariants(self) -> Charter:
-        # Aggregated per app/CONVENTIONS.md ("aggregate errors instead of
-        # failing on the first one where the caller benefits from seeing
-        # everything wrong at once") - a genesis charter or a bulk-field
-        # amendment can fail more than one rule at once, and pydantic v2
-        # gives a model_validator exactly one ValueError to raise, so all
-        # messages are collected and joined into that one error.
         errors: list[str] = []
         if self.pm_seats < 0:
             errors.append(f"pm_seats={self.pm_seats} must be >= 0")
@@ -251,16 +195,9 @@ class Charter(BaseModel):
         return self
 
 
-# Fields on Charter that an amendment may target. Excludes `version` and
-# `genesis_tick`: those are bookkeeping the amendment engine itself owns,
-# not policy a government votes on.
 AMENDABLE_CHARTER_FIELDS = frozenset(Charter.model_fields.keys()) - {"version", "genesis_tick"}
 
 
-# GOV-4. Who may found a business. "open" is the genesis free market;
-# "permit_required" means holding an active `permit:business` licence, which a
-# sitting seat issues for the charter's `permit_fee_sim`; "state_only" means
-# only a sitting seat may register one - the command-economy end of the dial.
 BusinessLicensing = Literal["open", "permit_required", "state_only"]
 BUSINESS_LICENSING_MODES: tuple[str, ...] = ("open", "permit_required", "state_only")
 BUSINESS_PERMIT_TYPE = "permit:business"
@@ -291,11 +228,6 @@ class GovernmentPolicy(BaseModel):
     pension_private_pct: int = 25
     pension_government_pct: int = 50
     pension_eligibility_age: int = 70
-    # GOV-4. Price controls and licensing - the levers the checklist names
-    # and nothing had. Each default reproduces the free market it replaces:
-    # no caps, no floors, anybody may found a business. Read at dispatch by
-    # `commerce` (post_price, and buy/sell/trade settlement) and by
-    # `civic.register_business_handler`; see `price_band_refusal` below.
     price_caps: dict[str, int] = Field(default_factory=dict)
     price_floors: dict[str, int] = Field(default_factory=dict)
     business_licensing: BusinessLicensing = "open"
@@ -333,7 +265,6 @@ class GovernmentPolicy(BaseModel):
             raise ValueError("; ".join(errors))
         return self
 
-    # -- price controls (GOV-4) -------------------------------------------
 
     def price_band_refusal(self, item: str, unit_price_sim: float) -> str | None:
         """Why this price for one unit of `item` is not allowed, or None.
@@ -356,18 +287,6 @@ class GovernmentPolicy(BaseModel):
             )
         return None
 
-    # -- pension terms (GOV-09) -------------------------------------------
-    #
-    # The three `pension_*` fields above were levers a sitting government
-    # could set and nothing could read: the module that actually pays a
-    # retiree took its percentages and its minimum age from module-level
-    # constants, so a minister who voted the private rate up to 40% changed
-    # a number that no payment ever consulted. These three methods are the
-    # readable form of the policy - what a payer needs to ask, and the only
-    # place the answer is computed. They deliberately take the retiree's
-    # age, last salary and employment type as arguments: charter/ does not
-    # own demographics or wage history (see this module's own docstring on
-    # the import boundary), it owns the rule.
 
     def pension_pct_for(self, employment_type: Literal["private", "government"]) -> int:
         """Percentage of last salary owed to a retiree of this kind.
@@ -414,20 +333,6 @@ class GovernmentState(BaseModel):
     pm_agent_id: str | None = None
     minister_agent_ids: list[str] = Field(default_factory=list)
     terms_served: dict[str, int] = Field(default_factory=dict)
-    # GROW-12. Is the sitting PM a caretaker who was never elected?
-    #
-    # Seats start vacant, deliberately - the first PM is whoever wins the
-    # first election. But no run has ever crossed that first election, so
-    # every seat-gated verb has refused every resident in every run, and
-    # `petition` is the ONLY in-world entry to the whole land-expansion
-    # pipeline. DESIGN section 1 is "government petitions the President",
-    # so the answer cannot be to let anyone petition; it has to be that a
-    # government exists.
-    #
-    # Marked rather than merely seeded, because the research turns on it:
-    # DESIGN section 10's regime-transition and authoritarianism metrics
-    # count terms in office, and a caretaker nobody voted for is not a
-    # term. `terms_served` is deliberately NOT incremented for them.
     caretaker: bool = False
 
     def is_sitting(self, agent_id: str) -> bool:
@@ -501,7 +406,7 @@ class Election(BaseModel):
     voting_closes_tick: int
     phase: ElectionPhase = ElectionPhase.SCHEDULED
     candidates: dict[str, Candidacy] = Field(default_factory=dict)
-    ballots: dict[str, str] = Field(default_factory=dict)  # voter_agent_id -> candidate_agent_id
+    ballots: dict[str, str] = Field(default_factory=dict)
     result: ElectionResult | None = None
 
 
@@ -530,11 +435,9 @@ class AmendmentProposal(BaseModel):
     rationale: str
     proposed_by_agent_id: str
     proposed_tick: int
-    votes: dict[str, bool] = Field(default_factory=dict)  # seat holder -> support
+    votes: dict[str, bool] = Field(default_factory=dict)
     status: AmendmentStatus = AmendmentStatus.PROPOSED
     resulting_charter_version: int | None = None
-    # When the seats carried it. The President's veto window runs from
-    # here; without it an auto-sign could not know how long it had waited.
     passed_tick: int | None = None
     enacted_tick: int | None = None
     vetoed_tick: int | None = None
@@ -576,10 +479,6 @@ class Job(BaseModel):
     created_tick: int
     cut_by_agent_id: str | None = None
     cut_tick: int | None = None
-    # The last tick this job is settled up to, `None` while it has never
-    # been paid. Not "when the payer ran": it advances by whole periods, so
-    # a payer that runs late still owes every day it missed, and a payer
-    # that runs twice in one game-day finds nothing due the second time.
     last_paid_tick: int | None = None
     total_paid_sim: int = 0
 
@@ -598,7 +497,6 @@ class Job(BaseModel):
             raise ValueError("; ".join(errors))
         return self
 
-    # -- payroll arithmetic (ECON-10) -------------------------------------
 
     def is_on_the_payroll(self) -> bool:
         """Does this job owe anyone anything? A vacant post and an unpaid

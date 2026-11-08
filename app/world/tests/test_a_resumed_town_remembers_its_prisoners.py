@@ -110,7 +110,6 @@ async def test_what_comes_back_is_a_model_not_a_dict():
     resumed = CrimeStore()
     resumed.restore(_through_disk(store.snapshot()))
     assert isinstance(resumed.cases["case1"], CaseFile)
-    # Reachable through the async API, which is what production uses.
     assert (await resumed.get_case("case1")).kind == "theft"
 
 
@@ -121,8 +120,6 @@ async def test_the_runner_actually_registers_it(runner):
     was true of this one for the whole life of the project."""
     registered = set(runner.tick_engine.checkpoints.components)
     assert "crime" in registered, "the crime store has a snapshot nothing calls"
-    # And the two GOV-12 named that other work closed - asserted so they
-    # cannot quietly reopen.
     assert "stakes" in registered, "head-tax debt is not checkpointed (CORE-08)"
     assert "charter" in registered, "the charter is not checkpointed"
 

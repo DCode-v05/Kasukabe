@@ -37,8 +37,6 @@ def give_tile(world, x: int, y: int, owner_id: str, *, from_expansion: bool = Fa
     )
 
 
-# -- 31.1 / 31.2: one tile, one owner, and no ownerless land ---------------
-
 @pytest.mark.asyncio
 async def test_unclaimed_land_reads_as_government_owned(world) -> None:
     """Section 31.2: unclaimed land IS a government asset. No row is
@@ -46,7 +44,7 @@ async def test_unclaimed_land_reads_as_government_owned(world) -> None:
     tile = require_tile(world, 142, 87)
     assert tile.owner_class is OwnerClass.GOVERNMENT
     assert tile.owner_id == GOVERNMENT_OWNER_ID
-    assert world.tile_owners == {}          # reading did not mutate anything
+    assert world.tile_owners == {}
 
 
 @pytest.mark.asyncio
@@ -113,8 +111,6 @@ async def test_a_failed_payment_leaves_the_deed_alone(world, registry) -> None:
     assert require_tile(world, 9, 9).owner_id == "seller"
 
 
-# -- 31.2: the auction ------------------------------------------------------
-
 @pytest.mark.asyncio
 async def test_auction_turns_expanded_land_into_treasury_revenue(world, registry) -> None:
     await spawn_agent(world, "pm", "square")
@@ -129,7 +125,6 @@ async def test_auction_turns_expanded_land_into_treasury_revenue(world, registry
     )
 
     assert result.result["treasury_gain_sim"] == 4_000
-    # The sale price plus the PM's own action fee, which is also treasury-bound.
     assert world.ledger.sim_balance(TREASURY_ACCOUNT_ID) == treasury_before + 4_000 + action_cost(
         "auction_land", {}
     )
@@ -163,8 +158,6 @@ async def test_the_government_cannot_auction_private_land(world, registry) -> No
             {"tile_x": 12, "tile_y": 12, "to_owner_id": "pm", "price_sim": 100},
         )
 
-
-# -- 31.3: the will ---------------------------------------------------------
 
 @pytest.mark.asyncio
 async def test_set_and_read_a_will(world, registry) -> None:
@@ -207,14 +200,14 @@ async def test_the_will_overrides_the_default_heir(world) -> None:
     await spawn_agent(world, "kenji", "square")
     await spawn_agent(world, "lucia", "square")
     await spawn_agent(world, "hana", "square")
-    give_tile(world, 5, 5, "kenji")          # the house he willed to hana
-    give_tile(world, 6, 6, "kenji")          # everything else he did not mention
+    give_tile(world, 5, 5, "kenji")
+    give_tile(world, 6, 6, "kenji")
     await registry_free_will(world, "kenji", "hana", [(5, 5)])
 
     events = settle_property_estate(world, "kenji", default_heirs=["lucia"])
 
-    assert require_tile(world, 5, 5).owner_id == "hana"      # by the will
-    assert require_tile(world, 6, 6).owner_id == "lucia"     # by the default
+    assert require_tile(world, 5, 5).owner_id == "hana"
+    assert require_tile(world, 6, 6).owner_id == "lucia"
     routes = {(e.payload["tile_x"], e.payload["tile_y"]): e.payload["route"] for e in events}
     assert routes[(5, 5)] == "will" and routes[(6, 6)] == "default"
 

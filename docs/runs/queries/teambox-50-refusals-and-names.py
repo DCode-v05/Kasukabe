@@ -78,10 +78,6 @@ for kind in ("id", "name"):
     if n:
         print(f"N14 by {kind}: {n} calls, {refusals[kind]} refused ({100*refusals[kind]/n:.1f}%)")
 
-# N14's bar is about REFERENCE failures, and most refusals on a person
-# parameter are about the goods ("has not posted a price", "you hold 0").
-# A refusal is reference-shaped when it says the person could not be found
-# or is not here. An approximation over the refusal wording, stated as one.
 REF = re.compile(r"no (one|agent|resident|person)[^\"]*named|not found|unknown (agent|person)|"
                  r"no such (agent|person)|isn't here|is not here|not here|not co-located|could not find", re.I)
 refref = collections.Counter()

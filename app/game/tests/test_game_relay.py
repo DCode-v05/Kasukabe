@@ -35,11 +35,6 @@ class FakeWorldClient:
     async def stream_events(self):
         for event in self._events:
             yield event
-        # Block forever afterward instead of returning, matching
-        # HttpWorldClient/MockWorldClient's "never stops unless closed"
-        # contract - a generator that just returns would let
-        # ConnectionHub._pump's `async for` exit silently, which is not
-        # what the real implementations do.
         forever: asyncio.Future = asyncio.get_event_loop().create_future()
         await forever
 
@@ -90,7 +85,7 @@ async def test_hub_broadcasts_new_events_to_registered_clients() -> None:
     world = FakeWorldClient([make_event(tick=1)])
     hub = ConnectionHub(world, replay_buffer_size=10)
     client = FakeBrowserSocket()
-    hub.clients.add(client)  # pre-register, no replay needed for this test
+    hub.clients.add(client)
 
     hub.start()
     await wait_until(lambda: len(client.received) == 1)
@@ -117,7 +112,7 @@ async def test_hub_drops_a_client_whose_send_fails() -> None:
 async def test_hub_broadcast_is_a_noop_with_no_clients() -> None:
     world = FakeWorldClient([])
     hub = ConnectionHub(world, replay_buffer_size=10)
-    await hub.broadcast(make_event())  # must not raise
+    await hub.broadcast(make_event())
     await hub.stop()
 
 

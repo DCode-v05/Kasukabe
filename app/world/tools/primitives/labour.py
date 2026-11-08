@@ -134,8 +134,6 @@ async def set_wage_handler(
             "wage_sim": params.wage_sim,
             "every_days": params.every_days,
             "previous_wage_sim": previous.wage_sim if previous else None,
-            # The employee reads it on its next turn: being told what you
-            # were promised is the only way the promise exists for them.
             "involved_agent_ids": [agent.agent_id, params.employee_id],
         },
     )
@@ -198,10 +196,6 @@ async def pay_wage_handler(
 
     gift = 0
     if promise is not None:
-        # Paying more than owed clears the debt and records the rest as a
-        # gift rather than as credit against future wages: a generous
-        # employer this week is not thereby excused next week, and the
-        # trace should be able to see the generosity as generosity.
         applied = min(params.amount_sim, promise.accrued_sim - promise.paid_sim)
         gift = params.amount_sim - max(applied, 0)
         promise.paid_sim += max(applied, 0)
@@ -258,7 +252,6 @@ def build_specs() -> list[ToolSpec]:
         ToolSpec(
             name="set_wage",
             description=(
-                # Addendum section 5, 77 words.
                 "Promise an employee of a business you own a wage: so much sim "
                 "every so many game-days, payable at the premises. This records the "
                 "promise only; nothing is paid until you call `pay_wage`. The world "
@@ -269,7 +262,7 @@ def build_specs() -> list[ToolSpec]:
             params_model=SetWageParams,
             handler=set_wage_handler,
             namespace=ToolNamespace.PUBLIC,
-            location_gate=None,  # resolved against the named business, in the handler
+            location_gate=None,
             actor_requirements=ActorRequirements(),
         ),
         ToolSpec(
@@ -290,20 +283,6 @@ def build_specs() -> list[ToolSpec]:
         ToolSpec(
             name="check_debts",
             description=(
-                # Addendum section 8.
-                # ECON-27 cut this back to what the town could actually
-                # do, because it had promised two things it could not:
-                # upkeep arrears nothing recorded (ECON-15) and a treasury
-                # debt payable by `transfer`, which refuses every non-agent
-                # recipient (ECON-14). A resident that follows a
-                # description into a refusal has been misled by its own
-                # toolbox.
-                #
-                # Both are now closed - `record_upkeep_arrears` writes the
-                # shortfall and `pay_tax` settles the treasury - so the
-                # sentence may name the route again. It names `pay_tax`
-                # and NOT `transfer` for the treasury: that was the exact
-                # wrong turn ECON-14 is about.
                 "List what you owe and what is owed to you: head tax owed, unpaid "
                 "upkeep, wages promised to you or by you, and loans recorded with "
                 "`transfer`. Amounts and who, nothing else. Free to call. Head tax is "

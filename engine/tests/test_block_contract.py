@@ -19,8 +19,6 @@ import json
 import os
 import sys
 
-# The generator lives in scripts/ (engine root), not under src/. Put the engine
-# root on the path the same way the other non-src tests do, then import it.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from scripts.gen_block_contract import (  # noqa: E402
@@ -74,7 +72,7 @@ def parse_frame(frame: str) -> dict:
     into its decoded data object, asserting the framing along the way."""
     lines = frame.split("\n")
     assert lines[0].startswith("seq: "), f"missing seq line: {frame!r}"
-    int(lines[0][len("seq: ") :])  # seq is an int
+    int(lines[0][len("seq: ") :])
     assert lines[1] == "event: block", f"missing event line: {frame!r}"
     assert lines[2].startswith("data: "), f"missing data line: {frame!r}"
     assert lines[3] == "" and lines[4] == "", f"frame must end with blank line: {frame!r}"
@@ -85,7 +83,6 @@ def test_fixtures_parse():
     """Every fixture frame parses to valid JSON with the five envelope keys, and
     there is exactly one fixture per BLOCK_TYPES entry (done + error included)."""
     frames = render_fixtures()
-    # One frame per block type; done + error are two of the 30.
     assert len(frames) == len(BLOCK_TYPES)
 
     seen_types: list[str] = []
@@ -98,9 +95,7 @@ def test_fixtures_parse():
         assert data["id"], "every fixture must carry a derived id"
         seen_types.append(data["type"])
 
-    # Exactly one fixture for each of the 27 types, no more, no less.
     assert sorted(seen_types) == sorted(BLOCK_TYPES)
     assert len(set(seen_types)) == len(BLOCK_TYPES)
-    # done + error are present (the synthesized terminals).
     assert "done" in seen_types
     assert "error" in seen_types

@@ -39,12 +39,6 @@ async def _inventor_with_a_composite(
         {
             "name": name,
             "description": "look around, then count what is owed",
-            # Two DIFFERENT reads on purpose. TRADE-04 folds a
-            # repeated identical read inside one tick, and a folded
-            # repeat is answered without a dispatch record - correctly,
-            # because it is not an act. A guard about counting acts must
-            # not accidentally be a guard about that fold; there is a
-            # separate one for it below.
             "steps": [
                 {"tool_name": "look_around"},
                 {"tool_name": "check_debts"},
@@ -121,7 +115,7 @@ async def test_acts_per_model_call_is_computable_from_the_log(world, registry):
             by_program[row.program_id] = by_program.get(row.program_id, 0) + 1
 
     assert len(by_program) == 1
-    acts_bought = next(iter(by_program.values())) - 1  # minus the wrapper
+    acts_bought = next(iter(by_program.values())) - 1
     assert acts_bought == 2, (
         "one model call bought two acts and the log cannot say so; "
         f"rows per program: {by_program}"

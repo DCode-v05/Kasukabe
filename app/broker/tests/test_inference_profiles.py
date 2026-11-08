@@ -32,11 +32,6 @@ from broker.lanes import lane_id
 ARN = "arn:aws:bedrock:{region}:123456789012:application-inference-profile/{slug}"
 
 
-# BEDROCK_MODELS, not MODEL_ALLOWLIST: lanes here are (model x region) and an
-# OpenAI model has no region and no inference profile, so it contributes one
-# lane built on a different path (broker/lanes.py). Counting it in the Bedrock
-# arithmetic would make every expectation below wrong by exactly that lane.
-
 def full_mapping() -> dict[str, str]:
     """A profile for every real lane - derived, so a new model is covered."""
     return {
@@ -46,13 +41,7 @@ def full_mapping() -> dict[str, str]:
     }
 
 
-# ── the duplicated lane key ──────────────────────────────────────────
-
-
 def test_lane_key_matches_lanes_lane_id() -> None:
-    # config.lane_key is a deliberate copy of lanes.lane_id (lanes.py
-    # imports config.py, so importing back would be a cycle). Same parity
-    # discipline world/run_genesis.py's watchdog copy is held to.
     for model in BEDROCK_MODELS:
         for region in BEDROCK_LANE_REGIONS:
             assert lane_key(model, region) == lane_id(model, region)
@@ -61,9 +50,6 @@ def test_lane_key_matches_lanes_lane_id() -> None:
 def test_expected_lane_keys_is_every_model_in_every_region() -> None:
     assert len(expected_lane_keys()) == len(BEDROCK_MODELS) * len(BEDROCK_LANE_REGIONS)
     assert lane_key(KIMI_MODEL_ID, "ap-south-1") in expected_lane_keys()
-
-
-# ── parsing ──────────────────────────────────────────────────────────
 
 
 def test_parses_comma_separated() -> None:
@@ -101,11 +87,7 @@ def test_duplicate_lane_raises() -> None:
         parse_inference_profiles("X", f"{KIMI_MODEL_ID}@ap-south-1=a,{KIMI_MODEL_ID}@ap-south-1=b")
 
 
-# ── validation: all lanes or none ────────────────────────────────────
-
-
 def test_empty_mapping_is_valid_in_real_mode() -> None:
-    # Bare model ids are correct for an account with direct FM access.
     settings = BrokerSettings(mock_mode=False, world_base_url="http://w", trace_sqlite_path="/tmp/k.db")
     assert settings.validate() == []
 
@@ -156,8 +138,6 @@ def test_partial_mapping_is_legal_and_builds_only_those_lanes() -> None:
         "single region the partial mapping covers"
     )
     assert {lane.region for lane in lanes} == {BEDROCK_LANE_REGIONS[0]}
-    # EVERY model still served - a model with zero lanes is unservable,
-    # and build_lane_pool raises rather than silently dropping one.
     assert {lane.model for lane in lanes} == set(BEDROCK_MODELS)
 
 
@@ -213,12 +193,7 @@ def test_build_from_env_reports_malformed_value() -> None:
     assert any("BEDROCK_INFERENCE_PROFILES" in e for e in errors)
 
 
-# ── the swap itself ──────────────────────────────────────────────────
-
-
 def gateway(profile: "str | None") -> Boto3BedrockGateway:
-    # Constructing a boto3 client needs no credentials - they are only
-    # resolved at call time - so this touches no network and cannot spend.
     return Boto3BedrockGateway("ap-south-1", inference_profile_id=profile)
 
 
@@ -235,15 +210,9 @@ def test_profile_replaces_model_id() -> None:
 
 
 def test_swap_never_mutates_the_callers_request() -> None:
-    # broker/service.py keeps the request it built for the trace record.
-    # That record must say which MODEL was asked for, not which ARN
-    # carried it, or the research output disagrees with the billing.
     request = {"modelId": KIMI_MODEL_ID, "messages": []}
     gateway(ARN.format(region="ap-south-1", slug="x")).resolved_request(request)
     assert request["modelId"] == KIMI_MODEL_ID
-
-
-# ── the wiring ───────────────────────────────────────────────────────
 
 
 def test_build_service_hands_every_lane_its_own_profile(tmp_path) -> None:
@@ -275,8 +244,6 @@ def test_build_service_hands_every_lane_its_own_profile(tmp_path) -> None:
         assert lane.gateway.inference_profile_id == expected, (
             f"lane {lane.id} got {lane.gateway.inference_profile_id!r}, expected {expected!r}"
         )
-        # Each lane's client really is regional - a shared client would
-        # send ap-south-1 traffic to whichever region was built first.
         assert lane.gateway.region == lane.region
 
 
@@ -292,9 +259,6 @@ def test_build_service_without_profiles_sends_bare_model_ids(tmp_path) -> None:
     for lane in service.lane_pool.all_lanes():
         assert lane.gateway.inference_profile_id is None
         assert lane.gateway.resolved_request({"modelId": lane.model})["modelId"] == lane.model
-
-
-# -- AWS credentials from .env ----------------------------------------
 
 
 def write_env(tmp_path, *lines: str) -> Path:
@@ -383,9 +347,6 @@ def test_mock_mode_never_exports_credentials(tmp_path, monkeypatch) -> None:
     monkeypatch.delenv("AWS_ACCESS_KEY_ID", raising=False)
     write_env(tmp_path, "AWS_ACCESS_KEY_ID=should-not-be-exported")
 
-    # mock_mode is no longer reachable from the environment, so this asks
-    # for it the only way left: explicitly, in code. That is the point of
-    # keeping the field at all.
     create_app(settings=BrokerSettings(mock_mode=True))
 
     assert "AWS_ACCESS_KEY_ID" not in os.environ

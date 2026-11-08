@@ -38,10 +38,6 @@ import websockets
 
 CHROME_CANDIDATES = (
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    # Windows. `shutil.which("chrome")` does not find these - Chrome is not on
-    # PATH there - so the absolute paths have to be listed or find_chrome()
-    # falls through to candidate[0] and Popen dies with WinError 2, which
-    # names no file and reads like a missing script.
     "C:/Program Files/Google/Chrome/Application/chrome.exe",
     "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
     "google-chrome", "google-chrome-stable", "chromium", "chromium-browser", "chrome",
@@ -57,9 +53,6 @@ def find_chrome() -> str:
     that order; the first that exists wins.
     """
     for candidate in CHROME_CANDIDATES:
-        # `is_absolute()` rather than `startswith("/")`, so a Windows
-        # `C:/...` candidate is treated as the path it is instead of being
-        # handed to `which`, which looks along PATH and will not find it.
         path = candidate if Path(candidate).is_absolute() else shutil.which(candidate)
         if path and Path(path).exists():
             return path
@@ -94,13 +87,6 @@ def encode(frames: Path, out_mp4: Path, fps: int) -> "Path | None":
         return None
     listing = frames / "frames.txt"
     listing.write_text("".join(f"file '{p.name}'\n" for p in pictures), encoding="utf-8")
-    # ABSOLUTE, both of them. ffmpeg runs with the frames directory as its
-    # working directory (the listing names frames without a path), so a
-    # relative --out - which is what a launcher started from app/ passes,
-    # `../docs/runs/series/NAME/video` - resolved against the frames
-    # directory instead, and ffmpeg exited 254 into a directory that does
-    # not exist. The election-at-dawn-8 run of 2026-09-23 kept all 823
-    # frames and wrote no video.
     out_mp4 = Path(out_mp4).resolve()
     cmd = [ffmpeg, "-y", "-loglevel", "error", "-r", str(fps), "-f", "concat", "-safe", "0",
            "-i", str(listing.resolve()), "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p",
@@ -147,25 +133,8 @@ class Page:
 async def record(args) -> int:
     frames = Path(args.out) / "frames"
     frames.mkdir(parents=True, exist_ok=True)
-    start = len(list(frames.glob("frame-*.jpg")))   # continue numbering after a restart
+    start = len(list(frames.glob("frame-*.jpg")))
     profile = tempfile.mkdtemp(prefix="record-ui-")
-    # `--no-sandbox` and `--disable-dev-shm-usage` are for Linux, and without
-    # them a cloud box records nothing at all.
-    #
-    # Chrome's sandbox needs user namespaces, which a hardened or containerised
-    # host often does not grant. Chrome then starts, opens its DevTools port
-    # and dies the moment it renders, so the recorder connects and the socket
-    # closes under it: "no close frame received or sent", once per frame,
-    # forever. The message never mentions the sandbox, and Chrome's own
-    # complaint goes to DEVNULL below.
-    #
-    # `--disable-dev-shm-usage` is the matching one: /dev/shm is commonly 64 MB
-    # on these hosts and six 1920x1080 tabs do not fit, which produces the same
-    # kind of unexplained renderer death under load rather than at startup.
-    #
-    # Both are harmless on a Mac, which is why they are not conditioned on the
-    # platform: one code path that works everywhere beats two that differ in
-    # the way that is hardest to test.
     chrome = subprocess.Popen(
         [args.chrome, "--headless=new", f"--remote-debugging-port={args.port}",
          f"--user-data-dir={profile}", f"--window-size={args.width},{args.height}",
@@ -176,13 +145,6 @@ async def record(args) -> int:
     stop = asyncio.Event()
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGINT, signal.SIGTERM):
-        # `add_signal_handler` raises NotImplementedError on Windows -
-        # asyncio simply does not implement it on the Proactor loop. It took
-        # the recorder down on startup, so a run on Windows produced a video
-        # directory and no frames while everything else worked. `signal.signal`
-        # does exist there; it runs the handler on the main thread rather than
-        # inside the loop, which is why `call_soon_threadsafe` is used to set
-        # the event from it.
         try:
             loop.add_signal_handler(sig, stop.set)
         except NotImplementedError:
@@ -203,9 +165,6 @@ async def record(args) -> int:
             blind = 0
             async with httpx.AsyncClient(timeout=5) as probe:
               while not stop.is_set():
-                # Stop when the world stops: every run ends with the world
-                # going away, and frames of an "unreachable" page after the
-                # result would be the last thing the video shows.
                 if args.watch_url:
                     try:
                         ok = (await probe.get(args.watch_url)).status_code == 200
@@ -215,15 +174,6 @@ async def record(args) -> int:
                     if misses >= args.watch_misses:
                         print(f"record_ui: {args.watch_url} stopped answering; stopping")
                         break
-                # A screenshot can fail transiently - Chrome answered
-                # `Page.captureScreenshot: {'code': -32603, 'message':
-                # 'Internal error'}` on all six cameras of a rehearsal, at
-                # different times, after minutes of filming happily. Left
-                # unhandled it escaped `record()` and killed the process,
-                # which lost the ENCODE as well: the frames sat on disk and
-                # no run.mp4 was ever written. One bad frame must cost one
-                # frame. Only a camera that cannot take any frame at all is
-                # actually broken, and `blind` is what tells those apart.
                 try:
                     shot = await page.call(
                         "Page.captureScreenshot", format="jpeg", quality=args.quality
@@ -257,10 +207,6 @@ async def record(args) -> int:
         except subprocess.TimeoutExpired:
             chrome.kill()
         shutil.rmtree(profile, ignore_errors=True)
-        # Inside the `finally`, because it used to sit after it: any exception
-        # out of the loop skipped the encode entirely and a run that had filmed
-        # for hours ended with frames on disk and no video. Whatever was
-        # filmed gets encoded, even when the recorder is dying.
         print(f"record_ui: {taken} frames taken this session")
         try:
             encode(frames, Path(args.out) / "run.mp4", args.fps)
@@ -281,14 +227,8 @@ def main(argv: "list[str] | None" = None) -> int:
     ap.add_argument("--quality", type=int, default=80, help="JPEG quality per frame")
     ap.add_argument("--settle", type=float, default=6.0, help="seconds to let the page load first")
     ap.add_argument("--seconds", type=float, default=0, help="stop after this long (0 = until signalled)")
-    # 15 consecutive failures is a minute of blindness at the default 4s
-    # interval. Below that a camera is having a bad moment; above it, Chrome
-    # is gone and there is nothing to wait for.
     ap.add_argument("--blind-limit", type=int, default=15,
                     help="give up after this many consecutive failed screenshots")
-    # Outside the engine range (preflight.ENGINE_PORT_BASE 9100, one port per
-    # resident, up to 9349 at 250): 9333 sat inside it, and preflight
-    # reported the recorder's Chrome as an engine port already taken.
     ap.add_argument("--port", type=int, default=9600, help="Chrome's DevTools port")
     ap.add_argument("--chrome", default=None, help="Chrome/Chromium binary (found automatically)")
     ap.add_argument("--watch-url", default="", help="stop when this URL stops answering (the world's /world/state)")

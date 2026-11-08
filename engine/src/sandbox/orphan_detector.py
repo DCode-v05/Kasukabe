@@ -53,8 +53,6 @@ def is_sandbox_orphan(pid: int) -> bool:
     try:
         marker = f"{workspace_root()}/{WORKSPACE_PREFIX}"
     except Exception:
-        # Root unresolvable (misconfigured env in a teardown path). Fall back to
-        # the prefix alone rather than silently reaping nothing.
         logger.debug("Workspace root unresolvable; matching on prefix only", exc_info=True)
         marker = f"/{WORKSPACE_PREFIX}"
     return marker in cwd

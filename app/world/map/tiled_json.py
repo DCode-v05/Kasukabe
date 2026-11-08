@@ -45,12 +45,6 @@ ARENA_LAYER = "Arena Blocks"
 GAME_OBJECT_LAYER = "Object Interaction Blocks"
 SPAWNING_LAYER = "Spawning Blocks"
 
-# Every visual/decoration layer present in the base Ville file. Not
-# load-bearing for WorldMap construction (build_world_map only reads the
-# five layers above), but append_land still has to grow these in lockstep
-# so the Tiled JSON stays structurally valid (every layer's data array
-# must equal width*height, or a Tiled-compatible renderer - game/,
-# eventually - rejects the file).
 VISUAL_LAYERS = (
     "Bottom Ground",
     "Exterior Ground",
@@ -59,26 +53,15 @@ VISUAL_LAYERS = (
     "Interior Ground",
     "Wall",
     "Interior Furniture L1",
-    "Interior Furniture L2 ",  # trailing space is in the source file's own layer name
+    "Interior Furniture L2 ",
     "Foreground L1",
     "Foreground L2",
     "World Blocks",
     "Special Blocks Registry",
 )
 
-# gid 2 is the base grass tile: it covers 13979 of the 14000 cells in the
-# base map's "Bottom Ground" layer (measured directly against
-# the_ville_jan7.json), i.e. it is the default ground everywhere nothing
-# more specific was hand-painted. Newly grown land gets this as its base
-# rather than gid 0 (blank/no tile) so it renders as ordinary ground
-# instead of a void, without this module needing to know anything about
-# the tileset's actual art beyond this one already-dominant choice.
 DEFAULT_GROUND_GID = 2
 
-# Comfortably above every real gid in the base map (the highest tileset,
-# blocks_3, starts at firstgid 32285 and its tile count keeps the whole
-# file well under 40000) - synthetic ids minted for Kasukabe-only zones
-# start here so they can never collide with a real Ville tile graphic.
 SYNTHETIC_ID_FLOOR = 900_000
 
 

@@ -171,19 +171,7 @@ from world.life.soul_seed import format_sim, format_usd_cents
 from world.tools.registry import ActorRequirements, ToolNamespace, ToolOutcome, ToolSpec
 from world.tools.state import WorldState
 
-# One game-day of inference-burn history (DESIGN.md section 1: 144
-# ticks/game-day) is the default window for "recent burn rate" - long
-# enough to smooth over a single idle or unusually busy tick, short
-# enough that a burn rate from a week ago is not still being quoted as
-# "recent."
 DEFAULT_BURN_WINDOW_TICKS = TICKS_PER_DAY
-
-
-# ---------------------------------------------------------------------------
-# Assumed interface onto world.ledger.action_costs.ActionCostSchedule (see
-# module docstring's "ASSUMED INTERFACE" section for exactly why this is a
-# Protocol, not an import).
-# ---------------------------------------------------------------------------
 
 
 @runtime_checkable
@@ -229,11 +217,6 @@ class ActionCostScheduleUnavailableError(RuntimeError):
         )
 
 
-# ---------------------------------------------------------------------------
-# 1. Publishing costs into tool descriptions.
-# ---------------------------------------------------------------------------
-
-
 def describe_cost(tool_name: str, schedule: ActionCostScheduleLike) -> str:
     """The one-sentence cost disclosure fragment for ``tool_name``, price
     and rule only, per this module's CRITICAL CONSTRAINT. Used standalone
@@ -277,19 +260,6 @@ def annotate_tool_descriptions(
     }
 
 
-# ---------------------------------------------------------------------------
-# 2. Quotation: what would THIS call cost, before committing.
-# ---------------------------------------------------------------------------
-
-
-# The engine publishes every world tool under a namespace prefix
-# (engine/src/sim/world_tools.py's WORLD_TOOL_NAME_PREFIX is "world:", and
-# the tool-name sanitiser the SDK applies downstream turns the colon into
-# an underscore), so the name an agent reads in its own tool list is
-# "world:mine" or "world_mine" while the registry, the schedule and the
-# dispatch charge all use the bare "mine". A resident quoting the name it
-# was shown is not making a mistake, and must not be answered as if the
-# tool did not exist. ECON-17.
 ENGINE_TOOL_NAME_PREFIXES: tuple[str, ...] = ("world:", "world_")
 
 
@@ -542,11 +512,6 @@ def build_action_cost_quote_spec() -> ToolSpec:
     )
 
 
-# ---------------------------------------------------------------------------
-# 3. The per-tick economic context block.
-# ---------------------------------------------------------------------------
-
-
 @dataclass(frozen=True)
 class WalletAndBurn:
     """What ``gather_wallet_and_burn`` reads off a real ``Ledger``:
@@ -560,37 +525,6 @@ class WalletAndBurn:
     sim_balance: int
     recent_burn_usd_cents: int
     burn_window_ticks: int
-
-
-# ---------------------------------------------------------------------------
-# ECON-28: the recent-burn window, without re-reading the whole ledger.
-#
-# `gather_wallet_and_burn` runs once per agent per tick (run_genesis's
-# `wallet_line`, on the volatile line every resident reads every turn).
-# Summing it by filtering `ledger.transactions` made that O(agents x
-# transactions) per tick against a log that only ever grows: at 250
-# residents and 144 ticks a game-day the scan gets more expensive with
-# every hour the town has already lived, which is exactly backwards for a
-# long run.
-#
-# The finding's own suggestion was a per-agent ring buffer fed from
-# `economy.wallet.debited` events in the runner. This is the same idea
-# without needing the runner: the index below is built here, from the
-# ledger this module is already handed, and advanced incrementally - each
-# call walks only the transactions appended since the last one. A ring
-# buffer would also have needed a length chosen in advance (too short and
-# a long burn window reads short, silently); a per-agent prefix sum has no
-# such horizon and answers any window in a binary search.
-#
-# Correctness against a log that is NOT purely append-only: `run_genesis`
-# replaces `ledger.transactions` wholesale when it restores a saved run,
-# and a rolled-back tool call can shorten it. `_LedgerBurnIndex.sync`
-# therefore re-derives from scratch whenever the list object changed, or
-# is shorter than what was consumed, or no longer holds the same
-# Transaction object at the last consumed position. A stale index is a
-# wrong number on a resident's own runway, so the cheap check runs every
-# call rather than being trusted to a caller.
-# ---------------------------------------------------------------------------
 
 
 class _AgentBurnHistory:
@@ -668,8 +602,6 @@ class _LedgerBurnIndex:
             self._consumed = 0
             self._last_row = None
             self._by_agent = {}
-        # Indexed, not sliced: a slice would copy the tail, and the cost of
-        # this loop is the point of the whole mechanism.
         for index in range(self._consumed, len(log)):
             transaction = log[index]
             if (
@@ -692,10 +624,6 @@ class _LedgerBurnIndex:
         return history.total_between(since_tick, tick)
 
 
-# Weakly keyed so a finished run's ledger, and its index, are collected
-# together: nothing here keeps a Ledger alive, and a second Ledger in the
-# same process (every test builds its own) gets its own index rather than
-# reading another run's burns.
 _BURN_INDEXES: "weakref.WeakKeyDictionary[Ledger, _LedgerBurnIndex]" = weakref.WeakKeyDictionary()
 
 
@@ -790,8 +718,6 @@ class HouseholdUpkeepView(BaseModel):
     household_id: str
     daily_upkeep_sim: int
     dependent_agent_ids: tuple[str, ...] = ()
-    # Run 28: how many people the bill above is for. Without it a
-    # household's bill reached a resident's perception as a personal one.
     member_count: int = 1
 
     @property
@@ -858,8 +784,6 @@ def render_economic_context_block(context: EconomicContext) -> str:
     never cached long, it changes every tick by construction (module
     docstring's "Wiring this in" on the ``SystemPromptBlock`` TTL).
     """
-    # Energy, not dollars (world/ledger/money.py). Not wired into a
-    # perception today; whoever wires it inherits the right unit.
     from world.ledger.money import format_energy
 
     lines = [f"YOUR ECONOMY RIGHT NOW (tick {context.tick})", ""]

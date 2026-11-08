@@ -98,10 +98,6 @@ class TestRetrievalDepthConfig:
         assert high > low
 
     def test_cost_per_call_matches_measured_baseline_order_of_magnitude(self) -> None:
-        # Task prompt: "Real agent turn measured: 3443 in / 291 out =
-        # $0.001764/call." Verify our baseline estimate lands close to
-        # that measured figure (within half a hundredth of a cent), not
-        # exactly (this is a planning estimate, see module docstring).
         depth = RetrievalDepthConfig(fraction=0.0)
         assert depth.estimated_cost_per_call_usd == pytest.approx(0.001764, abs=0.0001)
 
@@ -164,8 +160,6 @@ class TestRenderPerceptionText:
 
     def test_heard_events_rendered(self) -> None:
         event = PerceivedEvent(
-            # TOOL-05: `agent.moved` has its own words now, so this uses
-            # a type with no branch to test the raw fallback.
             type="world.weather.changed", tick=10, payload={"to": "rain"},
             involves_self=False
         )
@@ -188,8 +182,6 @@ class TestRenderPerceptionText:
         perception = make_perception(heard_events=events)
         shallow_depth = RetrievalDepthConfig(fraction=0.0)
         text = render_perception_text(perception, depth=shallow_depth)
-        # Every rendered line is prefixed "  - ", so counting them counts
-        # rendered events directly rather than assuming exact wording.
         rendered_lines = [line for line in text.splitlines() if line.startswith("  - [")]
         assert len(rendered_lines) == shallow_depth.max_heard_events_rendered
         assert "more event" in text
@@ -242,13 +234,6 @@ class TestRenderPerceptionText:
         )
         assert len(deep) > len(shallow)
 
-
-# ── the prompt an agent actually receives ───────────────────────────────
-#
-# For 933 ticks this read, in full: the time, a list of agent IDs, and
-# "Nothing notable happened recently." A 30-agent town produced nine
-# utterances and residents stood in their houses all day. An agent was never
-# told its own trade, where its work was, or whether it had eaten.
 
 class TestPeopleAreNamed:
     def test_names_appear_at_every_depth_including_zero(self) -> None:
@@ -343,11 +328,6 @@ class TestStandingBrief:
         as it did."""
         plain = render_perception_text(
             make_perception(), depth=RetrievalDepthConfig(fraction=0.0))
-        # No standing BRIEF - "You are Marta Thorne, a baker." The ambient
-        # line's "You are at <place>" is not a brief and is always there:
-        # a resident that is not told where it stands cannot answer a
-        # single location gate. Asserting on the bare substring "You are"
-        # conflated the two.
         assert "You are Marta" not in plain
         assert "Your work is at" not in plain
         assert plain.startswith("It is game-day")
@@ -426,8 +406,6 @@ class TestSpeechReadsAsSpeech:
         )
 
     def render(self, event, **kw):
-        # Same place as the utterance, so the "at <place>" suffix - which is
-        # only added when the agent has moved on - stays out of the way.
         p = Perception(
             agent_id="a0087", tick=41, location_id="Hobbs Cafe",
             visible_agents=["a0121"], heard_events=[event],
@@ -486,9 +464,6 @@ class TestSpeechReadsAsSpeech:
         text = render_perception_text(
             p, depth=RetrievalDepthConfig(fraction=0.0),
             visible_agent_names={"a0121": "Arjun Holloway"})
-        # Guaranteed now by construction rather than by ordering: a remark
-        # addressed to this agent is lifted into its own section, so no
-        # amount of arrivals and departures can push it off the end.
         assert "Said to you, and not yet answered:" in text
 
     def test_a_non_speech_event_still_renders(self) -> None:
@@ -545,9 +520,6 @@ class TestPresenceIsAConstraintNotSceneSetting:
             visible_agent_bios={"a0031": "a patient farmer"},
             visible_agent_names={"a0031": "Wren Thorne"})
         assert "and nobody else" in text
-
-
-# ── said BY you is not said TO you ──────────────────────────────────────
 
 
 def _utterance(speaker: str, listener: str, where: str, text: str):
@@ -661,5 +633,4 @@ def test_an_open_question_is_read_before_the_town_directory() -> None:
     assert "Said to you" in text
     assert text.index("Said to you") < text.index("The rest of the town:")
     assert text.index("Said to you") < text.index("Your household:")
-    # Still below the clock, which is what orients everything else.
     assert text.index("game-day") < text.index("Said to you")

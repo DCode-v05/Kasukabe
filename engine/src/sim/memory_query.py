@@ -40,33 +40,6 @@ logger = logging.getLogger("kasukabe.sim.memory_query")
 
 SEARCH_MEMORY_TOOL_NAME = "search_memory"
 
-# ── the rule without which the verb is never callable ────────────────────
-#
-# `thread.py`'s `check_permission()` denies by default, so a registered
-# tool with no rule is silently never callable. Both siblings learned this
-# and wrote it down - `session_log.py`'s rule exists because "no
-# ToolExecution 'result' phase ever fired; the call was denied before the
-# handler ran", and `memory_stream.py` mirrors it. This module registered
-# its tool and never got one.
-#
-# It went unnoticed because it fails in the quietest way the engine has.
-# The denial happens before the handler, so no result event fires, so
-# `session_log` writes the call with no `status` at all - and a row with no
-# outcome does not look like a failure to anything that reads it. The
-# turn was billed, the resident was answered nothing, and the trace says
-# only that a call was made.
-#
-# The timing is the sharp part. `search_memory` was called ZERO times in
-# run 25, diagnosed above as a reaching problem, and fixed with SEARCH_HINT
-# naming the verb at the moment it would help. That worked: the corpus now
-# holds 29 calls across civic12 and the two 50-resident runs. Every one of
-# them was denied here. The hint earned the reach and this line was where
-# the payoff went.
-#
-# Found by `proof/reach.py`, which declines to score a call whose row
-# carries no outcome - "the corpus does not say whether the town answered,
-# so neither success nor refusal is evidenced here" - instead of counting
-# 29 silent rows as 29 refusals and moving on.
 SEARCH_MEMORY_TOOL_ALLOW_RULE = PermissionRule(
     tool=SEARCH_MEMORY_TOOL_NAME,
     pattern="",
@@ -82,8 +55,6 @@ def install_search_memory_permissions(thread: Any) -> None:
     if SEARCH_MEMORY_TOOL_ALLOW_RULE not in thread.session_rules:
         thread.session_rules.append(SEARCH_MEMORY_TOOL_ALLOW_RULE)
 
-# Recall competes with the turn's real work for context. A tool that can
-# return a hundred rows is a tool that will.
 def fts_terms(query: str) -> str:
     """A natural-language question, as an FTS5 MATCH expression.
 
@@ -104,15 +75,6 @@ def fts_terms(query: str) -> str:
     import re
 
     words = [w for w in re.split(r"[^0-9A-Za-z_]+", query or "") if w]
-    # Single characters are dropped as NOISE: "miller's" splits to
-    # (miller, s), and a bare "s" ORed in matches half the store.
-    #
-    # Only when there is something else to search for, though. A query
-    # that is nothing BUT a short token is a real query - the resident
-    # meant it - and dropping it turns a search into "ask me something
-    # with words in it", which is a refusal the resident cannot act on.
-    # The first draft of this dropped them unconditionally and broke
-    # exactly that case.
     meaty = [w for w in words if len(w) > 1]
     words = meaty or words
     return " OR ".join('"' + w.replace('"', '""') + '"' for w in words)
@@ -122,10 +84,6 @@ DEFAULT_LIMIT = 10
 MAX_LIMIT = 25
 MAX_ROW_CHARS = 300
 
-# `_source` values `unified()` tags its rows with, and the heading each
-# gets. "signals" is labelled unconsolidated on purpose: a raw correction
-# and an encoded fact must not read alike, because the model is weighing
-# one against the other.
 SOURCE_HEADINGS = {
     "episodes": "WHAT HAPPENED",
     "knowledge": "WHAT YOU KNOW",
@@ -179,31 +137,12 @@ def build_search_memory_tool(search: Retrieval | None) -> ToolDef:
             limit = DEFAULT_LIMIT
         limit = max(1, min(limit, MAX_LIMIT))
 
-        # ENG-15: hand FTS5 something it can parse.
-        #
-        # The raw question went straight to `MATCH`, where FTS5 reads it as
-        # QUERY SYNTAX rather than as words. Measured on a bare FTS5 table:
-        #
-        #   "wheat"                    -> 1 row
-        #   "miller's wheat"           -> syntax error near "'"
-        #   "wheat: damp"              -> no such column: wheat
-        #   "what did the miller say?" -> syntax error near "?"
-        #
-        # A colon is the worst of them: FTS5 takes the token before it as a
-        # COLUMN NAME, so an ordinary sentence becomes a schema error. Every
-        # one of these was caught by `search.py` and turned into an empty
-        # list, which this tool renders as "Nothing in memory matches that."
-        # A resident asking its own memory a plain question was told it had
-        # no such memory - and there is no way to tell that apart from
-        # genuinely having none.
         terms = fts_terms(query)
         if not terms:
             return "Ask memory something with words in it."
         try:
             rows = await search.unified(terms, limit=limit)
         except Exception as exc:  # noqa: BLE001
-            # Read as data, not as a crash - the same rule world tool calls
-            # follow, so a bad move is information the agent can act on.
             logger.warning("memory search failed for %r: %s", query, exc)
             return f"Memory could not be searched just now ({exc})."
         return _render(list(rows or []))
@@ -240,38 +179,6 @@ def build_search_memory_tool(search: Retrieval | None) -> ToolDef:
         is_read_only=lambda _: True,
     )
 
-
-# ── the line that names the verb ──────────────────────────────────────
-#
-# `search_memory` shipped registered, offered in all 82 tool schemas of
-# every request in run 25, and was called ZERO times across 1,973 tool
-# calls. That is the third time this exact result has been recorded here:
-# `start_conversation` got it across runs 18 and 19, `skillify` got it
-# before that, and SELF_AUTHORING_AGENTS.md section 8 states the reason —
-# an LLM agent does not spontaneously reach for a verb it was merely
-# handed a schema for. A good description is not a prompt.
-#
-# The fix that worked twice is an evidence-driven line naming the verb at
-# the moment the verb would help, and this is that fix a third time.
-# `world.tools.state.convening_hint` is the model; its discipline is
-# copied deliberately:
-#
-#   NOT a standing instruction. A permanent "you may search your memory"
-#   costs every resident a line every turn, carries no reason at any
-#   particular moment, and reads as furniture.
-#
-#   NAMES THE VERB, NEVER THE SUBJECT. What a resident chooses to look up
-#   is the experiment. Telling it what it already knows would answer the
-#   question instead of prompting it.
-#
-# WHY A REFUSAL IS THE MOMENT. `world_corrections.py` writes every world
-# refusal into `learning_signals`, and `learning_signals` is the ONE store
-# the turn's automatic recall does not read — that is the blind window
-# both specs are about. So a resident refused for the same reason twice
-# has, sitting in its own memory, the sentence explaining the first
-# refusal, durable and searchable and unreachable. This fires exactly
-# there: not on every refusal, only on one this resident has already been
-# given before.
 
 SEARCH_HINT = (
     "You have been told something about `{tool}` before that has not "

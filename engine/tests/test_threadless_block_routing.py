@@ -193,8 +193,6 @@ class TestReconnectSummaryCarriesTheTurn:
             def format_recap(self):
                 return "you were away"
 
-        # Run it in its own task, exactly as server.py does, so the contextvar
-        # it inherits is the default and only the explicit argument can help.
         await asyncio.create_task(server.emit_reconnect_summary(Summary(), "turn-9"))
 
         assert seen, "no event was emitted"

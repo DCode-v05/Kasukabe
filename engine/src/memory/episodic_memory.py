@@ -126,7 +126,6 @@ class EpisodicMemory:
                     result["score"] = score
                     scored.append((score, result))
 
-        # Keyword fallback — FTS5 with BM25 ranking
         fts_query = build_fts_query(query)
         if fts_query:
             fts_rows = await self.db.fetch(
@@ -151,7 +150,6 @@ class EpisodicMemory:
                     result["score"] = kw
                     scored.append((kw, result))
 
-        # Final fallback — keyword scoring on recent episodes without embeddings
         if not query_embedding or not self.db.vec_available:
             kw_rows = await self.db.fetch(
                 """
@@ -173,7 +171,6 @@ class EpisodicMemory:
                     result["score"] = kw
                     scored.append((kw, result))
 
-        # Apply recency boost — recent episodes rank higher
         for i, (score, result) in enumerate(scored):
             boost = recency_boost(result.get("created_at", ""))
             boosted = score * boost

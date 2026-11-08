@@ -19,9 +19,6 @@ from pathlib import Path
 APP = Path(__file__).resolve().parents[2]
 
 
-# ── TOOL-21: the rulebook is not the world's ─────────────────────────
-
-
 def test_exactly_one_rule_is_shared_between_the_two_economies() -> None:
     """`TOOL-21`. `rules/village_rules.json` defines wages by trade,
     upkeep at 55/day, head tax at 1,000 base and 300 bps, a supply and
@@ -57,10 +54,8 @@ def test_exactly_one_rule_is_shared_between_the_two_economies() -> None:
         and "tests" not in path.parts
     )
     assert readers == [
-        # The loader and its package - the mechanism, not a consumer.
         "world/rules/__init__.py",
         "world/rules/loader.py",
-        # The one consumer, and the one field: GOV-18's tax rate.
         "world/charter/genesis.py",
     ] or set(readers) == {
         "world/rules/__init__.py",
@@ -93,13 +88,8 @@ def test_the_rulebook_is_real_and_says_what_the_finding_says() -> None:
         return
     rules = json.loads(candidates[0].read_text(encoding="utf-8"))
     flat = json.dumps(rules)
-    # The three the finding quotes. Read loosely - the point is that this
-    # file really does define a parallel economy, not the exact schema.
     assert "upkeep" in flat.lower()
     assert "tax" in flat.lower()
-
-
-# ── TOOL-28: `mine costs 0 sim` was never verified ───────────────────
 
 
 def test_mine_is_priced_and_the_finding_could_not_have_been_right() -> None:
@@ -124,9 +114,6 @@ def test_mine_is_priced_and_the_finding_could_not_have_been_right() -> None:
         "right and the pricing is the bug rather than the ledger"
     )
     assert rule.base_cost > 0 or rule.per_unit_cost > 0
-
-
-# ── ECON-32: a budget that makes dormancy unreachable ────────────────
 
 
 def test_the_stakes_chain_is_reachable_at_the_wallets_the_run_uses() -> None:

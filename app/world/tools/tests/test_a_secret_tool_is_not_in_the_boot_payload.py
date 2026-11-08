@@ -187,12 +187,6 @@ async def test_a_neighbours_invention_is_not_in_your_payload(
         {
             "name": "mill_flour_run",
             "description": "walk to the mill and look at it",
-            # TOOL-06: `move` needs a destination. Steps are dry-run
-            # against their own params model at filing now, so a step
-            # with no params is refused - correctly: `resolve_step_params`
-            # only fills keys the step declares, so this composite would
-            # have died on its first call with the caller having paid for
-            # whatever ran before it.
             "steps": [
                 {"order": 1, "tool_name": "move",
                  "params": {"destination_location_id": "business:b_mill"}},
@@ -234,11 +228,6 @@ async def test_the_payload_and_the_vocabulary_listing_cannot_disagree(
         GovernmentState(pm_agent_id="pm", minister_agent_ids=[])
     )
 
-    # One deliberate, narrow exception: a tool in CONVERSATION_ENABLED_TOOLS
-    # (`buy`) EXISTS for a resident - dispatch still reaches it and refuses
-    # with the reason - but is only OFFERED while the resident is in a
-    # conversation (operator's rule, 2026-09-21). That is "not offered now",
-    # not "confidential", which is what this guard protects.
     from world.tools.registry import CONVERSATION_ENABLED_TOOLS
 
     for agent_id in ("n01", "pm"):

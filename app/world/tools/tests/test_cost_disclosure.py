@@ -46,10 +46,6 @@ from world.tools.bootstrap import build_world
 from world.tools.errors import ToolError
 from world.tools.tests.conftest import action_cost, spawn_agent
 
-# Same tripwire list as world/life/tests/test_soul_seed.py (this task's
-# own CRITICAL CONSTRAINT), extended with a couple of words specific to
-# the economic-context phrasing this module adds (survival framing that
-# could tip into advice rather than a fact).
 STRATEGY_WORDS = (
     "cooperate",
     "cooperation",
@@ -183,9 +179,6 @@ class TestAnnotateToolDescription:
         assert annotated == "Look around. Cost: no published sim-currency charge for this action."
 
     def test_against_a_real_registered_tool_description(self) -> None:
-        # Proof against the real thing: pull "pray"'s actual ToolSpec
-        # description out of a real build_world() registry instead of
-        # inventing a stand-in string.
         import asyncio
 
         world, registry = asyncio.run(build_world(genesis_tick=0, seed=1))
@@ -232,7 +225,7 @@ class TestQuoteActionCost:
         schedule = FakeActionCostSchedule({})
         quote = quote_action_cost(schedule, "look_around")
         assert quote.sim_cost == 0
-        assert quote.affordable is None  # no balance was supplied to check against
+        assert quote.affordable is None
 
     def test_affordability_when_balance_covers_it(self) -> None:
         schedule = FakeActionCostSchedule({"harvest_crop": (15, "flat fee")})
@@ -248,15 +241,11 @@ class TestQuoteActionCost:
         assert quote.affordable is False
 
     def test_usd_equivalent_is_informational_and_does_not_require_an_exact_multiple(self) -> None:
-        # 15 is not a multiple of SIM_PER_USD_CENT, so the real, strict
-        # ledger exchange helper refuses it - proving this module
-        # deliberately does NOT reuse that path for a merely informational
-        # figure (see ActionCostQuote's own docstring).
         from world.ledger.money import sim_to_usd_cents
 
         schedule = FakeActionCostSchedule({"harvest_crop": (15, "flat fee")})
         quote = quote_action_cost(schedule, "harvest_crop")
-        assert quote.usd_equivalent_cents == 0  # floor(15 / SIM_PER_USD_CENT)
+        assert quote.usd_equivalent_cents == 0
         with pytest.raises(ValueError):
             sim_to_usd_cents(15)
 
@@ -276,9 +265,6 @@ class TestQuoteActionCostHandlerIntegration:
 
     @pytest.mark.asyncio
     async def test_handler_called_directly_against_a_real_world_and_agent(self, world) -> None:
-        # quote_action_cost_handler itself, not through ToolRegistry -
-        # proves the handler function is correct in isolation, on top of
-        # the full-dispatch proof below.
         world.action_costs = FakeActionCostSchedule({"pray": (50, "flat fee")})
         agent = await spawn_agent(world, "a1", "temple", starting_sim=1_000)
 
@@ -288,12 +274,10 @@ class TestQuoteActionCostHandlerIntegration:
 
         assert outcome.result["sim_cost"] == 50
         assert outcome.result["sim_balance_before"] == 1_000
-        assert outcome.events == []  # a pure read publishes nothing
+        assert outcome.events == []
 
     @pytest.mark.asyncio
     async def test_quotes_through_the_real_registry(self, world, registry) -> None:
-        # Registered by build_world() itself now (bootstrap.py wires
-        # cost_disclosure in), so re-registering it would raise.
         assert registry.get("quote_action_cost") is not None
         world.action_costs = FakeActionCostSchedule({"pray": (50, "flat fee")})
         await spawn_agent(world, "a1", "temple", starting_sim=1_000)
@@ -302,10 +286,6 @@ class TestQuoteActionCostHandlerIntegration:
             world, "a1", "quote_action_cost", {"tool_name": "pray", "call_params": {}}
         )
 
-        # Part A: asking is itself an action, so the quote is answered from the
-        # balance the agent has AFTER paying to ask - which is the number it
-        # should be deciding on. (The handler-level test above calls the
-        # handler directly, with no dispatch, and still sees a clean 1_000.)
         asked = action_cost("quote_action_cost", {})
         assert result.result["sim_cost"] == 50
         assert result.result["sim_balance_before"] == 1_000 - asked
@@ -315,8 +295,6 @@ class TestQuoteActionCostHandlerIntegration:
 
     @pytest.mark.asyncio
     async def test_variable_cost_resolves_from_real_call_params(self, world, registry) -> None:
-        # Registered by build_world() itself now (bootstrap.py wires
-        # cost_disclosure in), so re-registering it would raise.
         assert registry.get("quote_action_cost") is not None
         world.action_costs = FakeVariableActionCostSchedule()
         await spawn_agent(world, "a1", "park", starting_sim=1_000)
@@ -331,8 +309,6 @@ class TestQuoteActionCostHandlerIntegration:
         assert result.result["sim_cost"] == FakeVariableActionCostSchedule.PER_TILE_SIM * 4
 
     def test_params_model_defaults_call_params_to_empty(self) -> None:
-        # An agent asking about a flat-cost tool has no reason to also
-        # supply call_params - proving the params model does not force it.
         params = QuoteActionCostParams(tool_name="pray")
         assert params.call_params == {}
 
@@ -340,12 +316,7 @@ class TestQuoteActionCostHandlerIntegration:
     async def test_missing_schedule_raises_named_error_and_leaves_no_invocation_record(
         self, world, registry
     ) -> None:
-        # Registered by build_world() itself now (bootstrap.py wires
-        # cost_disclosure in), so re-registering it would raise.
         assert registry.get("quote_action_cost") is not None
-        # Cleared deliberately. bootstrap.py now sets world.action_costs, so
-        # the unavailable path needs reproducing rather than inheriting - it
-        # still guards a world assembled by hand that skipped the wiring.
         world.action_costs = None
         await spawn_agent(world, "a1", "temple")
         invocations_before = len(world.tool_invocations)
@@ -353,31 +324,19 @@ class TestQuoteActionCostHandlerIntegration:
         with pytest.raises(ActionCostScheduleUnavailableError):
             await registry.execute(world, "a1", "quote_action_cost", {"tool_name": "pray"})
 
-        # ToolRegistry.execute()'s snapshot/rollback contract (registry.py's
-        # own docstring): a handler that raises leaves no partial trace.
         assert len(world.tool_invocations) == invocations_before
 
     @pytest.mark.asyncio
     async def test_registered_as_not_a_primitive(self, world, registry) -> None:
         spec = build_action_cost_quote_spec()
         assert spec.is_primitive is False
-        # build_world() registers it; this asserts the live one, not a copy.
         assert registry.get("quote_action_cost") is not None
-        # freeze_primitives() already ran inside build_world() before this
-        # test registers the spec, so it can never join the meta-tool's
-        # composition whitelist regardless of the flag above - this is the
-        # emergent guarantee is_primitive=False exists to produce.
         assert "quote_action_cost" not in registry.primitive_names
 
     @pytest.mark.asyncio
     async def test_is_a_tool_error_free_pure_read_dormant_agent_still_blocked(
         self, world, registry
     ) -> None:
-        # Actor requirements still apply like any other tool (require_alive
-        # / require_not_dormant default True) - quoting is not a bypass
-        # around the registry's own gates.
-        # Registered by build_world() itself now (bootstrap.py wires
-        # cost_disclosure in), so re-registering it would raise.
         assert registry.get("quote_action_cost") is not None
         world.action_costs = FakeActionCostSchedule({"pray": (50, "flat fee")})
         await spawn_agent(world, "a1", "temple")
@@ -397,22 +356,15 @@ class TestGatherWalletAndBurn:
         assert wallet_and_burn.sim_balance == 5_000
         assert wallet_and_burn.wallet_owner_agent_id == "a1"
         assert wallet_and_burn.recent_burn_usd_cents == 0
-        # Default window is one game-day (DEFAULT_BURN_WINDOW_TICKS), not
-        # an arbitrary number - confirmed against the real caller default.
         assert wallet_and_burn.burn_window_ticks == DEFAULT_BURN_WINDOW_TICKS
 
     @pytest.mark.asyncio
     async def test_sums_real_burn_transactions_inside_the_window(self) -> None:
-        # burn_for_inference() moves USD through Ledger.move(), which
-        # enforces the real $1000 invariant (app/CONVENTIONS.md) after
-        # every transaction - genesis() is how every other test in this
-        # repo gets a ledger that starts in a state the invariant accepts
-        # (see world/ledger/tests/test_ledger_parent_debit.py).
         ledger = Ledger()
         await ledger.genesis(["a1"], agent_usd_cents=2_000, treasury_usd_cents=TOTAL_USD_CENTS - 2_000)
         await ledger.burn_for_inference("a1", 10, tick=100)
         await ledger.burn_for_inference("a1", 20, tick=140)
-        await ledger.burn_for_inference("a1", 999, tick=1)  # outside the window below
+        await ledger.burn_for_inference("a1", 999, tick=1)
 
         wallet_and_burn = gather_wallet_and_burn(ledger, "a1", tick=140, burn_window_ticks=50)
 
@@ -425,9 +377,6 @@ class TestGatherWalletAndBurn:
         await ledger.genesis(
             ["parent1", "kid1"], agent_usd_cents=250, treasury_usd_cents=TOTAL_USD_CENTS - 500
         )
-        # genesis() funds every agent uniformly; is_minor/parent_id are set
-        # directly on the Account afterward, matching
-        # test_ledger_parent_debit.py's own established idiom.
         ledger.accounts["kid1"].is_minor = True
         ledger.accounts["kid1"].parent_id = "parent1"
 
@@ -436,7 +385,7 @@ class TestGatherWalletAndBurn:
         wallet_and_burn = gather_wallet_and_burn(ledger, "kid1", tick=10)
 
         assert wallet_and_burn.wallet_owner_agent_id == "parent1"
-        assert wallet_and_burn.usd_wallet_cents == 220  # 250 - 30
+        assert wallet_and_burn.usd_wallet_cents == 220
         assert wallet_and_burn.recent_burn_usd_cents == 30
 
     @pytest.mark.asyncio
@@ -466,7 +415,6 @@ class TestEstimateTicksUntilDormancy:
         assert estimate_ticks_until_dormancy(usd_wallet_cents=0, recent_burn_usd_cents=10, burn_window_ticks=144) == 0.0
 
     def test_normal_projection(self) -> None:
-        # 100 cents burned over 100 ticks = 1 cent/tick; 500 cents wallet -> 500 ticks left.
         ticks = estimate_ticks_until_dormancy(usd_wallet_cents=500, recent_burn_usd_cents=100, burn_window_ticks=100)
         assert ticks == 500.0
 
@@ -476,7 +424,7 @@ class TestBuildEconomicContext:
     async def test_combines_real_ledger_reads_with_supplied_upkeep_data(self) -> None:
         ledger = Ledger()
         await ledger.genesis(["a1"], agent_usd_cents=300, treasury_usd_cents=TOTAL_USD_CENTS - 300)
-        ledger.accounts["a1"].sim_units = 8_000  # genesis() only seeds USD, not sim
+        ledger.accounts["a1"].sim_units = 8_000
         await ledger.burn_for_inference("a1", 50, tick=10)
         household = HouseholdUpkeepView(
             household_id="h1", daily_upkeep_sim=200, dependent_agent_ids=("kid1", "elder1")
@@ -513,8 +461,6 @@ class TestRenderEconomicContextBlock:
         return EconomicContext.model_validate(defaults)
 
     def test_literal_text_for_one_tick(self) -> None:
-        # PROVE: the exact text an agent sees for one tick's economic
-        # context block, given fixed real numbers.
         context = self.make_context()
         text = render_economic_context_block(context)
         expected = (
@@ -552,7 +498,7 @@ class TestRenderEconomicContextBlock:
         context = self.make_context(wallet_owner_agent_id="parent1", agent_id="kid1")
         text = render_economic_context_block(context)
         assert "parent1's energy" in text
-        assert "kid1" not in text.split("\n")[2]  # the wallet line names the payer, not the minor
+        assert "kid1" not in text.split("\n")[2]
 
     def test_dependent_ids_are_named_literally(self) -> None:
         context = self.make_context(

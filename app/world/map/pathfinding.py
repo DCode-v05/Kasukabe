@@ -32,14 +32,6 @@ import math
 from world.map.model import TileCoord, WorldMap
 from world.map.walkability import in_bounds_xy, neighbors4, neighbors8
 
-# Cost to step onto a street tile (world.is_street) vs. any other walkable
-# tile, in the same unit-per-orthogonal-step scale manhattan_distance
-# already uses. Only the ratio matters for routing (which tiles get
-# picked); world.core.movement re-derives its own ticks-per-tile speed
-# model from the same world.is_street signal for how LONG each tile takes
-# to walk, rather than importing this constant directly, since "which
-# route" (this module's job) and "how long" (movement's job) are
-# deliberately separate concerns that happen to share one input signal.
 STREET_STEP_COST = 1
 OFF_STREET_COST_MULTIPLIER = 2
 

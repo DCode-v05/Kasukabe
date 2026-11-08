@@ -279,9 +279,8 @@ class TestCircuitBreaker:
         orch.reset()
         assert orch.consecutive_failures == 0
         assert orch.circuit_state == CircuitState.CLOSED
-        assert not orch.circuit_breaker_tripped  # shim still works
+        assert not orch.circuit_breaker_tripped
         assert len(orch.history) == 0
-        # All session-level metrics cleared on full reset
         assert orch.total_trips == 0
         assert orch.total_probes == 0
         assert orch.total_probe_successes == 0
@@ -290,7 +289,6 @@ class TestCircuitBreaker:
         orch = make_orch()
         orch.consecutive_failures = 2
         orch.circuit_state = CircuitState.CLOSED
-        # State persists because orchestrator is reused
         assert orch.consecutive_failures == 2
 
     def test_reset_clears_half_open_state(self):
@@ -300,13 +298,12 @@ class TestCircuitBreaker:
         orch.reset()
         assert orch.tripped_at is None
         assert orch.circuit_state == CircuitState.CLOSED
-        assert not orch.half_open_probe_active  # shim works
+        assert not orch.half_open_probe_active
 
 
 class TestCircuitBreakerHardened:
     """Tests for per-user-message decay, half-open, context-shrink, and events."""
 
-    # ── Helpers ──────────────────────────────────────────────────────────────
 
     def collect_reset_events(
         self, orch: CompactionOrchestrator
@@ -330,7 +327,6 @@ class TestCircuitBreakerHardened:
     ) -> list[CompactionCircuitBreakerSkip]:
         return [e for e in orch.emitter.buffer if isinstance(e, CompactionCircuitBreakerSkip)]
 
-    # Backward-compat helper for tests that only care about "did something emit"
     def collect_cb_events(self, orch: CompactionOrchestrator) -> list:
         return [
             e
@@ -346,7 +342,6 @@ class TestCircuitBreakerHardened:
             )
         ]
 
-    # ── Per-user-message decay ────────────────────────────────────────────────
 
     def test_on_user_message_decrements_failures(self):
         orch = make_orch()
@@ -382,9 +377,8 @@ class TestCircuitBreakerHardened:
         orch = make_orch()
         orch.consecutive_failures = 3
         orch.circuit_state = CircuitState.OPEN
-        orch.tripped_at = 1.0  # Not in half-open cooldown range
+        orch.tripped_at = 1.0
         run(orch.on_user_message("t1"))
-        # failures should NOT decrement — only the half-open path handles recovery
         assert orch.consecutive_failures == 3
 
     def test_multiple_decay_steps_heal_over_time(self):
@@ -394,7 +388,6 @@ class TestCircuitBreakerHardened:
             run(orch.on_user_message("t1"))
         assert orch.consecutive_failures == 0
 
-    # ── Half-open ─────────────────────────────────────────────────────────────
 
     def test_on_user_message_arms_half_open_after_cooldown(self):
         import time
@@ -405,14 +398,14 @@ class TestCircuitBreakerHardened:
         orch.tripped_at = time.time() - CIRCUIT_BREAKER_HALF_OPEN_SECONDS - 1
         run(orch.on_user_message("t1"))
         assert orch.circuit_state == CircuitState.HALF_OPEN
-        assert orch.half_open_probe_active  # shim still works
+        assert orch.half_open_probe_active
 
     def test_on_user_message_does_not_arm_before_cooldown(self):
         import time
 
         orch = make_orch()
         orch.circuit_state = CircuitState.OPEN
-        orch.tripped_at = time.time()  # just tripped
+        orch.tripped_at = time.time()
         run(orch.on_user_message("t1"))
         assert orch.circuit_state == CircuitState.OPEN
         assert not orch.half_open_probe_active
@@ -440,7 +433,6 @@ class TestCircuitBreakerHardened:
         run(orch.on_user_message("t1"))
         assert orch.circuit_state == CircuitState.HALF_OPEN
         probes_before = len(self.collect_probe_events(orch))
-        # Call again — already HALF_OPEN, not OPEN, so no new probe
         run(orch.on_user_message("t1"))
         probes_after = len(self.collect_probe_events(orch))
         assert probes_after == probes_before
@@ -483,7 +475,6 @@ class TestCircuitBreakerHardened:
         assert evts[0].reason == "llm_compact_success"
         assert evts[0].consecutive_failures == 0
 
-    # ── Trip event ────────────────────────────────────────────────────────────
 
     def test_trip_emits_structured_event(self):
         """Trigger a trip via compact_if_needed with a failing LLM adapter."""
@@ -521,7 +512,6 @@ class TestCircuitBreakerHardened:
         assert orch.last_token_count_at_trip == 5000
         assert orch.total_trips == 1
 
-    # ── Context-shrink reset ──────────────────────────────────────────────────
 
     def test_context_shrink_resets_failures_after_large_mechanical_drop(self):
         """Mechanical compaction freeing >= SHRINK_THRESHOLD resets consecutive_failures."""
@@ -596,7 +586,6 @@ class TestCircuitBreakerHardened:
 class TestNewCircuitBreakerAPI:
     """Tests for the new CircuitState enum, named methods, and event types."""
 
-    # ── CircuitState enum ─────────────────────────────────────────────────────
 
     def test_circuit_state_enum_values(self):
         assert CircuitState.CLOSED.value == "closed"
@@ -607,7 +596,6 @@ class TestNewCircuitBreakerAPI:
         orch = make_orch()
         assert orch.circuit_state == CircuitState.CLOSED
 
-    # ── Boolean shims ────────────────────────────────────────────────────────
 
     def test_circuit_breaker_tripped_shim_closed(self):
         orch = make_orch()
@@ -640,7 +628,6 @@ class TestNewCircuitBreakerAPI:
         orch.circuit_state = CircuitState.HALF_OPEN
         assert orch.half_open_probe_active
 
-    # ── CompactionConfig new fields ──────────────────────────────────────────
 
     def test_config_defaults(self):
         cfg = CompactionConfig()
@@ -658,7 +645,6 @@ class TestNewCircuitBreakerAPI:
         assert cfg.circuit_breaker_shrink_threshold == 0.5
         assert cfg.circuit_breaker_reset_per_user_message is False
 
-    # ── New orchestrator metric fields ────────────────────────────────────────
 
     def test_new_fields_initial_values(self):
         orch = make_orch()
@@ -669,7 +655,6 @@ class TestNewCircuitBreakerAPI:
         assert orch.total_probes == 0
         assert orch.total_probe_successes == 0
 
-    # ── trip_breaker ─────────────────────────────────────────────────────────
 
     def test_trip_breaker_transitions_to_open(self):
         orch = make_orch()
@@ -683,7 +668,6 @@ class TestNewCircuitBreakerAPI:
         run(orch.trip_breaker("t1"))
         assert orch.total_trips == 2
 
-    # ── check_half_open_transition ───────────────────────────────────────────
 
     def test_check_half_open_transition_fires_after_cooldown(self):
         import time
@@ -710,7 +694,6 @@ class TestNewCircuitBreakerAPI:
         run(orch.check_half_open_transition("t1"))
         assert orch.circuit_state == CircuitState.CLOSED
 
-    # ── check_context_shrink_reset ────────────────────────────────────────────
 
     def test_shrink_reset_fires_when_threshold_met(self):
         orch = make_orch()
@@ -723,16 +706,14 @@ class TestNewCircuitBreakerAPI:
         orch.circuit_state = CircuitState.OPEN
         orch.consecutive_failures = 2
         run(orch.check_context_shrink_reset("t1", pre_tokens=1000, post_tokens=600))
-        assert orch.consecutive_failures == 2  # unchanged
+        assert orch.consecutive_failures == 2
 
     def test_shrink_reset_no_op_below_threshold(self):
         orch = make_orch()
         orch.consecutive_failures = 2
-        # Only freed 10%
         run(orch.check_context_shrink_reset("t1", pre_tokens=1000, post_tokens=900))
         assert orch.consecutive_failures == 2
 
-    # ── reset_breaker ─────────────────────────────────────────────────────────
 
     def test_reset_breaker_to_closed(self):
         orch = make_orch()
@@ -740,7 +721,6 @@ class TestNewCircuitBreakerAPI:
         run(orch.reset_breaker("t1", "reset_success", "test"))
         assert orch.circuit_state == CircuitState.CLOSED
 
-    # ── reset_for_new_user_message ────────────────────────────────────────────
 
     def test_reset_for_new_user_message_alias_works(self):
         orch = make_orch()
@@ -752,7 +732,6 @@ class TestNewCircuitBreakerAPI:
         orch = make_orch(config=CompactionConfig(circuit_breaker_reset_per_user_message=False))
         orch.consecutive_failures = 2
         run(orch.reset_for_new_user_message("t1"))
-        # Should NOT decay when flag is False
         assert orch.consecutive_failures == 2
 
     def test_reset_for_new_user_message_does_not_clear_trip_counters(self):
@@ -767,7 +746,6 @@ class TestNewCircuitBreakerAPI:
         assert orch.total_probes == 2
         assert orch.total_probe_successes == 1
 
-    # ── manual_reset ─────────────────────────────────────────────────────────
 
     def test_manual_reset_closes_open_breaker(self):
         orch = make_orch()
@@ -787,7 +765,6 @@ class TestNewCircuitBreakerAPI:
         assert reset_evts
         assert reset_evts[0].transition == "manual_reset"
 
-    # ── CompactionCircuitBreakerSkip emission ─────────────────────────────────
 
     def test_skip_event_emitted_when_breaker_open(self):
         orch = make_orch()
@@ -809,7 +786,6 @@ class TestNewCircuitBreakerAPI:
         skip_evts = [e for e in orch.emitter.buffer if isinstance(e, CompactionCircuitBreakerSkip)]
         assert not skip_evts, "No skip event when breaker is CLOSED"
 
-    # ── Session reset clears all metrics ──────────────────────────────────────
 
     def test_session_reset_clears_all_metrics(self):
         orch = make_orch()
@@ -827,7 +803,6 @@ class TestNewCircuitBreakerAPI:
         assert orch.last_message_count_at_trip == 0
         assert orch.last_token_count_at_trip == 0
 
-    # ── 4 distinct event types ────────────────────────────────────────────────
 
     def test_tripped_event_fields(self):
         evt = CompactionCircuitBreakerTripped(
@@ -875,7 +850,6 @@ class TestNewCircuitBreakerAPI:
         assert evt.message_count == 5
         assert evt.fallback_strategy == "round_drop"
 
-    # ── check_half_open_transition increments total_probes ───────────────────
 
     def test_total_probes_increments_on_probe(self):
         import time
@@ -885,7 +859,6 @@ class TestNewCircuitBreakerAPI:
         orch.tripped_at = time.time() - CIRCUIT_BREAKER_HALF_OPEN_SECONDS - 1
         run(orch.check_half_open_transition("t1"))
         assert orch.total_probes == 1
-        # Another cooldown cycle
         orch.circuit_state = CircuitState.OPEN
         orch.tripped_at = time.time() - CIRCUIT_BREAKER_HALF_OPEN_SECONDS - 1
         run(orch.check_half_open_transition("t1"))
@@ -916,7 +889,6 @@ class TestReactiveCompact:
         msgs = make_messages(20, chars_each=200)
         result = run(orch.reactive_compact(msgs, 2, 200_000))
         assert isinstance(result, ReactiveCompactResult)
-        # emergency_compact keeps first + last 5 = 6, plus boundary marker = 7
         assert len(result.messages) <= 7
         assert result.tier == 2
         assert result.strategy == "emergency"
@@ -936,8 +908,6 @@ class TestReactiveCompactHardened:
 
     def test_no_op_detection_small_messages(self):
         orch = make_orch()
-        # 4 tiny messages — already below any compaction threshold.
-        # Tier 0 (compact_messages with preserve=10) keeps all of them.
         msgs = make_messages(4, chars_each=10)
         result = run(orch.reactive_compact(msgs, 0, 200_000))
         assert isinstance(result, ReactiveCompactResult)
@@ -947,7 +917,6 @@ class TestReactiveCompactHardened:
     def test_finalization_adds_boundary_marker(self):
         orch = make_orch()
         msgs = make_messages(20, chars_each=600)
-        # Use a small context window to force compaction that makes progress
         result = run(orch.reactive_compact(msgs, 2, 1000))
         assert result.made_progress is True
         boundary_found = any(
@@ -1058,7 +1027,6 @@ class TestLoopStateTransitionReason:
     def test_deserialize_missing_field(self):
         from src.engine_core.loop_state import LoopState
 
-        # Backward compat: old serialized data without the field
         data = {"turns": 5, "input_tokens": 100, "output_tokens": 50}
         state = LoopState.deserialize(data)
         assert state.last_transition_reason == ""
@@ -1509,8 +1477,6 @@ class TestPostCompactCacheInvalidation:
         msgs = make_messages(20, chars_each=600)
         compact(orch, msgs, context_window=window_forcing_compaction(msgs))
         assert utility.invalidated
-        # Empty-prefix invalidation clears the entire cache — matches the
-        # Utility.invalidate signature in src/utility_directory/utility.py.
         assert utility.last_prefix == ""
 
     def test_invalidates_assets_cache(self):
@@ -1519,8 +1485,6 @@ class TestPostCompactCacheInvalidation:
         msgs = make_messages(20, chars_each=600)
         compact(orch, msgs, context_window=window_forcing_compaction(msgs))
         assert assets.invalidated
-        # Empty-prefix clears both cache and permission_cache — see
-        # AssetDirectory.invalidate in src/asset_directory/assets.py.
         assert assets.last_prefix == ""
 
     def test_invalidates_all_caches_together(self):
@@ -1551,14 +1515,12 @@ class TestPostCompactCacheInvalidation:
         assert orch.file_read_state == {}
 
     def test_no_crash_without_any_cache_deps(self):
-        # Orchestrator built with no search/utility/assets — historical shape.
         orch = make_orch()
         msgs = make_messages(20, chars_each=600)
         result = compact(orch, msgs, context_window=window_forcing_compaction(msgs))
         assert result.was_compacted
 
     def test_one_cache_failure_does_not_block_others(self):
-        # Search raises on invalidation. Utility and assets must still fire.
         mgr = FakeConsciousnessMgr()
         search = FakeSearch(raise_on_invalidate=True)
         utility = FakeUtility()
@@ -1572,28 +1534,23 @@ class TestPostCompactCacheInvalidation:
         msgs = make_messages(20, chars_each=600)
         compact(orch, msgs, context_window=window_forcing_compaction(msgs))
         assert mgr.invalidated
-        assert not search.invalidated  # Raised before the flag was set
+        assert not search.invalidated
         assert utility.invalidated
         assert assets.invalidated
 
     def test_no_cleanup_when_no_compaction(self):
-        # Caches must stay intact when compaction does not fire.
         search = FakeSearch()
         utility = FakeUtility()
         assets = FakeAssets()
         orch = make_orch(search=search, utility=utility, assets=assets)
         msgs = make_messages(4, chars_each=100)
-        result = compact(orch, msgs)  # default 200_000 window — no compaction
+        result = compact(orch, msgs)
         assert not result.was_compacted
         assert not search.invalidated
         assert not utility.invalidated
         assert not assets.invalidated
 
     def test_subagent_query_source_still_clears_per_instance_caches(self):
-        # Every cache reset after a compaction is per-instance, so a
-        # subagent-flagged compaction must clear all of them exactly like a
-        # main-thread one. query_source only steers the snip pre-pass, never
-        # the cache-reset matrix.
         mgr = FakeConsciousnessMgr()
         search = FakeSearch()
         utility = FakeUtility()
@@ -1649,8 +1606,6 @@ class TestIsMainThreadCompact:
         assert is_main_thread_compact(source) is False
 
     def test_unknown_value_is_not_main_thread(self):
-        # Values outside FOREGROUND_QUERY_SOURCES and without the subagent
-        # prefix are treated as not-main-thread (conservative default).
         assert is_main_thread_compact("random_unknown") is False
 
 
@@ -1677,13 +1632,12 @@ class TestRunPostCompactCleanupUnit:
         assert assets.invalidated
 
     def test_all_none_is_a_noop(self):
-        run_post_compact_cleanup()  # No args, no deps, no crash.
+        run_post_compact_cleanup()
 
     def test_every_failure_is_swallowed(self):
         search = FakeSearch(raise_on_invalidate=True)
         utility = FakeUtility(raise_on_invalidate=True)
         assets = FakeAssets(raise_on_invalidate=True)
-        # No exception must escape even when every cache raises.
         run_post_compact_cleanup(search=search, utility=utility, assets=assets)
 
 
@@ -1970,7 +1924,6 @@ class TestSessionMemoryCompactEnhanced:
         msgs = make_messages(40, chars_each=4000)
         result = compact(orch, msgs, context_window=50_000)
         if result.strategy == "session_memory":
-            # Index is reset after compaction because old indices are stale
             assert orch.last_summarized_msg_index is None
 
     def test_reset_clears_last_summarized_index(self):
@@ -2017,7 +1970,6 @@ class TestCalculateMessagesToKeepIndex:
         summary = "User asked to implement a REST API. Agent created routes.py and models.py. " * 3
         orch = make_orch(summary=summary)
         msgs = make_messages(40, chars_each=4000)
-        # Insert a fake boundary message in the range that will be kept
         from src.engine_core.compaction_orchestrator import COMPACTION_BOUNDARY_CONTENT
 
         boundary = Message(role="user", content=f"{COMPACTION_BOUNDARY_CONTENT}\n<!-- old -->")
@@ -2031,7 +1983,6 @@ class TestCalculateMessagesToKeepIndex:
                 and "old" in m.content
                 and COMPACTION_BOUNDARY_CONTENT in m.content
             ]
-            # Old boundary should be stripped (only new one may exist)
             assert len(boundary_in_result) == 0
 
     def test_handles_mixed_content_blocks(self):
@@ -2061,8 +2012,6 @@ class TestCalculateMessagesToKeepIndex:
         idx = orch.calculate_messages_to_keep_index(msgs)
         assert 0 <= idx <= len(msgs)
 
-
-# ─── Microcompact integration ─────────────────────────────────────────────
 
 import time  # noqa: E402
 
@@ -2115,9 +2064,6 @@ def stale_tool_messages(
 
 class TestMicrocompactIntegration:
     def test_time_based_fires_in_compact_if_needed(self):
-        # Stale conversation (2h gap) with 10 Read results → time-based
-        # microcompact should fire, emit a MicrocompactEvent, and replace
-        # the oldest tool_result content with STALENESS_MARKER.
         emitter = EventEmitter()
         received: list = []
 
@@ -2148,7 +2094,6 @@ class TestMicrocompactIntegration:
         assert ev.tools_cleared == 7
         assert ev.gap_minutes >= 60.0
 
-        # Cleared tool_result blocks should carry the staleness marker.
         cleared_count = 0
         kept_intact_count = 0
         for m in result.messages:
@@ -2188,7 +2133,6 @@ class TestMicrocompactIntegration:
         assert mc_events == [], "disabled config must not fire microcompact"
 
     def test_fresh_conversation_does_not_fire_time_based(self):
-        # Recent conversation (0 min gap) — trigger should NOT fire.
         emitter = EventEmitter()
         received: list = []
 
@@ -2213,8 +2157,6 @@ class TestMicrocompactIntegration:
         assert mc_events == [], "fresh conversation must not fire time-based microcompact"
 
     def test_forced_microcompact_runs_in_reactive_tier_0(self):
-        # Reactive overflow on a fresh conversation — time-based would not
-        # fire, but FORCED must. Tier 0 of reactive_compact.
         emitter = EventEmitter()
         received: list = []
 
@@ -2279,14 +2221,9 @@ class TestMicrocompactIntegration:
         msgs = stale_tool_messages(n_read_results=8, gap_minutes=120)
         run(orch.compact_if_needed(msgs, "", [], "task-cache", 1, 200_000))
 
-        # After a time-based fire, the cache-deletion seam must have been called.
         assert is_cache_deletion_pending() is True
 
-        # Reset to leave state clean for other tests.
         reset_pending_deletions()
-
-
-# ── Context Collapse integration ────────────────────────────────────
 
 
 def build_collapsible_history(pair_count: int) -> list[Message]:
@@ -2349,23 +2286,16 @@ class TestContextCollapseIntegration:
 
         msgs = build_collapsible_history(pair_count=50)
         tokens = estimate_messages_tokens(msgs)
-        context_window = int(tokens / 0.82)  # low/mid band
+        context_window = int(tokens / 0.82)
         result = compact(orch, msgs, context_window=context_window)
 
-        # Collapse either succeeded alone or it fell through to normal
-        # compaction — in both cases the result must not be the
-        # unmodified input.
         assert result.messages is not None
         if result.strategy == STRATEGY_CONTEXT_COLLAPSE:
             assert result.was_compacted
-            # No LLM compaction fired after collapse
             assert mgr.has_committed() or mgr.has_staged() or result.tokens_freed >= 0
 
     def test_flag_off_preserves_legacy_path(self, monkeypatch):
         monkeypatch.setenv("FEATURE_CONTEXT_COLLAPSE", "false")
-        # With the flag off the thread wiring would construct a disabled
-        # manager. Simulate that directly here so we don't need a full
-        # thread spin-up.
         from src.engine_core.context_collapse import (
             ContextCollapseManager,
             STRATEGY_CONTEXT_COLLAPSE,
@@ -2375,8 +2305,6 @@ class TestContextCollapseIntegration:
         orch = make_orch(collapse_manager=mgr)
         msgs = make_messages(20, chars_each=600)
         result = compact(orch, msgs, context_window=1000)
-        # When the manager is disabled the pre-pass never runs and the
-        # strategy name reflects the legacy pipeline.
         assert result.strategy != STRATEGY_CONTEXT_COLLAPSE
 
     def test_reactive_compact_drains_staged_queue(self):
@@ -2386,8 +2314,6 @@ class TestContextCollapseIntegration:
         mgr = ContextCollapseManager(db=None, enabled=True)
         msgs = build_collapsible_history(pair_count=40)
         tokens = estimate_messages_tokens(msgs)
-        # Drive the ratio into the mid band so spans are staged but
-        # NOT auto-committed.
         mgr.evaluate_and_stage(msgs, tokens, int(tokens / 0.90))
         assert mgr.has_staged()
 
@@ -2395,9 +2321,7 @@ class TestContextCollapseIntegration:
 
         result = run(orch.reactive_compact(msgs, 0, int(tokens / 0.90)))
         assert isinstance(result, ReactiveCompactResult)
-        # Drain must have committed the staged spans
         assert not mgr.has_staged()
-        # Result is a shorter message list than the input
         assert len(result.messages) <= len(msgs)
 
     def test_post_compact_cleanup_resets_collapse_state(self):
@@ -2418,9 +2342,6 @@ class TestContextCollapseIntegration:
         )
         assert not mgr.has_committed()
         assert not mgr.has_staged()
-
-
-# ── Hardened post-compact restoration tests ────────────────────────
 
 
 class TestShouldExcludeHardened:
@@ -2854,7 +2775,7 @@ class TestPerTypeBudgets:
         msgs = orch.build_tool_reannouncement_messages(big_tool_set)
         if msgs:
             tokens = estimate_tokens_dense(msgs[0].content)
-            assert tokens <= POST_COMPACT_TOOL_REMINDER_TOKEN_BUDGET + 100  # small margin
+            assert tokens <= POST_COMPACT_TOOL_REMINDER_TOKEN_BUDGET + 100
 
 
 class TestFeatureFlags:

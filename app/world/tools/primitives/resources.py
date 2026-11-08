@@ -27,9 +27,6 @@ from world.tools.models import ResourceZone, ResourceZoneKind
 from world.tools.registry import ActorRequirements, ToolNamespace, ToolOutcome, ToolSpec
 from world.tools.state import WorldState
 
-# ASSUMPTION (DESIGN.md section 1 does not pin a cap or a regen rate):
-# farmland/ore zones start with a large-but-finite yield and refill
-# slowly, forest ("common") never depletes at all.
 DEFAULT_ZONE_YIELD = 10_000
 DEFAULT_ZONE_REGEN_PER_TICK = 5
 

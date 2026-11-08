@@ -1,7 +1,3 @@
--- Utility Directory: Per-engine state tables only.
--- Platform catalog (agents, skills, tools) loaded from mounted volume at boot.
--- Single-user engine — no user_id columns.
-
 CREATE TABLE IF NOT EXISTS user_agents (
     id                      TEXT PRIMARY KEY,
     name                    TEXT         NOT NULL,
@@ -21,10 +17,6 @@ CREATE TABLE IF NOT EXISTS user_agents (
     UNIQUE (name)
 );
 
--- Per-skill STATE only. The definition (description, capabilities, signatures,
--- prompt, source code) lives in the skill folder on disk and is read from the
--- catalog. Holding it in both places produced duplicate entries in everything
--- that merged the two, so the definition columns are deliberately absent here.
 CREATE TABLE IF NOT EXISTS user_skills (
     id                       TEXT PRIMARY KEY,
     name                     TEXT          NOT NULL,

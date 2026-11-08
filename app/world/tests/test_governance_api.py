@@ -19,11 +19,6 @@ from world.governance_api import GovernanceDeps, build_governance_router
 from world.wiring import WorldConfig, build_world_server
 from world.tests.map_assets import needs_the_map
 
-# TOOL-27. This module needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped, and red for environment hides real regressions inside the
-# noise - which is how TOOL-09 stayed invisible for a whole cycle.
 pytestmark = needs_the_map
 
 
@@ -70,15 +65,12 @@ async def test_charter_and_policy_reflect_real_genesis_defaults() -> None:
 
         charter_resp = client.get("/governance/charter")
         assert charter_resp.status_code == 200
-        # views.html is served by game/server.py, a different origin than
-        # whatever process mounts this router (world/main.py) - see this
-        # module's own "Cross-origin" docstring note.
         assert charter_resp.headers["access-control-allow-origin"] == "*"
         charter = charter_resp.json()
         assert charter["version"] == 0
         assert charter["pm_seats"] == 1
         assert charter["minister_seats"] == 4
-        assert charter["amendment_votes_required"] == 3  # ceil(3*5/5)
+        assert charter["amendment_votes_required"] == 3
 
         policy_resp = client.get("/governance/policy")
         assert policy_resp.status_code == 200
@@ -96,11 +88,6 @@ async def test_active_policies_reflects_a_real_police_hire() -> None:
     try:
         hirer = adult_agent_ids(server, 1)[0]
         officer = adult_agent_ids(server, 2)[1]
-        # Genesis seeds an EMPTY government (no PM/ministers until the
-        # first election tallies - world/charter/genesis.py) - seed a
-        # sitting government the same way a real tally() would, through
-        # the store's own public method, rather than running a full
-        # election in a test that isn't about elections.
         await server.world.charter.store.set_government_state(
             GovernmentState(pm_agent_id=hirer, minister_agent_ids=[])
         )

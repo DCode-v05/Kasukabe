@@ -36,8 +36,6 @@ from src.engine_core.context_engineering import (
 from src.herald.types import Message, TextBlock, ToolResultBlock, ToolUseBlock
 
 
-# ── Message builders ────────────────────────────────────────────────
-
 NEXT_TS = [1000.0]
 
 
@@ -106,9 +104,6 @@ def build_history(
     return msgs
 
 
-# ── Fingerprints ────────────────────────────────────────────────────
-
-
 class TestFingerprint:
     def test_same_message_same_fingerprint(self):
         a = assistant_text("hello")
@@ -132,9 +127,6 @@ class TestFingerprint:
         assert fingerprint(u) != fingerprint(r)
 
 
-# ── Summary generation ─────────────────────────────────────────────
-
-
 class TestGenerateCollapseSummary:
     def test_header_includes_counts(self):
         span = [tool_use("Read", "t1"), tool_result("t1", "contents")]
@@ -144,7 +136,6 @@ class TestGenerateCollapseSummary:
         assert "1 tool calls" in summary
 
     def test_summary_within_budget(self):
-        # Large span of long messages
         span: list[Message] = []
         for i in range(20):
             span.append(tool_use("Read", f"t{i}"))
@@ -153,14 +144,10 @@ class TestGenerateCollapseSummary:
         original_tokens = estimate_messages_tokens(span)
         summary_tokens = estimate_tokens(summary)
         budget = int(original_tokens * SUMMARY_BUDGET_RATIO)
-        # Budget + a small epsilon for the truncation marker line
         assert summary_tokens <= budget + 20, f"summary={summary_tokens} tok, budget={budget} tok"
 
     def test_empty_span(self):
         assert generate_collapse_summary([]) == ""
-
-
-# ── Evaluate + stage (usage bands) ────────────────────────────────
 
 
 class TestEvaluateAndStage:
@@ -182,22 +169,18 @@ class TestEvaluateAndStage:
         mgr = ContextCollapseManager(db=None, enabled=True)
         history = build_history(low_risk_pairs=30)
         tokens = estimate_messages_tokens(history)
-        # Drive the ratio into the 0.75..0.85 band
         context_limit = int(tokens / 0.80)
         mgr.evaluate_and_stage(history, tokens, context_limit)
         spans = mgr.staged_spans()
         assert len(spans) >= 1
-        # Every staged span's risk should be below RISK_LOW
         assert all(s.risk < RISK_LOW for s in spans)
 
     def test_emergency_band_commits_immediately(self):
         mgr = ContextCollapseManager(db=None, enabled=True)
         history = build_history(low_risk_pairs=30)
         tokens = estimate_messages_tokens(history)
-        # Drive the ratio into >= USAGE_HIGH
         context_limit = int(tokens / 0.96)
         mgr.evaluate_and_stage(history, tokens, context_limit)
-        # Everything that was staged should be immediately committed
         assert not mgr.has_staged()
         assert mgr.has_committed()
 
@@ -207,21 +190,16 @@ class TestEvaluateAndStage:
         tokens = estimate_messages_tokens(history)
         context_limit = int(tokens / 0.90)
         mgr.evaluate_and_stage(history, tokens, context_limit)
-        # The last PRESERVE_RECENT messages should NOT overlap any
-        # staged span.
         last_tail_start = len(history) - PRESERVE_RECENT
         for span in mgr.staged_spans():
-            # Reconstruct indices from fingerprints
             idxs = [
                 i for i, m in enumerate(history) if fingerprint(m) in (span.start_fp, span.end_fp)
             ]
             assert idxs, "fingerprints must resolve to history indices"
-            # Both boundaries must lie strictly before the tail region
             assert max(idxs) < last_tail_start
 
     def test_user_messages_never_inside_span(self):
         mgr = ContextCollapseManager(db=None, enabled=True)
-        # Interleave user messages with low-risk pairs to test hard split
         history: list[Message] = []
         for i in range(20):
             history.extend(low_risk_search_pair(i))
@@ -232,14 +210,10 @@ class TestEvaluateAndStage:
         context_limit = int(tokens / 0.90)
         mgr.evaluate_and_stage(history, tokens, context_limit)
         for span in mgr.staged_spans():
-            # Reconstruct start/end indices
             start_idx = next(i for i, m in enumerate(history) if fingerprint(m) == span.start_fp)
             end_idx = next(i for i, m in enumerate(history) if fingerprint(m) == span.end_fp)
             for m in history[start_idx : end_idx + 1]:
                 if getattr(m, "role", "") == "user":
-                    # user messages inside a span are fine IF they
-                    # carry tool_result blocks (turn carriers for
-                    # tool output). They must NOT be pure user text.
                     content = m.content
                     assert isinstance(content, list), (
                         "pure user text should never appear in a staged span"
@@ -254,7 +228,6 @@ class TestEvaluateAndStage:
         context_limit = int(tokens / 0.90)
         mgr.evaluate_and_stage(history, tokens, context_limit)
         for span in mgr.staged_spans():
-            # Reconstruct the concrete slice and verify tool pairing
             start_idx = next(i for i, m in enumerate(history) if fingerprint(m) == span.start_fp)
             end_idx = next(i for i, m in enumerate(history) if fingerprint(m) == span.end_fp)
             use_ids: set[str] = set()
@@ -267,9 +240,6 @@ class TestEvaluateAndStage:
                         elif isinstance(b, ToolResultBlock):
                             result_ids.add(b.tool_use_id)
             assert use_ids == result_ids, "staged span split a tool_use/tool_result pair"
-
-
-# ── Commit + projection ───────────────────────────────────────────
 
 
 class TestCommitAndProject:
@@ -292,7 +262,6 @@ class TestCommitAndProject:
         context_limit = int(tokens / 0.80)
         mgr.evaluate_and_stage(history, tokens, context_limit)
         mgr.commit_all_staged()
-        # Second drain is a no-op
         assert mgr.commit_all_staged() == []
 
     def test_projection_shrinks_history(self):
@@ -304,9 +273,6 @@ class TestCommitAndProject:
         mgr.commit_all_staged()
         projected = mgr.project_messages(history)
         assert len(projected) < len(history)
-        # Every committed collapse becomes exactly one summary message
-        # Not a strict equality because commits can touch different
-        # span lengths, but token count must drop
         new_tokens = estimate_messages_tokens(projected)
         assert new_tokens < tokens
 
@@ -318,15 +284,10 @@ class TestCommitAndProject:
         mgr.evaluate_and_stage(history, tokens, context_limit)
         mgr.commit_all_staged()
         projected = mgr.project_messages(history)
-        # Leading user message survives
         assert projected[0].role == "user"
         assert projected[0].content == "Do the thing."
-        # Trailing user message survives
         assert projected[-1].role == "user"
         assert projected[-1].content == "What did you find?"
-
-
-# ── Persistence ────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -368,15 +329,10 @@ async def test_save_restore_round_trip():
             assert x.end_fp == y.end_fp
             assert x.summary == y.summary
 
-        # And projection after restore still works against the
-        # original message list (session-resume acceptance criterion)
         projected = b.project_messages(history)
         assert len(projected) < len(history)
 
         await pool.close() if hasattr(pool, "close") else None
-
-
-# ── Reset ─────────────────────────────────────────────────────────
 
 
 def test_reset_clears_everything():
@@ -389,22 +345,6 @@ def test_reset_clears_everything():
     mgr.reset()
     assert not mgr.has_committed()
     assert not mgr.has_staged()
-
-
-# ── Live LLM integration (skipped by default) ─────────────────────
-
-# The live integration test spins a real agent loop against the real
-# LLM adapter and drives it until the context window fills. Collapse
-# should engage and let the session continue past the point where
-# pre-change compaction would have triggered.
-#
-# Run explicitly:
-#   docker compose run --rm -e RUN_LIVE_TESTS=1 test \
-#       pytest tests/test_context_collapse.py::test_live_collapse
-#
-# The test is intentionally skipped in the default Docker target so
-# CI runs stay fast and free. It exists in-tree so the verification
-# path is permanent and can be turned on any time without rewriting.
 
 
 @pytest.mark.skipif(
@@ -430,9 +370,6 @@ async def test_live_collapse():
 
     mgr = ContextCollapseManager(db=None, enabled=True)
 
-    # Build a big low-risk history and call the orchestrator directly
-    # rather than spinning the full agent loop — this keeps the test
-    # hermetic while still exercising the real pre-pass path.
     history = build_history(low_risk_pairs=300)
     tokens = estimate_messages_tokens(history)
     context_limit = int(tokens / 0.85)

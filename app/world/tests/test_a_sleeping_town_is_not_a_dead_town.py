@@ -29,7 +29,6 @@ from world.core.clock import timestamp_for
 from world.core.engine import TickResult
 from world.run_genesis import GenesisRunner, GenesisRunnerConfig, TickOutcome
 
-# 1am on day 1 - the tick the real run died on.
 NIGHT_TICK = 152
 NOON_TICK = 80
 
@@ -73,9 +72,6 @@ async def test_a_town_asleep_does_not_count_as_barren(tmp_path) -> None:
     due = list(runner.world_state.agents)[:5]
 
     for _ in range(25):
-        # `dispatch_due_agents` counts the tick itself - driving the
-        # real path, not the counter in isolation, because the defect was
-        # in which ticks reach the counter at all.
         await runner.dispatch_due_agents(
             TickResult(tick=timestamp_for(NIGHT_TICK), due_agents=due)
         )
@@ -96,9 +92,6 @@ async def test_a_broker_that_answers_nothing_still_halts_the_run(tmp_path) -> No
     due = list(runner.world_state.agents)[:5]
 
     for _ in range(5):
-        # `dispatch_due_agents` counts the tick itself - driving the
-        # real path, not the counter in isolation, because the defect was
-        # in which ticks reach the counter at all.
         await runner.dispatch_due_agents(
             TickResult(tick=timestamp_for(NOON_TICK), due_agents=due)
         )

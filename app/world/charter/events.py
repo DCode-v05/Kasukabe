@@ -43,24 +43,6 @@ def build_event(event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
     module always pass a literal from the `EVENT_*` constants below so
     there is nothing to typo at the call site.
     """
-    # GOV-04: say who the event is about under the key readers use.
-    #
-    # Every payload here already names its agent, but under the role it
-    # played - `voter_agent_id`, `filed_by_agent_id`, `founder_agent_id`,
-    # `holder_agent_id`, `set_by_agent_id`. Readers that scope an event to
-    # a resident look for a plain `agent_id` (`admin_api.py:1044, 1305,
-    # 1343, 1454`), and until GOV-04 they got one only because the tool
-    # HANDLERS emitted a second, duplicate copy of the same event with the
-    # generic key added.
-    #
-    # Deleting those duplicates - which is what GOV-04 asks for, now that
-    # the charter sink is live and they are double rows - would have taken
-    # the generic key with them. So the alias moves here, to the one place
-    # every charter event passes through.
-    #
-    # Only when the payload names exactly ONE agent: an event about two
-    # people (a membership change names the org and the member) has no
-    # single "the agent" and guessing would be worse than omitting it.
     if "agent_id" not in payload:
         named = [k for k in payload if k.endswith("_agent_id")]
         if len(named) == 1:
@@ -68,11 +50,6 @@ def build_event(event_type: str, payload: dict[str, Any]) -> dict[str, Any]:
     return {"type": event_type, "payload": payload}
 
 
-# Every event this module emits, one constant per literal so a typo is a
-# NameError at import time instead of a silent mismatch between the
-# emitting call site and whatever later subscribes to it. All in the
-# `politics` domain (app/CONVENTIONS.md's event domain table: "politics |
-# world/ | politics.vote.cast, politics.charter.amended, ...").
 EVENT_CHARTER_GENESIS_SEEDED = "politics.charter.genesis_seeded"
 EVENT_CHARTER_AMENDMENT_PROPOSED = "politics.charter.amendment_proposed"
 EVENT_CHARTER_AMENDMENT_PASSED = "politics.charter.amendment_passed"

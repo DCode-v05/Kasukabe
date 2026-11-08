@@ -30,9 +30,6 @@ import time
 import uuid
 from pathlib import Path
 
-# app/ root, so `import supabase` resolves the same way it does for every
-# other test in this repo (pyproject.toml's own pythonpath = ["."] only
-# applies to pytest's own process, not this separately-launched one).
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from supabase.sqlite_client import SCHEMA_PATH, connect_sqlite  # noqa: E402
@@ -61,31 +58,15 @@ def main() -> None:
     batch = 0
     while True:
         batch += 1
-        # Written BEFORE the transaction below opens - the parent test's
-        # "started == N" observation happens strictly before any row of
-        # batch N could possibly be committed.
         write_marker(started_marker, batch)
 
         base_tick = (batch - 1) * rows_per_batch
         for i in range(rows_per_batch):
-            # events.id is `text primary key` (schema_gen.py, generated
-            # from broker/trace.py's BrokerEvent.id - an app-generated
-            # string, not a SQLite autoincrement integer), so this raw-
-            # sqlite3 script - unlike SqliteClient's own insert_sync,
-            # which fills a missing id via fill_generated_id() - has to
-            # generate one itself; a bare INSERT that omits "id" now
-            # raises NOT NULL instead of silently autoincrementing.
             conn.execute(
                 "insert into events (id, type, tick, payload) values (?, ?, ?, ?)",
                 (f"evt_{uuid.uuid4().hex}", "agent.moved", base_tick + i, f'{{"batch":{batch},"row":{i}}}'),
             )
             if i == rows_per_batch // 2:
-                # The crash window. A SIGKILL landing here (which is the
-                # entire point of this script) leaves this transaction's
-                # earlier inserts in this process's uncommitted page
-                # cache only - never flushed to the WAL as a committed
-                # frame - so SQLite's own crash recovery discards all of
-                # them on next open, not just the ones after this line.
                 time.sleep(CRASH_WINDOW_S)
 
         conn.commit()

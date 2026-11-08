@@ -37,10 +37,6 @@ def profiles_in_region(region: str) -> list[dict]:
 
     client = boto3.client("bedrock", region_name=region)
     summaries: list[dict] = []
-    # Both types matter: SYSTEM_DEFINED covers the cross-region profiles
-    # AWS ships, APPLICATION covers the ones an account creates itself.
-    # Asking for neither returns both, but being explicit survives a
-    # future default change.
     for type_filter in ("SYSTEM_DEFINED", "APPLICATION"):
         token: str | None = None
         while True:
@@ -134,8 +130,6 @@ def probe_invoke(model_id: str, region: str) -> str:
 
 
 def main() -> int:
-    # Same .env credential path the broker uses, so discovery and the real
-    # run can never disagree about which account they are looking at.
     if exported := export_aws_env():
         print(f"Using credentials from .env ({', '.join(exported)})")
     print(f"Sweeping {len(BEDROCK_LANE_REGIONS)} regions for {len(MODEL_ALLOWLIST)} models")

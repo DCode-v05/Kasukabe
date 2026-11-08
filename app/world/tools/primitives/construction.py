@@ -63,11 +63,6 @@ from world.tools.primitives.property import require_tile
 from world.tools.registry import ActorRequirements, ToolNamespace, ToolOutcome, ToolSpec
 from world.tools.state import WorldState
 
-# ASSUMPTION (DESIGN.md describes the mechanic, "auto-computed from
-# geometry," but pins no rate): timber scales with footprint area (walls
-# and floor), the structural metal scales with perimeter (the frame's
-# outer edge), and build time scales with area, all in the units
-# recipes.py's own timber/ore chains produce.
 TIMBER_PER_TILE = 5
 METAL_PER_TILE = 2
 CONSTRUCTION_TICKS_PER_TILE = 6
@@ -113,44 +108,12 @@ async def build_structure_handler(
     if not plot.permitted:
         raise ActorRequirementError("build_structure", [f"plot {plot.plot_id} has no government permit"])
 
-    # GROW-17. You build where you stand.
-    #
-    # This tool is registered with `location_gate=None`, so until this
-    # check a licensed builder could raise a smithy on a plot across town
-    # without leaving the tavern - and DESIGN.md section 2's "construction
-    # occupies the crew for time proportional to size" means nothing if the
-    # crew is never on site.
-    #
-    # HERE and not in the ToolSpec because `location_gate` is a constant
-    # the registry checks before the handler runs, and the place a builder
-    # must stand in is not a constant: it is wherever the plot it named
-    # happens to be. The registry cannot know that without reading params.
-    #
-    # `satisfies_gate`, not `!=`: every other co-location check in the town
-    # folds (TOOL-19 fixed `trade` and `steal` for exactly this), and a
-    # strict compare would refuse a builder standing in the right field
-    # under another spelling of its name.
     if plot.location_id:
         here = world.location_of(agent.agent_id)
         if not satisfies_gate(here, plot.location_id):
             raise LocationGateError("build_structure", plot.location_id, here)
 
     footprint = frozenset(params.footprint)
-    # GROW-09. The permit is not the deed.
-    #
-    # There are four unconnected notions of land in this codebase:
-    # `tile_owners` (1x1 `TileOwnership`), `tools.models.Plot` (a
-    # development RIGHT), `map/parcel.PlotRegistry` (footprint claims
-    # validated against map geometry), and buildings and businesses keyed
-    # by opaque location strings. `build_structure` checked exactly one of
-    # them - `Plot.permitted` - so a resident holding a permit could raise
-    # a building on ground another resident owns, and the ledger that
-    # records who owns what would never hear about it.
-    #
-    # `require_tile` materialises the government default for unrecorded
-    # ground (section 31.2: "unclaimed land is a government asset"), so
-    # this does not forbid building on the commons - it forbids building
-    # on somebody's garden.
     trespassing = sorted(
         f"({x},{y}) is held by {require_tile(world, x, y).owner_id}"
         for x, y in footprint
@@ -179,9 +142,6 @@ async def build_structure_handler(
     construction_ticks = area * CONSTRUCTION_TICKS_PER_TILE
     metal_item = f"{params.metal_kind}_ore"
 
-    # Fallible tools-owned mutations (insufficient inventory) both happen
-    # before the Building row is created, so a failed materials check
-    # leaves no half-built record behind.
     world.inventory.debit(agent.agent_id, "timber", timber_needed)
     world.inventory.debit(agent.agent_id, metal_item, metal_needed)
 
@@ -195,9 +155,6 @@ async def build_structure_handler(
         metal_used=metal_needed,
         started_tick=world.tick(),
         completion_tick=world.tick() + construction_ticks,
-        # GROW-18: the same arithmetic as the deadline, so a crew that
-        # works every tick finishes exactly when the old countdown would
-        # have. The difference is that somebody has to turn up.
         labour_ticks_required=construction_ticks,
     )
     world.buildings[building.building_id] = building
@@ -211,10 +168,6 @@ async def build_structure_handler(
             "builder_agent_id": agent.agent_id,
             "purpose": params.purpose,
             "area_tiles": area,
-            # UI-33. Where it is going up, not just how big it is. A
-            # viewer told a building exists and given only `area_tiles`
-            # cannot put a hoarding on the map - and construction is the
-            # one thing in this town that changes the map's shape.
             "rect": footprint_rect(footprint),
             "kind": params.purpose,
             "status": "under_construction",
@@ -269,13 +222,6 @@ async def work_site_handler(
     """
     building = world.buildings.get(params.building_id)
     if building is None:
-        # A site id is not something a resident can look up. election30's
-        # seven `work_site` calls all failed here, on invented ids -
-        # `b_construction`, `whitlock_repair` - and each was told only that
-        # the id did not exist, so nobody worked a site all run and 52
-        # successful fellings of timber went into nothing. Naming the open
-        # sites is the same rule as `withdraw_item`'s storages and
-        # `teach_skill`'s skills: a refusal that teaches, or noise.
         raise NotFoundError(
             "building", params.building_id, sites_worth_naming(world)
         )
@@ -289,10 +235,6 @@ async def work_site_handler(
             [f"{params.building_id} is already built and waiting on its deadline"],
         )
 
-    # You work where you stand - the same rule `build_structure` follows
-    # (GROW-17), for the same reason: a crew that is not on site is not a
-    # crew. `satisfies_gate`, not `!=`, because every co-location check in
-    # this town folds place names.
     plot = world.plots.get(building.plot_id)
     if plot is not None and plot.location_id:
         here = world.location_of(agent.agent_id)
@@ -342,12 +284,6 @@ async def complete_construction(
             "complete_construction",
             [f"{building_id} is not due until tick {building.completion_tick}, now is {world.tick()}"],
         )
-    # GROW-18: and the crew has to have built it.
-    #
-    # Both, not either. The deadline alone let a builder start a smithy and
-    # walk away; the labour alone would let a crew of twelve raise a
-    # cathedral in an afternoon. DESIGN section 2 asks for time
-    # proportional to size AND for the crew to be occupied by it.
     if building.labour_remaining > 0:
         raise ActorRequirementError(
             "complete_construction",
@@ -358,9 +294,6 @@ async def complete_construction(
             ],
         )
 
-    # UI-33: the same four keys the started event carries, so a viewer
-    # that drew a hoarding can replace it with the finished building
-    # without re-fetching anything.
     payload: dict[str, object] = {
         "building_id": building_id,
         "purpose": building.purpose,
@@ -374,8 +307,6 @@ async def complete_construction(
             tile_footprint, purpose=building.purpose, owner=building.builder_agent_id, tick=world.tick()
         )
         payload["map_sector_id"] = sector_id
-        # Built by the same function the stamp uses, not a second copy
-        # of the f-string - see building_sector_name's docstring.
         payload["sector_name"] = building_sector_name(
             building.purpose, building.builder_agent_id
         )
@@ -397,10 +328,6 @@ def buildings_due_for_completion(world: WorldState) -> list[str]:
         for building in world.buildings.values()
         if building.status is BuildingStatus.UNDER_CONSTRUCTION
         and world.tick() >= building.completion_tick
-        # GROW-18: and the work is done. A site nobody has worked is not
-        # due; it is unstarted. Without this the tick loop would call
-        # `complete_construction` on it every tick for the rest of the run
-        # and eat the refusal each time.
         and building.labour_remaining == 0
     ]
 
@@ -422,9 +349,6 @@ def build_specs() -> list[ToolSpec]:
             params_model=WorkSiteParams,
             handler=work_site_handler,
             namespace=ToolNamespace.PUBLIC,
-            # GROW-18: the site is wherever the plot is, which is a
-            # parameter and not a constant - so the check lives in the
-            # handler, exactly as build_structure's does (GROW-17).
             location_gate=None,
             actor_requirements=ActorRequirements(),
         ),

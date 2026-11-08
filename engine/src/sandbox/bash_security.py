@@ -23,35 +23,25 @@ from src.sandbox.command_classifier import (
 from src.sandbox.command_classifier import ZSH_DANGEROUS_CMDS as ZSH_DANGEROUS_CMDS_TUPLE
 
 
-# ---------------------------------------------------------------------------
-# Result types
-# ---------------------------------------------------------------------------
-
-
 @dataclass(frozen=True, slots=True)
 class SecurityResult:
     blocked: bool
-    check_id: int  # 1-26, maps to validator
-    behavior: str  # "allow" | "ask" | "deny" | "passthrough"
+    check_id: int
+    behavior: str
     message: str
-    is_misparsing: bool = False  # misparsing results get priority in deferral
+    is_misparsing: bool = False
 
 
 @dataclass(frozen=True, slots=True)
 class ValidationContext:
     original_command: str
-    base_command: str  # first word of command
-    fully_unquoted: str  # all quotes stripped (post safe-redirection strip)
-    fully_unquoted_pre_strip: str  # all quotes stripped (pre safe-redirection strip)
-    unquoted_keep_quotes: str  # quote chars kept, inner content removed
+    base_command: str
+    fully_unquoted: str
+    fully_unquoted_pre_strip: str
+    unquoted_keep_quotes: str
 
 
 PASSTHROUGH = SecurityResult(blocked=False, check_id=0, behavior="passthrough", message="")
-
-
-# ---------------------------------------------------------------------------
-# Shared utilities
-# ---------------------------------------------------------------------------
 
 
 def extract_quoted_content(cmd: str) -> tuple[str, str, str]:
@@ -167,28 +157,22 @@ def has_backslash_escaped_operator(cmd: str) -> tuple[bool, str]:
     while i < n:
         c = cmd[i]
 
-        # Backslash handling FIRST (before quote toggles)
         if c == "\\" and i + 1 < n:
             if in_single:
-                # Backslash is literal inside single quotes
                 i += 1
                 continue
             next_c = cmd[i + 1]
             if in_double:
-                # Inside double quotes, only certain escapes work
                 if next_c in ('"', "\\", "$", "`"):
                     i += 2
                     continue
-                # \; inside double quotes — not an operator escape, skip
                 i += 1
                 continue
-            # Outside quotes: backslash-escaped operator
             if next_c in SHELL_OPERATORS:
                 return True, next_c
             i += 2
             continue
 
-        # Quote state tracking
         if c == "'" and not in_double:
             in_single = not in_single
         elif c == '"' and not in_single:
@@ -216,11 +200,9 @@ def extract_heredoc_bodies(cmd: str) -> str:
     heredoc body content from triggering validators.
     Only handles quoted/escaped delimiters (body is literal text, no expansion).
     """
-    # Quick bail if no heredoc operator
     if "<<" not in cmd:
         return cmd
 
-    # Bail on ANSI-C or locale quoting before first << (can't track quotes reliably)
     first_heredoc = cmd.index("<<")
     prefix = cmd[:first_heredoc]
     if "$'" in prefix or '$"' in prefix:
@@ -235,13 +217,11 @@ def extract_heredoc_bodies(cmd: str) -> str:
 
         is_strip = "-" in cmd[m.start() : m.start() + 4] and cmd[m.start() + 2] == "-"
 
-        # Find start of body (first newline after operator)
         body_start = cmd.find("\n", m.end())
         if body_start == -1:
             continue
-        body_start += 1  # skip the newline
+        body_start += 1
 
-        # Find closing delimiter line-by-line
         body_end = None
         pos = body_start
         while pos < len(cmd):
@@ -259,7 +239,6 @@ def extract_heredoc_bodies(cmd: str) -> str:
             pos = line_end + 1
 
         if body_end is not None:
-            # Replace body with placeholder
             body = cmd[body_start:body_end]
             result = result.replace(body, " __HEREDOC_BODY__ ", 1)
 
@@ -282,21 +261,12 @@ def build_context(cmd: str) -> ValidationContext:
     )
 
 
-# ---------------------------------------------------------------------------
-# Validator 1: validate_empty
-# ---------------------------------------------------------------------------
-
-
 def validate_empty(ctx: ValidationContext) -> SecurityResult | None:
     """Empty command is safe — short-circuit with allow."""
     if not ctx.original_command or not ctx.original_command.strip():
         return SecurityResult(blocked=False, check_id=1, behavior="allow", message="empty command")
     return None
 
-
-# ---------------------------------------------------------------------------
-# Validator 2: validate_incomplete_commands
-# ---------------------------------------------------------------------------
 
 INCOMPLETE_START = re.compile(r"^\s*([;&|]|&&|\|\||\t|-\s)")
 
@@ -312,10 +282,6 @@ def validate_incomplete_commands(ctx: ValidationContext) -> SecurityResult | Non
         )
     return None
 
-
-# ---------------------------------------------------------------------------
-# Validator 3: validate_safe_heredoc
-# ---------------------------------------------------------------------------
 
 SAFE_HEREDOC_PATTERN = re.compile(
     r"\$\(cat\s+<<(-?)\s*(?:"
@@ -341,7 +307,6 @@ def validate_safe_heredoc(ctx: ValidationContext) -> SecurityResult | None:
     """
     cmd = ctx.original_command.strip()
 
-    # Must have a non-whitespace prefix before $( (not in command-name position)
     dollar_paren_pos = cmd.find("$(")
     if dollar_paren_pos == -1:
         return None
@@ -349,7 +314,6 @@ def validate_safe_heredoc(ctx: ValidationContext) -> SecurityResult | None:
         prefix = cmd[:dollar_paren_pos].strip()
         if not prefix:
             return None
-    # If $(cat is the whole command start, that's fine (common pattern)
 
     m = SAFE_HEREDOC_PATTERN.search(cmd)
     if not m:
@@ -362,7 +326,6 @@ def validate_safe_heredoc(ctx: ValidationContext) -> SecurityResult | None:
 
     body_start = m.end()
 
-    # Line-based delimiter matching (replicates bash semantics)
     body_end = None
     closing_end = None
     pos = body_start
@@ -376,13 +339,11 @@ def validate_safe_heredoc(ctx: ValidationContext) -> SecurityResult | None:
 
         check_line = line.lstrip("\t") if is_strip else line
 
-        # Standard form: delimiter alone on line
         if check_line.strip() == delimiter:
             body_end = pos
             closing_end = line_end + 1 if line_end < len(cmd) else line_end
             break
 
-        # PST_EOFTOKEN form: DELIM) inline
         if check_line.strip() == delimiter + ")":
             body_end = pos
             closing_end = line_end + 1 if line_end < len(cmd) else line_end
@@ -395,7 +356,6 @@ def validate_safe_heredoc(ctx: ValidationContext) -> SecurityResult | None:
 
     body = cmd[body_start:body_end]
 
-    # Reject nested heredocs
     if NESTED_HEREDOC.search(body):
         return SecurityResult(
             blocked=True,
@@ -404,7 +364,6 @@ def validate_safe_heredoc(ctx: ValidationContext) -> SecurityResult | None:
             message="nested heredoc inside safe heredoc pattern",
         )
 
-    # Body should not contain command substitution
     if "$(" in body or "`" in body:
         return SecurityResult(
             blocked=True,
@@ -413,7 +372,6 @@ def validate_safe_heredoc(ctx: ValidationContext) -> SecurityResult | None:
             message="command substitution inside heredoc body",
         )
 
-    # Validate remaining text after the heredoc
     remainder = cmd[closing_end:].strip().rstrip(")")
     if remainder and not SAFE_REMAINDER_CHARS.match(remainder):
         return SecurityResult(
@@ -431,16 +389,12 @@ def validate_safe_heredoc(ctx: ValidationContext) -> SecurityResult | None:
     )
 
 
-# ---------------------------------------------------------------------------
-# Validator 4: validate_git_commit
-# ---------------------------------------------------------------------------
-
 GIT_COMMIT_PATTERN = re.compile(
-    r"""^\s*git\s+commit\s+"""  # git commit
-    r"""[^;&|`$<>()\n\r]*?"""  # safe pre-flags (no metacharacters)
-    r"""-m\s+"""  # -m flag
-    r"""(['"])([\s\S]*?)\1"""  # quoted message (group 1=quote, group 2=msg)
-    r"""(.*)$""",  # remainder (group 3)
+    r"""^\s*git\s+commit\s+"""
+    r"""[^;&|`$<>()\n\r]*?"""
+    r"""-m\s+"""
+    r"""(['"])([\s\S]*?)\1"""
+    r"""(.*)$""",
     re.I,
 )
 
@@ -460,7 +414,6 @@ def validate_git_commit(ctx: ValidationContext) -> SecurityResult | None:
     message = m.group(2)
     remainder = m.group(3).strip()
 
-    # Block messages starting with dash (flag obfuscation)
     if message.startswith("-"):
         return SecurityResult(
             blocked=True,
@@ -469,7 +422,6 @@ def validate_git_commit(ctx: ValidationContext) -> SecurityResult | None:
             message="git commit message starts with dash — possible flag obfuscation",
         )
 
-    # Block command substitution in double-quoted messages
     if quote_char == '"':
         if "$(" in message or "`" in message or "${" in message:
             return SecurityResult(
@@ -479,7 +431,6 @@ def validate_git_commit(ctx: ValidationContext) -> SecurityResult | None:
                 message="command substitution in git commit message",
             )
 
-    # Check for backslashes (quote boundary attacks)
     if "\\" in message:
         return SecurityResult(
             blocked=True,
@@ -488,9 +439,7 @@ def validate_git_commit(ctx: ValidationContext) -> SecurityResult | None:
             message="backslash in git commit message — possible quote boundary attack",
         )
 
-    # Check remainder for dangerous patterns
     if remainder:
-        # Shell operators and metacharacters in remainder
         if GIT_COMMIT_REMAINDER_METACHARS.search(remainder):
             return SecurityResult(
                 blocked=True,
@@ -498,7 +447,6 @@ def validate_git_commit(ctx: ValidationContext) -> SecurityResult | None:
                 behavior="ask",
                 message="shell metacharacter in remainder after git commit message",
             )
-        # Unquoted redirections (allow < > inside quotes like --author="Name <email>")
         remainder_unquoted = extract_quoted_content(remainder)[1]
         if "<" in remainder_unquoted or ">" in remainder_unquoted:
             return SecurityResult(
@@ -515,10 +463,6 @@ def validate_git_commit(ctx: ValidationContext) -> SecurityResult | None:
         message="safe git commit with simple message",
     )
 
-
-# ---------------------------------------------------------------------------
-# Validator 5: validate_jq_command
-# ---------------------------------------------------------------------------
 
 JQ_FILE_FLAGS = re.compile(
     r"\bjq\b.*\s(-f|--from-file|--rawfile|--slurpfile|-L|--library-path)\b",
@@ -551,32 +495,17 @@ def validate_jq_command(ctx: ValidationContext) -> SecurityResult | None:
     return None
 
 
-# ---------------------------------------------------------------------------
-# Validator 6: validate_obfuscated_flags
-# ---------------------------------------------------------------------------
-
-# ANSI-C quoting: $'\x2d' = '-', can reconstruct any flag
 ANSI_C_QUOTE = re.compile(r"\$'[^']*'")
-# Locale quoting: $"..."
 LOCALE_QUOTE = re.compile(r'\$"[^"]*"')
-# Empty special quotes before dash: $''- or $""-
 EMPTY_SPECIAL_DASH = re.compile(r"""\$['"]["']+-""")
-# Empty quote pairs before dash: ''- or ""-
 EMPTY_PAIR_DASH = re.compile(r'(?:^|[\s])(?:\'\'|"")-')
-# 3+ consecutive quotes at word start (after whitespace)
 TRIPLE_QUOTES = re.compile(r"(?:^|[\s])['\x22]{3,}")
-# Quoted content starting with dash: '-f' or "-f"
 QUOTED_DASH_FLAG = re.compile(r"(?:^|[\s])['\x22]-[a-zA-Z]")
-# Flag continuation: -""exec or "-"exec — quotes inside/adjacent to flag chars
 FLAG_CONTINUATION = re.compile(r"""-['"]+[a-zA-Z]|['"]-['"]*[a-zA-Z]""")
-# Adjacent quote chaining near dashes
 ADJACENT_QUOTE_CHAIN = re.compile(r"""['"]{2,}-|['"]+-['"]+""")
-# Homogeneous empty pairs adjacent to quoted dash: """-f" or '''-f'
 HOMO_EMPTY_QUOTED_DASH = re.compile(r"(?:'{3,}|\x22{3,})['\x22]?-[a-zA-Z]")
-# Original simple patterns
 OBFUSCATED_FLAG = re.compile(r"""-[a-zA-Z]*['"][a-zA-Z]""")
 DASH_IN_QUOTES = re.compile(r"""(['"])-[a-zA-Z]""")
-# Special allowance: cut -d (delimiter can be quoted)
 CUT_D_PATTERN = re.compile(r"\bcut\b.*\s-d\s*['\x22.]")
 
 
@@ -584,11 +513,9 @@ def validate_obfuscated_flags(ctx: ValidationContext) -> SecurityResult | None:
     """Comprehensive obfuscation detection for flags using quoting tricks."""
     cmd = ctx.original_command
 
-    # Special allowance: cut -d with quoted delimiter is normal
     if CUT_D_PATTERN.search(cmd):
         return None
 
-    # ANSI-C quoting: $'\x2d\x65\x78\x65\x63' = -exec
     if ANSI_C_QUOTE.search(cmd):
         return SecurityResult(
             blocked=True,
@@ -597,7 +524,6 @@ def validate_obfuscated_flags(ctx: ValidationContext) -> SecurityResult | None:
             message="ANSI-C quoting ($'...') can encode arbitrary characters including flags",
         )
 
-    # Locale quoting: $"..."
     if LOCALE_QUOTE.search(cmd):
         return SecurityResult(
             blocked=True,
@@ -606,7 +532,6 @@ def validate_obfuscated_flags(ctx: ValidationContext) -> SecurityResult | None:
             message='locale quoting ($"...") can alter string interpretation',
         )
 
-    # Empty special quotes before dash: $''- or $""-
     if EMPTY_SPECIAL_DASH.search(cmd):
         return SecurityResult(
             blocked=True,
@@ -615,7 +540,6 @@ def validate_obfuscated_flags(ctx: ValidationContext) -> SecurityResult | None:
             message="empty special quote before dash — flag obfuscation",
         )
 
-    # Empty quote pairs before dash: ''- or ""-
     if EMPTY_PAIR_DASH.search(cmd):
         return SecurityResult(
             blocked=True,
@@ -624,7 +548,6 @@ def validate_obfuscated_flags(ctx: ValidationContext) -> SecurityResult | None:
             message="empty quote pair before dash — flag obfuscation",
         )
 
-    # Homogeneous empty pairs adjacent to quoted dash
     if HOMO_EMPTY_QUOTED_DASH.search(cmd):
         return SecurityResult(
             blocked=True,
@@ -633,7 +556,6 @@ def validate_obfuscated_flags(ctx: ValidationContext) -> SecurityResult | None:
             message="consecutive empty quotes adjacent to flag — obfuscation",
         )
 
-    # 3+ consecutive quotes at word start
     if TRIPLE_QUOTES.search(cmd):
         return SecurityResult(
             blocked=True,
@@ -642,7 +564,6 @@ def validate_obfuscated_flags(ctx: ValidationContext) -> SecurityResult | None:
             message="3+ consecutive quotes — possible obfuscation",
         )
 
-    # Flag continuation: -""exec or "-"exec
     if FLAG_CONTINUATION.search(cmd):
         return SecurityResult(
             blocked=True,
@@ -651,7 +572,6 @@ def validate_obfuscated_flags(ctx: ValidationContext) -> SecurityResult | None:
             message="quote-interrupted flag — possible obfuscation",
         )
 
-    # Adjacent quote chaining near dashes
     if ADJACENT_QUOTE_CHAIN.search(cmd):
         return SecurityResult(
             blocked=True,
@@ -660,7 +580,6 @@ def validate_obfuscated_flags(ctx: ValidationContext) -> SecurityResult | None:
             message="adjacent quote chain near dash — flag obfuscation",
         )
 
-    # Original: quoted chars mid-flag
     if OBFUSCATED_FLAG.search(cmd):
         return SecurityResult(
             blocked=True,
@@ -669,7 +588,6 @@ def validate_obfuscated_flags(ctx: ValidationContext) -> SecurityResult | None:
             message="obfuscated flag — quoted characters inside flag",
         )
 
-    # Quoted content starting with dash
     if QUOTED_DASH_FLAG.search(cmd):
         return SecurityResult(
             blocked=True,
@@ -678,7 +596,6 @@ def validate_obfuscated_flags(ctx: ValidationContext) -> SecurityResult | None:
             message="quoted string starting with dash — possible hidden flag",
         )
 
-    # Leading dash in quoted string at argument position
     if DASH_IN_QUOTES.search(cmd):
         for m in DASH_IN_QUOTES.finditer(cmd):
             pos = m.start()
@@ -692,10 +609,6 @@ def validate_obfuscated_flags(ctx: ValidationContext) -> SecurityResult | None:
 
     return None
 
-
-# ---------------------------------------------------------------------------
-# Validator 7: validate_shell_metacharacters
-# ---------------------------------------------------------------------------
 
 META_IN_FLAG_VALUE = re.compile(
     r"""(-(?:name|path|iname|regex|exec)\s+)['"]([^'"]*[;&|][^'"]*)['"]""",
@@ -716,10 +629,6 @@ def validate_shell_metacharacters(ctx: ValidationContext) -> SecurityResult | No
     return None
 
 
-# ---------------------------------------------------------------------------
-# Validator 8: validate_dangerous_variables
-# ---------------------------------------------------------------------------
-
 VAR_NEAR_REDIRECT = re.compile(r"[<>|]\s*\$[A-Za-z_]|\$[A-Za-z_]\w*\s*[|<>]")
 
 
@@ -735,21 +644,14 @@ def validate_dangerous_variables(ctx: ValidationContext) -> SecurityResult | Non
     return None
 
 
-# ---------------------------------------------------------------------------
-# Validator 9: validate_newlines
-# ---------------------------------------------------------------------------
-
-# Newline followed by non-whitespace, NOT preceded by backslash-space continuation
 DANGEROUS_NEWLINE = re.compile(r"(?<![\s]\\)[\n\r]\s*\S")
 
 
 def validate_newlines(ctx: ValidationContext) -> SecurityResult | None:
     """Embedded newlines can hide commands. Allows backslash-newline continuations."""
     cmd = ctx.original_command
-    # Allow heredocs (they legitimately contain newlines)
     if "<<" in cmd:
         return None
-    # Use pre-strip content to avoid strip-induced phantom continuations
     content = ctx.fully_unquoted_pre_strip
     if DANGEROUS_NEWLINE.search(content):
         return SecurityResult(
@@ -761,22 +663,18 @@ def validate_newlines(ctx: ValidationContext) -> SecurityResult | None:
     return None
 
 
-# ---------------------------------------------------------------------------
-# Validator 10: validate_dangerous_patterns
-# ---------------------------------------------------------------------------
-
 UNESCAPED_BACKTICK = re.compile(r"(?<!\\)`")
 CMD_SUBSTITUTION = re.compile(
-    r"\$\("  # $( — command substitution
-    r"|\$\{"  # ${ — parameter substitution
-    r"|\$\["  # $[ — legacy arithmetic
-    r"|<\("  # <( — process substitution
-    r"|>\("  # >( — process substitution
-    r"|=\("  # =( — Zsh process substitution
-    r"|~\["  # ~[ — Zsh parameter expansion
-    r"|\(e:"  # (e: — Zsh glob qualifier with execution
-    r"|\(\+"  # (+ — Zsh glob qualifier with command
-    r"|<#"  # <# — PowerShell comment syntax
+    r"\$\("
+    r"|\$\{"
+    r"|\$\["
+    r"|<\("
+    r"|>\("
+    r"|=\("
+    r"|~\["
+    r"|\(e:"
+    r"|\(\+"
+    r"|<#"
 )
 ZSH_EQUALS_EXPANSION = re.compile(r"(?<![=\w])=[a-zA-Z_]\w*")
 ZSH_ALWAYS_BLOCK = re.compile(r"\}\s*always\s*\{")
@@ -821,11 +719,6 @@ def validate_dangerous_patterns(ctx: ValidationContext) -> SecurityResult | None
     return None
 
 
-# ---------------------------------------------------------------------------
-# Validator 11: validate_redirections
-# ---------------------------------------------------------------------------
-
-
 def validate_redirections(ctx: ValidationContext) -> SecurityResult | None:
     """Remaining < or > after safe redirection stripping are suspicious."""
     if has_unescaped_char(ctx.fully_unquoted, "<"):
@@ -844,10 +737,6 @@ def validate_redirections(ctx: ValidationContext) -> SecurityResult | None:
         )
     return None
 
-
-# ---------------------------------------------------------------------------
-# Validator 12: validate_ifs_injection
-# ---------------------------------------------------------------------------
 
 IFS_ASSIGN = re.compile(r"\bIFS\s*=")
 IFS_EXPAND = re.compile(r"\$IFS\b|\$\{[^}]*IFS[^}]*\}")
@@ -872,10 +761,6 @@ def validate_ifs_injection(ctx: ValidationContext) -> SecurityResult | None:
         )
     return None
 
-
-# ---------------------------------------------------------------------------
-# Validator 13: validate_git_commit_substitution
-# ---------------------------------------------------------------------------
 
 GIT_COMMIT_CMD = re.compile(r"\bgit\s+commit\b", re.I)
 
@@ -906,10 +791,6 @@ def validate_git_commit_substitution(ctx: ValidationContext) -> SecurityResult |
     return None
 
 
-# ---------------------------------------------------------------------------
-# Validator 14: validate_proc_environ
-# ---------------------------------------------------------------------------
-
 PROC_ENVIRON = re.compile(r"/proc/[^/]*/environ")
 
 
@@ -923,11 +804,6 @@ def validate_proc_environ(ctx: ValidationContext) -> SecurityResult | None:
             message="/proc/*/environ access leaks credentials",
         )
     return None
-
-
-# ---------------------------------------------------------------------------
-# Validator 15: validate_malformed_tokens
-# ---------------------------------------------------------------------------
 
 
 def count_unescaped_delimiters(cmd: str) -> dict[str, int]:
@@ -987,7 +863,6 @@ def validate_malformed_tokens(ctx: ValidationContext) -> SecurityResult | None:
     """
     cmd = ctx.original_command
 
-    # Unbalanced quotes
     single_count = 0
     double_count = 0
     i = 0
@@ -1011,7 +886,6 @@ def validate_malformed_tokens(ctx: ValidationContext) -> SecurityResult | None:
             is_misparsing=True,
         )
 
-    # Unbalanced delimiters — only when command separators present
     if has_command_separator(cmd):
         counts = count_unescaped_delimiters(cmd)
         if counts["{"] != counts["}"]:
@@ -1040,11 +914,6 @@ def validate_malformed_tokens(ctx: ValidationContext) -> SecurityResult | None:
             )
 
     return None
-
-
-# ---------------------------------------------------------------------------
-# Validator 16: validate_backslash_escaped_whitespace
-# ---------------------------------------------------------------------------
 
 
 def validate_backslash_escaped_whitespace(ctx: ValidationContext) -> SecurityResult | None:
@@ -1092,11 +961,6 @@ def validate_backslash_escaped_whitespace(ctx: ValidationContext) -> SecurityRes
     return None
 
 
-# ---------------------------------------------------------------------------
-# Validator 17: validate_brace_expansion
-# ---------------------------------------------------------------------------
-
-
 def find_brace_expansion(content: str) -> bool:
     """Depth-matching brace expansion detection.
 
@@ -1110,7 +974,6 @@ def find_brace_expansion(content: str) -> bool:
             i += 2
             continue
         if content[i] == "{" and not is_escaped_at_position(content, i):
-            # Found opening brace — scan for matching close with , or .. at depth 0
             depth = 1
             has_comma = False
             has_dotdot = False
@@ -1143,7 +1006,6 @@ def has_mismatched_brace_count(original: str, unquoted: str) -> bool:
     open_unq = unquoted.count("{") - unquoted.count("\\{")
     close_unq = unquoted.count("}") - unquoted.count("\\}")
 
-    # If stripping quotes removed { but not }, there's a mismatch
     if close_unq > open_unq and open_orig >= close_orig:
         return True
     return False
@@ -1160,7 +1022,6 @@ def validate_brace_expansion(ctx: ValidationContext) -> SecurityResult | None:
     """Brace expansion detection with depth matching and mismatch detection."""
     content = ctx.fully_unquoted
 
-    # Mismatched brace count (quoted { stripped, unbalanced })
     if has_mismatched_brace_count(ctx.original_command, content):
         return SecurityResult(
             blocked=True,
@@ -1169,7 +1030,6 @@ def validate_brace_expansion(ctx: ValidationContext) -> SecurityResult | None:
             message="mismatched brace count — quoted brace stripped, possible expansion attack",
         )
 
-    # Quoted braces in unquoted context
     if ("'{'" in ctx.original_command or '"{' in ctx.original_command) and "{" in content:
         return SecurityResult(
             blocked=True,
@@ -1178,7 +1038,6 @@ def validate_brace_expansion(ctx: ValidationContext) -> SecurityResult | None:
             message="quoted brace alongside unquoted brace — possible expansion bypass",
         )
 
-    # Sensitive path expansion
     if SENSITIVE_BRACE_PATHS.search(content):
         return SecurityResult(
             blocked=True,
@@ -1187,7 +1046,6 @@ def validate_brace_expansion(ctx: ValidationContext) -> SecurityResult | None:
             message="brace expansion targeting sensitive paths",
         )
 
-    # General brace expansion with depth matching
     if find_brace_expansion(content):
         return SecurityResult(
             blocked=True,
@@ -1198,10 +1056,6 @@ def validate_brace_expansion(ctx: ValidationContext) -> SecurityResult | None:
 
     return None
 
-
-# ---------------------------------------------------------------------------
-# Validator 18: validate_control_characters
-# ---------------------------------------------------------------------------
 
 CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
@@ -1219,22 +1073,18 @@ def validate_control_characters(ctx: ValidationContext) -> SecurityResult | None
     return None
 
 
-# ---------------------------------------------------------------------------
-# Validator 19: validate_unicode_whitespace
-# ---------------------------------------------------------------------------
-
 UNICODE_WHITESPACE = re.compile(
     "["
-    "\u00a0"  # NBSP
-    "\u1680"  # Ogham space mark
-    "\u2000-\u200f"  # en/em spaces, zero-width spaces and marks
-    "\u2028\u2029"  # line/paragraph separator
-    "\u202a-\u202e"  # directional overrides (BiDi)
-    "\u202f"  # narrow no-break space
-    "\u205f"  # medium mathematical space
-    "\u2060"  # word joiner
-    "\u3000"  # ideographic space
-    "\ufeff"  # BOM / zero-width no-break space
+    "\u00a0"
+    "\u1680"
+    "\u2000-\u200f"
+    "\u2028\u2029"
+    "\u202a-\u202e"
+    "\u202f"
+    "\u205f"
+    "\u2060"
+    "\u3000"
+    "\ufeff"
     "]"
 )
 
@@ -1251,10 +1101,6 @@ def validate_unicode_whitespace(ctx: ValidationContext) -> SecurityResult | None
     return None
 
 
-# ---------------------------------------------------------------------------
-# Validator 20: validate_mid_word_hash
-# ---------------------------------------------------------------------------
-
 MID_WORD_HASH = re.compile(r"\S#")
 HASH_LENGTH_SYNTAX = re.compile(r"\$\{#")
 
@@ -1267,7 +1113,6 @@ def validate_mid_word_hash(ctx: ValidationContext) -> SecurityResult | None:
     """
     content = ctx.unquoted_keep_quotes
 
-    # Exclude ${# (bash string-length syntax)
     if HASH_LENGTH_SYNTAX.search(ctx.original_command):
         return None
 
@@ -1280,10 +1125,6 @@ def validate_mid_word_hash(ctx: ValidationContext) -> SecurityResult | None:
         )
     return None
 
-
-# ---------------------------------------------------------------------------
-# Validator 21: validate_zsh_dangerous_commands
-# ---------------------------------------------------------------------------
 
 ZSH_DANGEROUS_CMDS = frozenset(ZSH_DANGEROUS_CMDS_TUPLE)
 
@@ -1303,7 +1144,6 @@ def validate_zsh_dangerous_commands(ctx: ValidationContext) -> SecurityResult | 
             message=f"Zsh builtin '{base}' bypasses sandbox",
         )
 
-    # fc -e: arbitrary command execution via editor substitution
     if FC_E_PATTERN.search(ctx.fully_unquoted):
         return SecurityResult(
             blocked=True,
@@ -1313,11 +1153,6 @@ def validate_zsh_dangerous_commands(ctx: ValidationContext) -> SecurityResult | 
         )
 
     return None
-
-
-# ---------------------------------------------------------------------------
-# Validator 22: validate_backslash_escaped_operators
-# ---------------------------------------------------------------------------
 
 
 def validate_backslash_escaped_operators(ctx: ValidationContext) -> SecurityResult | None:
@@ -1336,11 +1171,6 @@ def validate_backslash_escaped_operators(ctx: ValidationContext) -> SecurityResu
             is_misparsing=True,
         )
     return None
-
-
-# ---------------------------------------------------------------------------
-# Validator 23: validate_comment_quote_desync
-# ---------------------------------------------------------------------------
 
 
 def validate_comment_quote_desync(ctx: ValidationContext) -> SecurityResult | None:
@@ -1365,7 +1195,6 @@ def validate_comment_quote_desync(ctx: ValidationContext) -> SecurityResult | No
         elif c == '"' and not in_single:
             in_double = not in_double
         elif c == "#" and not in_single and not in_double:
-            # Hash in unquoted position — check rest of line for quote chars
             rest_of_line = cmd[i + 1 :]
             newline_pos = rest_of_line.find("\n")
             if newline_pos != -1:
@@ -1380,11 +1209,6 @@ def validate_comment_quote_desync(ctx: ValidationContext) -> SecurityResult | No
         i += 1
 
     return None
-
-
-# ---------------------------------------------------------------------------
-# Validator 24: validate_carriage_return
-# ---------------------------------------------------------------------------
 
 
 def validate_carriage_return(ctx: ValidationContext) -> SecurityResult | None:
@@ -1414,7 +1238,6 @@ def validate_carriage_return(ctx: ValidationContext) -> SecurityResult | None:
         elif c == '"' and not in_single:
             in_double = not in_double
         elif c == "\r" and not in_double:
-            # CR outside double quotes (unquoted or single-quoted)
             return SecurityResult(
                 blocked=True,
                 check_id=24,
@@ -1425,11 +1248,6 @@ def validate_carriage_return(ctx: ValidationContext) -> SecurityResult | None:
         i += 1
 
     return None
-
-
-# ---------------------------------------------------------------------------
-# Validator 25: validate_shell_quote_bug
-# ---------------------------------------------------------------------------
 
 
 def validate_shell_quote_bug(ctx: ValidationContext) -> SecurityResult | None:
@@ -1448,7 +1266,6 @@ def validate_shell_quote_bug(ctx: ValidationContext) -> SecurityResult | None:
     n = len(cmd)
     while i < n:
         if cmd[i] == "'":
-            # Start of single-quoted string
             i += 1
             trailing_backslashes = 0
             while i < n and cmd[i] != "'":
@@ -1458,11 +1275,9 @@ def validate_shell_quote_bug(ctx: ValidationContext) -> SecurityResult | None:
                     trailing_backslashes = 0
                 i += 1
             if i >= n:
-                break  # Unterminated (caught by malformed_tokens)
-            # cmd[i] == "'" — closing quote
+                break
             if trailing_backslashes > 0:
                 if trailing_backslashes % 2 != 0:
-                    # Odd backslashes: shell-quote treats \' as escape, quote stays open
                     return SecurityResult(
                         blocked=True,
                         check_id=25,
@@ -1470,7 +1285,6 @@ def validate_shell_quote_bug(ctx: ValidationContext) -> SecurityResult | None:
                         message="shell-quote single-quote backslash bug — odd trailing backslashes",
                         is_misparsing=True,
                     )
-                # Even backslashes: unsafe if a later ' exists (token merging)
                 if "'" in cmd[i + 1 :]:
                     return SecurityResult(
                         blocked=True,
@@ -1484,11 +1298,6 @@ def validate_shell_quote_bug(ctx: ValidationContext) -> SecurityResult | None:
             i += 1
 
     return None
-
-
-# ---------------------------------------------------------------------------
-# Validator 26: validate_quoted_newline
-# ---------------------------------------------------------------------------
 
 
 def validate_quoted_newline(ctx: ValidationContext) -> SecurityResult | None:
@@ -1517,7 +1326,6 @@ def validate_quoted_newline(ctx: ValidationContext) -> SecurityResult | None:
         elif c == '"' and not in_single:
             in_double = not in_double
         elif c == "\n" and (in_single or in_double):
-            # Newline inside quotes — check if next line starts with #
             rest = cmd[i + 1 :]
             next_line = rest.split("\n", 1)[0].strip()
             if next_line.startswith("#"):
@@ -1533,11 +1341,6 @@ def validate_quoted_newline(ctx: ValidationContext) -> SecurityResult | None:
     return None
 
 
-# ---------------------------------------------------------------------------
-# Validator registry + runner with misparsing deferral
-# ---------------------------------------------------------------------------
-
-# Early validators: can short-circuit with allow
 EARLY_VALIDATORS: list[tuple[int, Callable[[ValidationContext], SecurityResult | None]]] = [
     (1, validate_empty),
     (2, validate_incomplete_commands),
@@ -1545,7 +1348,6 @@ EARLY_VALIDATORS: list[tuple[int, Callable[[ValidationContext], SecurityResult |
     (4, validate_git_commit),
 ]
 
-# Misparsing validators: get priority over non-misparsing
 MISPARSING_VALIDATORS: list[tuple[int, Callable[[ValidationContext], SecurityResult | None]]] = [
     (18, validate_control_characters),
     (25, validate_shell_quote_bug),
@@ -1555,7 +1357,6 @@ MISPARSING_VALIDATORS: list[tuple[int, Callable[[ValidationContext], SecurityRes
     (26, validate_quoted_newline),
 ]
 
-# Standard validators
 STANDARD_VALIDATORS: list[tuple[int, Callable[[ValidationContext], SecurityResult | None]]] = [
     (5, validate_jq_command),
     (6, validate_obfuscated_flags),
@@ -1584,23 +1385,20 @@ def run_validators(ctx: ValidationContext) -> SecurityResult | None:
     3. Standard validators run last
     4. If a misparsing result was found, it takes priority over deferred non-misparsing ask
     """
-    # Phase 1: Early validators (can short-circuit)
     for check_id, validator in EARLY_VALIDATORS:
         result = validator(ctx)
         if result is not None:
             return result
 
-    # Phase 2: Misparsing validators (priority)
     deferred_misparsing: SecurityResult | None = None
     for check_id, validator in MISPARSING_VALIDATORS:
         result = validator(ctx)
         if result is not None and result.blocked:
             if result.is_misparsing:
-                return result  # Misparsing blocks returned immediately
+                return result
             if deferred_misparsing is None:
                 deferred_misparsing = result
 
-    # Phase 3: Standard validators
     deferred_standard: SecurityResult | None = None
     for check_id, validator in STANDARD_VALIDATORS:
         result = validator(ctx)
@@ -1611,7 +1409,6 @@ def run_validators(ctx: ValidationContext) -> SecurityResult | None:
             elif result.behavior == "allow":
                 return result
 
-    # Return misparsing deferred first, then standard
     if deferred_misparsing is not None:
         return deferred_misparsing
     if deferred_standard is not None:
@@ -1630,15 +1427,12 @@ def analyze_bash_security(command: str) -> SecurityResult:
     if not command or not command.strip():
         return SecurityResult(blocked=False, check_id=1, behavior="allow", message="empty command")
 
-    # Run validators on the full command first (for heredoc/git commit patterns)
     full_ctx = build_context(command)
     full_result = run_validators(full_ctx)
     if full_result is not None:
         if full_result.behavior == "allow" or full_result.blocked:
             return full_result
 
-    # Split compound commands and validate each subcommand
-    # Skip if single non-compound command (already validated above)
     subcommands = split_compound(command)
     if len(subcommands) > 1:
         for sub in subcommands:

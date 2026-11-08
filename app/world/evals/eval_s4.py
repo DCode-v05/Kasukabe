@@ -26,7 +26,7 @@ THRESHOLDS = {
     "group chat":                         ">=1 thread with 3+ participants",
 }
 
-results: list[tuple[str, str, str]] = []          # objective, verdict, evidence
+results: list[tuple[str, str, str]] = []
 def record(name, ok, evidence):
     results.append((name, "PASS" if ok else "FAIL", evidence))
 
@@ -63,16 +63,6 @@ def turns():
             except Exception:
                 continue
 
-# ── 4.1 movement completes ──────────────────────────────────────────────
-#
-# Measures ARRIVAL, not the estimate. The first version of this check
-# passed on "longest estimate 8 ticks" while observing zero arrivals -
-# nothing could have made it red, which is a defect in the test and not
-# evidence about the town (spec §9.4).
-#
-# A journey is proven complete when the agent's OWN later perception says
-# it is standing at the place it set off for. That is end-to-end: the tool
-# started it, the tick loop walked it, and the agent can see it happened.
 try:
     per_agent = collections.defaultdict(list)
     for who, d in turns():
@@ -97,17 +87,8 @@ try:
                     started += 1
                     if j.get("estimated_ticks") is not None:
                         est.append(j["estimated_ticks"])
-                    # Did a later turn of THIS agent perceive it at `dest`?
                     later_turns = entries[i + 1:]
                     later = " ".join(str(e.get("input") or "") for e in later_turns)
-                    # Did it later set off somewhere ELSE? Then this journey
-                    # was abandoned on purpose, not lost. Spec §3.5 asks
-                    # that an interrupted journey resolve to one honest
-                    # outcome, and ending up somewhere real after changing
-                    # your mind IS that outcome. Measured case: n02 set off
-                    # for the Willows Market, then issued seventeen tool
-                    # calls in its next turn - four of them moves - and
-                    # settled at the Moore family's house, where it stayed.
                     superseded = False
                     for later_turn in later_turns:
                         for b in later_turn.get("actions") or []:
@@ -132,17 +113,11 @@ try:
                     elif superseded:
                         changed_plan += 1
                     elif len(later_turns) < 3:
-                        # Still in flight when the log ends. A journey with
-                        # no turns left after it cannot be judged either
-                        # way, and counting it as a failure would make this
-                        # eval impossible to pass on any run that is still
-                        # going - which is every run, at the moment it is
-                        # measured.
                         in_flight += 1
                     else:
                         stranded += 1
                 elif j.get("walking") is False and not j.get("error"):
-                    arrived += 1  # already standing there
+                    arrived += 1
 
     worst = max(est) if est else 0
     ok = started + arrived > 0 and stranded == 0 and worst <= 12
@@ -155,7 +130,6 @@ try:
 except Exception as e:
     record("4.1 cross-town walk completes", False, f"eval errored: {e}")
 
-# ── 4.2 nobody reports being lost ───────────────────────────────────────
 try:
     LOST = re.compile(
         r"(lost|not sticking|didn'?t stick|never reach|can'?t reach|wandering|"
@@ -171,7 +145,6 @@ try:
 except Exception as e:
     record("4.2 nobody reports being lost", False, f"eval errored: {e}")
 
-# ── 4.3 a hungry resident gets fed ──────────────────────────────────────
 try:
     ate = collections.Counter()
     for who, d in turns():
@@ -186,7 +159,6 @@ try:
 except Exception as e:
     record("4.3 hungry beside food gets fed", False, f"eval errored: {e}")
 
-# ── 4.6 the new tools get used, unprompted and correctly ────────────────
 try:
     tried = collections.Counter()
     failed = collections.Counter()
@@ -205,7 +177,6 @@ try:
 except Exception as e:
     record("4.6 new tools used unprompted", False, f"eval errored: {e}")
 
-# ── 4.7 a refusal is followed by a correction that works ────────────────
 try:
     per = collections.defaultdict(list)
     for who, d in turns():
@@ -233,7 +204,6 @@ try:
 except Exception as e:
     record("4.7 refusal recovery", False, f"eval errored: {e}")
 
-# ── group chat ──────────────────────────────────────────────────────────
 try:
     c = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
     g = collections.defaultdict(set)
@@ -249,23 +219,17 @@ try:
 except Exception as e:
     record("group chat", False, f"eval errored: {e}")
 
-# ── 4.1 adversarial variants ────────────────────────────────────────────
-#
-# The spec asks for these by name and no run had ever exercised them. Each
-# is measured from what the residents actually did, not staged - a run
-# where a variant never arose reports "not exercised", which is honest and
-# is not a pass.
 try:
     per_agent = collections.defaultdict(list)
     for who, d in turns():
         per_agent[who].append(d)
 
-    reissued_same = 0       # asked again for somewhere it was already walking
-    told_already = 0        # ...and was told so instead of restarted
-    changed_mind = 0        # picked a new destination mid-walk
-    no_route = 0            # given a destination with no route
-    no_route_told = 0       # ...and told in terms it could act on
-    interrupted = 0         # spoken to while walking
+    reissued_same = 0
+    told_already = 0
+    changed_mind = 0
+    no_route = 0
+    no_route_told = 0
+    interrupted = 0
 
     for who, entries in per_agent.items():
         walking_to = None
@@ -314,9 +278,6 @@ try:
     if interrupted:
         exercised.append(f"spoke while walking x{interrupted}")
 
-    # The one that must never regress: a re-issue has to be answered, not
-    # silently restarted. Six of Marta Thorne's moves in one turn were
-    # restarts, and she arrived nowhere.
     ok = (reissued_same == 0 or told_already == reissued_same) and (
         no_route == 0 or no_route_told == no_route)
     record("4.1a adversarial: interruption and repetition", ok,
@@ -324,7 +285,6 @@ try:
 except Exception as e:
     record("4.1a adversarial: interruption and repetition", False, f"eval errored: {e}")
 
-# ── 4.5 a deal agreed in talk settles in the ledger ──────────────────────
 try:
     c = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
     said_numbers = 0
@@ -347,7 +307,6 @@ try:
 except Exception as e:
     record("4.5 a deal agreed in talk settles in the ledger", False, f"eval errored: {e}")
 
-# ── the board ───────────────────────────────────────────────────────────
 print("\n  §4 EVAL BOARD - thresholds fixed before the run")
 print("  " + "-" * 76)
 for name, verdict, ev in results:
@@ -358,12 +317,6 @@ passed = sum(1 for _, v, _ in results if v == "PASS")
 failed = sum(1 for _, v, _ in results if v == "FAIL")
 unmeasured = sum(1 for _, v, _ in results if v == "N/A")
 print("  " + "-" * 76)
-# EVAL-10 / EVAL-13: three numbers, not one. "18 of 20 pass" hid the
-# difference between an objective a run met and an objective the run never
-# put to the test - and a gate that cannot fail is not evidence, it is
-# arithmetic. Reported separately so a board with a large N/A column reads
-# as "this run was too short to ask", which is the true statement about
-# every run this project has done.
 print(f"  {passed} passed · {failed} failed · {unmeasured} not exercised "
       f"({len(results)} objectives)")
 if unmeasured:

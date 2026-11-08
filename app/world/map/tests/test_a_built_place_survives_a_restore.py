@@ -23,8 +23,6 @@ import pytest
 from world.map.genesis import classify_sector
 from world.tools.locations import WORKSHOPS_BY_BUSINESS_TYPE
 
-# The purposes `build_structure` accepts, per doc 05 section 5.3(c) and
-# the workshop constants the gates use.
 BUILDABLE_PURPOSES = sorted(
     {workshop for workshops in WORKSHOPS_BY_BUSINESS_TYPE.values() for workshop in workshops}
     | {"hospital", "police_station", "well", "school", "granary"}

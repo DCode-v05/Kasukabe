@@ -1,12 +1,3 @@
-// Client-side mirror of game/position.py's day_night_tint()/
-// game_day_and_time(). Duplicated deliberately, same reasoning
-// position.py's own module docstring gives for copying (not importing)
-// world/core/clock.py's constants: DESIGN.md section 1 fixes these
-// numbers ("tick = 10 game-minutes; 144 ticks/game-day"), so both the
-// Python and the JS side of game/ read the same law directly rather than
-// one importing the other across a browser/server boundary that can't
-// share Python modules anyway.
-
 const TICK_MINUTES = 10;
 const MINUTES_PER_DAY = 24 * 60;
 const DAY_START_HOUR = 6;
@@ -28,11 +19,6 @@ export function dayNightTint(tick) {
     alpha = 1;
   }
   alpha = Math.max(0, Math.min(1, alpha));
-  // 0.38 ceiling, not 0.72: the overlay now covers the whole map in world
-  // space (see town.js), and at 0.72 midnight rendered the town as a solid
-  // black rectangle with nothing visible. Night must READ as night while
-  // leaving the streets, buildings and sprites legible - an operator has to
-  // be able to watch the town at 03:00, not stare at a black screen.
   return { color: 0x0b1230, alpha: Math.round(alpha * 0.38 * 1000) / 1000 };
 }
 

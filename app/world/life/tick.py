@@ -47,16 +47,10 @@ from world.life import aging, death, health
 from world.life.clock import GameClock
 from world.life.models import AgentLifeRecord, DeathCause, LifeEvent, PopulationDials
 
-# `world.life.household.bring_of_age`'s exact signature: the agent that
-# just turned eighteen, and the game-hour it happened at. Returns the
-# agent as it stands afterwards plus whatever the transition emitted.
 ComingOfAgeHook = Callable[
     [AgentLifeRecord, float], Awaitable[tuple[AgentLifeRecord, list[LifeEvent]]]
 ]
 
-# A death that has consequences beyond the record: estate settlement,
-# scheduler unregistration, anything else a root owns. Same return shape
-# as `apply_death` below, which is the default when no hook is given.
 DeathHook = Callable[
     [AgentLifeRecord, DeathCause], Awaitable[tuple[AgentLifeRecord, list[LifeEvent]]]
 ]
@@ -143,11 +137,6 @@ async def run_hourly_life_tick(
     agent, aging_events = aging.advance_age(agent, elapsed_hours)
     events.extend(aging_events)
 
-    # Aging fires `agent.aged_to_adult` and stops there. Until a caller
-    # consumed that event, a minor crossing eighteen changed nothing at
-    # all: the parent kept paying for their thinking and the household
-    # never moved. A root with no hook keeps that behaviour, which is why
-    # this is the one line ECON-22 was really about.
     if on_coming_of_age is not None and any(
         event.type == "agent.aged_to_adult" for event in aging_events
     ):

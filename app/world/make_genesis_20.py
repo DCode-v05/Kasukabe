@@ -48,7 +48,6 @@ def persona(**kw) -> dict:
 
 
 NEW_AGENTS = [
-    # ── h_mill: the Vances. Rosalind is Ainsley Holloway's sister. ──────
     dict(
         agent_id="n11", name="Rosalind Vance", age_years=39, sex="female",
         household_id="h_mill", marital_status="married", spouse_id="n12",
@@ -149,7 +148,6 @@ NEW_AGENTS = [
             blind_spot="thinks being right settles it",
         ),
     ),
-    # ── h_forge: the Okonjos. Bram's copper needs a smith. ──────────────
     dict(
         agent_id="n15", name="Ezra Okonjo", age_years=52, sex="male",
         household_id="h_forge", marital_status="married", spouse_id="n16",
@@ -250,7 +248,6 @@ NEW_AGENTS = [
             blind_spot="assumes being right is the same as being kind",
         ),
     ),
-    # ── two who belong to no household: the town's other institutions ───
     dict(
         agent_id="n19", name="Father Anselm", age_years=63, sex="male",
         household_id="h_forge", marital_status="single", spouse_id=None,
@@ -303,17 +300,6 @@ NEW_AGENTS = [
     ),
 ]
 
-
-# ══════════════════════════════════════════════════════════════════════
-# the rest of PersonaDepth
-# ══════════════════════════════════════════════════════════════════════
-#
-# The first ten carry twenty-two persona fields, not twelve. A resident
-# missing any of them is not merely thinner - `RichGenesis` refuses to
-# validate the file at all, which is how the first attempt at this run
-# died before a single engine started. Everything below is the other ten
-# fields, authored per resident rather than defaulted, because a blank
-# `secret` is a resident with nothing to withhold.
 
 DEPTH = {
     "n11": dict(
@@ -438,18 +424,7 @@ DEPTH = {
     ),
 }
 
-# ══════════════════════════════════════════════════════════════════════
-# the social web
-# ══════════════════════════════════════════════════════════════════════
-#
-# The first ten each carry nine opinions, which is what makes them a town
-# rather than ten strangers on the same map. Every tie below is written
-# once and read from both ends: `fact` is what both households would
-# agree happened, and the two notes are what each side privately makes of
-# it. The reciprocal half is appended to the original ten as well - a
-# newcomer the old cast has never heard of is not a relation.
 
-# (a, b, kind, role_a, role_b, fact, note_a, note_b, sim)
 EDGES = [
     ("n11", "n02", "kin", "younger", "older",
      "Rosalind Vance and Ainsley Holloway are sisters. Their father left the mill "
@@ -651,11 +626,6 @@ EDGES = [
 ]
 
 
-# ══════════════════════════════════════════════════════════════════════
-# attaching the web
-# ══════════════════════════════════════════════════════════════════════
-
-
 def kin_opinion(me: dict, them: dict, household: str) -> dict:
     """A household member's standing view of another. Spouses get the
     spouse role the original ten use; everyone else under one roof gets
@@ -714,11 +684,8 @@ def attach_web(agents: list[dict]) -> None:
 def build() -> dict:
     genesis = json.loads(SOURCE.read_text(encoding="utf-8"))
 
-    # Kin across the two original households: Rosalind and Ainsley are
-    # sisters, and Hester is mother to both. That makes the Vances the
-    # Holloways' in-laws rather than newcomers who happen to mill.
     for agent in genesis["agents"]:
-        if agent["agent_id"] == "n02":          # Ainsley Holloway
+        if agent["agent_id"] == "n02":
             agent["parent_ids"] = ["n20"]
 
     for spec in NEW_AGENTS:
@@ -738,7 +705,6 @@ def build() -> dict:
          "member_ids": ["n15", "n16", "n17", "n18", "n19"], "formed_at_hours": 0.0},
     ])
 
-    # The two trades the first cast had no counterpart for.
     genesis["small_businesses"].extend([
         {"business_id": "b_mill", "name": "Vance Mill", "business_type": "mill",
          "owner_agent_id": "n11", "employee_agent_ids": [], "starting_sim_balance": 5000},
@@ -746,17 +712,12 @@ def build() -> dict:
          "owner_agent_id": "n13", "employee_agent_ids": [], "starting_sim_balance": 4000},
     ])
 
-    # The $1,000 invariant is the ledger's, not this file's, and it must
-    # still total 100,000 cents with twice the population drawing on it.
     wallets = 600 * genesis["population"]
     genesis["usd_ledger"] = {
         "agent_wallets_cents": wallets,
         "treasury_cents": 100_000 - wallets,
         "total_cents": 100_000,
     }
-    # Derived from the agents, like population and usd_ledger above.
-    # This builder doubles the cast and used to leave the summary
-    # describing the half it started from (EVAL-16).
     recount_ablation_summary(genesis)
     return genesis
 

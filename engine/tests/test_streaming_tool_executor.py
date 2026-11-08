@@ -27,9 +27,6 @@ async def immediate_execute(call: ToolCall, ct: CancellationToken) -> ToolResult
     return ToolResultBlock(tool_use_id=call.id, content=f"result:{call.id}")
 
 
-# ── Basic execution ──────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_single_tool():
     executor = StreamingToolExecutor(execute_fn=immediate_execute)
@@ -171,9 +168,6 @@ async def test_tool_count_and_has_pending():
     assert not executor.has_pending
 
 
-# ── Sibling abort ────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_sibling_abort_bash_error_cancels_siblings():
     """When a bash-like tool errors, sibling tools get cancelled."""
@@ -185,7 +179,6 @@ async def test_sibling_abort_bash_error_cancels_siblings():
             return ToolResultBlock(
                 tool_use_id=call.id, content="Error: command failed", is_error=True
             )
-        # Slow tool — should get cancelled by sibling abort
         for _ in range(50):
             if ct.cancelled:
                 order.append(f"cancelled:{call.id}")
@@ -206,8 +199,8 @@ async def test_sibling_abort_bash_error_cancels_siblings():
 
     results = [r async for r in executor.results()]
     assert len(results) == 2
-    assert results[0].is_error  # bash errored
-    assert results[1].is_error  # grep got cancelled
+    assert results[0].is_error
+    assert results[1].is_error
     assert executor.has_errored
 
 
@@ -231,11 +224,8 @@ async def test_non_bash_error_does_not_cancel_siblings():
 
     results = [r async for r in executor.results()]
     assert results[0].is_error
-    assert not results[1].is_error  # read completed normally
+    assert not results[1].is_error
     assert not executor.has_errored
-
-
-# ── Abort reason discrimination ──────────────────────────
 
 
 @pytest.mark.asyncio
@@ -256,12 +246,8 @@ async def test_sibling_abort_synthetic_message():
     executor.add_tool(make_call("t1", "bash", command="rm -rf /"))
     executor.add_tool(make_call("t2", "read"))
 
-    # t2 is queued behind t1 in terms of safety, but both are concurrent-safe
-    # t1 errors immediately, sibling cancel fires, t2 should see sibling reason
-    # Wait a tick for t1 to complete and fire sibling abort
     await asyncio.sleep(0.05)
 
-    # Now t2's cancellation token should be cancelled with SIBLING_ERROR
     results = [r async for r in executor.results()]
     assert "parallel tool call" in results[1].content or results[1].is_error
 
@@ -288,22 +274,17 @@ async def test_discard_produces_streaming_fallback_message():
     assert "Streaming fallback" in results[2].content
 
 
-# ── Mid-stream harvest (get_completed_results) ──────────
-
-
 @pytest.mark.asyncio
 async def test_get_completed_results_non_blocking():
     executor = StreamingToolExecutor(execute_fn=immediate_execute)
     executor.add_tool(make_call("t1"))
 
-    # Give the event loop a tick to complete the immediate execute
     await asyncio.sleep(0.01)
 
     mid = list(executor.get_completed_results())
     assert len(mid) == 1
     assert mid[0].tool_use_id == "t1"
 
-    # results() should skip the already-yielded one
     remaining = [r async for r in executor.results()]
     assert len(remaining) == 0
 
@@ -312,7 +293,7 @@ async def test_get_completed_results_non_blocking():
 async def test_get_completed_results_stops_at_incomplete():
     async def execute(call: ToolCall, ct: CancellationToken) -> ToolResultBlock:
         if call.id == "t1":
-            await asyncio.sleep(0.1)  # slow
+            await asyncio.sleep(0.1)
         return ToolResultBlock(tool_use_id=call.id, content=f"result:{call.id}")
 
     executor = StreamingToolExecutor(
@@ -322,12 +303,8 @@ async def test_get_completed_results_stops_at_incomplete():
     executor.add_tool(make_call("t1"))
     executor.add_tool(make_call("t2"))
 
-    # t1 is executing (slow), t2 is queued — nothing completed yet
     mid = list(executor.get_completed_results())
     assert len(mid) == 0
-
-
-# ── Interrupt behavior ───────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -388,9 +365,6 @@ async def test_discard_respects_interrupt_behavior():
     assert len(results) == 2
 
 
-# ── Progress ─────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_progress_report_and_drain():
     executor = StreamingToolExecutor(execute_fn=immediate_execute)
@@ -402,11 +376,7 @@ async def test_progress_report_and_drain():
     progress = executor.drain_progress()
     assert progress == [("t1", "50% done"), ("t1", "75% done")]
 
-    # Drain again should be empty
     assert executor.drain_progress() == []
-
-
-# ── Tool description ─────────────────────────────────────
 
 
 def test_tool_description_extracts_command():
@@ -417,7 +387,7 @@ def test_tool_description_extracts_command():
 def test_tool_description_truncates():
     tc = make_call("t1", "bash", command="x" * 100)
     desc = tool_description(tc)
-    assert len(desc) <= 43  # 40 + "..."
+    assert len(desc) <= 43
     assert desc.endswith("...")
 
 
@@ -429,9 +399,6 @@ def test_tool_description_extracts_file_path():
 def test_tool_description_fallback_to_name():
     tc = make_call("t1", "custom_tool")
     assert tool_description(tc) == "custom_tool"
-
-
-# ── Cancellation via parent ──────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -455,9 +422,6 @@ async def test_cancellation_via_parent():
     assert len(results) == 1
 
 
-# ── has_completed_results property ───────────────────────
-
-
 @pytest.mark.asyncio
 async def test_has_completed_results():
     executor = StreamingToolExecutor(execute_fn=immediate_execute)
@@ -471,9 +435,6 @@ async def test_has_completed_results():
     assert not executor.has_completed_results
 
 
-# ── Abort bubbling ───────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_timeout_cancel_does_not_bubble_to_sibling():
     """Per-tool timeout stays isolated — does NOT propagate to siblings or parent."""
@@ -484,14 +445,10 @@ async def test_timeout_cancel_does_not_bubble_to_sibling():
     )
     executor.add_tool(make_call("t1"))
     executor.add_tool(make_call("t2"))
-    # Timeout on t1 — should NOT affect t2 or parent
     executor.tracked[0].cancellation_token.cancel("Timeout after 5000ms", AbortReason.TIMEOUT)
     assert not executor.sibling_cancel.cancelled
     assert not parent.cancelled
     assert not executor.tracked[1].cancellation_token.cancelled
-
-
-# ── Synthetic error messages ─────────────────────────────
 
 
 def test_timeout_synthetic_error_message():
@@ -508,7 +465,6 @@ def test_user_interrupted_uses_full_reject_message():
     tc = make_call("t1", "search")
     msg = synthetic_error_content(tc, AbortReason.USER_INTERRUPTED)
     assert msg == REJECT_MESSAGE
-    # Sanity: it's a full instructional sentence, not a short label.
     assert "STOP" in msg
     assert "wait for the user" in msg
     assert len(msg) > 100
@@ -540,9 +496,6 @@ def test_fallback_synthetic_error_wraps_description():
     assert "Cancelled" in msg
 
 
-# ── Interruptible state tracking ─────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_interruptible_state_fires_true_when_all_cancel():
     """Executor fires True only when every executing tool is CANCEL."""
@@ -560,10 +513,8 @@ async def test_interruptible_state_fires_true_when_all_cancel():
     )
     executor.add_tool(make_call("t1", "a"))
     executor.add_tool(make_call("t2", "a"))
-    # Let the callback fire at least once.
     await asyncio.sleep(0.01)
-    assert True in states  # at some point we were interruptible
-    # Drain
+    assert True in states
     _ = [r async for r in executor.results()]
 
 
@@ -591,10 +542,8 @@ async def test_interruptible_state_flips_false_when_block_joins_cancel():
         on_interruptible_change=lambda s: states.append(s),
     )
     executor.add_tool(make_call("t1", "cancelable"))
-    # Pre-condition: cancelable alone ⇒ interruptible
     assert states[-1] is True
     executor.add_tool(make_call("t2", "blocker"))
-    # Post-condition: blocker joined ⇒ no longer interruptible
     assert states[-1] is False
     _ = [r async for r in executor.results()]
 
@@ -605,7 +554,6 @@ async def test_interruptible_state_flips_true_when_block_completes():
     states: list[bool] = []
 
     async def execute(call: ToolCall, ct: CancellationToken) -> ToolResultBlock:
-        # blocker finishes quickly, cancelable lingers
         if call.name == "blocker":
             await asyncio.sleep(0.02)
         else:
@@ -623,9 +571,6 @@ async def test_interruptible_state_flips_true_when_block_completes():
     executor.add_tool(make_call("t1", "cancelable"))
     executor.add_tool(make_call("t2", "blocker"))
     _ = [r async for r in executor.results()]
-    # Must have seen a False → True transition (block completed, cancel alone).
-    # Then a final True → False as the cancel tool also finishes.
-    # Walk the states and look for any False immediately followed by True.
     flipped_back_to_true = any(
         states[i] is False and states[i + 1] is True for i in range(len(states) - 1)
     )
@@ -651,8 +596,6 @@ async def test_interruptible_state_deduped_no_spurious_events():
     executor.add_tool(make_call("t2", "a"))
     executor.add_tool(make_call("t3", "a"))
     _ = [r async for r in executor.results()]
-    # True should appear exactly once (adding more CANCEL tools while already
-    # interruptible is not a state change).
     assert states.count(True) == 1
 
 
@@ -682,11 +625,9 @@ async def test_interruptible_event_emitted_through_emitter():
     executor.add_tool(make_call("t1", "a"))
     executor.add_tool(make_call("t2", "a"))
     _ = [r async for r in executor.results()]
-    # Let fire-and-forget emit() coroutines resolve
     await asyncio.sleep(0.02)
 
     assert len(received) >= 1
-    # First fire should report interruptible=True with the thread_id propagated
     first = received[0]
     assert first.interruptible is True
     assert first.thread_id == "task-xyz"
@@ -711,7 +652,6 @@ async def test_interruptible_callback_exception_isolated():
         on_interruptible_change=boom,
     )
     executor.add_tool(make_call("t1", "a"))
-    # Must not raise out of add_tool
     _ = [r async for r in executor.results()]
 
 
@@ -721,10 +661,7 @@ async def test_cleanup_is_idempotent():
     executor.add_tool(make_call("t1"))
     _ = [r async for r in executor.results()]
     executor.cleanup()
-    executor.cleanup()  # second call must not raise
-
-
-# ── Mid-flight cancellation → REJECT_MESSAGE ─────────────
+    executor.cleanup()
 
 
 @pytest.mark.asyncio
@@ -735,8 +672,6 @@ async def test_mid_flight_user_interrupt_replaces_result_with_reject_message():
     terse string the tool happened to return."""
 
     async def cooperative_execute(call: ToolCall, ct: CancellationToken) -> ToolResultBlock:
-        # Simulate a cooperative tool that returns a bland "partial"
-        # result when cancelled mid-execution.
         for _ in range(100):
             if ct.cancelled:
                 return ToolResultBlock(
@@ -753,14 +688,12 @@ async def test_mid_flight_user_interrupt_replaces_result_with_reject_message():
         interrupt_behavior_fn=lambda _: InterruptBehavior.CANCEL,
     )
     executor.add_tool(make_call("t1", "slow"))
-    await asyncio.sleep(0.02)  # let execute_fn enter its loop
+    await asyncio.sleep(0.02)
     executor.cancel_interruptible("User interrupted", AbortReason.USER_INTERRUPTED)
 
     results = [r async for r in executor.results()]
     assert len(results) == 1
     result = results[0]
-    # Result must be the full REJECT_MESSAGE, NOT the cooperative
-    # "partial result" string.
     assert result.is_error
     assert result.content == REJECT_MESSAGE
     assert "partial result" not in result.content
@@ -773,13 +706,11 @@ async def test_mid_flight_sibling_abort_replaces_result_with_wrapped_error():
 
     async def cooperative_execute(call: ToolCall, ct: CancellationToken) -> ToolResultBlock:
         if call.name == "bash":
-            # bash errors immediately and fires sibling abort
             return ToolResultBlock(
                 tool_use_id=call.id,
                 content="Error: bash failed",
                 is_error=True,
             )
-        # sibling tool: wait for sibling abort, then bail cleanly
         for _ in range(100):
             if ct.cancelled:
                 return ToolResultBlock(
@@ -800,15 +731,10 @@ async def test_mid_flight_sibling_abort_replaces_result_with_wrapped_error():
     results = [r async for r in executor.results()]
     assert len(results) == 2
     sibling = results[1]
-    # Sibling's "partial cleanup result" must have been replaced with
-    # the wrapped sibling-error synthetic message.
     assert sibling.is_error
     assert "<tool_use_error>" in sibling.content
     assert "parallel tool call" in sibling.content
     assert "partial cleanup" not in sibling.content
-
-
-# ── is_command_execution flag on ToolDef ─────────────────
 
 
 def test_tool_def_is_command_execution_default_false():
@@ -831,7 +757,6 @@ def test_tool_def_is_command_execution_true_for_bash():
     """ToolDef.is_command_execution is True for bash in sandbox tools."""
     from src.sandbox.tools import build_sandbox_tools
 
-    # Build sandbox tools with a minimal mock executor
     class FakeExecutor:
         async def run_bash(self, *a, **kw): ...
         async def run_python(self, *a, **kw): ...
@@ -857,7 +782,6 @@ def test_tool_def_is_command_execution_true_for_bash():
 
     assert by_name["bash"].is_command_execution is True
     assert by_name["python"].is_command_execution is True
-    # Non-command tools should NOT trigger sibling abort
     assert by_name["read_file"].is_command_execution is False
     assert by_name["write_file"].is_command_execution is False
     assert by_name["list_directory"].is_command_execution is False
@@ -875,7 +799,6 @@ async def test_is_command_execution_fn_false_means_no_sibling_abort():
         await asyncio.sleep(0.05)
         return ToolResultBlock(tool_use_id=call.id, content="result:t2")
 
-    # is_command_execution_fn always returns False → no sibling abort
     executor = StreamingToolExecutor(
         execute_fn=execute,
         concurrency_check_fn=lambda _: True,
@@ -886,7 +809,7 @@ async def test_is_command_execution_fn_false_means_no_sibling_abort():
 
     results = [r async for r in executor.results()]
     assert results[0].is_error
-    assert not results[1].is_error  # t2 completed normally — no abort fired
+    assert not results[1].is_error
     assert not executor.has_errored
 
 
@@ -915,7 +838,7 @@ async def test_python_tool_error_cancels_siblings_when_flagged():
 
     results = [r async for r in executor.results()]
     assert results[0].is_error
-    assert results[1].is_error  # sibling was aborted
+    assert results[1].is_error
     assert executor.has_errored
 
 
@@ -944,9 +867,6 @@ async def test_sibling_abort_synthetic_message_format():
     assert "errored" in results[1].content
 
 
-# ── Permission rejection bubble-up ─────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_permission_rejection_bubbles_to_parent():
     """Non-sibling cancellation on per-tool token propagates to parent turn token."""
@@ -966,15 +886,12 @@ async def test_permission_rejection_bubbles_to_parent():
     )
     executor.add_tool(make_call("t1"))
 
-    # Simulate permission rejection: directly cancel the tool's token
-    # with a non-sibling reason (no AbortReason enum value).
     tracked = executor.tracked[0]
     await asyncio.sleep(0.01)
     tracked.cancellation_token.cancel("Permission denied")
 
     results = [r async for r in executor.results()]
     assert results[0].is_error
-    # Parent must also be cancelled — the turn should end.
     assert parent.cancelled
     assert parent.reason == "Permission denied"
 
@@ -1006,11 +923,7 @@ async def test_sibling_error_does_not_bubble_to_parent():
     assert results[0].is_error
     assert results[1].is_error
     assert executor.has_errored
-    # Parent must NOT be cancelled — sibling errors stay isolated.
     assert not parent.cancelled
-
-
-# ── Unknown tool inline handling ───────────────────────────
 
 
 @pytest.mark.asyncio
@@ -1033,7 +946,6 @@ async def test_unknown_tool_immediate_error():
     assert results[0].is_error
     assert "No such tool available" in results[0].content
     assert "nonexistent_tool" in results[0].content
-    # execute_fn should never have been called
     assert execute_called == []
 
 
@@ -1055,9 +967,9 @@ async def test_unknown_tool_does_not_block_queue():
 
     results = [r async for r in executor.results()]
     assert len(results) == 2
-    assert results[0].is_error  # ghost: immediate error
-    assert not results[1].is_error  # real_tool: executed normally
-    assert order == ["real_tool"]  # only real_tool went through execute_fn
+    assert results[0].is_error
+    assert not results[1].is_error
+    assert order == ["real_tool"]
 
 
 if __name__ == "__main__":

@@ -47,8 +47,6 @@ from src.sim.world_tools import WorldClient
 
 from tests.sim_fake_citadel import FakeBroker, install_fake_broker, text_turn_sse
 
-# A perception of the shape the world actually sends (retrieval_depth.
-# render_perception_text): where you are, what you hold, who is here.
 PERCEPTION = (
     "It is game-day 0, 06:10 (day).\n"
     "You are Marta Thorne, the town's baker.\n"
@@ -107,15 +105,10 @@ async def test_create_skill_never_reaches_the_wire_even_once_data_dir_is_wired(
     )
 
     try:
-        # Where the boot stands today: nothing is wired, so the frozen
-        # engine's registrar returned early and there is nothing to prune.
         assert engine.coordinator.data_dir == ""
         assert engine.coordinator.skill_catalog is None
         assert engine.thread.tools.get_tool("create_skill") is None
 
-        # Now do the thing ENG-06 invites: hand the thread a data_dir and
-        # let thread.py's OWN registrar run - the same method initiate()
-        # calls at thread.py:2230, on the real thread this boot built.
         engine.thread.data_dir = str(tmp_path / "home")
         engine.thread.register_create_skill_tool()
         assert engine.thread.tools.get_tool("create_skill") is not None, (
@@ -123,13 +116,9 @@ async def test_create_skill_never_reaches_the_wire_even_once_data_dir_is_wired(
             "re-measure what is served before trusting this guard"
         )
 
-        # The real prune, the same call pinned_boot.py makes after the
-        # thread is built.
         removed = prune_to_the_towns_tools(engine.thread)
         assert "create_skill" in removed
 
-        # And the real production entry point: one tick, through
-        # Coordinator.handle_input to the broker.
         broker.queue(MODEL_ID, "sse", text_turn_sse("I will light the oven."))
         reply = await engine.send_tick(PERCEPTION)
         assert reply == "I will light the oven."
@@ -140,12 +129,8 @@ async def test_create_skill_never_reaches_the_wire_even_once_data_dir_is_wired(
             "a miner is being served the assistant's skill-authoring tool; "
             "the town writes procedures with skillify"
         )
-        # Nowhere in the request at all - not in the tool array, not in a
-        # system-reminder, not in a restored transcript.
         assert "create_skill" not in json.dumps(body)
 
-        # The control: the other names on the list are gone from the same
-        # wire too, so a pass here cannot mean "the array was empty".
         assert not (names & NOT_A_RESIDENTS_TOOL)
         assert names, "no tools reached the wire at all - this proves nothing"
     finally:

@@ -21,11 +21,6 @@ from src.sandbox.permissions import (
 )
 
 
-# ---------------------------------------------------------------------------
-# classify_action tests
-# ---------------------------------------------------------------------------
-
-
 class TestClassifyAction:
     def test_internal_search_tools(self):
         for tool in (
@@ -151,11 +146,6 @@ class TestClassifyAction:
         assert classify_action("python", {"code": ""}, ToolSource.SANDBOXED) == ToolAction.EXECUTE
 
 
-# ---------------------------------------------------------------------------
-# deny rule matching tests
-# ---------------------------------------------------------------------------
-
-
 class TestDenyRuleMatching:
     def test_wildcard_tool_with_pattern(self):
         rule = DenyRule(tool="*", pattern=r"rm\s+-rf\s+/", reason="catastrophic")
@@ -180,11 +170,6 @@ class TestDenyRuleMatching:
     def test_invalid_regex_returns_false(self):
         rule = DenyRule(tool="*", pattern=r"[invalid")
         assert match_deny_rule(rule, "bash", "test") is False
-
-
-# ---------------------------------------------------------------------------
-# permission matrix tests
-# ---------------------------------------------------------------------------
 
 
 class TestPermissionMatrix:
@@ -217,11 +202,6 @@ class TestPermissionMatrix:
     def test_platform_write_destructive_require_permission(self):
         assert PERMISSION_MATRIX[(ToolSource.PLATFORM, ToolAction.WRITE)] is True
         assert PERMISSION_MATRIX[(ToolSource.PLATFORM, ToolAction.DESTRUCTIVE)] is True
-
-
-# ---------------------------------------------------------------------------
-# check_permission integration tests
-# ---------------------------------------------------------------------------
 
 
 class TestCheckPermission:
@@ -293,7 +273,6 @@ class TestCheckPermission:
                 "bash", {"command": "node index.js"}, ToolSource.SANDBOXED, deny_rules=rules
             )
         )
-        # node index.js on sandboxed is EXECUTE which is auto-allowed
         assert result.allowed is True
 
     def test_fail_closed_when_no_ask_user(self):
@@ -362,7 +341,7 @@ class TestCheckPermission:
         result = self.run(
             check_permission("file_write", {"path": "/tmp/x", "content": "hi"}, ToolSource.PLATFORM)
         )
-        assert result.allowed is False  # no ask_user_fn, fail-closed
+        assert result.allowed is False
 
     def test_hardcoded_denials_override_user_approval(self):
         """Hardcoded denials fire before ask_user is ever called."""
@@ -393,11 +372,6 @@ class TestCheckPermission:
         assert "destructive SQL" in result.reason
 
 
-# ---------------------------------------------------------------------------
-# DenialTracker tests
-# ---------------------------------------------------------------------------
-
-
 class TestDenialTracker:
     def test_record_denial_increments_counters(self):
         t = DenialTracker()
@@ -426,7 +400,7 @@ class TestDenialTracker:
         t = DenialTracker()
         for i in range(19):
             t.record_denial("tool_a")
-            t.record_success()  # reset consecutive so we hit total, not consecutive
+            t.record_success()
         result = t.record_denial("tool_b")
         assert result is not None
         assert result.hit_total_limit is True
@@ -449,7 +423,7 @@ class TestDenialTracker:
         assert t.consecutive == 2
         t.record_success()
         assert t.consecutive == 0
-        assert t.total == 2  # total NOT reset
+        assert t.total == 2
 
     def test_record_success_noop_when_zero(self):
         t = DenialTracker()
@@ -497,7 +471,6 @@ class TestDenialTracker:
         t.record_success()
         t.record_denial("bash")
         t.record_denial("bash")
-        # Only 2 consecutive, not 3
         assert t.consecutive == 2
         assert t.total == 4
 
@@ -510,10 +483,6 @@ class TestDenialTracker:
         result = t.record_denial("tool_b")
         assert result is not None
         assert "tool_b" in result.injection
-
-
-# validate_path unit tests
-# ---------------------------------------------------------------------------
 
 
 class TestValidatePath:
@@ -636,7 +605,7 @@ class TestValidatePath:
         result = validate_path(
             f"{test_dir}/somefile.txt", "read", allowed_roots=["/home/user/project"]
         )
-        assert result.allowed is True  # /tmp always allowed
+        assert result.allowed is True
 
     def test_tmp_always_allowed_with_roots(self):
         import tempfile
@@ -761,11 +730,6 @@ class TestValidatePath:
         assert "dangerous directory" in result.reason.lower()
 
 
-# ---------------------------------------------------------------------------
-# check_permission + path validation integration tests
-# ---------------------------------------------------------------------------
-
-
 class TestCheckPermissionPathValidation:
     def run(self, coro):
         return asyncio.run(coro)
@@ -794,7 +758,6 @@ class TestCheckPermissionPathValidation:
             )
         )
         assert result.allowed is False
-        # blocked by either hardcoded deny rule or path validation (both catch this)
 
     def test_file_write_etc_shadow_blocked_by_path_validation(self):
         """Sensitive path write blocked by path validation (not covered by hardcoded denials)."""
@@ -869,15 +832,6 @@ class TestCheckPermissionPathValidation:
         assert "Blocked" in result.reason
 
 
-# ---------------------------------------------------------------------------
-# Bypass-immune dangerous-target gate (step 1.6) — regression suite for the
-# vulnerability where a broad ALLOW rule on a write tool granted access to
-# .bashrc / .mcp.json / .git/config etc. The whole point of this test class
-# is to construct an `allow_all` rule and assert these targets are STILL
-# blocked, proving the new step 1.6 cannot be overridden by user rules.
-# ---------------------------------------------------------------------------
-
-
 class TestCheckPermissionBypassImmunity:
     def run(self, coro):
         return asyncio.run(coro)
@@ -890,7 +844,6 @@ class TestCheckPermissionBypassImmunity:
             source="test",
         )
 
-    # ----- PLATFORM file_path inputs -----
 
     def test_allow_rule_cannot_override_dangerous_file(self):
         result = self.run(
@@ -940,7 +893,6 @@ class TestCheckPermissionBypassImmunity:
         assert result.allowed is False
 
     def test_allow_rule_cannot_override_via_path_key(self):
-        # Some tools use 'path' instead of 'file_path' — both must be gated.
         result = self.run(
             check_permission(
                 "file_edit",
@@ -963,14 +915,8 @@ class TestCheckPermissionBypassImmunity:
         assert result.allowed is False
         assert result.reason.startswith("path-evasion: ")
 
-    # ----- SANDBOXED bash inputs -----
 
     def test_allow_rule_cannot_override_bash_redirect(self):
-        # NOTE: bash_security check #11 (validate_redirections) blocks ALL
-        # output redirections at step 1.5, before step 1.6 ever runs. The
-        # security outcome is identical (denied) and `~/.bashrc` would have
-        # been blocked by step 1.6 if check #11 hadn't already fired. We only
-        # assert the deny here, not the reason prefix.
         result = self.run(
             check_permission(
                 "bash",
@@ -982,7 +928,6 @@ class TestCheckPermissionBypassImmunity:
         assert result.allowed is False
 
     def test_allow_rule_cannot_override_bash_append(self):
-        # Same caveat as above — check #11 fires first.
         result = self.run(
             check_permission(
                 "bash",
@@ -1005,12 +950,6 @@ class TestCheckPermissionBypassImmunity:
         assert result.allowed is False
 
     def test_allow_rule_cannot_override_sed_in_place(self):
-        # This test exercises the bypass-immune step 1.6 dangerous-path gate,
-        # which catches ~/.gitconfig via DANGEROUS_FILES long before the sed
-        # validator at step 4.5 gets a chance to run. Lock the assertion to
-        # the step 1.6 deny-reason prefix so a future refactor that moves sed
-        # handling earlier can't silently change which gate is exercising
-        # this path.
         result = self.run(
             check_permission(
                 "bash",
@@ -1046,12 +985,8 @@ class TestCheckPermissionBypassImmunity:
         )
         assert result.allowed is False
 
-    # ----- Negative cases — must NOT over-block -----
 
     def test_read_dangerous_file_not_blocked_by_step_1_6(self):
-        # Reads of dangerous files are intentionally allowed at step 1.6.
-        # validate_path may still permit them; the bypass-immune gate is
-        # writes-only.
         result = self.run(
             check_permission(
                 "file_read",
@@ -1073,10 +1008,6 @@ class TestCheckPermissionBypassImmunity:
         assert result.allowed is True
 
     def test_safe_bash_write_not_blocked(self):
-        # `touch` is a write to a safe path. bash_security has no opinion
-        # on it, and step 1.6 sees a non-dangerous target via
-        # extract_written_paths -> passes through to user rules -> the
-        # allow_all() rule wins.
         result = self.run(
             check_permission(
                 "bash",
@@ -1098,7 +1029,6 @@ class TestCheckPermissionBypassImmunity:
         )
         assert result.allowed is True
 
-    # ----- Reason-prefix contract (locks the future AUTO-mode interface) -----
 
     def test_reason_prefix_dangerous_target_locked(self):
         result = self.run(
@@ -1109,7 +1039,6 @@ class TestCheckPermissionBypassImmunity:
             )
         )
         assert result.allowed is False
-        # Stable contract for future AUTO-mode classifier consumption.
         assert result.reason.startswith("dangerous-target: ")
 
     def test_reason_prefix_evasion_locked(self):
@@ -1123,7 +1052,6 @@ class TestCheckPermissionBypassImmunity:
         assert result.allowed is False
         assert result.reason.startswith("path-evasion: ")
 
-    # ----- Pipeline ordering -----
 
     def test_step_1_6_runs_before_user_rules(self):
         """Even with both an allow-all rule AND a deny-all rule, step 1.6
@@ -1147,8 +1075,6 @@ class TestCheckPermissionBypassImmunity:
             )
         )
         assert result.allowed is False
-        # If the user-rule loop ran first, the reason would be
-        # "Blocked by test rule: ...". Step 1.6 must short-circuit before that.
         assert result.reason.startswith("dangerous-target: ")
 
     def test_classify_action_still_populates_result(self):
@@ -1162,13 +1088,7 @@ class TestCheckPermissionBypassImmunity:
             )
         )
         assert result.allowed is True
-        # PLATFORM file_write classifies to WRITE.
         assert result.action == ToolAction.WRITE
-
-
-# ---------------------------------------------------------------------------
-# PermissionMode tests
-# ---------------------------------------------------------------------------
 
 
 class TestPermissionMode:
@@ -1244,7 +1164,6 @@ class TestPermissionMode:
             )
         )
         assert result.allowed is False
-        # Could be hardcoded denial or read-only — both deny
 
     def test_read_only_hardcoded_denial_fires_first(self):
         """Hardcoded denials fire before read-only mode logic."""
@@ -1369,16 +1288,10 @@ class TestPermissionMode:
         assert result.allowed is True
 
 
-# ---------------------------------------------------------------------------
-# PermissionRule (allow/deny/ask) tests
-# ---------------------------------------------------------------------------
-
-
 class TestPermissionRules:
     def run(self, coro):
         return asyncio.run(coro)
 
-    # --- Backward compat ---
 
     def test_deny_rule_alias_still_works(self):
         """DenyRule is an alias for PermissionRule; existing creation syntax works."""
@@ -1406,7 +1319,6 @@ class TestPermissionRules:
         assert result.allowed is False
         assert "no slack" in result.reason
 
-    # --- DENY rule behavior ---
 
     def test_deny_rule_blocks_tool(self):
         rules = [PermissionRule(tool="bash", behavior=PermissionBehavior.DENY, reason="blocked")]
@@ -1427,12 +1339,10 @@ class TestPermissionRules:
                 reason="block pub",
             )
         ]
-        # Matches
         result = self.run(
             check_permission("bash", {"command": "npm publish"}, ToolSource.SANDBOXED, rules=rules)
         )
         assert result.allowed is False
-        # Doesn't match — node index.js is EXECUTE (auto-allowed for sandboxed)
         result = self.run(
             check_permission(
                 "bash", {"command": "node index.js"}, ToolSource.SANDBOXED, rules=rules
@@ -1440,7 +1350,6 @@ class TestPermissionRules:
         )
         assert result.allowed is True
 
-    # --- ALLOW rule behavior ---
 
     def test_allow_rule_skips_prompt_for_normally_prompted_tool(self):
         """MCP write normally requires permission; ALLOW rule auto-approves."""
@@ -1469,20 +1378,17 @@ class TestPermissionRules:
     def test_allow_rule_content_specific(self):
         """ALLOW with pattern only matches when input matches."""
         rules = [PermissionRule(tool="bash", pattern="npm test", behavior=PermissionBehavior.ALLOW)]
-        # Matches
         result = self.run(
             check_permission("bash", {"command": "npm test"}, ToolSource.SANDBOXED, rules=rules)
         )
         assert result.allowed is True
-        # Doesn't match — falls through to normal pipeline (sandboxed execute = auto-allow)
         result = self.run(
             check_permission(
                 "bash", {"command": "node index.js"}, ToolSource.SANDBOXED, rules=rules
             )
         )
-        assert result.allowed is True  # execute is auto-allowed for sandboxed
+        assert result.allowed is True
 
-    # --- ASK rule behavior ---
 
     def test_ask_rule_forces_prompt_for_non_auto_allowed_command(self):
         """ASK rule forces prompt for commands NOT in sandbox auto-allow list."""
@@ -1509,7 +1415,7 @@ class TestPermissionRules:
             )
         )
         assert result.allowed is True
-        assert call_count == 1  # prompt was forced
+        assert call_count == 1
 
     def test_ask_rule_no_ask_fn_fails_closed(self):
         """ASK rule with no ask_user_fn -> denied (fail-closed)."""
@@ -1558,9 +1464,8 @@ class TestPermissionRules:
             )
         )
         assert result.allowed is True
-        assert call_count == 1  # the operator's ask rule fired
+        assert call_count == 1
 
-    # --- Evaluation order ---
 
     def test_deny_wins_over_allow(self):
         """When both DENY and ALLOW rules match, DENY is evaluated first."""
@@ -1590,16 +1495,13 @@ class TestPermissionRules:
         assert result.allowed is False
         assert "catastrophic deletion" in result.reason
 
-    # --- Prefix matching ---
 
     def test_ad_mcp_prefix_matching_allow(self):
         """ad:gmail* matches ad:gmail_send_email."""
         rules = [PermissionRule(tool="ad:gmail_*", behavior=PermissionBehavior.ALLOW)]
         result = self.run(check_permission("ad:gmail_send_email", {}, ToolSource.MCP, rules=rules))
         assert result.allowed is True
-        # Doesn't match different prefix
         result = self.run(check_permission("ad:slack_post", {}, ToolSource.MCP, rules=rules))
-        # Falls through to normal pipeline — MCP execute requires permission, no ask_user
         assert result.allowed is False
 
     def test_ad_mcp_prefix_matching_deny(self):
@@ -1612,7 +1514,6 @@ class TestPermissionRules:
         assert result.allowed is False
         assert "no prod" in result.reason
 
-    # --- 4-choice prompt responses ---
 
     def test_allow_always_creates_new_rule(self):
         async def mock_ask_user(params):
@@ -1684,12 +1585,11 @@ class TestPermissionRules:
         assert result.new_rule is None
         assert result.persist is False
 
-    # --- suggested_rule field ---
 
     def test_suggested_rule_present_on_prompt(self):
         async def mock_ask_user(params):
             assert "suggested_rule" in params
-            assert params["suggested_rule"]  # non-empty
+            assert params["suggested_rule"]
             return "allow"
 
         result = self.run(
@@ -1714,7 +1614,6 @@ class TestPermissionRules:
         assert result.allowed is False
         assert result.suggested_rule != ""
 
-    # --- Full flow: allow_always -> next call auto-allowed ---
 
     def test_allow_always_session_flow(self):
         """Simulates the thread flow: allow_always creates a rule, next call uses it."""
@@ -1723,7 +1622,6 @@ class TestPermissionRules:
         async def mock_ask_user(params):
             return "allow_always"
 
-        # First call — prompts user, gets allow_always
         result = self.run(
             check_permission(
                 "ad:create_issue",
@@ -1736,7 +1634,6 @@ class TestPermissionRules:
         assert result.new_rule is not None
         session_rules.append(result.new_rule)
 
-        # Second call — session rule auto-allows, no prompt
         call_count = 0
 
         async def should_not_be_called(params):
@@ -1754,7 +1651,7 @@ class TestPermissionRules:
             )
         )
         assert result.allowed is True
-        assert call_count == 0  # prompt was NOT called
+        assert call_count == 0
 
     def test_deny_always_session_flow(self):
         """deny_always creates a rule, next call is auto-denied."""
@@ -1775,7 +1672,6 @@ class TestPermissionRules:
         assert result.new_rule is not None
         session_rules.append(result.new_rule)
 
-        # Second call — auto-denied by session rule
         result = self.run(
             check_permission(
                 "ad:create_issue",
@@ -1788,7 +1684,6 @@ class TestPermissionRules:
         assert result.matched_rule is not None
         assert result.matched_rule.source == "user"
 
-    # --- prompt includes choices ---
 
     def test_prompt_includes_choices_and_suggested_rule(self):
         received_params = {}
@@ -1812,7 +1707,6 @@ class TestPermissionRules:
         assert "allow" in received_params["suggested_rule"]
         assert "file_write" in received_params["suggested_rule"]
 
-    # --- ASK rule reason appears in prompt ---
 
     def test_ask_rule_reason_in_prompt(self):
         received_question = ""
@@ -1837,11 +1731,6 @@ class TestPermissionRules:
         assert "audit required" in received_question
 
 
-# ---------------------------------------------------------------------------
-# Step 4.5: sed validator
-# ---------------------------------------------------------------------------
-
-
 class TestStep45SedValidator:
     """End-to-end coverage for the step 4.5 sed validator.
 
@@ -1858,7 +1747,6 @@ class TestStep45SedValidator:
         """Default: validator on. Individual tests can monkeypatch to disable."""
         monkeypatch.setenv("FEATURE_SED_VALIDATION", "1")
 
-    # --- Safe patterns auto-allow ---
 
     def test_safe_substitution_passes_through(self):
         result = self.run(
@@ -1880,7 +1768,6 @@ class TestStep45SedValidator:
         )
         assert result.allowed is True
 
-    # --- Denylist hits escalate to ask ---
 
     def test_dangerous_write_flag_fails_closed(self):
         result = self.run(
@@ -1890,7 +1777,6 @@ class TestStep45SedValidator:
                 ToolSource.SANDBOXED,
             )
         )
-        # No ask_user_fn provided — ask path fails closed with a sed reason.
         assert result.allowed is False
         assert "sed" in (result.reason or "").lower()
 
@@ -1932,11 +1818,9 @@ class TestStep45SedValidator:
                 ask_user_fn=capture_ask_user,
             )
         )
-        # The reason should reach the user prompt.
         assert "sed" in received_question.lower()
         assert result.allowed is False
 
-    # --- ACCEPT_EDITS mode relaxes `-i` ---
 
     def test_in_place_in_default_mode_fails_closed(self):
         result = self.run(
@@ -1961,7 +1845,6 @@ class TestStep45SedValidator:
         assert result.allowed is True
 
     def test_accept_edits_does_not_bypass_denylist(self):
-        # Even with ACCEPT_EDITS, dangerous patterns are still caught.
         result = self.run(
             check_permission(
                 "bash",
@@ -1973,8 +1856,6 @@ class TestStep45SedValidator:
         assert result.allowed is False
 
     def test_accept_edits_on_non_sed_tool_behaves_like_default(self):
-        # ACCEPT_EDITS is sed-specific. A Write platform tool in
-        # ACCEPT_EDITS mode should be indistinguishable from DEFAULT mode.
         result_accept = self.run(
             check_permission(
                 "Write",
@@ -1991,16 +1872,10 @@ class TestStep45SedValidator:
                 permission_mode=PermissionMode.DEFAULT,
             )
         )
-        # Both must produce the same allow/deny outcome.
         assert result_accept.allowed == result_default.allowed
 
-    # --- User ALLOW rule bypass (documented trade-off) ---
 
     def test_user_allow_rule_bypasses_validator(self):
-        # Literal src reading: a broad user ALLOW rule runs BEFORE step 4.5
-        # and short-circuits with allowed=True. This is a conscious trade-off
-        # the design accepts. Test here so a future refactor can't silently
-        # change the contract without flipping this assertion.
         allow_all = PermissionRule(
             tool="bash",
             behavior=PermissionBehavior.ALLOW,
@@ -2016,13 +1891,9 @@ class TestStep45SedValidator:
         )
         assert result.allowed is True
 
-    # --- Feature flag rollback ---
 
     def test_flag_off_skips_step_45_entirely(self, monkeypatch):
         monkeypatch.setenv("FEATURE_SED_VALIDATION", "0")
-        # With the flag off, step 4.5 is skipped. The validator-specific
-        # reason prefixes (sed-denylist:, sed-unknown:, sed-parse:) must not
-        # appear — if any do, step 4.5 was wrongly invoked.
         result = self.run(
             check_permission(
                 "bash",
@@ -2037,12 +1908,6 @@ class TestStep45SedValidator:
 
     def test_flag_off_no_sed_specific_gate_remains(self, monkeypatch):
         monkeypatch.setenv("FEATURE_SED_VALIDATION", "0")
-        # With the validator off AND the hardcoded policy / executor / yaml
-        # / classifier entries stripped, sed -i has no sed-specific gate.
-        # The command flows through the general pipeline (bash security
-        # AST, dangerous-path gate, matrix). With a benign file target, it
-        # is allowed. This test documents the rollback trade-off: turning
-        # the feature flag off removes the sed-specific protections.
         result = self.run(
             check_permission(
                 "bash",
@@ -2051,17 +1916,12 @@ class TestStep45SedValidator:
                 permission_mode=PermissionMode.ACCEPT_EDITS,
             )
         )
-        # The sed-specific reason prefixes must not appear regardless of
-        # allow/deny — the validator was not invoked.
         reason = result.reason or ""
         assert "sed-denylist:" not in reason
         assert "sed-unknown:" not in reason
         assert "sed-parse:" not in reason
 
     def test_flag_off_safe_sub_still_allowed(self, monkeypatch):
-        # Safe substitution with no files, no -i, is a SEARCH by classifier
-        # (or at worst WRITE), and should still be allowed or asked — but
-        # importantly, the validator is not the reason either way.
         monkeypatch.setenv("FEATURE_SED_VALIDATION", "0")
         result = self.run(
             check_permission(
@@ -2070,15 +1930,10 @@ class TestStep45SedValidator:
                 ToolSource.SANDBOXED,
             )
         )
-        # Classifier labels this as SEARCH (first word `sed` doesn't match
-        # WRITE patterns without -i). SEARCH on SANDBOXED auto-allows.
         assert result.allowed is True
 
-    # --- Non-sed commands are untouched ---
 
     def test_non_sed_command_not_routed_through_validator(self):
-        # A grep command should never go near the sed validator even with
-        # the flag on.
         result = self.run(
             check_permission(
                 "bash",
@@ -2089,8 +1944,6 @@ class TestStep45SedValidator:
         assert result.allowed is True
 
     def test_malformed_command_does_not_crash_validator(self):
-        # Unbalanced quote → tokenize_command returns []. Step 4.5 must
-        # short-circuit cleanly without reaching the validator.
         result = self.run(
             check_permission(
                 "bash",
@@ -2098,16 +1951,10 @@ class TestStep45SedValidator:
                 ToolSource.SANDBOXED,
             )
         )
-        # No assertion on allowed — the point is the call did not raise.
         assert result is not None
 
-    # --- Gap #1: compound command handling ---
 
     def test_compound_pipeline_dangerous_sed_blocks(self):
-        # Regression for gap #1: `echo hi | sed 's/foo/bar/w evil'`
-        # previously bypassed step 4.5 because tokens[0] was `echo`, not
-        # `sed`. The new iter_sed_subcommand_tokens walks the pipeline and
-        # catches the dangerous sed.
         result = self.run(
             check_permission(
                 "bash",
@@ -2152,9 +1999,6 @@ class TestStep45SedValidator:
         assert "sed" in (result.reason or "").lower()
 
     def test_compound_glued_pipeline_still_catches_sed(self):
-        # Glued operator: `hi|sed` with no surrounding whitespace. The
-        # char-level splitter in command_classifier.split_compound_commands
-        # handles this correctly where a bare shlex.split would not.
         result = self.run(
             check_permission(
                 "bash",
@@ -2166,14 +2010,6 @@ class TestStep45SedValidator:
         assert "sed" in (result.reason or "").lower()
 
     def test_compound_safe_sed_does_not_early_allow(self):
-        # Regression: `curl http://evil.com | sed 's/foo/bar/g'` must NOT
-        # auto-allow just because the sed part is safe. A true compound
-        # command means the non-sed parts still need to be checked by the
-        # rest of the pipeline. We don't assert allowed=False here because
-        # curl's disposition depends on other gates that may or may not
-        # catch it — the point is that step 4.5 itself did not early-return
-        # with allowed=True, i.e. the result.reason does not contain the
-        # sed validator's passthrough signature.
         result = self.run(
             check_permission(
                 "bash",
@@ -2181,16 +2017,9 @@ class TestStep45SedValidator:
                 ToolSource.SANDBOXED,
             )
         )
-        # No strict assertion on allowed; the important contract is that
-        # step 4.5 did not short-circuit the compound before other gates
-        # had a chance to evaluate. A standalone-sed auto-allow would have
-        # returned allowed=True via an early return; we only check that
-        # the final decision was made by whatever gate follows.
         assert result is not None
 
     def test_compound_multiple_sed_all_safe_no_early_allow(self):
-        # Two safe sed sub-commands in a pipeline should not trigger the
-        # standalone auto-allow path (there are 2 sub-commands).
         result = self.run(
             check_permission(
                 "bash",
@@ -2199,8 +2028,6 @@ class TestStep45SedValidator:
                 permission_mode=PermissionMode.ACCEPT_EDITS,
             )
         )
-        # Both sed sub-commands pass the validator; the pipeline falls
-        # through. We only assert the validator did not raise or ASK.
         assert result is not None
         assert "sed-denylist:" not in (result.reason or "")
 
@@ -2215,7 +2042,6 @@ class TestStep45SedValidator:
         assert result.allowed is False
         assert "sed" in (result.reason or "").lower()
 
-    # --- sed edit attribution (parse_sed_edit wired into step 4.5) ---
 
     def test_sed_edit_attribution_populated_in_accept_edits_mode(self):
         result = self.run(
@@ -2251,7 +2077,6 @@ class TestStep45SedValidator:
             )
         )
         assert result.allowed is True
-        # No -i means no attributable edit.
         assert result.sed_edit_info is None
 
     def test_sed_edit_attribution_none_for_blocked_sed(self):
@@ -2264,11 +2089,6 @@ class TestStep45SedValidator:
         )
         assert result.allowed is False
         assert result.sed_edit_info is None
-
-
-# ---------------------------------------------------------------------------
-# parse_ask_response unit tests
-# ---------------------------------------------------------------------------
 
 
 class TestParseAskResponse:
@@ -2324,11 +2144,6 @@ class TestParseAskResponse:
         assert feedback == ""
 
 
-# ---------------------------------------------------------------------------
-# PermissionResult.feedback and content_blocks population
-# ---------------------------------------------------------------------------
-
-
 class TestPermissionFeedbackAndContentBlocks:
     """Verify that feedback and content_blocks are populated on PermissionResult
     when ask_user_fn returns a rich dict response (direct port of
@@ -2342,7 +2157,6 @@ class TestPermissionFeedbackAndContentBlocks:
     def run(self, coro):
         return asyncio.run(coro)
 
-    # --- plain string (backward compat) ---
 
     def test_plain_string_allow_no_feedback(self):
         async def ask(params):
@@ -2375,7 +2189,6 @@ class TestPermissionFeedbackAndContentBlocks:
         assert result.allowed is False
         assert result.content_blocks == []
 
-    # --- dict response: allow ---
 
     def test_dict_allow_with_feedback(self):
         async def ask(params):
@@ -2429,7 +2242,6 @@ class TestPermissionFeedbackAndContentBlocks:
         assert result.feedback == "screenshot attached"
         assert result.content_blocks == cb
 
-    # --- dict response: allow_always ---
 
     def test_dict_allow_always_with_feedback_and_content_blocks(self):
         cb = [self.IMAGE_BLOCK]
@@ -2454,7 +2266,6 @@ class TestPermissionFeedbackAndContentBlocks:
         assert result.feedback == "approved forever"
         assert result.content_blocks == cb
 
-    # --- dict response: deny ---
 
     def test_dict_deny_content_blocks_propagated(self):
         cb = [self.IMAGE_BLOCK]
@@ -2490,7 +2301,6 @@ class TestPermissionFeedbackAndContentBlocks:
         assert result.allowed is False
         assert result.feedback == ""
 
-    # --- dict response: deny_always ---
 
     def test_dict_deny_always_content_blocks_propagated(self):
         cb = [self.IMAGE_BLOCK]
@@ -2510,7 +2320,6 @@ class TestPermissionFeedbackAndContentBlocks:
         assert result.persist is True
         assert result.content_blocks == cb
 
-    # --- feedback stripping ---
 
     def test_whitespace_only_feedback_becomes_empty(self):
         async def ask(params):
@@ -2527,20 +2336,15 @@ class TestPermissionFeedbackAndContentBlocks:
         assert result.allowed is True
         assert result.feedback == ""
 
-    # --- rule-match auto-allow: feedback carries rule signature + tier ---
 
     @pytest.mark.parametrize(
         "source,tier",
         [
-            # Current vocabulary.
             ("user", "persistent"),
             ("managed", "persistent"),
             ("engine", "session"),
             ("septemberai", "system"),
             ("hard_deny", "system"),
-            # Legacy strings from a permissions.json written by an older engine.
-            # "agent" and "session" were two names for one tier that the old
-            # table mapped to two different tiers; both now resolve to session.
             ("operator_global", "persistent"),
             ("operator_project", "persistent"),
             ("agent", "session"),
@@ -2591,7 +2395,6 @@ class TestPermissionFeedbackAndContentBlocks:
 
     def test_sandbox_auto_allow_populates_feedback(self):
         """Step 2.5 SYSTEM_ALLOW allowlist stamps sandbox feedback."""
-        # `ls` is in the sandbox safe-command allowlist
         result = self.run(
             check_permission(
                 "Bash",
@@ -2659,9 +2462,6 @@ class TestBypassMode:
         return asyncio.run(coro)
 
     def test_bypass_allows_sandboxed_exec_without_prompt(self):
-        # Code execution isn't auto-allowed (not read-only) and DEFAULT would
-        # escalate it to a prompt; BYPASS auto-allows it (no redirection/dangerous
-        # target, so no bypass-immune gate fires first).
         result = self.run(
             check_permission(
                 "bash",
@@ -2685,7 +2485,6 @@ class TestBypassMode:
         assert result.allowed is True
 
     def test_bypass_still_blocks_catastrophic(self):
-        # Bypass-immune hardcoded deny (step 1) still fires under BYPASS.
         result = self.run(
             check_permission(
                 "bash",

@@ -27,11 +27,6 @@ from world.tools.tests.conftest import spawn_agent
 from world.wiring import WorldConfig, build_world_server
 from world.tests.map_assets import needs_the_map
 
-# TOOL-27. This module needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped, and red for environment hides real regressions inside the
-# noise - which is how TOOL-09 stayed invisible for a whole cycle.
 pytestmark = needs_the_map
 
 
@@ -42,8 +37,6 @@ def make_client(server) -> TestClient:
     )
     return TestClient(app)
 
-
-# -- the character sheet (22.a) -------------------------------------------
 
 @pytest.mark.asyncio
 async def test_the_sheet_lists_skills_best_first():
@@ -95,8 +88,6 @@ async def test_an_unknown_agent_is_a_404():
     assert make_client(server).get("/skills/agents/nobody").status_code == 404
 
 
-# -- provenance, through the real tool ------------------------------------
-
 @pytest.mark.asyncio
 async def test_a_real_lesson_is_attributed_to_the_teacher():
     """End to end: the tool call, not a hand-written dict."""
@@ -130,8 +121,6 @@ async def test_being_taught_something_you_already_know_better_records_no_teacher
     assert "construction" not in world.skill_sources.get("sofia", {})
 
 
-# -- the town spread (22.b) -----------------------------------------------
-
 @pytest.mark.asyncio
 async def test_the_town_view_names_the_best_at_each_trade():
     server = await build_world_server(WorldConfig())
@@ -153,8 +142,6 @@ async def test_a_zero_proficiency_is_not_a_practitioner():
     server.world.skills[a] = {"baking": 0}
     assert town_spread(server.world, {}) == []
 
-
-# -- the family tree (22.c) -----------------------------------------------
 
 @pytest.mark.asyncio
 async def test_a_trade_running_in_a_family_is_visible():

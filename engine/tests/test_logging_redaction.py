@@ -17,11 +17,6 @@ from src.logging_config import JSONFormatter, MAX_FIELD_CHARS
 from tests.test_secret_scanner import CANONICAL_POSITIVES
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
 def format(msg: str, level: int = logging.DEBUG, **kwargs: object) -> dict:
     """Format a log record through JSONFormatter and return the parsed dict."""
     formatter = JSONFormatter()
@@ -52,11 +47,6 @@ def format_with_args(msg: str, args: tuple, level: int = logging.DEBUG) -> dict:
     return json.loads(formatter.format(record))
 
 
-# ---------------------------------------------------------------------------
-# Basic redaction at all standard log levels
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.parametrize(
     "level",
     [
@@ -72,11 +62,6 @@ def test_secret_redacted_at_all_log_levels(level: int) -> None:
     entry = format(f"token value: {secret} end", level=level)
     assert secret not in entry["msg"]
     assert "[REDACTED]" in entry["msg"]
-
-
-# ---------------------------------------------------------------------------
-# Secrets embedded in %-formatted log messages
-# ---------------------------------------------------------------------------
 
 
 def test_secret_redacted_in_percent_formatted_message() -> None:
@@ -97,14 +82,8 @@ def test_secret_embedded_in_command_string() -> None:
     )
     assert secret not in entry["msg"]
     assert "[REDACTED]" in entry["msg"]
-    # Structural parts of the message should be preserved.
     assert "Permission ALLOWED" in entry["msg"]
     assert "Bash" in entry["msg"]
-
-
-# ---------------------------------------------------------------------------
-# Clean messages are unchanged
-# ---------------------------------------------------------------------------
 
 
 def test_clean_message_passes_through_unchanged() -> None:
@@ -120,11 +99,6 @@ def test_clean_percent_message_passes_through_unchanged() -> None:
     assert "ls -la /tmp" in entry["msg"]
 
 
-# ---------------------------------------------------------------------------
-# JSON structure is preserved
-# ---------------------------------------------------------------------------
-
-
 def test_json_structure_intact_after_redaction() -> None:
     secret = CANONICAL_POSITIVES["github-pat"]
     entry = format(f"leaked: {secret}")
@@ -136,11 +110,6 @@ def test_json_structure_intact_after_redaction() -> None:
     assert entry["logger"] == "test.logger"
 
 
-# ---------------------------------------------------------------------------
-# Multiple secrets in one message
-# ---------------------------------------------------------------------------
-
-
 def test_multiple_secrets_all_redacted() -> None:
     aws = CANONICAL_POSITIVES["aws-access-token"]
     gh = CANONICAL_POSITIVES["github-pat"]
@@ -148,11 +117,6 @@ def test_multiple_secrets_all_redacted() -> None:
     assert aws not in entry["msg"]
     assert gh not in entry["msg"]
     assert entry["msg"].count("[REDACTED]") >= 2
-
-
-# ---------------------------------------------------------------------------
-# Empty / whitespace messages
-# ---------------------------------------------------------------------------
 
 
 def test_empty_message_does_not_raise() -> None:
@@ -163,11 +127,6 @@ def test_empty_message_does_not_raise() -> None:
 def test_whitespace_only_message_preserved() -> None:
     entry = format("   ")
     assert entry["msg"] == "   "
-
-
-# ---------------------------------------------------------------------------
-# Exception text redaction
-# ---------------------------------------------------------------------------
 
 
 def format_with_exc(msg: str, exc: BaseException) -> dict:
@@ -195,7 +154,6 @@ def test_secret_in_exception_message_redacted() -> None:
         entry = format_with_exc("call failed", exc)
     assert secret not in entry["exception"]
     assert "[REDACTED]" in entry["exception"]
-    # Structural framing of the traceback is preserved.
     assert "RuntimeError" in entry["exception"]
     assert "Traceback" in entry["exception"]
 
@@ -210,11 +168,6 @@ def test_secret_in_nested_exception_cause_redacted() -> None:
     except RuntimeError as exc:
         entry = format_with_exc("outer", exc)
     assert secret not in entry["exception"]
-
-
-# ---------------------------------------------------------------------------
-# Field-name JSON redaction (opaque values without a format match)
-# ---------------------------------------------------------------------------
 
 
 def test_opaque_token_in_json_body_redacted() -> None:
@@ -246,11 +199,6 @@ def test_multiple_sensitive_fields_all_redacted() -> None:
     assert '"harmless":"keep"' in entry["msg"]
 
 
-# ---------------------------------------------------------------------------
-# Size truncation
-# ---------------------------------------------------------------------------
-
-
 def test_long_message_truncated_with_length_suffix() -> None:
     long_msg = "x" * (MAX_FIELD_CHARS + 500)
     entry = format(long_msg)
@@ -271,13 +219,8 @@ def test_long_exception_truncated() -> None:
         raise RuntimeError(long_payload)
     except RuntimeError as exc:
         entry = format_with_exc("failed", exc)
-    assert len(entry["exception"]) <= MAX_FIELD_CHARS + 40  # room for suffix
+    assert len(entry["exception"]) <= MAX_FIELD_CHARS + 40
     assert "chars)" in entry["exception"]
-
-
-# ---------------------------------------------------------------------------
-# LogRecord extras scanning
-# ---------------------------------------------------------------------------
 
 
 def format_with_extra(msg: str, extra: dict[str, object]) -> dict:

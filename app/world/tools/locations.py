@@ -38,7 +38,6 @@ from world.charter.models import (
 )
 from world.map.model import CROP_VARIETIES, ORE_METALS
 
-# -- re-exported from charter/ (never redefined here) -----------------
 __all__ = [
     "LOCATION_TOWN_HALL",
     "LOCATION_GOVERNMENT_COMPLEX",
@@ -55,14 +54,9 @@ __all__ = [
     "kitchen_location",
 ]
 
-# -- new here: not owned by any other module yet -----------------------
 
-# DESIGN.md section 1: "temple" is a genesis building; section 4: "Marriage:
-# temple ceremony", section 7: "Temple: ... Weddings, prayers, donations."
 LOCATION_TEMPLE = "temple"
 
-# DESIGN.md section 1: "forest (timber, common)" - a single map-edge zone,
-# unlike farmland/ore which are per-variety, so one constant suffices.
 LOCATION_FOREST = "forest"
 
 
@@ -84,15 +78,6 @@ def ore_outcrop_location(metal: str) -> str:
     return f"ore_outcrop:{metal}"
 
 
-# Production arenas (DESIGN.md section 2: craft is "location gated
-# (required sector/arena)"). None of these are genesis buildings
-# (DESIGN.md section 1's genesis list has no mill/smithy/kitchen) - they
-# are exactly the kind of institution "the town must build" via
-# build_structure, so these constants name where a *built* one is
-# expected to register itself, the same way LOCATION_TEMPLE names a
-# genesis building that already exists on day one. A town with no mill
-# yet simply cannot satisfy craft's location gate for a milling recipe -
-# that is the intended physics, not a bug.
 def mill_location() -> str:
     return "mill"
 
@@ -117,20 +102,6 @@ def kitchen_location() -> str:
     return "kitchen"
 
 
-# Which trade gives a town which workshop (TOOL-02).
-#
-# The paragraph above was right that DESIGN.md's genesis list has no
-# mill/smithy/kitchen, and wrong about the consequence. It concluded "a
-# town with no mill yet simply cannot craft - that is the intended
-# physics". But genesis seeds a MILL BUSINESS with a miller, thirty wheat
-# and twenty-four flour in stock; the town has a mill in every sense
-# except the one the gate checks. The intended physics was that a town
-# without the trade cannot do the trade, and that is preserved: a town
-# with no baker still has no kitchen.
-#
-# Read by `register_business` for its default and by genesis for the
-# seeded shops. A business may hold workshops beyond its type's default -
-# the set is the record, this table only says where it starts.
 WORKSHOPS_BY_BUSINESS_TYPE: dict[str, frozenset[str]] = {
     "mill": frozenset({"mill"}),
     "bakery": frozenset({"kitchen"}),
@@ -143,16 +114,8 @@ WORKSHOPS_BY_BUSINESS_TYPE: dict[str, frozenset[str]] = {
     "carpentry": frozenset({"carpentry"}),
     "loom_house": frozenset({"loom_house"}),
     "weaver": frozenset({"loom_house"}),
-    # The construction yard works timber and raises frames, so it is both
-    # the sawmill and the carpentry shop. Genesis gives the town exactly
-    # one of these and `WORKPLACE_BY_OCCUPATION` already sends every
-    # construction worker to "carpentry" (GROW-29).
     "construction": frozenset({"carpentry", "sawmill"}),
     "yard": frozenset({"carpentry", "sawmill"}),
-    # Deliberately absent: grocery, shop, pharmacy, market. A grocer sells
-    # what others made; giving a shop a kitchen would mean anybody who
-    # registered "grocery" could bake, and the gate would stop meaning
-    # anything.
 }
 
 

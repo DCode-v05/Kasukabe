@@ -96,53 +96,41 @@ def stem(word: str) -> str:
     if len(word) <= 3:
         return word
 
-    # -ies → -y (companies → company)
     if word.endswith("ies") and len(word) > 4:
         return word[:-3] + "y"
-    # -ves → -f (knives → knif — close enough for matching)
     if word.endswith("ves") and len(word) > 4:
         return word[:-3] + "f"
-    # -ing → strip (running → run, processing → process)
     if word.endswith("ing") and len(word) > 5:
         base = word[:-3]
         if len(base) >= 2 and base[-1] == base[-2] and base[-1] in "bdglmnprt":
             return base[:-1]
         return base
-    # -tion, -sion → strip
     if word.endswith("tion") and len(word) > 5:
         return word[:-4]
     if word.endswith("sion") and len(word) > 5:
         return word[:-4]
-    # -ment → strip
     if word.endswith("ment") and len(word) > 5:
         return word[:-4]
-    # -ness → strip
     if word.endswith("ness") and len(word) > 5:
         return word[:-4]
-    # -able, -ible → strip
     if word.endswith("able") and len(word) > 5:
         return word[:-4]
     if word.endswith("ible") and len(word) > 5:
         return word[:-4]
-    # -ly → strip
     if word.endswith("ly") and len(word) > 4:
         return word[:-2]
-    # -ed → strip (processed → process, planned → plan)
     if word.endswith("ed") and len(word) > 4:
         base = word[:-2]
         if len(base) >= 2 and base[-1] == base[-2] and base[-1] in "bdglmnprt":
             return base[:-1]
         return base
-    # -er → strip (runner → run, bigger → big)
     if word.endswith("er") and len(word) > 4:
         base = word[:-2]
         if len(base) >= 2 and base[-1] == base[-2] and base[-1] in "bdglmnprt":
             return base[:-1]
         return base
-    # -es → strip (processes → process)
     if word.endswith("es") and len(word) > 4:
         return word[:-2]
-    # -s → strip (projects → project), but not words ending in "ss" (process, access)
     if word.endswith("s") and not word.endswith("ss") and len(word) > 3:
         return word[:-1]
 
@@ -258,7 +246,7 @@ class EmbeddingService:
         self.model = model
         self.dim = dim
         self.lock = asyncio.Lock()
-        self.client: Any | None = None  # AsyncSeptember (untyped SDK), lazy
+        self.client: Any | None = None
 
     def zero_vector(self) -> list[float]:
         return [0.0] * self.dim

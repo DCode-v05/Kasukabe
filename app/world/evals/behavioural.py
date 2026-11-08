@@ -38,43 +38,19 @@ import sqlite3
 import sys
 from typing import Any
 
-# --------------------------------------------------------------------
-# Bars. Each cites docs/HUMAN_BASELINES.md, which cites its source.
-# --------------------------------------------------------------------
 
-# B1. Stivers et al., PNAS 106(26) 2009: across ten languages, answers
-# were 64% (Korean) to 87% (Dutch, Yeli-Dnye) of all responses. 64 is the
-# floor of the slowest-answering language measured, not an average, so a
-# town below it is outside the human range rather than merely at its edge.
 ANSWER_RATE_FLOOR = 0.64
 
-# B3. Dunbar: spontaneous conversation caps at about four, observed mean
-# 3.4 (one speaker plus 2.4 listeners); at five it fissions into two.
-# This is the measure our own G3 gets backwards - G3 has a floor of three
-# speakers and NO ceiling, so a six- or eight-speaker thread scores as a
-# success when a human group that size would already have split.
 CONVERSATION_SIZE_CEILING = 4
 
-# B4. What share of over-large threads behave the way humans do and break
-# up. Half, because the research says fission is what happens, not what
-# usually happens, and a first bar should be reachable.
 FISSION_SHARE_FLOOR = 0.50
 
-# A thread is "the same conversation" for these purposes when the world
-# says so. Unlike loop_report's gathering heuristic, this reads the
-# world's own conversation_id, because the question here is about the
-# object the town maintains, not about a window we impose on it.
 
-# How far apart two remarks can be and still count as one bout of the
-# conversation, for the fission measure. Matches CONVERSATION_WINDOW_TICKS.
 BOUT_WINDOW_TICKS = 12
 
-# B5. A price named in speech and then moved by a tool call.
 SETTLING_TX_TYPES = ("trade", "purchase", "sale")
 SETTLEMENT_WINDOW_TICKS = 20
 
-# What counts as naming a price: two to six digits standing alone. Same
-# rule loop_report uses, so the two cannot disagree about what a price is.
 PRICE = re.compile(r"\b(\d{2,6})\b")
 
 
@@ -137,8 +113,6 @@ def utterances(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         {
             "speaker": r[0], "listener": r[1], "conversation": r[2],
             "location": r[3], "content": r[4] or "", "tick": r[5] or 0,
-            # EVAL-11: everyone the remark named. `listener_agent_id` holds
-            # one of them; run 23 carried more on 172 of 229 rows.
             "addressed": _addressees(r[6]),
         }
         for r in rows(
@@ -152,11 +126,6 @@ def utterances(conn: sqlite3.Connection) -> list[dict[str, Any]]:
 
 def names(conn: sqlite3.Connection) -> dict[str, str]:
     return {r[0]: r[1] for r in rows(conn, "select id, display_name from agents")}
-
-
-# --------------------------------------------------------------------
-# B1 - being asked, and answering
-# --------------------------------------------------------------------
 
 
 def selections(utts: list[dict]) -> list[dict]:
@@ -190,7 +159,6 @@ def answer_rate(utts: list[dict]) -> tuple[int, int, list[dict]]:
     unanswered = []
     answered = 0
     for u in selected:
-        # EVAL-11: an answer from ANY selected party closes the obligation.
         if any(
             r["tick"] > u["tick"] and r["listener"] == u["speaker"]
             for addressee in _selected_by(u)
@@ -200,11 +168,6 @@ def answer_rate(utts: list[dict]) -> tuple[int, int, list[dict]]:
         else:
             unanswered.append(u)
     return answered, len(selected), unanswered
-
-
-# --------------------------------------------------------------------
-# B2 - a named resident is told they were named
-# --------------------------------------------------------------------
 
 
 def unrecorded_addressees(conn: sqlite3.Connection) -> int:
@@ -232,11 +195,6 @@ def unrecorded_addressees(conn: sqlite3.Connection) -> int:
         if any(a not in involved for a in listed):
             short += 1
     return short if seen else -1
-
-
-# --------------------------------------------------------------------
-# B3, B4 - how many people one conversation holds
-# --------------------------------------------------------------------
 
 
 def threads(utts: list[dict]) -> dict[str, list[dict]]:
@@ -284,11 +242,6 @@ def fissioned(utts: list[dict]) -> tuple[int, int]:
     return split, big
 
 
-# --------------------------------------------------------------------
-# B5 - a price named, then moved
-# --------------------------------------------------------------------
-
-
 def settlements(conn: sqlite3.Connection, utts: list[dict]) -> tuple[int, int]:
     """(prices named in speech that a tool call then moved, prices named).
 
@@ -329,16 +282,6 @@ def settlements(conn: sqlite3.Connection, utts: list[dict]) -> tuple[int, int]:
     return moved, named
 
 
-# --------------------------------------------------------------------
-# B6, B7 - favours and debts. Reported, never barred.
-# --------------------------------------------------------------------
-
-# Gouldner (1960) and the reciprocity literature: delayed exchange creates
-# a relationship AND an obligation. DELAYED is the word that matters - a
-# 72-tick run is one morning, so a bar on the return rate would be
-# measuring the run length rather than the town. Reported instead, with
-# the direction across runs as the thing worth watching.
-
 DEBT_WORDS = re.compile(
     r"\b(owe[sd]?|owing|debt|repay|paid back|borrow(ed|ing)?|lent|loan)\b",
     re.IGNORECASE,
@@ -378,9 +321,6 @@ def debts_spoken(utts: list[dict]) -> int:
     contain. Bram's unspoken 400 sim is the best thing in the run log.
     """
     return sum(1 for u in utts if DEBT_WORDS.search(u["content"]))
-
-
-# --------------------------------------------------------------------
 
 
 def main(path: str) -> int:

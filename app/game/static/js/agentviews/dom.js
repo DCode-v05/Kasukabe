@@ -1,7 +1,3 @@
-// Small, dependency-free rendering helpers shared by js/agentviews/*.js.
-// Deliberately duplicated from js/views/dom.js rather than imported
-// across directories - see js/agentviews/api.js's own comment for why.
-
 export function escapeHtml(value) {
   if (value === null || value === undefined) return "";
   return String(value)

@@ -45,9 +45,6 @@ async def test_steal_success_and_not_witnessed_with_seed_one(world, registry) ->
 
 @pytest.mark.asyncio
 async def test_steal_failure_leaves_item_in_place(world, registry) -> None:
-    # seed 2's first two draws are both above their thresholds: fails and
-    # goes unwitnessed. Verified once here rather than hardcoding the raw
-    # floats at the call site.
     probe = random.Random(2)
     expected_success = probe.random() < 0.70
     expected_witnessed = probe.random() < 0.30

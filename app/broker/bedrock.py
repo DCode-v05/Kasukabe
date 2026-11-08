@@ -35,9 +35,6 @@ from typing import Protocol
 from broker.errors import UpstreamError, UpstreamOverloadedError
 from broker.tokens import estimate_tokens
 
-# botocore error codes that mean "the model is allowed, Bedrock just can't
-# serve it right now" - distinct from every other ClientError, which is a
-# genuine bad-gateway condition (broker/errors.py's UpstreamError).
 THROTTLING_ERROR_CODES = frozenset(
     {
         "ThrottlingException",
@@ -47,10 +44,6 @@ THROTTLING_ERROR_CODES = frozenset(
     }
 )
 
-# The in-stream event keys converse_stream can emit that mean "the model
-# stream itself failed partway through" - these arrive as ordinary stream
-# events (one dict, one key), not as a raised exception, because the
-# HTTP response already started streaming by the time they happen.
 STREAM_ERROR_EVENT_KEYS = frozenset(
     {
         "internalServerException",
@@ -62,22 +55,6 @@ STREAM_ERROR_EVENT_KEYS = frozenset(
 )
 
 
-# INFRA-15. How many Bedrock streams may be read at once.
-#
-# Sized for the town, not for the CPU: every one of these threads is
-# blocked on a socket waiting for the next delta, so the usual "do not
-# exceed core count" rule does not apply - they are holding a place in a
-# queue, not computing. The interpreter's default executor allows
-# min(32, cpu + 4), which at the 250-resident design target means 250
-# streams contending for at most 32 slots, and the wait appears in no
-# metric: not `rate_limit_wait_ms` (nothing throttled), not Bedrock's own
-# latency (Bedrock answered) - just turns quietly crossing the
-# 120-second dispatch limit, as 10 of run 23's did.
-#
-# 300 rather than 250: a stream is read for the length of a turn and
-# turns overlap at the edges, so sizing exactly to the cast would put the
-# last few residents of every tick back in the queue this exists to
-# empty.
 STREAM_POOL_WORKERS = int(os.environ.get("KASUKABE_STREAM_POOL_WORKERS", "300"))
 
 
@@ -144,26 +121,9 @@ class Boto3BedrockGateway:
         max_attempts: int = 1,
         inference_profile_id: "str | None" = None,
     ) -> None:
-        # Imported here, not at module top level: keeps the module
-        # importable (and app/tests/test_module_boundaries.py's AST scan
-        # happy about WHERE boto3 lives) even in environments that build
-        # this package without the boto3 wheel installed, e.g. a docs
-        # build. Real usage always has boto3 installed (pyproject.toml
-        # lists it unconditionally); this is defensive, not a workaround.
         import boto3
         from botocore.config import Config
 
-        # max_attempts=1 disables botocore's OWN internal retry loop.
-        # TASK spec (broker-lanes track): "Circuit-break a lane on
-        # repeated throttles, never spin-retry." Without this, a
-        # ThrottlingException would get silently retried inside boto3
-        # itself before this gateway ever sees a ClientError to classify -
-        # both hiding the throttle from broker/lanes.py's CircuitBreaker
-        # (which needs to SEE every throttle to count it) and quietly
-        # burning extra wall-clock time against the caller's one dispatch
-        # attempt. One lane, one attempt, one outcome; retry policy
-        # (whether to try a different lane, or give up) belongs entirely
-        # to broker/lanes.py + broker/service.py, not to botocore.
         self.region = region
         self.inference_profile_id = inference_profile_id
         self.client = boto3.client(
@@ -251,14 +211,9 @@ class Boto3BedrockGateway:
         loop = asyncio.get_running_loop()
         pool = self.stream_pool
         while True:
-            # INFRA-15: this pool, not the interpreter's default one. See
-            # `stream_pool` for why the default is a ceiling rather than a
-            # resource here.
             try:
                 event = await loop.run_in_executor(pool, next, stream, sentinel)
             except transport_errors() as e:
-                # Mid-stream, urllib3's own exception arrives unwrapped by
-                # botocore - the exact shape of run 27's eight lost calls.
                 raise transport_failure(e) from e
             if event is sentinel:
                 return
@@ -268,7 +223,6 @@ class Boto3BedrockGateway:
                     raise classify_client_error(key, str(body))
             yield event
 
-    # INFRA-15: one pool for the whole process, built on first use.
     _stream_pool: "ThreadPoolExecutor | None" = None
 
     def call_converse_stream_sync(self, request: dict) -> dict:
@@ -294,24 +248,6 @@ class MockBedrockGateway:
         canned_response_fn: Callable[[dict], dict] | None = None,
         text_content_block_start: bool = False,
     ) -> None:
-        # INFRA-23. Default OFF, because real Bedrock frequently omits it.
-        #
-        # Real Bedrock sends `contentBlockStart` for a `toolUse` block and
-        # often does NOT send it for plain text - a text block arrives as a
-        # bare `contentBlockDelta`. This mock always sent it, so every
-        # end-to-end test through `build_service` exercised a friendlier
-        # wire than production ever produces.
-        #
-        # That is how defect D1 survived fifteen runs: 938 calls recorded
-        # with zero content and 360,250 output tokens billed against them,
-        # while the suite was green throughout. `test_stream_fidelity.py`
-        # now covers the bare shape directly, but only because it builds
-        # its fixtures by hand; everything that goes through the mock was
-        # still testing the shape that cannot fail.
-        #
-        # Kept as a flag rather than removed so a test that specifically
-        # wants the friendly shape can still ask for it, in one visible
-        # word rather than by accident.
         self.text_content_block_start = text_content_block_start
         self.fixed_text = fixed_text
         self.latency_s = latency_s
@@ -369,7 +305,6 @@ class MockBedrockGateway:
 
         for index, block in enumerate(message["content"]):
             if "text" in block:
-                # INFRA-23: only when explicitly asked for. See __init__.
                 if self.text_content_block_start:
                     yield {
                         "contentBlockStart": {"contentBlockIndex": index, "start": {}}

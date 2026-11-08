@@ -52,8 +52,6 @@ async def test_archive_payload_reports_accurate_sizes(client: SqliteClient) -> N
     result = await archiver.archive_payload(key="x.json.gz", payload=payload)
 
     assert result.original_size_bytes == len(raw_expected)
-    # Highly repetitive content compresses well; this is a sanity bound,
-    # not an exact figure that would break on a gzip version bump.
     assert result.compressed_size_bytes < result.original_size_bytes
 
 

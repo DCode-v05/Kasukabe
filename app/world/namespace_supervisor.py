@@ -76,14 +76,10 @@ class NamespaceSupervisor:
         self.world_base_url = world_base_url
         self.engine_repo = engine_repo
         self.units: dict[str, _Namespace] = {}
-        # Injected so tests can drive this without importing the engine, and
-        # so the engine import stays lazy - `app/` must not pay for engine
-        # imports when it is running with a different backend.
         self._boot = boot
         self._world_client_factory = world_client_factory
         self._lock = asyncio.Lock()
 
-    # ── the namespace itself ──────────────────────────────────────────────
 
     def home_for(self, agent_id: str) -> Path:
         """`<home_root>/<agent_id>` - the same path ProcessSupervisor exports
@@ -114,7 +110,6 @@ class NamespaceSupervisor:
         if repo not in sys.path:
             sys.path.insert(0, repo)
 
-    # ── Supervisor protocol ───────────────────────────────────────────────
 
     async def start(self, spec: Any) -> Any:
         from world.run_genesis import UnitAlreadyExistsError, UnitState, UnitStatus
@@ -134,10 +129,6 @@ class NamespaceSupervisor:
             state = UnitState.RUNNING
             detail = f"namespace {ns.home}"
         except Exception as exc:  # noqa: BLE001 - one agent must not take the run down
-            # Recorded rather than raised. With 50 agents in one process a
-            # single bad profile would otherwise abort the whole run at
-            # startup, which is exactly the fragility this backend is
-            # supposed to be worth tolerating a shared process for.
             ns.failures += 1
             ns.last_error = f"{type(exc).__name__}: {exc}"
             logger.warning("namespace %s failed to boot: %s", ns.agent_id, ns.last_error)
@@ -155,10 +146,6 @@ class NamespaceSupervisor:
 
     async def _boot_engine(self, ns: _Namespace, spec: Any) -> Any:
         if self._boot is None:
-            # The engine repo has to be importable from THIS process, because
-            # that is the whole design: no subprocess, so no `cwd=engine_repo`
-            # to make `src` resolve. Added lazily and only once, so a run on a
-            # different backend never pays for it.
             self._ensure_engine_importable()
             from src.sim.config import SimProfile
             from src.sim.pinned_boot import boot_sim_engine
@@ -205,9 +192,6 @@ class NamespaceSupervisor:
         await self.stop(unit_id)
         async with self._lock:
             self.units.pop(unit_id, None)
-        # The namespace directory is deliberately NOT cleared: an agent's
-        # SQLite, memory and skills are what make a restart a continuation
-        # rather than a new resident with the same name.
         return await self.start(
             UnitSpec(
                 unit_id=unit_id,
@@ -242,14 +226,11 @@ class NamespaceSupervisor:
         return ns is not None and ns.engine is not None
 
     async def shutdown_all(self, timeout_s: float = 30.0) -> None:
-        # Concurrently: 50 engines shut down one after another at a 10s
-        # timeout each is an eight-minute teardown.
         await asyncio.gather(
             *(self.stop(uid, timeout_s=min(timeout_s, 10.0)) for uid in list(self.units)),
             return_exceptions=True,
         )
 
-    # ── driving a tick ────────────────────────────────────────────────────
 
     async def send_tick(self, unit_id: str, perception_text: str) -> str:
         """Straight into the engine, no HTTP.

@@ -12,9 +12,6 @@ import pytest
 from tui import EngineApp, ExecutionStream, Wire, parse_frame
 
 
-# ── SSE parsing (pure) ──
-
-
 def test_parse_frame_block():
     f = parse_frame('seq: 3\nevent: block\ndata: {"type":"text"}')
     assert f["event"] == "block"
@@ -24,12 +21,9 @@ def test_parse_frame_block():
 
 def test_parse_frame_defaults_and_multiline_data():
     f = parse_frame('data: {"x":\ndata: 1}')
-    assert f["event"] == "message"  # default when no event: line
+    assert f["event"] == "message"
     assert f["seq"] is None
-    assert f["data"] == '{"x":1}'  # data lines concatenated, leading space stripped
-
-
-# ── App flow with a fake wire ──
+    assert f["data"] == '{"x":1}'
 
 
 class FakeWire(Wire):
@@ -86,13 +80,10 @@ async def test_normal_turn_adopts_thread():
         await pilot.pause()
         assert wire.calls and wire.calls[0]["text"] == "hi engine"
         assert wire.calls[0]["block_id"] is None
-        assert app.selected_thread_id == "t1"  # adopted the driven thread
+        assert app.selected_thread_id == "t1"
 
 
 def test_routing_block_renders_intent_and_target():
-    # The routing telemetry line must read the RoutingDecision fields the engine
-    # actually folds (intent / target_thread) — not the renamed-away method /
-    # selected_slot_id, which rendered a permanently blank "[routing:  → ?]".
     stream = ExecutionStream()
     captured: list[str] = []
     stream.write = lambda text, *a, **k: captured.append(
@@ -105,16 +96,15 @@ def test_routing_block_renders_intent_and_target():
         }
     )
     line = next(s for s in captured if "routing:" in s)
-    assert "continuation" in line  # intent rendered (was always blank)
-    assert "thread99" in line  # target_thread rendered (was '?')
-    assert "→ ?]" not in line  # not the stale-empty form
+    assert "continuation" in line
+    assert "thread99" in line
+    assert "→ ?]" not in line
 
 
 @pytest.mark.asyncio
 async def test_craft_await_then_block_input():
     wire = FakeWire(
         [
-            # turn 1: a craft that pauses (done.status=awaiting carries the block_id)
             [
                 {
                     "type": "craft",
@@ -128,7 +118,6 @@ async def test_craft_await_then_block_input():
                 },
                 {"type": "done", "payload": {"status": "awaiting", "block_id": "craft:1"}},
             ],
-            # turn 2: the answer resolves it
             [{"type": "done", "payload": {"status": "completed", "thread_id": "t1"}}],
         ]
     )
@@ -138,15 +127,14 @@ async def test_craft_await_then_block_input():
         app.send_message("start")
         await app.workers.wait_for_complete()
         await pilot.pause()
-        assert app.awaiting_block_id == "craft:1"  # paused, waiting for an answer
+        assert app.awaiting_block_id == "craft:1"
 
         app.send_message("answer text")
         await app.workers.wait_for_complete()
         await pilot.pause()
-        # second call answered the paused block via block_input
         assert wire.calls[1]["block_id"] == "craft:1"
         assert wire.calls[1]["value"] == {"response": "answer text"}
-        assert app.awaiting_block_id == ""  # cleared after answering
+        assert app.awaiting_block_id == ""
 
 
 @pytest.mark.asyncio
@@ -155,4 +143,4 @@ async def test_unknown_command_is_handled():
     async with app.run_test() as pilot:
         await pilot.pause()
         await app.handle_command("/bogus")
-        await pilot.pause()  # no exception = handled gracefully
+        await pilot.pause()

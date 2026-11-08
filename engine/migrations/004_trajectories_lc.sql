@@ -1,6 +1,3 @@
--- Trajectories and Learning Centre queue.
--- Single-user engine — no user_id columns.
-
 CREATE TABLE IF NOT EXISTS trajectories (
     trajectory_id   TEXT PRIMARY KEY,
     charter_id      TEXT NOT NULL,

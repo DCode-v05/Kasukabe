@@ -64,8 +64,6 @@ def test_the_flag_is_accepted() -> None:
     assert parsed.start_at_dawn is True
 
 
-# The day is 06:00-22:00, which is 96 ticks. DAWN_TICK + 100 is 22:40 and
-# correctly NOT daytime - the premise was wrong, not the clock.
 @pytest.mark.parametrize("tick", [DAWN_TICK, DAWN_TICK + 1, DAWN_TICK + 95])
 def test_a_run_starting_at_dawn_is_awake_from_its_first_tick(tick: int) -> None:
     """The whole point: the first tick of the run has to be one on which

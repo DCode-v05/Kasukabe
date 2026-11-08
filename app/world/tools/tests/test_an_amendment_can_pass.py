@@ -28,9 +28,6 @@ from world.tools.state import WorldState
 
 from .conftest import spawn_agent
 
-# The sector the map actually draws. `place_aliases` folds it onto
-# `government_complex`, and ALSO_SATISFIES folds that onto `town_hall`,
-# because on this map they are one building (TOOL-08).
 HALL = "Kasukabe Government Complex"
 SEATS = ["pm", "m1", "m2", "m3", "m4"]
 
@@ -41,9 +38,6 @@ async def _a_sitting_government(world: WorldState) -> None:
     await world.charter.store.set_government_state(
         GovernmentState(pm_agent_id="pm", minister_agent_ids=SEATS[1:])
     )
-
-
-# ── the two tools that did not exist ──────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -73,7 +67,6 @@ async def test_a_resident_with_no_seat_cannot_table_one(world, registry):
     await _a_sitting_government(world)
     await spawn_agent(world, "n02", HALL, age_years=40.0, household_id="h2")
 
-    # GOVERNMENT namespace: it is not merely refused, it is invisible.
     with pytest.raises(ToolNotFoundError):
         await registry.execute(
             world,
@@ -134,33 +127,25 @@ async def test_a_seat_may_change_its_mind_before_it_resolves(world, registry):
     assert outcome.result["yes_votes"] == 0
 
 
-# ── GOV-13 ────────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_the_charter_decides_who_may_vote_not_the_registry(world, registry):
     """An amendment lowering suffrage has to actually lower it."""
     from world.charter.models import Candidacy, ElectionPhase
 
     await _a_sitting_government(world)
-    # A sixteen-year-old, a resident, standing in the hall.
     await spawn_agent(world, "young", HALL, age_years=16.0, household_id="h3")
 
     election = await world.charter.elections.schedule_election(0)
     election.candidates["pm"] = Candidacy(agent_id="pm", declared_tick=0)
     await world.charter.store.put_election(election)
-    # `cast_vote` recomputes the phase from the tick, so the clock has to
-    # be inside the voting window rather than the phase hand-set.
     world.current_tick = election.voting_opens_tick + 1
 
-    # The town lowers the voting age to sixteen.
     charter = await world.charter.store.get_charter()
     lowered = charter.model_copy(
         update={"version": charter.version + 1, "suffrage_min_age": 16.0}
     )
     await world.charter.store.push_charter(lowered)
 
-    # Which now means something.
     outcome = await registry.execute(
         world,
         "young",
@@ -181,8 +166,6 @@ async def test_the_charters_own_bar_is_still_enforced(world, registry):
     election = await world.charter.elections.schedule_election(0)
     election.candidates["pm"] = Candidacy(agent_id="pm", declared_tick=0)
     await world.charter.store.put_election(election)
-    # `cast_vote` recomputes the phase from the tick, so the clock has to
-    # be inside the voting window rather than the phase hand-set.
     world.current_tick = election.voting_opens_tick + 1
 
     with pytest.raises(Exception) as raised:
@@ -193,5 +176,4 @@ async def test_the_charters_own_bar_is_still_enforced(world, registry):
             {"election_id": election.election_id, "candidate_agent_id": "pm", "because": "She has kept the mill weights honest all season."},
         )
     assert "suffrage" in str(raised.value).lower()
-    # And it reaches the refusal log now, rather than vanishing (TOOL-08).
     assert world.tool_refusals and world.tool_refusals[-1].tool_name == "vote"

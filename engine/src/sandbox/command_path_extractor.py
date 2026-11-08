@@ -51,21 +51,9 @@ def filter_positional(args: list[str]) -> list[str]:
     return result
 
 
-# All three removal commands (``rm``, ``rmdir``, ``unlink``) take positional
-# path arguments after flag filtering, so one extractor handles all of them.
-# Split per-command functions would reintroduce boilerplate without
-# behavioural divergence. If a future removal command diverges (e.g. needs
-# destination-vs-source extraction like ``mv``), add a dedicated function
-# then — extensibility stays a one-line edit.
 extract_removal_paths = filter_positional
 
 
-# Canonical command name → extractor function.
-#
-# Callers look up the canonical name via ``resolve_removal_command`` first
-# and then index this dict. Keeping the two tables separate lets alias
-# resolution stay a pure string transform that a future AST analyser can
-# reason about without caring about the extractor signatures.
 PATH_EXTRACTORS: dict[str, Callable[[list[str]], list[str]]] = {
     "rm": extract_removal_paths,
     "rmdir": extract_removal_paths,
@@ -73,16 +61,10 @@ PATH_EXTRACTORS: dict[str, Callable[[list[str]], list[str]]] = {
 }
 
 
-# Removal-command alias table. ``rm``/``rmdir``/``unlink`` are their own
-# canonicals today; the table exists so future Windows support can collapse
-# ``del``/``ri``/``rd``/``erase`` into ``remove-item`` with a one-line edit
-# and no branching elsewhere.
 REMOVAL_ALIASES: dict[str, str] = {
     "rm": "rm",
     "rmdir": "rmdir",
     "unlink": "unlink",
-    # Future: "del": "remove-item", "ri": "remove-item", "rd": "remove-item",
-    # "erase": "remove-item".
 }
 
 

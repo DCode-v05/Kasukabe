@@ -51,15 +51,7 @@ class ToolResultBuilder:
         self.tool_use_id = tool_use_id
         self.is_error = is_error
         self.source_assistant_id = source_assistant_id
-        # tool_name is used by the empty-content guard in build() to
-        # produce a meaningful marker like "(Bash completed with no
-        # output)". Optional for backward compatibility — when omitted
-        # the marker uses a generic "tool" label.
         self.tool_name = tool_name
-        # Track block flavor + label so build() can decide between str
-        # and list[ContentBlock] forms. We store everything as plain
-        # ContentBlock instances except for the label metadata which
-        # rides alongside text blocks.
         self.blocks: list[ContentBlock] = [TextBlock(text=base_result)]
         self.labels: list[str | None] = [None]
 
@@ -123,7 +115,6 @@ class ToolResultBuilder:
                 total += len(block.text)
             elif isinstance(block, PersistedBlock):
                 total += len(block.summary)
-            # ImageBlock contributes 0
         return total
 
     def is_effectively_empty(self) -> bool:
@@ -142,7 +133,6 @@ class ToolResultBuilder:
                 if block.text and block.text.strip():
                     return False
             elif isinstance(block, (ImageBlock, PersistedBlock)):
-                # Non-text blocks always count as content.
                 return False
         return True
 

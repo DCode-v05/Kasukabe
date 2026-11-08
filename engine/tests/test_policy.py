@@ -37,9 +37,6 @@ class TestPolicyParsing:
         assert expected.issubset(set(policy.binaries.keys()))
 
     def test_sed_not_in_default_policy(self):
-        # sed is gated by src/sandbox/sed_validation.py at permission time,
-        # not by the executor-level binary policy. It must not be present in
-        # the default binary allowlist.
         policy = SandboxPolicy.default()
         assert "sed" not in policy.binaries
 
@@ -117,7 +114,6 @@ class TestToSafeBins:
     def test_matches_default_safe_bins(self):
         policy = SandboxPolicy.default()
         safe_bins = policy.to_safe_bins()
-        # Every binary in DEFAULT_SAFE_BINS should have a matching policy
         for name, profile in DEFAULT_SAFE_BINS.items():
             assert name in safe_bins, f"Missing {name}"
             sb = safe_bins[name]
@@ -170,7 +166,7 @@ class TestToFilesystemArgs:
             }
         )
         args = policy.to_filesystem_bwrap_args()
-        assert len(args) == 6  # 2 rules x 3 args each
+        assert len(args) == 6
 
 
 class TestMerge:
@@ -189,7 +185,6 @@ class TestMerge:
             {
                 "binaries": {
                     "echo": {"max_positional": 20},
-                    # cat not in custom = removed
                 }
             }
         )
@@ -282,7 +277,7 @@ class TestMerge:
             {
                 "binaries": {
                     "echo": {"max_positional": 20},
-                    "rm": {"max_positional": 5},  # not in base
+                    "rm": {"max_positional": 5},
                 }
             }
         )

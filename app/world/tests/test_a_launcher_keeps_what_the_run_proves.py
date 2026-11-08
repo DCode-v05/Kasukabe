@@ -32,9 +32,6 @@ import pytest
 
 APP = Path(__file__).resolve().parents[2]
 
-#: Every launcher that drives a run to completion and owns a run directory.
-#: `run20.sh` and `run50.sh` are absent where they only `exec` another one -
-#: the test follows the exec instead.
 LAUNCHERS = ("run-election.sh", "run-scenario.sh", "runseries.sh")
 
 
@@ -64,7 +61,7 @@ def test_the_thin_wrappers_reach_a_launcher_that_keeps_them(launcher: str) -> No
     script = _script(launcher)
 
     if "session_log.jsonl" in script:
-        return  # keeps them itself, like run50.sh does
+        return
     execed = [name for name in LAUNCHERS if name in script]
     assert execed, (
         f"{launcher} neither keeps session logs nor hands off to a launcher "

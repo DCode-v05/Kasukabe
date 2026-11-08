@@ -23,16 +23,6 @@ if TYPE_CHECKING:
     from src.infra.sqlite_pool import SqlitePool
 
 
-# Tools whose results become stale as time passes (or as context pressure
-# grows). File reads reflect disk state that may have changed, shell output
-# is ephemeral, search results change as code changes, web content changes
-# upstream. Every tool in this set is safe to replace with the staleness
-# marker during a microcompact pass.
-#
-# Tools NOT in this set (by design):
-#   - Memory / working-memory tools   — persistent by intent.
-#   - Permission / security tools     — decisions are session-scoped.
-#   - Agent / Task orchestration      — orchestration state must survive.
 COMPACTABLE_TOOLS: frozenset[str] = frozenset(
     {
         "Read",

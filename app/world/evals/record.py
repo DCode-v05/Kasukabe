@@ -30,9 +30,6 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-# The seven tracks `eval_metrics.track` allows. Named here so a caller
-# gets a Python error at the call site rather than a CHECK-constraint
-# failure three layers down in sqlite.
 TRACKS = (
     "political_science",
     "economics",

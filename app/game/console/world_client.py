@@ -121,16 +121,6 @@ class WorldAdminClient:
             return None
         return response.json()
 
-    # -- President: land petitions -------------------------------------
-
-    # -- B7: the read-only town views (family/business/treasury/skills) ----
-    # These are plain GETs against world's own read-only routers
-    # (family_api, agents_api, governance_api, skills_api), not the admin
-    # API - the console proxies them so the browser talks to one origin and
-    # the operator does not need a second base URL. They are returned as raw
-    # JSON rather than parsed into schemas here: game/console/framing.py is
-    # what turns them into sentences, and a view model in between would just
-    # be a second place for those field names to drift.
 
     async def town_households(self) -> list[dict[str, Any]]:
         return await self.call_json("GET", "/family/households")
@@ -187,7 +177,6 @@ class WorldAdminClient:
         )
         return LandPetitionView.model_validate(data)
 
-    # -- President: amendments -------------------------------------------
 
     async def list_amendments(self) -> list[AmendmentProposalView]:
         data = await self.call_json("GET", f"{ADMIN_PREFIX}/president/amendments")
@@ -207,7 +196,6 @@ class WorldAdminClient:
         )
         return AmendmentProposalView.model_validate(data)
 
-    # -- President: address to the nation --------------------------------
 
     async def broadcast_address(self, req: BroadcastRequest) -> BroadcastView:
         data = await self.call_json("POST", f"{ADMIN_PREFIX}/president/broadcast", req)
@@ -217,7 +205,6 @@ class WorldAdminClient:
         data = await self.call_json("GET", f"{ADMIN_PREFIX}/president/broadcasts")
         return TypeAdapter(list[BroadcastView]).validate_python(data)
 
-    # -- President: honors --------------------------------------------------
 
     async def grant_honor(self, req: HonorRequest) -> HonorView:
         data = await self.call_json("POST", f"{ADMIN_PREFIX}/president/honors", req)
@@ -227,7 +214,6 @@ class WorldAdminClient:
         data = await self.call_json("GET", f"{ADMIN_PREFIX}/president/honors")
         return TypeAdapter(list[HonorView]).validate_python(data)
 
-    # -- God: prayer feed --------------------------------------------------
 
     async def list_prayers(self) -> list[PrayerView]:
         data = await self.call_json("GET", f"{ADMIN_PREFIX}/god/prayers")
@@ -245,7 +231,6 @@ class WorldAdminClient:
         )
         return PrayerDecisionView.model_validate(data)
 
-    # -- God: baby blessing queue -------------------------------------------
 
     async def list_blessing_requests(self) -> list[BirthRequestView]:
         data = await self.call_json("GET", f"{ADMIN_PREFIX}/god/blessings")
@@ -263,7 +248,6 @@ class WorldAdminClient:
         )
         return BirthDecisionView.model_validate(data)
 
-    # -- God: disasters -------------------------------------------------------
 
     async def trigger_disaster(self, req: DisasterRequest) -> DisasterView:
         data = await self.call_json("POST", f"{ADMIN_PREFIX}/god/disasters", req)
@@ -273,7 +257,6 @@ class WorldAdminClient:
         data = await self.call_json("GET", f"{ADMIN_PREFIX}/god/disasters")
         return TypeAdapter(list[DisasterView]).validate_python(data)
 
-    # -- God: miracles and misfortunes ----------------------------------------
 
     async def cast_miracle(self, req: MiracleRequest) -> MiracleView:
         data = await self.call_json("POST", f"{ADMIN_PREFIX}/god/miracles", req)
@@ -291,7 +274,6 @@ class WorldAdminClient:
         data = await self.call_json("GET", f"{ADMIN_PREFIX}/god/misfortunes")
         return TypeAdapter(list[MisfortuneView]).validate_python(data)
 
-    # -- God: population dials ------------------------------------------------
 
     async def get_population_dials(self) -> PopulationDialsView:
         data = await self.call_json("GET", f"{ADMIN_PREFIX}/god/population-dials")
@@ -303,13 +285,11 @@ class WorldAdminClient:
         data = await self.call_json("PUT", f"{ADMIN_PREFIX}/god/population-dials", req)
         return PopulationDialsView.model_validate(data)
 
-    # -- Spend: live burn tracking --------------------------------------------
 
     async def get_spend_status(self) -> SpendStatusView:
         data = await self.call_json("GET", f"{ADMIN_PREFIX}/spend/status")
         return SpendStatusView.model_validate(data)
 
-    # -- Alert feed ---------------------------------------------------------
 
     async def list_alerts(self, limit: int = 50) -> list[AlertView]:
         data = await self.call_json(
@@ -317,7 +297,6 @@ class WorldAdminClient:
         )
         return TypeAdapter(list[AlertView]).validate_python(data)
 
-    # -- Top-level dials: pause/resume, tick speed, checkpoint ---------------
 
     async def get_control_status(self) -> SimControlStatus:
         data = await self.call_json("GET", f"{ADMIN_PREFIX}/control/status")

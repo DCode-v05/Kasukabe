@@ -146,8 +146,6 @@ def maybe_raise_quota_exhausted(exc: CitadelAPIError) -> None:
         max_tokens=int(err.get("max_tokens", 0) or 0),
         window_seconds=int(err.get("window_seconds", 0) or 0),
     )
-    # Arm the engine-local cooldown so background consumers stop firing doomed
-    # calls until the citadel-reported window resets. Foreground turns ignore it.
     quota_cooldown.enter_cooldown(quota_exc)
     raise quota_exc from exc
 
@@ -172,10 +170,6 @@ def maybe_raise_budget_exhausted(exc: CitadelAPIError) -> None:
         budget_usd=float(err.get("budget_usd", 0) or 0),
         window_seconds=int(err.get("window_seconds", 0) or 0),
     )
-    # Mirror the quota path: arm the engine-local cooldown so background
-    # consumers stop firing doomed calls until the citadel-reported budget
-    # window resets. Foreground turns ignore it. enter_cooldown is duck-typed
-    # on window_seconds, which CitadelBudgetExhausted also carries.
     quota_cooldown.enter_cooldown(budget_exc)
     raise budget_exc from exc
 
@@ -231,41 +225,16 @@ class Provider:
     """
 
     def __init__(self, settings: Settings, model_override: str | None = None) -> None:
-        # CitadelClient validates cdt_url/cdt_key and builds the persistent
-        # httpx client with the citadel auth + version headers.
         self.client = CitadelClient(settings)
-        # Explicit override wins, then LLM_MODEL from settings, then the
-        # herald launch default. Nothing here validates the id; boot-time
-        # model validation (src/herald/model_validation.py) already has.
         self.model = model_override or resolve_model(ModelRole.PRIMARY, settings)
         self.max_tokens = settings.max_tokens
-        # TTL for the single system-prompt cache breakpoint. Threaded from the
-        # same Settings the rest of the engine reads (config -> bootstrap ->
-        # ConsciousnessManager wires it onto the blocks; the wire send path
-        # reads it here). Default "1h" keeps behavior unchanged unless
-        # GLOBAL_CACHE_TTL=5m is set.
         self.global_cache_ttl = settings.global_cache_ttl
-        # Tool schema session cache — avoids recomputing ~11K tokens of tool
-        # schemas every turn. Recomputed only when the tool set changes.
         self.cached_tool_schemas: list[dict] | None = None
         self.cached_tool_names: frozenset[str] | None = None
-        # Sanitised → internal tool name (e.g. "ad_gmail_send_message" →
-        # "ad:gmail.send_message"). Refreshed alongside the schema cache so
-        # tool_use responses from the model can be reverse-mapped back to
-        # the dispatcher's expected names.
         self.tool_name_reverse_map: dict[str, str] = {}
-        # Beta header latching — once thinking is sent in a request, keep
-        # sending it for the session to avoid cache busting on toggle.
         self.latched_thinking: bool = False
-        # Per-instance cache-aware snip state. Lazily initialised on first
-        # queue_snip_cache_edits call so sessions that never trigger the
-        # feature pay zero overhead.
         self.cached_snip_state: CachedSnipState | None = None
-        # Prior-turn cache_read_input_tokens, used to detect server-side
-        # cache breaks and reset stale cache_edits state before the next
-        # request can send references the server no longer knows about.
         self.prev_cache_read: int = 0
-        # Model support is fixed for the provider lifetime — evaluate once.
         self.model_supports_cache_editing: bool = is_model_supported_for_cache_editing(self.model)
 
     def queue_snip_cache_edits(self, tool_ids: list[str]) -> None:
@@ -346,9 +315,6 @@ class Provider:
         apply_betas(kwargs)
         extra_headers = kwargs.pop("extra_headers", None)
 
-        # Mirror stream_with_tools' accounting: input usage rides message_start,
-        # output usage + the quota relay ride message_delta. The no-tools path
-        # previously dropped both, so a plain streamed turn reported zero tokens.
         input_tokens = 0
         output_tokens = 0
         cache_read = 0
@@ -439,15 +405,9 @@ class Provider:
         still served from cache.
         """
         anthropic_messages = to_wire_messages(messages)
-        # Message-level cache marker on last user message's last content block
         if not skip_cache_write:
             place_message_cache_marker(anthropic_messages)
 
-        # Cache-aware snip: inject cache_reference + cache_edits AFTER the
-        # cache_control marker is placed (so positions are final).
-        # header_latched sessions keep receiving the beta header (dropping
-        # mid-session would bust the prompt cache), so the model gate only
-        # blocks brand-new injection on an unsupported model.
         betas: list[str] = []
         state = self.cached_snip_state
         if state is not None and (
@@ -471,14 +431,6 @@ class Provider:
             kwargs["betas"] = betas
 
         if system:
-            # Single cache breakpoint on the LAST system block. Anthropic cache
-            # breakpoints are cumulative prefixes, so one marker at the end
-            # caches the whole (deploy-stable) system as a single prefix and
-            # can never overflow Anthropic's 4-breakpoint cap no matter how many
-            # blocks features add (soul + craft + citation guidance). The TTL is
-            # the configured global_cache_ttl (default "1h") so the knob wired
-            # through config/bootstrap/ConsciousnessManager actually reaches the
-            # Anthropic request instead of a hardcoded literal.
             sys_blocks: list[dict[str, Any]] = [
                 {"type": "text", "text": block.text} for block in system if block.text
             ]
@@ -516,8 +468,6 @@ class Provider:
         """Return cached tool schemas, recomputing only when the tool set changes."""
         tool_names = frozenset(t.name for t in tools)
         if self.cached_tool_names == tool_names and self.cached_tool_schemas is not None:
-            # Only copy the last dict — that's the one the caller mutates
-            # to add cache_control. The rest can share references safely.
             result = list(self.cached_tool_schemas)
             if result:
                 result[-1] = dict(result[-1])
@@ -574,19 +524,6 @@ class Provider:
             "end_turn": StopReason.END_TURN,
             "tool_use": StopReason.TOOL_USE,
             "max_tokens": StopReason.MAX_TOKENS,
-            # `StopReason.REFUSAL` has existed in types.py since the enum
-            # was written and was produced by neither map, so a refused
-            # turn arrived looking exactly like a finished one. The broker
-            # already does its half: translate.py maps Bedrock's
-            # `content_filtered` and `guardrail_intervened` onto "refusal"
-            # before the stream leaves it. The signal reached this line
-            # and was flattened here.
-            #
-            # It costs nothing on Kimi, which rarely refuses. It costs a
-            # great deal on a GPT-class model, which refuses often: every
-            # such turn is billed, produces nothing, and is recorded as
-            # ordinary, and no instrument downstream can tell the town
-            # "the model declined" from "the resident had nothing to do".
             "refusal": StopReason.REFUSAL,
         }
         stop = STOP_MAP.get(response.get("stop_reason") or "", StopReason.END_TURN)
@@ -632,51 +569,14 @@ class Provider:
             "end_turn": StopReason.END_TURN,
             "tool_use": StopReason.TOOL_USE,
             "max_tokens": StopReason.MAX_TOKENS,
-            # `StopReason.REFUSAL` has existed in types.py since the enum
-            # was written and was produced by neither map, so a refused
-            # turn arrived looking exactly like a finished one. The broker
-            # already does its half: translate.py maps Bedrock's
-            # `content_filtered` and `guardrail_intervened` onto "refusal"
-            # before the stream leaves it. The signal reached this line
-            # and was flattened here.
-            #
-            # It costs nothing on Kimi, which rarely refuses. It costs a
-            # great deal on a GPT-class model, which refuses often: every
-            # such turn is billed, produces nothing, and is recorded as
-            # ordinary, and no instrument downstream can tell the town
-            # "the model declined" from "the resident had nothing to do".
             "refusal": StopReason.REFUSAL,
         }
 
         try:
-            # Open tool calls, keyed by the content-block index the
-            # provider gave them.
-            #
-            # This was three scalars - `current_tool_id`, `current_tool_name`,
-            # `current_tool_json` - and `event["index"]` was read nowhere in
-            # this method. Anthropic and Bedrock both happen to emit content
-            # blocks one at a time, so the bug never fired: every start was
-            # followed by its own deltas and its own stop.
-            #
-            # A provider that interleaves two tool blocks concatenates both
-            # argument strings into one. The usual outcome is a
-            # `JSONDecodeError`, which is loud and survivable. The outcome
-            # that matters is the other one: if the two fragments happen to
-            # concatenate into VALID json, the turn calls a real verb with
-            # arguments nobody wrote, and nothing anywhere notices. That is
-            # the shape TRADE-01 cost this project 6,424 calls to learn -
-            # "it returns SUCCESS for an act nobody asked for".
-            #
-            # Keyed by index, each block accumulates into its own slot and
-            # is emitted by its own stop. A stream that opens one block at a
-            # time behaves exactly as before; `_NO_INDEX` keeps a provider
-            # that omits the field on the single-slot path it already used.
             _NO_INDEX = -1
             open_tools: dict[object, dict[str, str]] = {}
             thinking_text = ""
             thinking_redacted = False
-            # Final id/stop/usage are assembled from message_start +
-            # message_delta (the SDK's get_final_message() equivalent).
             message_id = ""
             stop = StopReason.END_TURN
             input_tokens = 0
@@ -716,12 +616,6 @@ class Provider:
                     if dtype == "text_delta":
                         yield StreamEvent(type="text", text=delta.get("text", ""))
                     elif dtype == "input_json_delta":
-                        # A delta for a block that was never opened has no
-                        # name and no id, so there is nothing to call. It is
-                        # dropped here rather than accumulated into whatever
-                        # block happens to be open - which is what the old
-                        # single buffer did, and is how one call's arguments
-                        # reached another call's name.
                         slot = open_tools.get(event.get("index", _NO_INDEX))
                         if slot is not None:
                             slot["json"] += delta.get("partial_json", "")
@@ -756,7 +650,6 @@ class Provider:
                     if d.get("stop_reason"):
                         stop = STOP_MAP.get(d["stop_reason"], StopReason.END_TURN)
                     u = event.get("usage", {}) or {}
-                    # message_delta carries the running/final output token count.
                     if u.get("output_tokens") is not None:
                         output_tokens = u.get("output_tokens", 0) or 0
                     if u.get("cache_read_input_tokens") is not None:
@@ -826,9 +719,6 @@ def tool_result_to_wire(
             out.append({"type": "image", "source": sub.source})
         elif isinstance(sub, PersistedBlock):
             out.append({"type": "text", "text": format_persisted_block_xml(sub)})
-        # Other block types (ToolUseBlock, ThinkingBlock, nested
-        # ToolResultBlock) shouldn't appear inside a tool_result
-        # content list — silently skip if they do.
     return out
 
 
@@ -838,9 +728,6 @@ def blocks_to_wire(blocks: list[ContentBlock]) -> list[dict]:
         if isinstance(block, TextBlock):
             result.append({"type": "text", "text": block.text})
         elif isinstance(block, ToolUseBlock):
-            # Names in history must match the sanitised form Anthropic accepted
-            # on the original turn — otherwise the assistant message fails the
-            # tools.*.custom.name pattern check on resend.
             result.append(
                 {
                     "type": "tool_use",
@@ -904,7 +791,6 @@ def place_message_cache_marker(messages: list[dict]) -> None:
         content = msg.get("content")
         role = msg.get("role", "")
 
-        # Convert string content to list form so the marker can be placed
         if isinstance(content, str):
             msg["content"] = [
                 {"type": "text", "text": content, "cache_control": {"type": "ephemeral"}}
@@ -923,7 +809,6 @@ def place_message_cache_marker(messages: list[dict]) -> None:
                 if btype not in ("thinking", "redacted_thinking"):
                     block["cache_control"] = {"type": "ephemeral"}
                     return
-        # If we get here, content was all thinking blocks — skip to previous message
 
 
 def to_wire_tools(tools: list[ToolDef]) -> list[dict]:

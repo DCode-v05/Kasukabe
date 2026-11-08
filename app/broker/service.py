@@ -155,31 +155,10 @@ def request_text_chars(req: MessagesRequest) -> int:
     elif isinstance(req.system, list):
         total += sum(len(b.get("text", "")) for b in req.system)
 
-    # INFRA-13. The tool schemas are input tokens too, and they were the
-    # biggest single omission in this estimate.
-    #
-    # The docstring above explains why `tool_use` inputs and images are
-    # excluded - char-counting a base64 blob would wildly overestimate.
-    # That reasoning does not extend to the TOOL DEFINITIONS: they are
-    # plain JSON text on the wire, they are sent on every single call, and
-    # ENG-03 measured them at 59,310 chars before the budget and 14.8K
-    # tokens by the engine own estimator - two thirds of a typical turn
-    # input bill.
-    #
-    # So the wallet check was passing calls it should have refused: a
-    # resident with a cent left was cleared for a request whose input was
-    # dominated by a cost the estimate could not see. Undercounting here is
-    # not conservative, it is the direction that spends money that is not
-    # there.
-    #
-    # Serialised the same way `fit.py` serialises them, so the estimate and
-    # the thing actually sent are counting the same bytes.
     if req.tools:
         try:
             total += len(json.dumps(req.tools, default=str))
         except (TypeError, ValueError):
-            # A tool definition that will not serialise is the broker
-            # translation problem a few lines later, not this estimate.
             pass
     return total
 
@@ -188,11 +167,6 @@ def request_text_chars(req: MessagesRequest) -> int:
 class PreparedCall:
     agent_id: str
     payer_agent_id: str
-    # `model` is the SERVED model - the selected lane's, i.e. what Bedrock
-    # actually gets billed for. `requested_model` is whatever the client's
-    # `model` field asked for. The two can differ (a cognition call that
-    # overflowed Kimi -> DeepSeek) - see broker/lanes.py's module
-    # docstring for why that's an intentional research signal, not a bug.
     model: str
     requested_model: str
     region: str
@@ -204,15 +178,7 @@ class PreparedCall:
     estimated_input_tokens: int
     rate_limit_wait_s: float
     start_monotonic: float
-    # CORE-30: 'header' | 'inferred' | 'shape'. Where `purpose` came from,
-    # so the trace can tell a caller's assertion from this broker's guess.
-    # Additive with a default for the same reason `tick` below is: every
-    # existing construction site, in this file and in the tests, keeps
-    # working unmodified. None means "this build did not record it", which
-    # is not the same as "the caller said nothing" - that is 'shape'.
     purpose_source: "str | None" = None
-    # INFRA-02: the world's tick, carried from the payer-balance response.
-    # The broker has no clock; this is where the two meet.
     tick: "int | None" = None
 
 
@@ -222,10 +188,6 @@ class StreamAccumulator:
     field only - never for billing (see translate.py's on_usage callback
     for the exact numbers that feed the ledger debit)."""
 
-    # Which delta type feeds which field on the block it belongs to, and
-    # which counter it increments. One table so a new delta kind cannot be
-    # accumulated without also being counted, which is what makes the
-    # reconciliation in delta_counts() trustworthy.
     DELTA_FIELDS: dict[str, tuple[str, str]] = {
         "text_delta": ("text", "text"),
         "thinking_delta": ("thinking", "thinking"),
@@ -271,12 +233,6 @@ class StreamAccumulator:
             field, counter = field_and_counter
             block = self.blocks.get(index)
             if block is None:
-                # A delta for a block nobody opened. translate.py now emits
-                # the synthetic start that prevents this, and this branch
-                # stays anyway: dropping data because the input was
-                # imperfect is exactly how defect D1 survived fifteen runs
-                # and 938 blank records. Degrade to recording the text,
-                # never to recording nothing.
                 opening = self.OPENING_BLOCK_FOR_DELTA.get(dtype)
                 if opening is None:
                     return
@@ -310,9 +266,6 @@ class StreamAccumulator:
     def content(self) -> list[dict[str, Any]]:
         blocks = [self.blocks[i] for i in self.order if i in self.blocks]
         for block in blocks:
-            # Any block still holding partial_json never saw its stop
-            # event. Sealing here keeps the private key out of the trace
-            # and gives the truncated call its best available arguments.
             self.seal(block)
         return blocks
 
@@ -366,13 +319,9 @@ def reconcile_usage_and_content(
         if not isinstance(block, dict):
             continue
         if block.get("type") == "tool_use":
-            # A tool call is content even with an empty input dict.
             return None
         key = TEXT_BEARING_KEYS.get(block.get("type", ""))
         if key is None or block.get(key):
-            # Unknown block kinds are given the benefit of the doubt: a
-            # future block type broker cannot interpret is not evidence of
-            # loss, and treating it as such would alarm on every upgrade.
             return None
     return (
         f"billed {output_tokens} output tokens and every recorded block is empty - "
@@ -390,11 +339,6 @@ class BrokerService:
     trace_writer: "BatchWriter[TraceRecord]"
     event_writer: "BatchWriter[BrokerEvent]"
     clock: Clock = field(default=time.monotonic)
-    # Calls billed for output whose content did not survive into the
-    # record. Build Spec v2 section 7.3. Kept in process and bounded: this
-    # is a live alarm for a health surface to read, not an archive - the
-    # trace store is the archive, and a run producing enough of these to
-    # overflow this list has already failed.
     content_loss: list[dict[str, Any]] = field(default_factory=list)
 
     def emit_event(self, event_type: str, agent_id: str, model: str, payload: dict[str, Any]) -> None:
@@ -477,38 +421,14 @@ class BrokerService:
         if new_state == SpendState.WARNING:
             self.emit_event("broker.spend.warned", prepared.agent_id, prepared.model, payload)
         elif new_state == SpendState.HALTED:
-            # app/CONVENTIONS.md's event table: system.* is the domain for
-            # cross-cutting events "any" package may emit. Broker owns
-            # this crossing (it is the only package that knows real spend
-            # in real time) but the halt itself is a world-wide fact, not
-            # a broker-only one - hence system.sim.halted, not a broker.*
-            # event, exactly matching the table's own example of that
-            # event name.
             self.emit_event("system.sim.halted", prepared.agent_id, prepared.model, payload)
 
     async def prepare_call(self, raw_body: dict[str, Any], headers: dict[str, str]) -> PreparedCall:
-        # INFRA-05: the peer, so the unsigned path can refuse a remote one.
-        # Carried in the headers dict the route already builds rather than
-        # threading a new parameter through every caller; absent means
-        # "not reported", which resolve_agent_id treats as local.
         agent_id = resolve_agent_id(
             headers,
             self.settings.auth_shared_secret,
             peer=headers.get("x-kasukabe-peer"),
         )
-        # The header when there is one, what the request plainly is when
-        # there is not. Nothing in the engine sets this header (herald is
-        # frozen), which is why every call in every run ever made has been
-        # classified cognition and the background share has been zero -
-        # ROADMAP RC-5, open since round 1. infer_purpose names the narrow,
-        # marker-matched background calls and hands everything else to
-        # lanes.derive_purpose for a shape tag; see broker/purpose.py for
-        # why only the first of those two is allowed to move a call to
-        # another lane.
-        # CORE-30: keep WHERE the answer came from, not just the answer.
-        # Every background classification this project has ever recorded
-        # is this module's inference, and the T4 gate reads them as though
-        # the engine had asserted them.
         purpose, purpose_source = purpose_and_source(
             get_header(headers, "X-Kasukabe-Purpose", ""), raw_body
         )
@@ -543,11 +463,6 @@ class BrokerService:
             )
             raise error
 
-        # broker/lanes.py's module docstring: routing is purpose-driven,
-        # not simply "whichever model the client's request named" - the
-        # SELECTED lane's model is what actually gets built into the
-        # Bedrock request and priced below, req.model only ever reaches
-        # the allowlist check above and PreparedCall.requested_model.
         try:
             lane = self.lane_pool.select(call_class)
         except BrokerError as e:
@@ -557,12 +472,6 @@ class BrokerService:
             )
             raise
 
-        # Does it fit in the window of the lane that will SERVE it? Asked
-        # after lane selection, because cognition overflows from Kimi onto
-        # DeepSeek when the Kimi lanes saturate and the two windows differ
-        # by 100k tokens. Eighteen of loop4's nineteen failures were a
-        # round trip to Bedrock to be told a request was one token too
-        # large - see broker/fit.py.
         try:
             raw_body, fit_note = fit_to_context_window(raw_body, lane.model)
         except BrokerError as e:
@@ -573,9 +482,6 @@ class BrokerService:
             )
             raise
         if fit_note is not None:
-            # Revalidate, because the clamp changed max_tokens and every
-            # number below is computed off `req`. Cheap, and the
-            # alternative is two truths about one request.
             req = MessagesRequest.model_validate(raw_body)
             logger.warning("%s: %s", agent_id, fit_note)
 
@@ -591,12 +497,6 @@ class BrokerService:
                 stop_sequences=req.stop_sequences,
                 tools=req.tools,
                 tool_choice=req.tool_choice,
-                # MessagesRequest is extra="allow", so `thinking` arrives as
-                # an extra rather than a declared field. Read through
-                # model_extra rather than getattr-with-a-default: Build Spec
-                # v2 clause 4.4 exists because a silent default is how the
-                # dormancy counter reported zero for every run ever made,
-                # and a typo here would disable reasoning exactly as quietly.
                 thinking=self.thinking_for(req, purpose),
                 service_tier=self.settings.bedrock_service_tier,
             )
@@ -609,14 +509,6 @@ class BrokerService:
             raise
 
         estimated_input_tokens = estimate_tokens("x" * request_text_chars(req))
-        # Worst-case output estimate: max_tokens is the ceiling Bedrock
-        # can possibly bill for this call, so checking against it means
-        # the post-response exact debit (bounded by the SAME max_tokens,
-        # since a model can never emit more output tokens than it was
-        # allowed) can never exceed what this check already cleared -
-        # see pricing.py's estimate_cost_cents_ceiling docstring. Priced
-        # against the LANE's model (what will really be billed), not
-        # necessarily req.model - see PreparedCall's docstring.
         estimate_cents = estimate_cost_cents_ceiling(lane.model, estimated_input_tokens, req.max_tokens)
 
         try:
@@ -624,10 +516,6 @@ class BrokerService:
                 agent_id, purpose=purpose, amount_cents=estimate_cents,
             )
         except BrokerError as e:
-            # UnknownAgentError, most likely - still a rejection worth
-            # tracing (see module docstring: every early rejection gets
-            # a trace + event record, not just the ones with an
-            # obviously interesting cause).
             lane.circuit.release_unused_reservation()
             self.record_rejection(
                 agent_id, lane.model, req.model, purpose, call_class, raw_body, e,
@@ -651,9 +539,6 @@ class BrokerService:
                 error,
                 payer.payer_agent_id,
                 region=lane.region,
-                # INFRA-02: the one rejection that happens AFTER the payer
-                # balance is known - and the one a broke resident produces,
-                # so it is the one worth bucketing by day.
                 tick=payer.tick,
             )
             raise error
@@ -682,7 +567,6 @@ class BrokerService:
             estimated_input_tokens=estimated_input_tokens,
             rate_limit_wait_s=wait_s,
             start_monotonic=self.clock(),
-            # INFRA-02: from the ledger's payer response.
             tick=payer.tick,
         )
 
@@ -759,8 +643,6 @@ class BrokerService:
                 purpose=purpose,
                 purpose_source=purpose_source,
                 request_body=raw_body,
-                # The rejection reason IS the response as far as the caller is
-                # concerned - there was no upstream call to have a body from.
                 response_body=error.detail or error.to_anthropic_body(),
                 stop_reason=None,
                 input_tokens=0,
@@ -821,15 +703,6 @@ class BrokerService:
                         },
                     )
                 except Exception:
-                    # See module docstring: the Bedrock response is
-                    # already computed and must still reach the caller,
-                    # so this is caught (not re-raised), logged, and the
-                    # un-collected cost is folded back for next time
-                    # instead of being silently written off. The
-                    # resulting trace row (cost_nano_dollars > 0,
-                    # cents_debited == 0, success == True) is the
-                    # queryable signature of this happening, for
-                    # research/ops to watch the rate of.
                     logger.exception(
                         "broker.service: ledger debit failed for payer %r (agent %r), "
                         "%d cents credited back to be re-billed on the next call",
@@ -840,13 +713,6 @@ class BrokerService:
                     self.cost_accountant.credit_back_cents(prepared.payer_agent_id, cents_debited)
                     cents_debited = 0
 
-        # Did we record what we were billed for? (Build Spec v2 sections
-        # 4.8 and 7.3, threshold 9.4 = zero.) Defect D1 put 938 blank
-        # records into one trace store carrying 360,250 paid-for output
-        # tokens, and nothing anywhere noticed, because a blank record and
-        # a model with nothing to say are the same row. This is the line
-        # that tells them apart. Loud, and non-fatal: the response has
-        # already reached the agent and must still settle.
         problem = reconcile_usage_and_content(output_tokens, response_body)
         if problem is not None:
             self.content_loss.append(
@@ -877,7 +743,6 @@ class BrokerService:
                 id=new_trace_id(),
                 agent_id=prepared.agent_id,
                 payer_agent_id=prepared.payer_agent_id,
-                # INFRA-02: the world tick, carried from the payer response.
                 tick=prepared.tick,
                 model=prepared.model,
                 requested_model=prepared.requested_model,
@@ -921,10 +786,6 @@ class BrokerService:
             response = await prepared.lane.gateway.converse(prepared.bedrock_request)
         except BrokerError as e:
             self.record_lane_outcome(prepared.lane, e)
-            # `e.detail or e.to_anthropic_body()`, never None: this passed
-            # None, which is why response_body was empty for every one of the
-            # 5,724 failures in the last run and none of them was diagnosable
-            # from the database.
             await self.settle(prepared, 0, 0, None, e.detail or e.to_anthropic_body(), e)
             raise
         self.record_lane_outcome(prepared.lane, None)

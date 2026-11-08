@@ -33,16 +33,11 @@ import csv
 import json
 from pathlib import Path
 
-# Small enough to reason about, big enough to have an inside and an
-# outside: two buildings, a road between them, and open ground.
 WIDTH = 24
 HEIGHT = 18
 TILE_SIZE = 32
 WORLD_NAME = "the Fixture"
 
-# Block ids. The real data numbers these in the thousands with wide gaps;
-# what matters to every reader of the maze CSVs is only that 0 means
-# "nothing here" and that ids are distinct.
 NOTHING = 0
 WALL = 1
 SECTOR_HOUSE = 100
@@ -52,9 +47,6 @@ ARENA_COUNTER = 201
 OBJECT_STOVE = 300
 SPAWN_DOORSTEP = 400
 
-# The two sectors, as rectangles (x0, y0, x1, y1), half-open on the far
-# edge. Deliberately NOT touching: the corridor of open ground between
-# them is what makes a pathfinding test meaningful.
 HOUSE_RECT = (2, 2, 8, 7)
 SHOP_RECT = (14, 9, 21, 15)
 
@@ -136,8 +128,6 @@ def build_fixture_tileset(root: Path) -> Path:
         ("game_object_maze.csv", game_object),
         ("spawning_location_maze.csv", spawning),
     ):
-        # One row of width*height comma-separated ints, which is what
-        # `read_maze_csv` expects - the upstream format, not a tidier one.
         (matrix / "maze" / filename).write_text(",".join(str(v) for v in grid), encoding="utf-8")
 
     blocks = matrix / "special_blocks"
@@ -151,8 +141,6 @@ def build_fixture_tileset(root: Path) -> Path:
         [ARENA_COUNTER, WORLD_NAME, "Fixture Shop", "counter"],
     ])
     _write_rows(blocks / "game_object_blocks.csv", [
-        # Column 2 is "<all>" in the upstream data for every row; kept so
-        # the fixture is read by the same code path, not a lenient one.
         [OBJECT_STOVE, WORLD_NAME, "<all>", "stove"],
     ])
     _write_rows(blocks / "spawning_location_blocks.csv", [

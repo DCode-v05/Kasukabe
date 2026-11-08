@@ -17,19 +17,16 @@ from __future__ import annotations
 
 import re
 
-# Match "+500k" at message start (optional leading whitespace).
 SHORTHAND_START_RE = re.compile(
     r"^\s*\+(\d+(?:\.\d+)?)\s*(k|m|b)\b",
     re.IGNORECASE,
 )
 
-# Match "+500k" at message end, optionally followed by ./!/? and whitespace.
 SHORTHAND_END_RE = re.compile(
     r"\s\+(\d+(?:\.\d+)?)\s*(k|m|b)\s*[.!?]?\s*$",
     re.IGNORECASE,
 )
 
-# Match "use 500k tokens" / "spend 2m tokens" anywhere in the text.
 VERBOSE_RE = re.compile(
     r"\b(?:use|spend)\s+(\d+(?:\.\d+)?)\s*(k|m|b)\s*tokens?\b",
     re.IGNORECASE,
@@ -62,8 +59,6 @@ def parse_token_budget(text: str) -> int | None:
             budget = parse_match(match.group(1), match.group(2))
             if budget > 0:
                 return budget
-            # Match but zero result — treat as no budget, do not fall through
-            # to other patterns (matches src: first matching pattern wins).
             return None
 
     return None

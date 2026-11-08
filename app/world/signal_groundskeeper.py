@@ -57,17 +57,10 @@ from pathlib import Path
 
 logger = logging.getLogger("kasukabe.groundskeeper")
 
-# Every five minutes. The backlog grows with ticks, not seconds, and at
-# ~2.7s per tick five minutes is roughly 110 ticks - well inside the window
-# where a request is still small enough to send.
 SWEEP_INTERVAL_S = float(os.environ.get("KASUKABE_GROUNDSKEEPER_INTERVAL_S", "300"))
 
-# Below this, a sweep is not worth the write. The prompt cost of a few
-# hundred rows is negligible and an engine mid-write does not need the
-# contention.
 MIN_ROWS_TO_SWEEP = int(os.environ.get("KASUKABE_GROUNDSKEEPER_MIN_ROWS", "200"))
 
-# The one type deleted, and the reason it is safe: see the module docstring.
 NOISE_TYPE = "system_event"
 
 
@@ -105,9 +98,6 @@ def sweep_once(home_root: str | Path) -> SweepResult:
             continue
         result.brains_seen += 1
         try:
-            # A short timeout, not the 5s default: the engine owns this file
-            # and is writing to it. If it is busy, this sweep gives up and
-            # the next one in five minutes gets it.
             conn = sqlite3.connect(brain, timeout=2.0)
             try:
                 pending = conn.execute(
@@ -125,8 +115,6 @@ def sweep_once(home_root: str | Path) -> SweepResult:
             finally:
                 conn.close()
         except sqlite3.Error as exc:
-            # Includes "database is locked" and "no such table" - both are
-            # normal for an engine that is busy or has not booted yet.
             result.errors.append(f"{home.name}: {exc}")
     return result
 
@@ -164,8 +152,6 @@ class SignalGroundskeeper:
         while True:
             await asyncio.sleep(self.interval_s)
             try:
-                # Off the event loop: thirty SQLite deletes would otherwise
-                # stall every tick dispatch for as long as they take.
                 result = await asyncio.to_thread(sweep_once, self.home_root)
             except asyncio.CancelledError:
                 raise

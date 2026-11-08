@@ -1,10 +1,3 @@
-// Agent Reasoning tab - "the research centrepiece" (DESIGN.md section 8):
-// for any decision, retrieved memories -> prompt -> reasoning text ->
-// chosen tool call -> result, with model, lane, tokens and cost. The
-// causal chain is rendered top to bottom in that exact order so "the
-// agent bought flour" and "here is why, and what it cost to think that"
-// are the same screen.
-
 import { fetchReasoningDetail, fetchReasoningList } from "./api.js";
 import { el, escapeHtml, fmtCents, fmtTick, fmtUsd, setEmpty, setError, setLoading } from "./dom.js";
 import { getSelectedAgent } from "./state.js";

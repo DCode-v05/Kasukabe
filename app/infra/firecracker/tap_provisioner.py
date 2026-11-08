@@ -96,9 +96,6 @@ class LinuxTapProvisioner:
 
     async def create_tap(self, resources: UnitResources, bridge_name: str) -> None:
         tap = resources.tap_device
-        # Idempotent: a tap left over from an unclean shutdown of the
-        # SAME unit_id (which always maps to the same tap name, see this
-        # module's docstring) must not make a fresh start() fail.
         exists = await self._ip.run(["link", "show", tap], check=False)
         if exists != 0:
             await self._ip.run(["tuntap", "add", "dev", tap, "mode", "tap"], check=True)

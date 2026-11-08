@@ -42,22 +42,16 @@ async def test_farm_to_table_chain_across_ledger_and_inventory() -> None:
     )
 
     await registry.execute(world, "farmer", "move", {"destination_location_id": "grocery-shop"})
-    # A4: nothing is bought or sold until a price is posted. The grocer
-    # posts what it pays; the farmer takes it or goes to `trade`.
     await registry.execute(world, "grocer", "post_price", {
         "item": "bread", "bid_sim": 15, "on_behalf_of_business": "grocery-1",
     })
-    in_conversation(world, "farmer", "grocer")   # a sale is agreed in conversation
+    in_conversation(world, "farmer", "grocer")
     await registry.execute(
         world, "farmer", "sell", {"buyer_id": "grocery-1", "item": "bread", "quantity": 20}
     )
 
     assert world.inventory.quantity("farmer", "bread") == 0
     assert world.inventory.quantity("grocery-1", "bread") == 20
-    # Part A: the farmer earned 300 for the bread and paid for every act that
-    # produced it. Spelled out step by step rather than as one total, because
-    # the point of the assertion is that EACH call was charged - a chain that
-    # silently stopped charging halfway would still match a lump sum.
     labour = (
         action_cost("harvest", {"crop": "wheat", "quantity": 20})
         + action_cost("move", {})
@@ -71,10 +65,7 @@ async def test_farm_to_table_chain_across_ledger_and_inventory() -> None:
     assert labour > 0, "acting must not be free"
     assert world.ledger.sim_balance("farmer") == 1_000 + 20 * 15 - labour
 
-    # ...and doing the work is how the farmer got better at it. One completed
-    # call of each discounted tool, so one repetition of each trade it feeds.
     assert world.skill_reps["farmer"] == {"farming": 1, "artisanry": 1, "cooking": 1}
-    # `move` and `sell` are nobody's trade, so they taught nothing.
     assert "farming" in world.skills["farmer"]
 
 

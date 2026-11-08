@@ -47,7 +47,6 @@ async def test_filing_a_workflow_derives_what_it_discounts() -> None:
     assert result.result["discounts_tools"] == ["look_around", "harvest"]
     assert result.result["governmental"] is False
     assert result.result["status"] == "ACTIVE"
-    # The author holds it, but only at 1: writing a procedure is not knowing it.
     assert world.skills["yara"]["working a field"] == 1
 
 
@@ -136,14 +135,12 @@ async def test_walking_the_workflow_end_to_end_is_what_earns_proficiency() -> No
     assert world.skills["yara"]["a proper harvest"] == 1
 
     await registry.execute(world, "yara", "look_around", {})
-    # Halfway: progress is open, but nothing has been earned yet.
     assert world.skill_progress["yara::a proper harvest"].next_step == 1
     assert world.skill_reps.get("yara", {}).get("a proper harvest", 0) == 0
 
     await registry.execute(world, "yara", "harvest", {"crop": "wheat", "quantity": 1})
     assert world.skill_reps["yara"]["a proper harvest"] == 1
     assert "yara::a proper harvest" not in world.skill_progress, "completed, so no longer open"
-    # And the built-in trade advanced independently, from the harvest itself.
     assert world.skill_reps["yara"]["farming"] == 1
 
 
@@ -165,8 +162,6 @@ async def test_a_junk_skill_naming_many_tools_earns_nothing_from_ordinary_work()
         },
     )
 
-    # Two harvests: real work, and it does advance the workflow - but the
-    # workflow is not finished, so the skill has earned nothing.
     await registry.execute(world, "yara", "harvest", {"crop": "wheat", "quantity": 1})
     await registry.execute(world, "yara", "harvest", {"crop": "wheat", "quantity": 1})
 
@@ -247,7 +242,6 @@ async def test_an_authored_skill_discounts_its_own_tools_once_practised() -> Non
         await registry.execute(world, "yara", "harvest", {"crop": "wheat", "quantity": 1})
 
     assert world.skill_reps["yara"]["quick gathering"] == 20
-    # Highest wins across the built-in trade and the authored skill.
     assert proficiency_for(world, "yara", "harvest") == max(
         world.skills["yara"]["farming"], world.skills["yara"]["quick gathering"]
     )
@@ -284,7 +278,7 @@ async def test_authored_skills_survive_a_real_checkpoint_round_trip() -> None:
     assert world.skill_progress["yara::a proper harvest"].next_step == 1
 
     adapter = WorldStateCheckpointAdapter(world)
-    on_disk = json.loads(json.dumps(adapter.snapshot()))  # really JSON, really back
+    on_disk = json.loads(json.dumps(adapter.snapshot()))
     world.skill_definitions.clear()
     world.skill_progress.clear()
     world.skill_reps.clear()
@@ -296,6 +290,5 @@ async def test_authored_skills_survive_a_real_checkpoint_round_trip() -> None:
     assert definition.discounts_tools == ["look_around", "harvest"]
     assert world.skill_progress["yara::a proper harvest"].next_step == 1
 
-    # And the workflow carries on from where it was, across the save.
     await registry.execute(world, "yara", "harvest", {"crop": "wheat", "quantity": 1})
     assert world.skill_reps["yara"]["a proper harvest"] == 1

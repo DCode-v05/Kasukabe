@@ -39,11 +39,6 @@ from world.retrieval_depth import format_heard_event
 from world.tools.tests.conftest import spawn_agent
 from world.tests.map_assets import needs_the_map
 
-# TOOL-27. This module needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped, and red for environment hides real regressions inside the
-# noise - which is how TOOL-09 stayed invisible for a whole cycle.
 pytestmark = needs_the_map
 
 
@@ -56,9 +51,6 @@ class _Seen:
         self.payload = payload
         self.for_agent_id = for_agent_id
         self.involves_self = involves_self
-
-
-# ── (c) a jump says it is a jump ─────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -87,9 +79,6 @@ async def test_a_real_walk_says_so(world, registry) -> None:
     assert "walked" not in result.result, (
         "a journey that has not started has not walked anywhere yet"
     )
-
-
-# ── (a) arriving wakes you ───────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -121,9 +110,6 @@ def test_only_the_arrival_wakes_not_every_tile() -> None:
     )
 
 
-# ── (b) an arrival reads as an arrival ───────────────────────────────
-
-
 def test_your_own_arrival_is_a_sentence() -> None:
     line = format_heard_event(
         _Seen({"agent_id": "a1", "location_id": "Hobbs Cafe", "arrived": True}, "a1"),
@@ -151,7 +137,7 @@ def test_mid_walk_you_are_told_you_are_still_walking() -> None:
         ),
         {"a1": "Marta"},
     )
-    assert "still" not in line  # it is not a repeat of the goal
+    assert "still" not in line
     assert "passing sector:900002" in line
 
 
@@ -160,8 +146,6 @@ def test_somebody_elses_arrival_names_them() -> None:
         _Seen({"agent_id": "a2", "location_id": "Hobbs Cafe", "arrived": True}, "a1"),
         {"a2": "Arjun Holloway"},
     )
-    # `_named` carries the id beside the name, so `say` has something to
-    # address - the same shape every other rendered event uses.
     assert "Arjun Holloway (a2) arrived at Hobbs Cafe." in line
 
 

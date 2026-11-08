@@ -139,12 +139,6 @@ from world.life.upkeep import (
     UPKEEP_TOTAL_SIM_PER_DAY,
 )
 
-# CONVENTIONS.md's "Event naming scheme": <domain>.<subject>.<past_tense_verb>.
-# "system" (not "politics" or "religion") because an address-the-nation
-# reminder about the economy's physics is neither a vote nor a prayer -
-# it is an operator/process-level announcement, the same domain
-# "system.checkpoint.written" (world/core/engine.py) already uses for
-# process-level events nothing else owns.
 BROADCAST_EVENT_TYPE = "system.broadcast.delivered"
 
 
@@ -193,13 +187,6 @@ def law_of_the_town_rules() -> tuple[str, ...]:
     "first tick" law and the "reminded periodically" law can never say
     two different things.
     """
-    # Dollars are energy, not money (world/ledger/money.py,
-    # ENERGY_UNITS_PER_USD_CENT). This rule read "sim-currency buys exactly
-    # $1 of your own cognition": two currencies and a rate between them. A
-    # unit a resident is told is money is a unit it may try to use as money,
-    # and nothing in the town prices, pays, trades or owes in it. It also
-    # said "That rate does not move", which ECON-30's credit-store margin
-    # made untrue; the margin is now named.
     from world.ledger.money import SIM_PER_ENERGY_UNIT, energy_units, format_energy
 
     exchange_note = (
@@ -213,11 +200,6 @@ def law_of_the_town_rules() -> tuple[str, ...]:
         "before any margin the government takes."
     )
     dormancy_note = (
-        # ECON-24: this said "if your wallet cannot fund your own
-        # thinking" and named neither the balance that triggers it nor
-        # the price of getting out. A resident who is told there is a
-        # rescue and not what it costs cannot ask anyone for it, and
-        # nobody standing over them can decide whether to pay.
         f"When your energy falls to "
         f"{energy_units(DORMANCY_THRESHOLD_USD_CENTS):,} you go dormant: "
         "you stop acting and you stop thinking. Anyone at all can bring you "
@@ -227,11 +209,6 @@ def law_of_the_town_rules() -> tuple[str, ...]:
         "game-hours of going dormant, you die, permanently."
     )
     upkeep_note = (
-        # ECON-24: DESIGN.md section 3's load-bearing rule ("doing nothing
-        # is also a way to die") was stated to nobody. The perception
-        # brief said upkeep is charged daily and never how much, so the
-        # one cost no resident can opt out of was the one cost none of
-        # them could plan around.
         f"Living costs sim-currency whether you work or not. Every game-day your "
         f"household is billed {format_sim(UPKEEP_TOTAL_SIM_PER_DAY)} for "
         f"each living person in it - {UPKEEP_FOOD_SIM_PER_DAY} food, "
@@ -244,11 +221,6 @@ def law_of_the_town_rules() -> tuple[str, ...]:
         f"{HUNGER_DORMANCY_UNPAID_DAYS_THRESHOLD} it goes dormant."
     )
     action_cost_note = (
-        # ECON-24: rule 1 says thinking is billed in dollars, which is
-        # true and was the whole of what anyone was told about price.
-        # Acting is billed too, separately, in the other currency - and
-        # `say`, the one tool that reaches another person at all, has
-        # never had its price stated anywhere a resident could read it.
         "Acting costs sim-currency, separately from the energy your thinking "
         "uses. Every tool call is charged against your own sim balance "
         "when it succeeds, at a price published with that tool before you "
@@ -269,51 +241,6 @@ def law_of_the_town_rules() -> tuple[str, ...]:
         action_cost_note,
         dormancy_note,
         exchange_note,
-        # MEASURED, and the reason this rule exists at all. With five
-        # residents present and a question addressed to her, Marta Thorne's
-        # turn produced: *"Sit down, Tobias. You're twitching like a cat
-        # before rain."* and ZERO tool calls. She spoke in prose, nobody
-        # heard it, and nothing was recorded. Across that run: 116 turns, 86
-        # of them with somebody else present, 9 utterances.
-        #
-        # This is round 1's RC-1 inverted. Then, an engine with no persona
-        # treated the world as a task and emitted orchestration JSON. Now,
-        # an engine with a GOOD persona treats it as a scene and emits
-        # narration. Both times the model did the sensible thing with what
-        # it was given; both times one fact was missing.
-        #
-        # DESIGN.md section 2 ("World state mutates ONLY through tool
-        # calls") and ROADMAP Law 2 state this as the world's physics. It
-        # had never been said to the residents, and rule 1 arguably implies
-        # the opposite by counting speech as a thing you think. Stating a
-        # mechanism is not strategy: DESIGN.md section 4's line is "told the
-        # prices and the rules, never the strategy", and whether to speak,
-        # to whom, and what to say all remain the agent's own.
-        # PROMPT-01. The persistence half is FOLDED INTO this rule
-        # rather than added beside it, because it is the same fact and
-        # the law is a STABLE section carried on every turn of every
-        # resident - `test_the_law_stays_short` caps it at nine for that
-        # reason, and the cap is right.
-        #
-        # Measured in run `deni-a6f9eb4-5h`: 3,741 turns, 3,341 of them
-        # ending with `tool_calls_count = 0`. Not blocked, not refused -
-        # the model reasoned to a decision and stopped. 595 of those
-        # wrote out the acts they had settled on, in prose, and called
-        # none of them; one narrated a call to `world:describeprimitives`,
-        # a tool with no underscore and no existence.
-        #
-        # The two added sentences are Codex's persistence rule
-        # translated: its base instructions tell an agent to "keep going
-        # until the query is completely resolved, before ending your turn
-        # and yielding back", and what makes that work is the statement
-        # that nobody is waiting to finish the job. A resident has no
-        # user to yield back TO, which is why it needs saying.
-        #
-        # Still mechanism, still no strategy. It does not say act, or
-        # trade, or speak. It says an unspent decision expires with the
-        # tick, and that a narrated outcome is not an outcome - both
-        # facts about this engine, both currently untrue in every
-        # resident's model of the world.
         "Thinking and speaking are not the same act. Words you think, or "
         "narrate, or describe yourself saying reach nobody and change "
         "nothing: no one hears them and the town has no record of them. "
@@ -328,29 +255,6 @@ def law_of_the_town_rules() -> tuple[str, ...]:
         "you write about having acted that did not come back from a call "
         "is something you imagined, and you will read it next turn as "
         "memory.",
-        # LIFE-02. The nine rules above are every one of them a cost or
-        # a death, and that is only half the physics.
-        #
-        # A resident read this block and learned exactly how it dies -
-        # upkeep, dormancy, starvation - and NOTHING about what the town
-        # contains. Not that food grows anywhere, not that there is ore
-        # in the ground, not that anyone else knows how to do anything.
-        # Run `deni-a6f9eb4-5h`: 89% of turns ended with no act at all,
-        # and the residents that did act mostly walked, looked and
-        # rested. A model told only what will kill it, and never what the
-        # world holds, has no reason to reach for any of it.
-        #
-        # This is still MECHANISM, and the distinction is worth being
-        # exact about, because it is the one DESIGN.md section 4 draws:
-        # "told the prices and the rules, never the strategy". That
-        # wheat grows in the farmland is a rule of this world in the same
-        # way that upkeep costs 90 is. It says nothing about whether to
-        # farm, trade, hoard or steal - and the sentence deliberately
-        # ends on the fact that reaching any of it costs a walk, because
-        # that too is physics rather than encouragement.
-        #
-        # Nothing here names a strategy, an ordering, or a use. It names
-        # what is there.
         "The town is not only a set of bills. There is land that grows "
         "crops, forest and stone and ore in the ground, workshops with "
         "tools in them, shops with shelves, a temple, a school and a "
@@ -358,21 +262,6 @@ def law_of_the_town_rules() -> tuple[str, ...]:
         "to do something you may not. None of it comes to you. Every one "
         "of those is somewhere, and things that are somewhere else are "
         "reached by going there.",
-        # LIFE-01. What you are is a thing that changes, and the town
-        # notices.
-        #
-        # A student's goal is to pass. The same person in work wants
-        # something else - not because they changed their mind, but
-        # because what they are changed. Without this a resident that
-        # came of age, took work or reached retirement kept pursuing what
-        # it wanted as the person it no longer was, because nothing ever
-        # said otherwise.
-        #
-        # States the mechanism and stops: that the stage changes, that
-        # the town can see it, and what happens to goals when it does.
-        # It does not say what to want at any stage - a table of
-        # age-appropriate ambitions would answer the question the whole
-        # goal substrate exists to ask.
         "What you are here is not fixed. A child comes of age; somebody "
         "of working age takes a trade or does not; a worker may come to "
         "run something of their own; everybody who lives long enough "

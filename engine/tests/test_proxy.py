@@ -232,7 +232,7 @@ class TestProxyServer:
             await asyncio.wait_for(reader.read(4096), timeout=5)
             writer.close()
 
-            await asyncio.sleep(0.1)  # let audit log flush
+            await asyncio.sleep(0.1)
             assert len(proxy.audit_log) == 1
             assert proxy.audit_log[0].host == "blocked.com"
             assert proxy.audit_log[0].action == "deny"
@@ -274,8 +274,6 @@ class TestProxyServer:
             await writer.drain()
 
             response = await asyncio.wait_for(reader.readline(), timeout=5)
-            # Should get 200 (tunnel established) or 502 (can't connect upstream — that's OK,
-            # the point is it wasn't 403)
             assert b"200" in response or b"502" in response
 
             writer.close()
@@ -286,9 +284,6 @@ class TestProxyServer:
         assert audit_entries[0].action == "allow"
 
 
-# The CONNECT the child process issues. It blocks on the response, which keeps
-# its socket open while the proxy resolves the peer: the same timing the real
-# sandbox produces.
 CONNECT_CLIENT = """
 import socket, sys
 s = socket.create_connection(("127.0.0.1", int(sys.argv[1])), timeout=10)
@@ -322,8 +317,6 @@ class TestPerBinaryPolicy:
             stdout=asyncio.subprocess.PIPE,
         )
         try:
-            # Read the exe link only once the child is running its own code:
-            # a process still mid-exec can report the launcher it came from.
             assert probe.stdout is not None
             await asyncio.wait_for(probe.stdout.readline(), timeout=30)
             return Path(os.readlink(f"/proc/{probe.pid}/exe")).name
@@ -360,7 +353,6 @@ class TestPerBinaryPolicy:
         finally:
             await proxy.stop()
 
-        # The rule only reaches this connection if the caller was identified.
         assert "403" in status
         assert len(proxy.audit_log) == 1
         entry = proxy.audit_log[0]
@@ -384,8 +376,6 @@ class TestPerBinaryPolicy:
         finally:
             await proxy.stop()
 
-        # The caller was identified, so a rule for a different binary must not
-        # rescue it from the default deny.
         assert "403" in status
         assert proxy.audit_log[0].binary == binary
         assert proxy.audit_log[0].rule_matched == "default"

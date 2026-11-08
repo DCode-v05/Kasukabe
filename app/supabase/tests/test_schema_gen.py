@@ -51,9 +51,6 @@ def checked_in_schema() -> str:
     return SCHEMA_PATH.read_text(encoding="utf-8")
 
 
-# ── the drift test itself ────────────────────────────────────────────
-
-
 def test_llm_calls_generated_ddl_matches_checked_in_schema() -> None:
     generated = table_columns(schema_gen.llm_calls_ddl(), "llm_calls")
     checked_in = table_columns(checked_in_schema(), "llm_calls")
@@ -117,11 +114,8 @@ def test_table_info_hides_generated_columns_but_xinfo_and_select_star_do_not() -
 
     assert "game_day" not in info_columns
     assert "game_day" in xinfo_columns
-    assert len(star_row) == 2  # tick, game_day - select * sees it regardless
+    assert len(star_row) == 2
     conn.close()
-
-
-# ── SQLITE_JSON_COLUMNS / SQLITE_BOOL_COLUMNS agree with schema_gen ────
 
 
 def test_llm_calls_json_columns_match_schema_gen() -> None:
@@ -136,9 +130,6 @@ def test_events_has_no_bool_columns_and_payload_is_the_only_json_column() -> Non
     assert schema_gen.json_columns(BrokerEvent) == {"payload"}
     assert schema_gen.bool_columns(BrokerEvent) == set()
     assert SQLITE_JSON_COLUMNS["events"] == {"payload"}
-
-
-# ── type-mapping unit tests ─────────────────────────────────────────
 
 
 def test_is_optional_unwraps_pep604_union() -> None:
@@ -228,16 +219,6 @@ def test_generate_create_table_end_to_end_on_a_small_dataclass() -> None:
     conn.close()
 
 
-# ── prove it against the real thing: both real writers, one real table ─
-# TASK spec: "NEVER trust a mocked seam. Prove every cross-module
-# contract against the real thing." This inserts a row shaped exactly
-# like broker/trace.py's own row-builders produce (not a hand-typed
-# guess at their shape) and a row shaped exactly like world/wiring.py's
-# TraceStore.record_event produces (read directly from that file, quoted
-# in this test's comment below) into the SAME real SQLite table, proving
-# the schema serves both real writers rather than one assumed contract.
-
-
 @pytest.mark.asyncio
 async def test_real_tracerecord_row_inserts_into_a_real_llm_calls_table() -> None:
     from supabase.config import SupabaseConfig
@@ -302,10 +283,6 @@ async def test_both_real_event_writers_insert_into_the_same_events_table() -> No
             payload={"input_tokens": 42, "output_tokens": 17},
             created_at=1732000000.5,
         )
-        # Exactly world/wiring.py's TraceStore.record_event row shape:
-        # `{"type": event.type, "tick": event.tick, "agent_id": agent_id,
-        # "payload": event.payload}` - no "id", no "model", no
-        # "created_at" (all three deliberately omitted, not None).
         world_row = {
             "type": "agent.moved",
             "tick": 42,
@@ -321,7 +298,7 @@ async def test_both_real_event_writers_insert_into_the_same_events_table() -> No
         assert broker_rows[0]["domain"] == "broker"
         assert broker_rows[0]["tick"] is None
 
-        assert isinstance(world_rows[0]["id"], str)  # auto-generated, not the broker's
+        assert isinstance(world_rows[0]["id"], str)
         assert world_rows[0]["model"] is None
         assert world_rows[0]["domain"] == "agent"
         assert world_rows[0]["tick"] == 42

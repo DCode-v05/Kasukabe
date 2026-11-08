@@ -49,8 +49,6 @@ def test_only_additive_safe_columns_are_offered_for_migration():
     migrations, not something to do silently at boot."""
     columns = schema_columns()
 
-    # `amount integer not null check (amount > 0)` is in the DDL and must
-    # not be in the additive set.
     assert "amount" not in columns["transactions"]
     assert "id" not in columns["transactions"]
 
@@ -87,9 +85,6 @@ def test_a_column_added_to_the_schema_reaches_an_older_database(tmp_path):
     assert "counterparty_id" in live, (
         "a column added to the schema still cannot reach an existing database"
     )
-    # And the row that was already there is untouched. Additive means
-    # additive: a destructive repair is repair_live_schema.py's job, and
-    # it refuses to touch a table with rows in it.
     assert client.conn.execute("select count(*) from transactions").fetchone()[0] == 1
 
 
@@ -97,9 +92,6 @@ def test_a_table_added_to_the_schema_also_reaches_an_older_database(tmp_path):
     """The same guard hid whole new TABLES, not only columns."""
     path = tmp_path / "kasukabe.db"
     old = sqlite3.connect(path)
-    # Its NOT NULL columns, because those were in the original schema and
-    # a real old database has them. Asserting against a shape that never
-    # existed would be testing a fiction.
     old.execute(
         "create table transactions ("
         "  id integer primary key autoincrement,"

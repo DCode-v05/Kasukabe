@@ -37,11 +37,6 @@ from src.sim.config import SIM_MAX_RESPONSE_TOKENS, sim_env
 def profile():
     from src.sim.config import SimProfile
 
-    # `home_root`, not `september_home`: SEPTEMBER_HOME is derived as
-    # <home_root>/<agent_id> because each engine must own its own SQLite
-    # file. This helper named a field SimProfile has never had, so the
-    # whole module failed to import and took the engine's test collection
-    # down with it.
     return SimProfile(
         agent_id="n09",
         home_root="/tmp/kasukabe-test",

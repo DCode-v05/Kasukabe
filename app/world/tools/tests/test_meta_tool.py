@@ -38,7 +38,7 @@ async def test_define_tool_files_a_pending_application_and_charges_fee(world, re
     assert result.result["application_id"]
     assert world.ledger.sim_balance("inventor") == balance_before - charter.patent_filing_fee_sim
     assert world.custom_tools["commute"].approved is False
-    assert registry.get("commute") is None  # not callable until approved
+    assert registry.get("commute") is None
 
 
 @pytest.mark.asyncio
@@ -199,15 +199,12 @@ async def test_a_composite_tool_moves_whoever_called_it(world, registry) -> None
         world, "minister1", "approve_patent", {"application_id": filed.result["application_id"]}
     )
 
-    # A stranger cannot call it at all. Before C1 this call succeeded and
-    # teleported the inventor out of the patent office.
     await spawn_agent(world, "caller", "cafe")
     with pytest.raises(ToolNotFoundError):
         await registry.execute(world, "caller", "commute5", {"dest": "temple"})
     assert world.location_of("inventor") == LOCATION_PATENT_OFFICE
     assert world.location_of("caller") == "cafe"
 
-    # Licensed, it works, and it moves the LICENSEE.
     await move_agent(world, "caller", LOCATION_PATENT_OFFICE)
     await registry.execute(world, "inventor", "license_tool", {
         "tool_name": "commute5", "licensee_id": "caller", "term_days": 1,

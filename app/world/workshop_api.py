@@ -44,9 +44,6 @@ from world.charter.models import AmendmentStatus
 from world.life.models import Genesis
 from world.tools.state import WorldState
 
-# A game-day in ticks. Used only to turn "holders since created_tick" into a
-# per-day spread rate, which is what makes "spreading fastest" a measurement
-# rather than a guess at which row looks busiest.
 TICKS_PER_DAY = 144
 
 
@@ -62,9 +59,6 @@ def name_map(genesis: Genesis) -> dict[str, str]:
 
 async def add_cors_headers(response: Response) -> None:
     response.headers["Access-Control-Allow-Origin"] = "*"
-
-
-# ── views ────────────────────────────────────────────────────────────────
 
 
 class StepView(BaseModel):
@@ -93,9 +87,6 @@ class InventedToolView(BaseModel):
     pending_patent: bool
     uses: int
     distinct_users: int
-    # False when nobody but the inventor has ever called it. The spec's
-    # warning mark, and deliberately not phrased as an error: a filing the
-    # town ignored is a finding about the town, not a bug in the tool.
     adopted: bool
 
 
@@ -118,9 +109,6 @@ class AuthoredSkillView(BaseModel):
     average_proficiency: float
     completions: int
     followers_now: int
-    # Holders per game-day since it was filed. The "spreading fastest" mark
-    # is the maximum of this across skills, computed by the caller so the
-    # rule is visible in one place rather than baked into a boolean here.
     spread_per_day: float
 
 
@@ -138,9 +126,6 @@ class CouncilItemView(BaseModel):
     author_name: str | None
     created_tick: int
     steps: list[StepView]
-    # Everything below is None when a governmental workflow exists but was
-    # never bound to an amendment - possible for a skill filed ACTIVE before
-    # the council route existed, and shown as such rather than invented.
     proposal_id: str | None = None
     title: str | None = None
     rationale: str | None = None
@@ -164,9 +149,6 @@ class CouncilView(BaseModel):
     before_council: list[CouncilItemView]
     in_force: list[CouncilItemView]
     refused: list[CouncilItemView]
-
-
-# ── builders ─────────────────────────────────────────────────────────────
 
 
 def _steps(definition: Any) -> list[StepView]:
@@ -294,9 +276,6 @@ def _council_item(
     return item
 
 
-# ── router ───────────────────────────────────────────────────────────────
-
-
 def build_workshop_router(get_deps: Callable[[], WorkshopDeps]) -> APIRouter:
     router = APIRouter(tags=["workshop"], dependencies=[Depends(add_cors_headers)])
 
@@ -344,9 +323,6 @@ def build_workshop_router(get_deps: Callable[[], WorkshopDeps]) -> APIRouter:
             )
             item = _council_item(definition, names, proposal, seats, required)
             if proposal is None:
-                # Governmental, but never bound to an amendment. Followable
-                # now, so it belongs with the things in force rather than
-                # being dropped from the view entirely.
                 in_force.append(item)
             elif proposal.status in (
                 AmendmentStatus.PROPOSED,

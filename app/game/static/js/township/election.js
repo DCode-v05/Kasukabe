@@ -1,19 +1,3 @@
-// The election, on the map and in its own book.
-//
-// world/ has served /voting/elections on the embedded host all along and the
-// township page never asked for it: a run could hold a whole election - a
-// candidacy, a campaign, a vote, a tally - and the only sign on screen was
-// sashes appearing on the winners afterwards. This reads it every few
-// seconds and draws two things:
-//
-//   * a strip on the map (#electionStrip): the phase, how many are standing
-//     or how many ballots are in, and the next deadline - visible whichever
-//     book is open, which is what a recording of the run needs;
-//   * the Election book (#electionBody): the schedule, every candidate with
-//     their running total, and the result once it is counted.
-//
-// Names and totals only. Who voted for whom stays off this page, as it stays
-// off the town's own event feed (the game server drops `ballots`).
 (function () {
   'use strict';
 
@@ -108,9 +92,6 @@
       (r.regime_changed ? ' <span class="el-change">A new government.</span>' : '') + '</div>';
   }
 
-  // The counted election and the next one are different elections: the next
-  // is scheduled the moment a vote is counted. Show the result first, with
-  // its candidates and final totals, then the next election underneath.
   function bookHtml(d) {
     var r = d.latest_result;
     var e = d.current;
@@ -146,7 +127,6 @@
       (e.ballots_cast || 0) + ' ballot' + ((e.ballots_cast || 0) === 1 ? '' : 's') + ' cast</span></h4>';
     html += candidatesHtml(e);
     if (e.result) html += resultHtml(e);
-    // Not the one on screen, and not the result already shown above it.
     var shownResult = d.latest_result && d.latest_result.election_id;
     var past = (d.elections || []).filter(function (x) {
       return x.election_id !== e.election_id && x.election_id !== shownResult;
@@ -163,8 +143,6 @@
   function stripHtml(d) {
     var r = d.latest_result;
     var e = d.current;
-    // For a game-day after a count, the strip says who won - the next
-    // election's empty candidacy is not the news.
     if (r && r.result && d.tick != null && d.tick - r.result.tallied_tick < TICKS_PER_DAY) {
       return '<span class="es-icon">🗳</span><span class="es-body"><b>Elected</b> Prime Minister ' +
         who(r.result.prime_minister) +
@@ -188,14 +166,11 @@
   }
 
   var last = '';
-  var good = null;   // the last answer the world actually gave
+  var good = null;
   function render(d) {
     var key = JSON.stringify(d);
-    if (key === last) return;       // nothing changed: do not rebuild
+    if (key === last) return;
     last = key;
-    // When the world stops answering - which is how every run ends - keep
-    // showing what it last said, marked as such. A blank panel at the end of
-    // a recording would hide the one thing the run was for: the result.
     var stale = d.available === false;
     if (!stale) good = d;
     var shown = stale ? good : d;
@@ -220,7 +195,7 @@
     fetch('/api/town/election', { cache: 'no-store' })
       .then(function (r) { return r.json(); })
       .then(render)
-      .catch(function () { /* the next poll tries again */ })
+      .catch(function () {  })
       .then(function () { setTimeout(poll, POLL_MS); });
   }
 

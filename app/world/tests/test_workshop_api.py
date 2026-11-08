@@ -24,11 +24,6 @@ from world.wiring import WorldConfig, build_world_server
 from world.workshop_api import WorkshopDeps, build_workshop_router
 from world.tests.map_assets import needs_the_map
 
-# TOOL-27. This module needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped, and red for environment hides real regressions inside the
-# noise - which is how TOOL-09 stayed invisible for a whole cycle.
 pytestmark = needs_the_map
 
 
@@ -58,9 +53,6 @@ def a_workflow(name: str, author: str, *, governmental: bool = False, tick: int 
     )
 
 
-# -- the workshop (E.3) ---------------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_an_invented_tool_reports_who_filed_it_and_when():
     server = await build_world_server(WorldConfig())
@@ -77,7 +69,6 @@ async def test_an_invented_tool_reports_who_filed_it_and_when():
     assert [t["name"] for t in tools] == ["rope_making"]
     assert tools[0]["created_tick"] == 412
     assert tools[0]["creator_agent_id"] == who
-    # Resolved through genesis, because WorldState carries no display name.
     assert tools[0]["creator_name"]
 
 
@@ -108,11 +99,9 @@ async def test_a_tool_only_its_inventor_ever_called_is_not_adopted():
     ))
 
     by_name = {t["name"]: t for t in make_client(server).get("/workshop").json()["tools"]}
-    # Used three times, by one agent, who invented it: nobody took it up.
     assert by_name["dry_curing"]["uses"] == 3
     assert by_name["dry_curing"]["distinct_users"] == 1
     assert by_name["dry_curing"]["adopted"] is False
-    # Somebody other than the inventor reached for it: that is adoption.
     assert by_name["rope_making"]["adopted"] is True
 
 
@@ -133,7 +122,7 @@ async def test_completions_come_from_reps_not_from_proficiency():
     skill = make_client(server).get("/workshop").json()["skills"][0]
     assert skill["holders"] == 2
     assert skill["average_proficiency"] == 41.0
-    assert skill["completions"] == 39      # 34 + 5, not 61 + 21
+    assert skill["completions"] == 39
     assert [s["kind"] for s in skill["steps"]] == ["check", "tool", "tool"]
 
 
@@ -147,9 +136,6 @@ async def test_a_check_step_survives_the_wire_without_a_ref():
     server.world.skill_definitions["limbing"] = a_workflow("limbing", who)
     steps = make_client(server).get("/workshop").json()["skills"][0]["steps"]
     assert steps[0]["ref"] is None and steps[0]["note"] == "is the saw sharp?"
-
-
-# -- the council (E.4) ----------------------------------------------------
 
 
 @pytest.mark.asyncio
@@ -230,9 +216,6 @@ async def test_a_governmental_workflow_with_no_amendment_is_shown_not_dropped():
     council = make_client(server).get("/council").json()
     assert [i["skill"] for i in council["in_force"]] == ["old_rite"]
     assert council["in_force"][0]["status"] is None
-
-
-# -- the agent row carries it (E.1/E.2) -----------------------------------
 
 
 @pytest.mark.asyncio

@@ -26,11 +26,6 @@ from world.ledger.money import TOTAL_USD_CENTS
 from world.wiring import WorldConfig, build_world_server
 from world.tests.map_assets import needs_the_map
 
-# TOOL-27. This module needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped, and red for environment hides real regressions inside the
-# noise - which is how TOOL-09 stayed invisible for a whole cycle.
 pytestmark = needs_the_map
 
 
@@ -38,26 +33,12 @@ pytestmark = needs_the_map
 async def test_world_server_boots_with_full_genesis_population() -> None:
     server = await build_world_server(WorldConfig())
     try:
-        # The town is the generated population PLUS the institution
-        # roster (hospital, school, police, fire...). Read from the
-        # genesis the server actually loaded rather than pinned to a
-        # literal, so restaffing the town does not silently fail here.
         assert len(server.world.agents) == server.genesis.population
         assert len(server.world.households) == len(server.genesis.households)
-        # Every genesis agent is enrolled with the scheduler and placed
-        # somewhere on the map (tick_engine.register_agent's two jobs).
         assert server.tick_engine.scheduler.agent_count == server.genesis.population
         for agent_id in server.world.agents:
             assert server.tick_engine.locations.location_of(agent_id) is not None
             assert server.world.locations.location_of(agent_id) is not None
-        # The 4 owned genesis businesses each have a funded ledger account;
-        # the 10 control businesses are exposed read-only, not ledger accounts.
-        # Counted from the cast file rather than pinned at 4. The number moved
-        # when four bakers, four innkeepers and five shopkeepers were finally
-        # given somewhere to work - see
-        # `test_a_trade_has_somewhere_to_practise_it`. A magic number here
-        # would have to be edited every time the town gains a trade, and says
-        # nothing about whether the right businesses were seeded.
         import json as _json
         from pathlib import Path as _Path
         _cast = _json.loads(
@@ -90,20 +71,11 @@ async def test_ten_ticks_flow_events_and_hold_the_ledger_invariant() -> None:
 
         for _ in range(10):
             result = await server.advance_tick()
-            # Mock agent turns (app/CONVENTIONS.md: never a real LLM call
-            # in a test): every due agent's "decision" is a scripted move
-            # tool call instead of an inference call, then reported back
-            # via mark_agent_decided() exactly like a real agent-runtime
-            # layer would - core/engine.py's own documented caller
-            # contract for TickEngine.tick()'s due_agents.
             for agent_id in result.due_agents:
                 await server.execute_tool(agent_id, "move", {"destination_location_id": "town_hall"})
                 server.mark_agent_decided(agent_id)
 
         assert server.world.current_tick == 10
-        # Real events actually flowed on the shared bus: one
-        # world.tick.advanced per tick (deterministic) plus real
-        # agent.moved events from the mock agents' scripted tool calls.
         assert tick_advanced_count == 10
         assert "world.tick.advanced" in seen_types
         assert "agent.moved" in seen_types
@@ -180,10 +152,6 @@ async def test_a_real_tool_call_moves_state_and_publishes_events() -> None:
         result = await server.execute_tool(agent_id, "move", {"destination_location_id": "town_hall"})
 
         assert result.result["location_id"] == "town_hall"
-        # TOOL-05: `town_hall` has no map entry point, so this is the
-        # opaque jump - and the result now says so rather than looking
-        # identical to a walk. Asserted on the key rather than the whole
-        # dict so the shape can grow without this test deciding it.
         assert result.result["walked"] is False
         assert "no route on the map" in result.result["note"]
         assert server.world.location_of(agent_id) == "town_hall"

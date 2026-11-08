@@ -55,7 +55,6 @@ SANDBOX_TOOLS = [
 ]
 
 PER_TASK_TIMEOUT_S = 180
-# Optional: run a subset, e.g. EVAL_ONLY=fib30,sum_1_100
 ONLY = {t.strip() for t in os.environ.get("EVAL_ONLY", "").split(",") if t.strip()}
 
 
@@ -71,12 +70,11 @@ async def auto_approve(params):
     from src.sandbox.permissions import parse_ask_request
 
     q, choices, suggested = parse_ask_request(params)
-    if bool(choices) or bool(suggested):  # a permission prompt
+    if bool(choices) or bool(suggested):
         return {"response": "allow_always", "feedback": "", "content_blocks": []}
-    return "yes"  # a plain ask_user confirm
+    return "yes"
 
 
-# Open-ended tasks: each REQUIRES the sandbox, but the agent decides how.
 TASKS = [
     {
         "id": "fib30",
@@ -100,7 +98,7 @@ TASKS = [
     {
         "id": "primes12",
         "prompt": "Use code to find the first 12 prime numbers, then list them for me.",
-        "expect_all": ["31", "37"],  # 11th=31, 12th=37
+        "expect_all": ["31", "37"],
         "core": False,
     },
     {
@@ -111,8 +109,8 @@ TASKS = [
             "then check how many lines it has written, and finally kill it. "
             "Report the line count and confirm the process is stopped."
         ),
-        "expect_all": [],  # soft: judged on tool usage, not text
-        "require_tools": ["process"],  # must use the process-management tool
+        "expect_all": [],
+        "require_tools": ["process"],
         "core": False,
     },
     {
@@ -131,8 +129,8 @@ TASKS = [
 def eval_settings() -> Settings:
     """Engine settings that route LLM calls straight to Anthropic (no citadel)."""
     return Settings(
-        cdt_url="https://api.anthropic.com",  # engine posts /v1/messages here
-        cdt_key=API_KEY,  # sent as x-api-key + Bearer
+        cdt_url="https://api.anthropic.com",
+        cdt_key=API_KEY,
         llm_model=AGENT_MODEL,
         light_model=LIGHT_MODEL,
         sqlite_db_path=":memory:",
@@ -189,7 +187,6 @@ async def run_eval() -> dict:
         assert report.subsystems.get("sandbox") is True, "sandbox subsystem failed to boot"
         assert state.sandbox_session is not None, "no sandbox session provisioned"
         assert state.coordinator is not None, "no coordinator"
-        # Headless auto-approval so the agent can use the sandbox at will.
         state.coordinator.ask_user_callback = auto_approve
         instrument(state, calls)
 
@@ -293,13 +290,10 @@ async def test_agent_uses_sandbox_at_will():
     data = await run_eval()
     score = print_scorecard(data)
 
-    # The agent must actually reach for the sandbox, and it must run cleanly.
     assert score["total_calls"] > 0, "agent never used the sandbox"
     assert score["infra_errors"] == 0, "sandbox refused to execute inside a bwrap container"
-    # Deterministic core tasks must succeed (easy for the model; proves usefulness).
     for tid, ok in score["core_results"].items():
         assert ok, f"core task failed: {tid}"
-    # Overall bar across the open-ended suite.
     assert score["passed"] / score["total"] >= 0.6, "too many sandbox tasks failed"
 
 

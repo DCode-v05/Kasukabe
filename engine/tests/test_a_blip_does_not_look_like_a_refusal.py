@@ -125,9 +125,6 @@ async def test_a_healthy_call_is_posted_exactly_once():
     assert transport.calls == 1
 
 
-# ── WIRE-02: the failure mode now has an instrument ──────────────────
-
-
 class TestTheLinkToTheWorldIsCounted:
     """`WIRE-02`. 97 calls died in transport in run `deni-a6f9eb4-5h`
     and **nothing in the running system knew**.
@@ -208,21 +205,6 @@ class TestTheLinkToTheWorldIsCounted:
             "world_transport_recovered",
         ):
             assert field in source, f"/health does not report {field}"
-
-
-# ── a read timeout is a third case, and the first two answers were wrong ──
-#
-# The module docstring above says a transport failure is retried "because an
-# `httpx.HTTPError` means no response was received at all and the request
-# provably did not land". That holds for a CONNECT failure and not for a READ
-# timeout: the request was sent and accepted, and only the answer is missing,
-# so the act may already have happened.
-#
-# election30 is the evidence. Its ~1,800 lost calls logged `ReadTimeout`, and
-# every one was re-posted up to twice against a world that may already have
-# done the thing, then reported to the resident as "Nothing was done". The
-# queue that produced those timeouts is fixed in `app/world/tools/state.py`;
-# these are about telling the truth when one happens anyway.
 
 
 def _read_timeout() -> httpx.ReadTimeout:

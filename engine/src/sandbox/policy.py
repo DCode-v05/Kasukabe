@@ -19,9 +19,6 @@ logger = logging.getLogger(__name__)
 DEFAULT_POLICY_PATH = Path(__file__).parent / "default-policy.yaml"
 
 
-# ── Policy data types ─────────────────────────────────────────
-
-
 @dataclass
 class BinaryPolicy:
     """Policy for a single binary inside the sandbox."""
@@ -46,10 +43,10 @@ class FilesystemRule:
 class NetworkRule:
     """A per-binary network access rule for the proxy."""
 
-    binary: str  # binary name or "*" for any
-    host_pattern: str  # glob: "*.github.com", "api.openai.com", "*"
+    binary: str
+    host_pattern: str
     methods: list[str] = field(default_factory=lambda: ["*"])
-    action: str = "allow"  # "allow" | "deny" | "inject_credentials"
+    action: str = "allow"
     credential_ref: str = ""
 
 
@@ -102,7 +99,6 @@ class SandboxPolicy:
         policy.seccomp_enabled = data.get("seccomp_enabled", True)
         policy.landlock_enabled = data.get("landlock_enabled", True)
 
-        # Parse binaries
         for name, conf in data.get("binaries", {}).items():
             if not name or not isinstance(name, str):
                 continue
@@ -114,7 +110,6 @@ class SandboxPolicy:
                 bp.stdin_only = conf.get("stdin_only", False)
             policy.binaries[name] = bp
 
-        # Parse filesystem rules
         for rule_data in data.get("filesystem", []):
             if not isinstance(rule_data, dict):
                 continue
@@ -130,7 +125,6 @@ class SandboxPolicy:
                 )
             )
 
-        # Parse proxy policy
         proxy_data = data.get("proxy", {})
         if isinstance(proxy_data, dict):
             policy.proxy = ProxyPolicy(
@@ -197,9 +191,6 @@ class SandboxPolicy:
             "find": BinaryPolicy(
                 "find", max_positional=5, denied_flags={"-exec", "-execdir", "-delete"}
             ),
-            # `sed` has no entry here. It is gated at permission-time by the
-            # dedicated validator in src/sandbox/sed_validation.py (step 4.5
-            # of check_permission), not by the executor-level safe-bin check.
             "awk": BinaryPolicy("awk", stdin_only=True, max_positional=1, denied_flags={"-f"}),
         }
         policy.binaries = bins
@@ -251,10 +242,9 @@ def merge_policies(base: SandboxPolicy, custom: SandboxPolicy) -> SandboxPolicy:
     merged.seccomp_enabled = base.seccomp_enabled and custom.seccomp_enabled
     merged.landlock_enabled = base.landlock_enabled and custom.landlock_enabled
 
-    # Binaries: intersection (only binaries in BOTH survive)
     for name, base_bp in base.binaries.items():
         if name not in custom.binaries:
-            continue  # custom removed this binary
+            continue
         custom_bp = custom.binaries[name]
         merged.binaries[name] = BinaryPolicy(
             name=name,
@@ -264,10 +254,8 @@ def merge_policies(base: SandboxPolicy, custom: SandboxPolicy) -> SandboxPolicy:
             stdin_only=base_bp.stdin_only or custom_bp.stdin_only,
         )
 
-    # Filesystem: use base (custom cannot expand filesystem access)
     merged.filesystem = list(base.filesystem)
 
-    # Proxy: merge rules (custom deny rules added, base rules kept)
     merged.proxy = ProxyPolicy(
         enabled=base.proxy.enabled or custom.proxy.enabled,
         listen_port=base.proxy.listen_port,

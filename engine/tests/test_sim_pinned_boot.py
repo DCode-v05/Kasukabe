@@ -29,10 +29,6 @@ def empty_world_client() -> WorldClient:
         if request.url.path == "/tools/registry":
             return httpx.Response(200, json=[])
         if request.url.path == "/tools/registry/version":
-            # Every tick asks whether the town has invented anything since the
-            # last one (world_tools.refresh_world_tool_registry). A constant
-            # answer here means "nothing has changed", so these tests keep
-            # exercising exactly the boot path they were written for.
             return httpx.Response(200, json={"version": 0})
         raise AssertionError(f"unexpected world call: {request.url.path}")
 
@@ -84,8 +80,6 @@ async def test_boot_wires_a_coordinator_with_no_router(tmp_path, monkeypatch, br
     )
     engine = await boot_sim_engine(profile, "http://world.test", world_client=empty_world_client())
     try:
-        # ThreadRouter is never even constructed in this process - boot never
-        # calls coordinator.set_router() (see pinned_boot.py's module docstring).
         assert engine.coordinator.router is None
         assert engine.coordinator.is_thread_pinned(engine.thread_id) is True
         assert engine.thread_id in engine.coordinator.threads
@@ -248,11 +242,9 @@ async def test_session_log_records_a_tool_call_and_the_recall_tool_reads_it_back
     )
     engine = await boot_sim_engine(profile, "http://world.test", world_client=empty_world_client())
     try:
-        # Turn 1: an ordinary turn, logged as a baseline fact to recall later.
         broker.queue(MODEL_ID, "sse", text_turn_sse("Heading to the market."))
         await engine.send_tick("It is 8am. What do you do?")
 
-        # Turn 2: the model calls recall_session_log itself, then answers.
         broker.queue(MODEL_ID, "sse", tool_use_turn_sse("recall_session_log", {"turns": 5}))
         broker.queue(MODEL_ID, "sse", text_turn_sse("Right, I was heading to the market."))
         reply = await engine.send_tick("You pause for a moment. What were you doing?")
@@ -268,8 +260,6 @@ async def test_session_log_records_a_tool_call_and_the_recall_tool_reads_it_back
         action = turn2["actions"][0]
         assert action["tool"] == "recall_session_log"
         assert action["params"] == {"turns": 5}
-        # The tool's real result (turn 1's recorded input) is captured too -
-        # proof the recall tool actually read genuine prior history, not a stub.
         assert "It is 8am. What do you do?" in action["result"]
     finally:
         await engine.shutdown()

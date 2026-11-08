@@ -129,7 +129,6 @@ async def test_fight_pipeline_feeds_health_never_death() -> None:
 
     assert len(result.injuries) >= 1
     assert len(health.injuries) >= 1
-    # Nothing in FakeHealth or FightResult has any notion of a fatality.
     assert not hasattr(result, "died")
     assert not hasattr(result, "is_fatal")
 

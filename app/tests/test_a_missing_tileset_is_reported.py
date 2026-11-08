@@ -32,9 +32,6 @@ APP = Path(__file__).resolve().parents[1]
 def test_the_gate_skips_rather_than_fails(monkeypatch) -> None:
     monkeypatch.setattr(ville_assets, "VILLE_DIR", Path("/nowhere/the_ville"))
     monkeypatch.setattr(ville_assets, "SKIPPED_FOR_ASSETS", set())
-    # `Skipped` descends from BaseException, not Exception - catching
-    # `Exception` here would let the skip through and this test would pass
-    # by being skipped itself.
     with pytest.raises(pytest.skip.Exception):
         ville_assets.require_ville_assets("the town is walkable")
 

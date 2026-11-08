@@ -22,10 +22,6 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# IPv4-mapped IPv6 prefix (::ffff:a.b.c.d). A loopback client connecting to a
-# dual-stack listener shows up as an IPv4-mapped address in /proc/net/tcp6 but
-# as a plain IPv4 address in peername (or vice versa), so both forms are
-# normalised to the bare 4-byte address before comparison.
 V4_MAPPED_PREFIX = b"\x00" * 10 + b"\xff\xff"
 
 
@@ -56,9 +52,6 @@ def resolve_linux(pid: int) -> str | None:
         return exe_path
     except (OSError, PermissionError):
         return None
-
-
-# ── Socket → PID → binary ─────────────────────────────────────
 
 
 def resolve_pid_from_tcp_peer(
@@ -102,7 +95,7 @@ def find_socket_inode(local: tuple[str, int], remote: tuple[str, int]) -> str | 
     for proc_file in ("/proc/net/tcp", "/proc/net/tcp6"):
         try:
             with open(proc_file, "r", encoding="ascii", errors="replace") as f:
-                next(f, None)  # header row
+                next(f, None)
                 for line in f:
                     fields = line.split()
                     if len(fields) < 10:
@@ -138,7 +131,6 @@ def find_pid_owning_inode(inode: str) -> int | None:
         try:
             fds = os.listdir(fd_dir)
         except OSError:
-            # The process exited mid-scan, or belongs to another user.
             continue
         for fd in fds:
             try:
@@ -176,7 +168,7 @@ def parse_proc_address(field: str) -> tuple[bytes, int] | None:
 
 def pack_address(addr: str) -> bytes | None:
     """Pack a textual IP address for comparison with a /proc/net/tcp row."""
-    addr = addr.partition("%")[0]  # drop any IPv6 zone id
+    addr = addr.partition("%")[0]
     for family in (socket.AF_INET, socket.AF_INET6):
         try:
             return normalize_packed(socket.inet_pton(family, addr))

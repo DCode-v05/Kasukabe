@@ -21,7 +21,7 @@ import socket
 
 from world.preflight import _ports_in_use
 
-BASE = 9180  # away from the real engine range, so a live run cannot skew this
+BASE = 9180
 
 
 def test_a_free_port_is_reported_free() -> None:
@@ -59,8 +59,6 @@ def test_a_listener_on_the_wildcard_is_caught_not_just_loopback() -> None:
         finally:
             probe.close()
 
-        # Whatever the platform does with the narrower bind, the check
-        # itself must report the port busy.
         assert BASE + 1 in _ports_in_use(BASE, 4), (
             f"wildcard listener missed (loopback bind succeeded: "
             f"{loopback_says_free})"
@@ -95,8 +93,6 @@ def test_it_sets_the_same_flag_the_engine_does() -> None:
     assert "SO_REUSEADDR" in source, (
         "without it a port in TIME_WAIT blocks a clean relaunch"
     )
-    # Both addresses: probing only the loopback misses a wildcard listener,
-    # and probing only the wildcard misses a loopback-only one.
     assert '"127.0.0.1"' in source
     assert '""' in source or "('', port)" in source or '("", port)' in source
 
@@ -114,33 +110,6 @@ def test_a_loopback_only_listener_is_caught_too() -> None:
         assert BASE + 3 in _ports_in_use(BASE, 4)
     finally:
         srv.close()
-
-
-# ── The third mistake, and the one that made this check dead on Windows ──
-#
-# SO_REUSEADDR does not mean the same thing on the two platforms. On POSIX
-# it waives the TIME_WAIT reservation and a LISTENing socket still refuses
-# the second bind, which is what makes bind() a usable probe there. On
-# Windows it waives the conflict outright - it is closer to POSIX's
-# SO_REUSEPORT - so the bind SUCCEEDS against a live listener.
-#
-# Measured on this machine, with a listener on *:9187:
-#
-#     bind ''          reuse=True   -> SUCCEEDED   (probe says FREE)
-#     bind ''          reuse=False  -> refused 10048
-#     bind '127.0.0.1' reuse=True   -> SUCCEEDED   (probe says FREE)
-#     bind '127.0.0.1' reuse=False  -> SUCCEEDED   (probe says FREE)
-#     connect '127.0.0.1'           -> SUCCEEDED   (listener detected)
-#     connect after close           -> refused     (correctly free)
-#
-# So on the machine every run of this project has been launched from, the
-# check that exists to stop a run starting on top of another run returned
-# [] no matter what was running. A green board over a dead check, which is
-# gate 3 of Build Spec v2 section 1 inverted.
-#
-# connect() is the honest question. The docstring rejected it for a reason
-# that does not hold: a port in TIME_WAIT has no listener, so connect()
-# refuses, as the last line of the table above shows.
 
 
 def test_a_listener_is_caught_even_where_bind_would_allow_it() -> None:

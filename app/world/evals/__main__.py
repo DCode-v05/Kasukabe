@@ -151,11 +151,6 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.add_parser("judges", help="not implemented - see EVAL-09")
 
-    # PROG-03. Wired here on the same day it was written, and that is the
-    # point rather than tidiness: `character.py` and `judges.py` sat with
-    # no `__main__` long enough for two documents to describe them as
-    # "built", and WIRE-02 shipped counters that nothing read. A measure
-    # with no entry point is a measure nobody will run.
     programs = sub.add_parser(
         "programs", help="PROG-03: what programmatic tool calling did, and whether it held"
     )

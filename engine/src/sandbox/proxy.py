@@ -31,9 +31,6 @@ from src.sandbox.process_identity import (
 logger = logging.getLogger(__name__)
 
 
-# ── Audit ─────────────────────────────────────────────────────
-
-
 @dataclass
 class ProxyAuditEntry:
     """A single proxy decision log entry."""
@@ -43,12 +40,9 @@ class ProxyAuditEntry:
     pid: int | None
     host: str
     port: int
-    action: str  # "allow" | "deny" | "inject"
-    rule_matched: str  # description of which rule matched
+    action: str
+    rule_matched: str
     credential_injected: bool = False
-
-
-# ── Pure policy evaluation (no I/O, fully testable) ───────────
 
 
 def evaluate_policy(
@@ -97,9 +91,6 @@ def match_host_pattern(pattern: str, host: str) -> bool:
     return fnmatch.fnmatch(host.lower(), pattern.lower())
 
 
-# ── Peer identity ─────────────────────────────────────────────
-
-
 def identify_peer(peer: tuple[str, int], local: tuple[str, int]) -> tuple[int | None, str | None]:
     """Resolve an accepted connection's client to (pid, binary name).
 
@@ -111,8 +102,6 @@ def identify_peer(peer: tuple[str, int], local: tuple[str, int]) -> tuple[int | 
         return None, None
     return pid, resolve_binary_name_from_pid(pid)
 
-
-# ── Credential injection ──────────────────────────────────────
 
 CredentialLoader = Callable[[str], Awaitable[str | None]]
 
@@ -141,16 +130,11 @@ async def inject_credentials(
         logger.warning("proxy: credential not found for ref=%s", rule.credential_ref)
         return None
 
-    # Detect credential format and build headers
     if credential.startswith("Bearer "):
         return {"Authorization": credential}
     if credential.startswith("Basic "):
         return {"Authorization": credential}
-    # Default: treat as Bearer token
     return {"Authorization": f"Bearer {credential}"}
-
-
-# ── Proxy server ──────────────────────────────────────────────
 
 
 class TrustedZoneProxy:
@@ -184,7 +168,6 @@ class TrustedZoneProxy:
             self.listen_port = actual_port
             logger.info("Trusted-zone proxy started on %s:%d", self.listen_host, actual_port)
         except OSError as e:
-            # Port conflict — try OS-assigned port
             logger.warning(
                 "proxy: port %d unavailable (%s), trying OS-assigned", self.listen_port, e
             )
@@ -224,7 +207,6 @@ class TrustedZoneProxy:
 
             line = first_line.decode("utf-8", errors="replace").strip()
 
-            # Parse CONNECT host:port HTTP/1.x
             if not line.upper().startswith("CONNECT "):
                 writer.write(b"HTTP/1.1 400 Bad Request\r\n\r\n")
                 await writer.drain()
@@ -249,23 +231,15 @@ class TrustedZoneProxy:
                 host = target
                 port = 443
 
-            # Read remaining headers (we don't need them, but must consume)
             while True:
                 header_line = await asyncio.wait_for(reader.readline(), timeout=5)
                 if header_line in (b"\r\n", b"\n", b""):
                     break
 
-            # Resolve which process opened this connection, so per-binary rules
-            # can match. Resolution happens now, while the client is still
-            # blocked on our response and its socket is therefore still listed
-            # in /proc/net/tcp. A peer we cannot attribute stays None, which
-            # matches only rules whose binary is "*".
             peer_pid, binary_name = await self.resolve_peer(writer)
 
-            # Evaluate policy
             action, rule = evaluate_policy(self.policy, binary_name, host, port)
 
-            # Record audit entry
             entry = ProxyAuditEntry(
                 timestamp=time.time(),
                 binary=binary_name,
@@ -283,7 +257,6 @@ class TrustedZoneProxy:
                 writer.close()
                 return
 
-            # Allow or inject_credentials — establish tunnel
             if action == "inject_credentials" and self.credential_loader and rule:
                 cred_headers = await inject_credentials(rule, self.credential_loader)
                 if cred_headers:
@@ -292,7 +265,6 @@ class TrustedZoneProxy:
 
             self.record_audit(entry)
 
-            # Connect to upstream
             try:
                 upstream_reader, upstream_writer = await asyncio.wait_for(
                     asyncio.open_connection(host, port),
@@ -304,11 +276,9 @@ class TrustedZoneProxy:
                 writer.close()
                 return
 
-            # Tell client the tunnel is established
             writer.write(b"HTTP/1.1 200 Connection Established\r\n\r\n")
             await writer.drain()
 
-            # Bidirectional pipe
             await self.pipe(reader, writer, upstream_reader, upstream_writer)
 
         except asyncio.TimeoutError:

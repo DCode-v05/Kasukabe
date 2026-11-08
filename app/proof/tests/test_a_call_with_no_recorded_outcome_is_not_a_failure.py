@@ -59,8 +59,5 @@ def test_search_memory_reads_as_unknown_in_the_real_corpus() -> None:
     r = found.get("search_memory")
 
     assert r is not None and r.calls > 0, "the corpus records calls to it"
-    # Not a fixed count: the corpus grows every time a run's session files
-    # are recovered, and a test that pins the number would fail for the
-    # right thing happening.
     assert r.unknown == r.calls, "every one of them written without a status"
     assert "never once succeeded" not in reach_sentence(r)

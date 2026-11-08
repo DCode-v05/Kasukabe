@@ -27,7 +27,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-APP = HERE.parents[3]                       # .../app
+APP = HERE.parents[3]
 RULES_JSON = APP / "world" / "rules" / "village_rules.json"
 OUT_JS = HERE / "rules.js"
 
@@ -49,8 +49,6 @@ def main() -> int:
         print(f"no rulebook at {RULES_JSON}", file=sys.stderr)
         return 1
 
-    # Validate before bundling: a rulebook the world server would refuse to
-    # boot on must never reach the browser looking authoritative.
     sys.path.insert(0, str(APP))
     try:
         from world.rules import RuleError, load_rules

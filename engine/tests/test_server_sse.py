@@ -35,13 +35,6 @@ class StubCoordinator:
         citations=False,
         **gates,
     ):
-        # Bind the stream's thread box like the real coordinator does, so the
-        # v2 thread-routing sink delivers this turn's blocks to the stream.
-        # Accept ``craft`` and ``craft_wait`` (added to the real signature in M2)
-        # so the server's call doesn't raise before binding the box — an unbound
-        # box would make the sink drop the terminal done and hang the stream.
-        # ``**gates`` absorbs every later output gate the server forwards (voice,
-        # voice_primary, image, audio, video, ...) so that same hang can't recur.
         if thread_id_box is not None:
             thread_id_box[0] = "t1"
         await self.emitter.emit(TextDelta(thread_id="t1", text="Hello"))
@@ -62,10 +55,6 @@ def make_state(emitter):
     from src.config import Settings
 
     state = EngineState(settings=Settings(), emitter=emitter)
-    # Mirror what server.lifespan() does at boot: register the one global block
-    # sink that folds events → blocks, buffers them per-thread, and fans them to
-    # active /execute queues. ASGITransport tests bypass lifespan, so wire it
-    # explicitly here.
     emitter.on(server.block_fan_sink)
     return state
 
@@ -102,9 +91,6 @@ async def test_execute_streams_blocks_ending_in_done(monkeypatch):
         ) as resp:
             assert resp.status_code == 200
             body = ""
-            # Self-terminating: a routing regression that drops the terminal
-            # done block would otherwise ping-loop forever and hang the whole
-            # suite. Fail fast instead so the culprit is named, not hidden.
             async with asyncio.timeout(20):
                 async for chunk in resp.aiter_text():
                     body += chunk
@@ -114,7 +100,7 @@ async def test_execute_streams_blocks_ending_in_done(monkeypatch):
     assert "event: block" in body
     assert "event: text_delta" not in body
     assert "event: tool_execution" not in body
-    assert body.count("seq: ") >= 3  # text + tool + done at least
+    assert body.count("seq: ") >= 3
 
     blocks = parse_blocks(body)
     types = [b["type"] for b in blocks]
@@ -147,7 +133,7 @@ class TrapToolCoordinator:
         craft=False,
         craft_wait=True,
         citations=False,
-        **gates,  # output-gate kwargs the server forwards (voice, image, ...)
+        **gates,
     ):
         if thread_id_box is not None:
             thread_id_box[0] = "t1"
@@ -187,18 +173,15 @@ async def test_tool_frame_carrying_type_done_does_not_truncate_stream(monkeypatc
         ) as resp:
             assert resp.status_code == 200
             body = ""
-            # Read until the server closes the stream structurally (after the real
-            # done). A truncation regression would close at the tool frame → the
-            # done never arrives and types[-1] != "done".
             async with asyncio.timeout(20):
                 async for chunk in resp.aiter_text():
                     body += chunk
 
-    assert '"type": "done"' in body  # the trap substring really was on the wire
+    assert '"type": "done"' in body
     blocks = parse_blocks(body)
     types = [b["type"] for b in blocks]
-    assert "tool" in types  # the trap frame was delivered
-    assert types[-1] == "done"  # ...and the real terminal done still arrived
+    assert "tool" in types
+    assert types[-1] == "done"
     assert blocks[-1]["payload"]["status"] == "completed"
     tool_block = next(b for b in blocks if b["type"] == "tool")
     assert tool_block["payload"]["params"] == {"type": "done"}
@@ -288,7 +271,6 @@ def test_gated_telemetry_yields_contiguous_per_stream_seq_with_gappy_cursor(monk
 
     tid = "t1"
     q: asyncio.Queue = asyncio.Queue()
-    # telemetry off → thread/summary blocks are gated OUT of this stream.
     server.active_streams[object()] = server.StreamReg(
         queue=q, thread_id_box=[tid], gates=Gates(telemetry="off", tool=True)
     )
@@ -302,27 +284,21 @@ def test_gated_telemetry_yields_contiguous_per_stream_seq_with_gappy_cursor(monk
     def summary_blk():
         return Block(type="summary", payload={"k": 1}, thread_id=tid, id=f"summary:{tid}")
 
-    # Interleave delivered (text) with gated telemetry (thread/summary). The
-    # buffer index (cursor) advances for EVERY block; the per-stream seq advances
-    # only for the ones this stream actually receives.
-    server.fan_block(text("a"))  # buffer cursor 1, delivered  → seq 1
-    server.fan_block(thread_blk())  # buffer cursor 2, GATED out
-    server.fan_block(text("b"))  # buffer cursor 3, delivered  → seq 2
-    server.fan_block(summary_blk())  # buffer cursor 4, GATED out
-    server.fan_block(thread_blk())  # buffer cursor 5, GATED out
-    server.fan_block(text("c"))  # buffer cursor 6, delivered  → seq 3
-    server.fan_block(make_done_block("r1", {"status": "completed"}, tid))  # cursor 7 → seq 4
+    server.fan_block(text("a"))
+    server.fan_block(thread_blk())
+    server.fan_block(text("b"))
+    server.fan_block(summary_blk())
+    server.fan_block(thread_blk())
+    server.fan_block(text("c"))
+    server.fan_block(make_done_block("r1", {"status": "completed"}, tid))
 
     frames = [x for x in _drain(q) if isinstance(x, str)]
     parsed = [_frame_seq_cursor(f) for f in frames]
     seqs = [s for s, _ in parsed]
     cursors = [c for _, c in parsed]
 
-    # per-stream seq is CONTIGUOUS over only the delivered frames
     assert seqs == [1, 2, 3, 4]
-    # cursor reflects the larger, gappy per-thread buffer indices
     assert cursors == [1, 3, 6, 7]
-    # the last delivered block is the terminal done
     last_block = json.loads(frames[-1].split("data: ", 1)[1].strip())
     assert last_block["type"] == "done"
 

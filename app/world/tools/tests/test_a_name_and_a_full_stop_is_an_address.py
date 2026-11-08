@@ -68,9 +68,6 @@ def spoken(content: str, by: str = "n07") -> str | None:
     return addressee_from_content(HERE, by, "here", content)
 
 
-# -- The six real remarks that were missed ----------------------------
-
-
 @pytest.mark.parametrize(
     ("content", "expected"),
     [
@@ -92,9 +89,6 @@ def test_a_name_after_a_finished_sentence_is_an_address_too() -> None:
     assert spoken("I have walked all morning. Bram. Do you have food?") == "n01"
 
 
-# -- And the mentions that must stay mentions -------------------------
-
-
 @pytest.mark.parametrize("content", [
     "I saw Wren Thorne at the mill.",
     "Perrin told me something that doesn't make sense.",
@@ -114,9 +108,6 @@ def test_a_name_mid_clause_with_a_comma_is_still_not_an_address() -> None:
     find Perrin, or go home to Nell" resolved to Perrin, who is being
     talked ABOUT."""
     assert spoken("I've eaten now. You can go find Perrin, or go home to Nell.") is None
-
-
-# -- What already worked must keep working ----------------------------
 
 
 @pytest.mark.parametrize(

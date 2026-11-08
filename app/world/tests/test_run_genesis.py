@@ -67,9 +67,6 @@ from world.tools.models import Subpoena, ToolInvocationRecord
 from world.tools.state import OWNED_STATE_FIELDS
 
 
-# ── config ──────────────────────────────────────────────────────────────
-
-
 class TestGenesisRunnerConfig:
     def test_defaults_are_real_engines(self) -> None:
         """The safe default is no longer the fake one.
@@ -103,7 +100,6 @@ class TestGenesisRunnerConfig:
         assert any("exceeds" in e for e in errors)
 
     def test_validate_accepts_budget_cap_at_task_hard_cap(self) -> None:
-        # Task prompt: "HARD BUDGET CAP $400" = 40,000 cents.
         config = GenesisRunnerConfig(budget_cap_cents=40_000)
         assert config.validate() == []
 
@@ -234,9 +230,6 @@ class TestCliArgParsing:
         assert args.no_resume is True
 
 
-# ── to_jsonable ────────────────────────────────────────────────────────
-
-
 class TestToJsonable:
     def test_plain_scalars_pass_through(self) -> None:
         assert to_jsonable(1) == 1
@@ -263,11 +256,6 @@ class TestToJsonable:
         assert to_jsonable(Point(1, 2)) == {"x": 1, "y": 2}
 
 
-# ── WorldState checkpoint field classification (STATUS.md risk #3: the
-# adapter must derive its field/type map from OWNED_STATE_FIELDS, not
-# hand-list a second copy that can silently drift from it) ─────────────
-
-
 class TestWorldStateFieldClassification:
     def test_covers_every_owned_state_field_by_name(self) -> None:
         """The structural guarantee risk #3 asks for: WORLD_STATE_FIELD_TYPES
@@ -283,10 +271,6 @@ class TestWorldStateFieldClassification:
         assert WORLD_STATE_FIELD_TYPES["subpoenas"] == ("dict_model", Subpoena)
         assert WORLD_STATE_FIELD_TYPES["tool_invocations"] == ("list_model", ToolInvocationRecord)
         assert WORLD_STATE_FIELD_TYPES["skills"] == ("plain", None)
-
-
-# ── ProcessSupervisor (module docstring: fully unit-testable with a
-# harmless trivial command, no real engine checkout needed) ────────────
 
 
 class TestProcessSupervisor:
@@ -370,10 +354,8 @@ class TestProcessSupervisor:
         import os as os_module
         import sys as sys_module
 
-        builder = default_engine_command_builder(tmp_path)  # no .venv here
+        builder = default_engine_command_builder(tmp_path)
         command = builder(UnitSpec(unit_id="u1", engine_id="e1", cdt_url="http://x", cdt_key="k"))
-        # "python3" is a real PATH name on POSIX; on Windows it usually is
-        # not, so the fallback there is the running interpreter.
         expected = sys_module.executable if os_module.name == "nt" else "python3"
         assert command == [expected, "-m", "src.sim.sim_main"]
 
@@ -429,9 +411,6 @@ class TestMockSupervisor:
             await supervisor.stop("nope")
 
 
-# ── MockAgentGateway ─────────────────────────────────────────────────
-
-
 class TestMockAgentGateway:
     @pytest.mark.asyncio
     async def test_sleeping_agent_costs_nothing(self) -> None:
@@ -453,9 +432,6 @@ class TestMockAgentGateway:
         assert outcome.input_tokens == depth.estimated_input_tokens
         assert outcome.output_tokens == 291
         assert outcome.succeeded is True
-
-
-# ── LocalCheckpointStore ────────────────────────────────────────────
 
 
 class TestLocalCheckpointStore:
@@ -525,19 +501,11 @@ class TestLocalCheckpointStore:
 
         path = store.write(WorldCheckpoint(tick_index=7, game_day=0, components={"a": 1}))
 
-        # Two fsyncs on POSIX (the checkpoint file's fd, then the
-        # directory's fd); one on Windows, which has no directory file
-        # descriptor to sync - see LocalCheckpointStore.write's own comment.
-        # Asserted per-platform rather than relaxed to ">= 1", so a POSIX
-        # regression that dropped the directory fsync still fails here.
         expected_fsyncs = 1 if os_module.name == "nt" else 2
         assert len(fsynced_fds) == expected_fsyncs
         assert path.exists()
         with gzip.open(path, "rt") as f:
             assert json.load(f)["components"] == {"a": 1}
-
-
-# ── RunnerCounters checkpoint adapter ────────────────────────────────
 
 
 class TestRunnerCountersCheckpointAdapter:
@@ -587,15 +555,9 @@ class TestRunnerCountersCheckpointAdapter:
             "retrieval_depth_fraction": 0.0,
             "last_life_hour_processed": 0.0,
             "last_life_day_processed": -1,
-            # no "mock_cost_remainder_usd" key - simulates a checkpoint
-            # written before this field existed.
         }
         adapter.restore(legacy_snapshot)
         assert counters.mock_cost_remainder_usd == 0.0
-
-
-# ── GenesisRunner: boot / seed / tick / checkpoint / resume (the real
-# integration surface, mirroring test_world_wiring.py's own pattern) ────
 
 
 def make_runner(tmp_path: Path, **overrides: object) -> GenesisRunner:
@@ -603,7 +565,7 @@ def make_runner(tmp_path: Path, **overrides: object) -> GenesisRunner:
         mock_mode=True,
         checkpoint_dir=tmp_path / "checkpoints",
         world_mode="embedded",
-        world_port=0,  # let the OS pick a free port; tests never dial in over HTTP
+        world_port=0,
         budget_cap_cents=40_000,
     )
     kwargs.update(overrides)
@@ -628,18 +590,8 @@ class TestGenesisRunnerBoot:
         runner = make_runner(tmp_path)
         await runner.boot(resume=False)
         assert runner.world_state is not None
-        # The town is the generated population PLUS the institution
-        # roster (hospital, school, police, fire...). Read from the
-        # genesis the server actually loaded rather than pinned to a
-        # literal, so restaffing the town does not silently fail here.
         assert len(runner.world_state.agents) == runner.genesis.population
         assert len(runner.world_state.households) > 0
-        # Counted from the cast file rather than pinned at 4. The number moved
-        # when four bakers, four innkeepers and five shopkeepers were finally
-        # given somewhere to work - see
-        # `test_a_trade_has_somewhere_to_practise_it`. A magic number here
-        # would have to be edited every time the town gains a trade, and says
-        # nothing about whether the right businesses were seeded.
         import json as _json
         from pathlib import Path as _Path
         _cast = _json.loads(
@@ -677,7 +629,7 @@ class TestGenesisRunnerBoot:
     @pytest.mark.asyncio
     async def test_boot_with_no_checkpoint_present_does_not_resume(self, tmp_path: Path) -> None:
         runner = make_runner(tmp_path)
-        await runner.boot(resume=True)  # resume=True but nothing on disk yet
+        await runner.boot(resume=True)
         assert runner.world_state.current_tick == 0
 
 
@@ -705,7 +657,7 @@ class TestGenesisRunnerTickLoop:
     @pytest.mark.asyncio
     async def test_day_boundary_writes_a_local_checkpoint(self, tmp_path: Path) -> None:
         runner = await make_launched_runner(tmp_path)
-        await runner.run_burst(150)  # crosses the 144-tick day boundary
+        await runner.run_burst(150)
         checkpoints = runner.checkpoint_store.list_checkpoints()
         assert len(checkpoints) >= 1
         await runner.shutdown()
@@ -734,7 +686,7 @@ class TestGenesisRunnerCheckpointResume:
     async def test_resume_restores_tick_index(self, tmp_path: Path) -> None:
         first = await make_launched_runner(tmp_path)
         await first.run_burst(20)
-        await first.shutdown()  # writes a final checkpoint at tick 20
+        await first.shutdown()
 
         second = make_runner(tmp_path)
         await second.boot(resume=True)
@@ -796,13 +748,6 @@ class TestGenesisRunnerCheckpointResume:
         await second.shutdown()
 
 
-# ── charter/governance checkpoint round-trip (STATUS.md risk #4): the
-# real repro the task asks for - run an election to mid-flight, checkpoint,
-# kill the process, boot a brand-new GenesisRunner with resume=True, and
-# assert the election and government are bit-identical, not just "some
-# keys exist." ───────────────────────────────────────────────────────────
-
-
 def adult_facts(agent_id: str) -> EligibilityFacts:
     return EligibilityFacts(agent_id=agent_id, age_years=30, is_resident=True)
 
@@ -816,7 +761,7 @@ class TestGenesisRunnerCharterResume:
         charter = first.world_state.charter
 
         elections = await charter.store.list_elections()
-        assert len(elections) == 1  # seed_genesis() schedules exactly one
+        assert len(elections) == 1
         election_id = elections[0].election_id
 
         adults = [
@@ -831,9 +776,6 @@ class TestGenesisRunnerCharterResume:
             await charter.elections.declare_candidacy(
                 election_id, agent_id, adult_facts(agent_id), now_tick=0, location=LOCATION_TOWN_HALL
             )
-        # Exactly one ballot cast, deliberately: the election must land
-        # mid-VOTING_OPEN, never tallied, to prove an in-flight election
-        # (not just a finished one) survives a crash and resume.
         await charter.elections.cast_vote(
             election_id,
             voter_id,
@@ -847,7 +789,7 @@ class TestGenesisRunnerCharterResume:
         assert election_before.phase == ElectionPhase.VOTING_OPEN
         assert election_before.result is None
 
-        await first.shutdown()  # final checkpoint at the current (mid-election) tick
+        await first.shutdown()
 
         second = make_runner(tmp_path)
         await second.boot(resume=True)
@@ -900,9 +842,6 @@ class TestGenesisRunnerCharterResume:
         pm_agent_id = tallied.result.pm_agent_id
         assert pm_agent_id is not None
 
-        # An in-flight amendment: proposed and voted on, but not yet
-        # signed/vetoed - the "amendments" STATUS.md risk #4 names as lost
-        # alongside the election and the sitting government.
         proposal = await charter.amendments.propose_amendment(
             "patent_filing_fee_sim", 2500, "raise it", "treasury needs it",
             pm_agent_id, now_tick=501,
@@ -925,9 +864,6 @@ class TestGenesisRunnerCharterResume:
             application.application_id, pm_agent_id, LOCATION_GOVERNMENT_COMPLEX, now_tick=505,
         )
 
-        # Second election, scheduled but deliberately left mid-flight, so
-        # "election state" is exercised for an in-flight election too, not
-        # just the tallied one above.
         second_election = await charter.elections.schedule_election(now_tick=506)
         await charter.elections.declare_candidacy(
             second_election.election_id, candidates[0], adult_facts(candidates[0]),
@@ -957,10 +893,6 @@ class TestGenesisRunnerCharterResume:
         assert restored.store.patent_applications == patent_applications_before
         assert restored.store.patents == patents_before
 
-        # Read through the same public accessors a tool handler would use,
-        # not just the raw store dicts, to prove this is a real
-        # functioning CharterEngine after resume, not just data sitting
-        # inert in a dict.
         restored_org = await restored.organizations.load_organization(org.org_id)
         assert restored_org.name == "Midflight Party"
         restored_patent = await restored.store.get_patent(patent.patent_id)
@@ -985,11 +917,6 @@ class TestGenesisRunnerCharterResume:
         await runner.shutdown()
 
 
-# ── the mock-cost accumulator (regression coverage for the bug where
-# every single mock call rounded to zero cents and nothing was ever
-# burned, so the spend governor could never trip in a dry run) ────────
-
-
 class TestMockCostSettlement:
     @pytest.mark.asyncio
     async def test_a_single_awake_outcome_never_overshoots_a_whole_cent_alone(
@@ -1007,14 +934,12 @@ class TestMockCostSettlement:
             is_sleeping=False,
             input_tokens=5000,
             output_tokens=291,
-            cost_usd_cents=0,  # deliberately zero - proves settlement ignores this field
+            cost_usd_cents=0,
             succeeded=True,
         )
         burned_before = runner.ledger.usd_balance(BURNED_ACCOUNT_ID)
         await runner.settle_outcome_cost(agent_id, outcome, tick=0)
         burned_after = runner.ledger.usd_balance(BURNED_ACCOUNT_ID)
-        # A single call at max depth (~$0.0023) is well under one cent -
-        # nothing should have been burned yet, only accumulated.
         assert burned_after == burned_before
         assert runner.counters.mock_cost_remainder_usd == pytest.approx(
             runner.depth.estimated_cost_per_call_usd
@@ -1039,12 +964,10 @@ class TestMockCostSettlement:
             succeeded=True,
         )
         burned_before = runner.ledger.usd_balance(BURNED_ACCOUNT_ID)
-        # ~$0.0023/call at fraction=1.0: 5 calls exceeds one whole cent.
         for tick in range(5):
             await runner.settle_outcome_cost(agent_id, outcome, tick=tick)
         burned_after = runner.ledger.usd_balance(BURNED_ACCOUNT_ID)
         assert burned_after > burned_before
-        # The remainder never accumulates a whole cent's worth unclaimed.
         assert 0.0 <= runner.counters.mock_cost_remainder_usd < 0.01
         await runner.shutdown()
 
@@ -1109,7 +1032,7 @@ class TestMockCostSettlement:
             is_sleeping=False,
             input_tokens=1000,
             output_tokens=100,
-            cost_usd_cents=5,  # would burn if settlement mistakenly used it
+            cost_usd_cents=5,
             succeeded=True,
         )
         burned_before = runner.ledger.usd_balance(BURNED_ACCOUNT_ID)
@@ -1142,10 +1065,6 @@ class TestMockCostSettlement:
         await runner.shutdown()
 
 
-# ── live retrieval-depth knob (world/retrieval_depth.py wired into the
-# tick loop) ────────────────────────────────────────────────────────────
-
-
 class TestLiveRetrievalDepth:
     @pytest.mark.asyncio
     async def test_changing_depth_mid_run_changes_next_tick_hearing_window(
@@ -1174,9 +1093,6 @@ class TestLiveRetrievalDepth:
         await deep.shutdown()
 
         assert deep_burned >= shallow_burned
-
-
-# ── embedded world HTTP surface (build_embedded_world_app) ─────────────
 
 
 class TestEmbeddedWorldApp:
@@ -1273,10 +1189,6 @@ class TestEmbeddedWorldApp:
         assert response.status_code == 400
 
 
-# ── clean shutdown (regression coverage for the uvicorn hard-cancel
-# traceback fixed in this file: should_exit, not task.cancel()) ────────
-
-
 class TestGracefulShutdown:
     @pytest.mark.asyncio
     async def test_shutdown_signals_should_exit_not_a_hard_cancel(self, tmp_path: Path) -> None:
@@ -1291,8 +1203,6 @@ class TestGracefulShutdown:
         assert runner.embedded_world_server.should_exit is True
         assert runner.embedded_world_server_task is not None
         assert runner.embedded_world_server_task.done()
-        # A cancelled task's exception() raises CancelledError; a task that
-        # exited via should_exit completes normally with no exception.
         assert runner.embedded_world_server_task.exception() is None
 
     @pytest.mark.asyncio
@@ -1333,7 +1243,6 @@ class TestGracefulShutdown:
             async def drain_learning(self) -> dict[str, bool]:
                 order.append("drain")
                 statuses = await runner.supervisor.list()
-                # The whole point: engines still up when asked to consolidate.
                 assert all(s.state is UnitState.RUNNING for s in statuses)
                 return {"n01": True, "n02": True, "n03": False}
 
@@ -1345,8 +1254,6 @@ class TestGracefulShutdown:
         await runner.shutdown()
 
         assert order[0] == "drain"
-        # Two of three consolidated; the third is counted honestly, not
-        # rounded up to "we asked everybody".
         assert runner.learning_drained == 2
 
     @pytest.mark.asyncio
@@ -1358,8 +1265,6 @@ class TestGracefulShutdown:
         from shutting down at all."""
         gateway = HttpAgentGateway({"n01": 59991, "n02": 59992})
 
-        # Nothing is listening on either port, so both POSTs fail the way a
-        # dead engine fails. The call must still return, for both agents.
         drained = await gateway.drain_learning()
 
         assert drained == {"n01": False, "n02": False}
@@ -1378,16 +1283,6 @@ class TestGracefulShutdown:
 
         statuses_after = await runner.supervisor.list()
         assert all(s.state is UnitState.STOPPED for s in statuses_after)
-
-
-# ── tick pacing: the town must not outrun its own broker ─────────────
-#
-# Before this existed, PacingConfig was built with continuous_interval_s
-# left at its default 0 - no wall-clock pacing at all. The tick loop ran as
-# fast as the event loop allowed, so request rate was bounded only by how
-# quickly engines could answer. At 250 agents and the default 0.3 due
-# fraction that asks for thousands of RPM from a broker that, on a
-# deployment holding inference profiles in one region, serves 200.
 
 
 class TestTickPacing:
@@ -1416,7 +1311,6 @@ class TestTickPacing:
         runner = make_runner(tmp_path, mock_mode=False, scheduler_target_fraction=0.3)
         runner.probe_broker_capacity = lambda: _done(200.0)  # type: ignore[assignment]
 
-        # 10 agents -> 3 due -> 3 * calls_per_turn * 60 / 200
         assert await runner.resolve_tick_interval(10) == pytest.approx(
             0.9 * DEFAULT_CALLS_PER_TURN
         )
@@ -1431,7 +1325,7 @@ class TestTickPacing:
         twelve times."""
         runner = make_runner(tmp_path, mock_mode=False, scheduler_target_fraction=0.3)
         runner.probe_broker_capacity = lambda: _done(200.0)  # type: ignore[assignment]
-        runner.recent_steps_used.extend([1, 1, 1])   # +1 summariser -> 2.0
+        runner.recent_steps_used.extend([1, 1, 1])
 
         assert await runner.resolve_tick_interval(10) == pytest.approx(0.9 * 2.0)
 
@@ -1497,11 +1391,8 @@ class TestGenesisGivesTheTownItsWorkshops:
 
         by_type = {b.business_type: b for b in world.businesses.values()}
         assert by_type["cafe"].provides_workshops == {"kitchen"}
-        # A shop that sells what others made brings no workshop, or anybody
-        # who registered one could bake.
         assert by_type["grocery_store"].provides_workshops == set()
         assert by_type["pharmacy"].provides_workshops == set()
-        # The yard works timber either way.
         assert by_type["construction_company"].provides_workshops == {
             "carpentry",
             "sawmill",
@@ -1694,7 +1585,6 @@ class TestTheElectionConcludes:
         ][:3]
         candidate = residents[0]
 
-        # Somebody stands, and two people vote for them.
         election.candidates[candidate] = Candidacy(
             agent_id=candidate, declared_tick=election.candidacy_opens_tick
         )
@@ -1703,7 +1593,6 @@ class TestTheElectionConcludes:
             election.ballots[voter] = candidate
         await world.charter.store.put_election(election)
 
-        # The tick after voting closes.
         await runner.charter_tick(timestamp_for(election.voting_closes_tick + 1))
 
         state = await world.charter.store.get_government_state()
@@ -1773,7 +1662,6 @@ class TestTheElectionConcludes:
         election = (await world.charter.store.list_elections())[0]
         assert notice["election_id"] == election.election_id
         assert notice["you_have_voted"] is False
-        # And what the tax is, which nothing told them either (ECON-20).
         assert notice["tax_rate_bps"] > 0
 
     @pytest.mark.asyncio

@@ -80,10 +80,6 @@ async def test_one_call_walks_takes_carries_stocks_and_prices(world, registry):
                 {
                     "tool_name": "stock_shelf",
                     "params": {"business_id": SHOP, "item": "flour", "quantity": "$how_many"},
-                    # Only if the mill actually gave us any. A fetch that
-                    # came back empty and a stock that runs anyway is the
-                    # shape TRADE-03 warns about: an ask over goods that
-                    # are not there.
                     "when": {"left": "@fetched.quantity", "op": ">", "right": 0},
                 },
                 {
@@ -104,18 +100,14 @@ async def test_one_call_walks_takes_carries_stocks_and_prices(world, registry):
         world, "n11", "carry_flour_to_the_shop", {"how_many": 5, "ask": 30}
     )
 
-    # One decision.
     wrappers = [r for r in world.tool_invocations if r.program_step == 0]
     assert len(wrappers) == 1
 
-    # Five acts under it, all one program.
     acts = [r for r in world.tool_invocations if r.program_step]
     assert len(acts) == 5, [r.tool_name for r in acts]
     assert len({r.program_id for r in world.tool_invocations}) == 1
     assert outcome.result["steps_skipped"] == 0
 
-    # And the thing that makes it worth anything: the ask is on the SHOP,
-    # over stock the shop is holding, so a stranger walking in can buy.
     assert world.inventory.quantity(SHOP, "flour") == 5
     posted = world.posted(SHOP, "flour")
     assert posted is not None, (
@@ -159,8 +151,6 @@ async def test_a_customer_who_speaks_to_the_shop_can_buy_what_the_program_priced
     await registry.execute(world, "n11", "shop_run", {"how_many": 4})
 
     await spawn_agent(world, "n17", WHERE, starting_sim=500)
-    # Not a stranger any more: a sale is agreed in conversation, so the
-    # customer speaks to whoever is minding the shop first.
     in_conversation(world, "n17", "n11")
     bought = await registry.execute(
         world, "n17", "buy", {"item": "flour", "quantity": 2, "seller_id": SHOP}
@@ -227,7 +217,6 @@ async def test_the_guard_skips_the_steps_that_depended_on_a_short_fetch(
         "an ask was posted over stock the shop does not hold; the guard "
         "did not guard"
     )
-    # And the same program with a load that IS enough goes all the way.
     world.inventory.credit(MILL, "flour", 8)
     outcome = await registry.execute(
         world, "n11", "careful_shop_run", {"how_many": 5, "enough": 5}

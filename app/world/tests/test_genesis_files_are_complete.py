@@ -26,27 +26,7 @@ from world.life.genesis import RichGenesis
 GENESIS_DIR = Path(__file__).resolve().parent.parent
 SHIPPED = sorted(GENESIS_DIR.glob("genesis_*.json"))
 
-# The hand-authored casts, which are the ones runs are launched against.
-# Everything in this module applies to these.
 CURATED = [p for p in SHIPPED if p.name in {"genesis_10.json", "genesis_20.json"}]
-
-# The rest are older files, most of them sliced out of a 250-resident
-# generation without pruning what the slice cut. Writing these tests
-# turned up three real defects in them, recorded here rather than
-# deleted, because a scoped-out failure that nobody wrote down is a
-# failure nobody fixes:
-#
-#   * dangling opinion targets - genesis_30 holds 51 opinions about
-#     residents who are not in the file, genesis_realsim_10 holds 13.
-#     Those agents are briefed on neighbours the town does not contain.
-#   * genesis_14's usd_ledger totals 52,800 cents, not the 100,000 the
-#     $1,000 invariant requires.
-#   * genesis_250_backup has a resident (a0027) with an empty opinion
-#     list - nobody, in a town of 250.
-#
-# Fixing them means regenerating those files, which is its own change
-# with its own runs behind it. What is asserted below for every file is
-# the thing that actually stops a run booting: the strict shape.
 
 
 def _load(path: Path) -> dict:
@@ -74,7 +54,7 @@ def test_no_persona_field_is_blank(path: Path) -> None:
     for agent in _load(path)["agents"]:
         for key, value in agent["persona"].items():
             if key == "secret_target_agent_id":
-                continue  # legitimately None for a secret about nobody
+                continue
             if isinstance(value, str) and not value.strip():
                 blank.append(f"{agent['agent_id']}.{key}")
             if isinstance(value, list) and not value:

@@ -67,10 +67,6 @@ async def test_a_resume_into_a_new_store_knows_every_resident(tmp_path, monkeypa
         "them makes is dropped as 'speaker was never seeded'"
     )
     assert {row["id"] for row in await _rows(second, "agents")} == residents
-    # Every business a fresh boot records: the ones a resident owns. A control
-    # business is owned by a scripted actor (`control:<id>`), not a resident,
-    # and `businesses.owner_agent_id` references `agents` - the fresh path
-    # cannot record one either.
     owned_by_residents = {
         b.business_id for b in second.world_state.businesses.values()
         if b.owner_agent_id in residents

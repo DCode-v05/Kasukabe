@@ -125,9 +125,6 @@ async def let_the_loop_run(times: int = 30) -> None:
         await asyncio.sleep(0)
 
 
-# ── the wiring test ──────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_tick_answers_while_the_batch_is_still_running():
     """THE WIRING TEST. Drives the real `POST /tick` through the real ASGI
@@ -169,9 +166,6 @@ async def test_a_tick_answers_while_the_batch_is_still_running():
     )
 
 
-# ── what the response may honestly claim ─────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_learning_ran_reports_the_batch_that_landed_not_the_one_just_started():
     """The runner reads this field and prints it as what the town learned.
@@ -199,8 +193,6 @@ async def test_learning_ran_reports_the_batch_that_landed_not_the_one_just_start
         third = await post(client, "/tick", json=_tick(3))
         assert third.json()["learning_ran"] is True
 
-        # And it does not latch on forever: the fourth tick reports the
-        # batch the third one started, and then there is nothing left.
         await app.state.background_learning.settle()
 
 
@@ -219,9 +211,6 @@ async def test_a_quiet_gate_is_reported_as_no_batch():
 
     assert resp.json()["learning_ran"] is False
     assert second.json()["learning_ran"] is False
-
-
-# ── one batch at a time ──────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -246,9 +235,6 @@ async def test_a_second_tick_does_not_start_a_second_batch():
         await app.state.background_learning.settle()
 
     assert engine.order == ["turn", "turn", "turn", "batch"]
-
-
-# ── the turn is never harmed by the batch ────────────────────────────────
 
 
 @pytest.mark.asyncio

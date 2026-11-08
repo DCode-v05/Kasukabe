@@ -34,9 +34,6 @@ def build_429(body: dict | None = None, headers: dict | None = None) -> CitadelA
     return CitadelAPIError(status_code=429, body=body, headers=headers or {})
 
 
-# ── The conversion: only the QUOTA_EXCEEDED label is terminal ───────────────
-
-
 def test_quota_exceeded_code_is_terminal_regardless_of_retry_after():
     """An explicit QUOTA_EXCEEDED code is terminal even if a Retry-After header
     is present — quota won't recover before the window resets."""
@@ -52,7 +49,6 @@ def test_bare_429_no_body_passes_through():
     """No body means no quota label — not quota, so the 429 stays a raw
     transient ``CitadelAPIError`` and keeps its retries."""
     exc = build_429(body=None, headers={})
-    # Must return without raising.
     maybe_raise_quota_exhausted(exc)
 
 
@@ -71,9 +67,6 @@ def test_429_with_retry_after_passes_through():
     still transient."""
     exc = build_429(body=None, headers={"retry-after": "12"})
     maybe_raise_quota_exhausted(exc)
-
-
-# ── The persistent-retry split the conversion protects ─────────────────────
 
 
 def test_quota_exhausted_never_persistent_retries():
@@ -104,7 +97,6 @@ def test_bare_429_still_persistent_retries():
         persistent=True,
     )
     exc = build_429(body=None, headers={})
-    # Not converted — remains the raw transient 429.
     maybe_raise_quota_exhausted(exc)
     assert tracker.get_persistent_delay(exc) is not None
 
@@ -121,4 +113,4 @@ def test_429_with_retry_after_honors_server_delay():
     maybe_raise_quota_exhausted(exc)
     advice = tracker.get_persistent_delay(exc)
     assert advice is not None
-    assert advice.delay_s == 12  # honors the server-provided Retry-After
+    assert advice.delay_s == 12

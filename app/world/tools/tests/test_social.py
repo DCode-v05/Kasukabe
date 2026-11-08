@@ -72,7 +72,6 @@ async def test_pray_with_donation_moves_sim_to_treasury(world, registry) -> None
     )
 
     assert result.result["request_id"]
-    # The donation AND the action fee both land in the treasury.
     assert world.ledger.sim_balance(TREASURY_ACCOUNT_ID) == treasury_before + 250 + action_cost(
         "pray", {"donation_sim": 250}
     )

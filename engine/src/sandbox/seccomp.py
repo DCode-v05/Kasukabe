@@ -24,46 +24,35 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# ── BPF constants (linux/bpf_common.h, linux/seccomp.h) ──────────
 
-# BPF instruction classes
 BPF_LD = 0x00
 BPF_JMP = 0x05
 BPF_RET = 0x06
 
-# BPF instruction sizes
-BPF_W = 0x00  # word (32-bit)
+BPF_W = 0x00
 
-# BPF instruction modes
-BPF_ABS = 0x20  # absolute offset into seccomp_data
-BPF_K = 0x00  # constant operand
+BPF_ABS = 0x20
+BPF_K = 0x00
 
-# BPF jump conditions
 BPF_JEQ = 0x10
 
-# Combined opcodes
-LD_W_ABS = BPF_LD | BPF_W | BPF_ABS  # 0x20
-JMP_JEQ_K = BPF_JMP | BPF_JEQ | BPF_K  # 0x15
-RET_K = BPF_RET | BPF_K  # 0x06
+LD_W_ABS = BPF_LD | BPF_W | BPF_ABS
+JMP_JEQ_K = BPF_JMP | BPF_JEQ | BPF_K
+RET_K = BPF_RET | BPF_K
 
-# seccomp_data offsets
-OFFSET_NR = 0  # syscall number (offset 0 in seccomp_data)
-OFFSET_ARCH = 4  # architecture (offset 4)
+OFFSET_NR = 0
+OFFSET_ARCH = 4
 
-# Seccomp return actions
 SECCOMP_RET_ALLOW = 0x7FFF_0000
-SECCOMP_RET_ERRNO = 0x0005_0000  # OR with errno value
+SECCOMP_RET_ERRNO = 0x0005_0000
 SECCOMP_RET_KILL_PROCESS = 0x8000_0000
 
-# Architecture constants (linux/audit.h)
 AUDIT_ARCH_X86_64 = 0xC000_003E
 AUDIT_ARCH_AARCH64 = 0xC000_00B7
 
-# Standard errno values
 EPERM = 1
 ENOSYS = 38
 
-# BPF instruction: 8 bytes (opcode:u16, jt:u8, jf:u8, k:u32)
 BPF_STMT_FMT = "<HBBI"
 BPF_JUMP_FMT = "<HBBI"
 
@@ -76,88 +65,72 @@ def bpf_jump(code: int, k: int, jt: int, jf: int) -> bytes:
     return struct.pack(BPF_JUMP_FMT, code, jt, jf, k)
 
 
-# ── Syscall number tables ─────────────────────────────────────────
-# Source: linux kernel headers (asm/unistd_64.h for x86_64,
-#         asm-generic/unistd.h for aarch64)
-# Only the syscalls we need to explicitly allow or block.
-
-# x86_64 syscall numbers for the dangerous set we must block
 BLOCKED_X86_64: dict[int, int] = {
-    101: EPERM,  # ptrace
-    157: EPERM,  # prctl (we allow this selectively below)
-    161: EPERM,  # chroot
-    165: EPERM,  # mount
-    166: EPERM,  # umount2
-    167: EPERM,  # swapon
-    168: EPERM,  # swapoff
-    169: EPERM,  # reboot
-    175: EPERM,  # init_module
-    176: EPERM,  # delete_module
-    246: EPERM,  # kexec_load
-    272: EPERM,  # unshare
-    308: EPERM,  # setns
-    310: EPERM,  # process_vm_readv
-    311: EPERM,  # process_vm_writev
-    313: EPERM,  # finit_module
-    320: EPERM,  # kexec_file_load
-    321: EPERM,  # bpf
-    298: EPERM,  # perf_event_open
-    212: EPERM,  # lookup_dcookie
-    248: EPERM,  # add_key
-    249: EPERM,  # request_key
-    250: EPERM,  # keyctl
-    155: EPERM,  # pivot_root
-    173: EPERM,  # ioperm
-    172: EPERM,  # iopl
-    154: EPERM,  # modify_ldt
+    101: EPERM,
+    157: EPERM,
+    161: EPERM,
+    165: EPERM,
+    166: EPERM,
+    167: EPERM,
+    168: EPERM,
+    169: EPERM,
+    175: EPERM,
+    176: EPERM,
+    246: EPERM,
+    272: EPERM,
+    308: EPERM,
+    310: EPERM,
+    311: EPERM,
+    313: EPERM,
+    320: EPERM,
+    321: EPERM,
+    298: EPERM,
+    212: EPERM,
+    248: EPERM,
+    249: EPERM,
+    250: EPERM,
+    155: EPERM,
+    173: EPERM,
+    172: EPERM,
+    154: EPERM,
 }
 
-# aarch64 syscall numbers for the dangerous set
 BLOCKED_AARCH64: dict[int, int] = {
-    117: EPERM,  # ptrace
-    167: EPERM,  # prctl (selective)
-    51: EPERM,  # chroot
-    40: EPERM,  # mount
-    39: EPERM,  # umount2
-    224: EPERM,  # swapon
-    225: EPERM,  # swapoff
-    142: EPERM,  # reboot
-    105: EPERM,  # init_module
-    106: EPERM,  # delete_module
-    # no kexec_load on aarch64 (uses kexec_file_load only)
-    97: EPERM,  # unshare
-    268: EPERM,  # setns
-    270: EPERM,  # process_vm_readv
-    271: EPERM,  # process_vm_writev
-    273: EPERM,  # finit_module
-    294: EPERM,  # kexec_file_load
-    280: EPERM,  # bpf
-    241: EPERM,  # perf_event_open
-    217: EPERM,  # add_key
-    218: EPERM,  # request_key
-    219: EPERM,  # keyctl   (NB: 220 is clone on aarch64 — must never be blocked,
-    #           or every fork()/pipe inside the sandbox dies with EPERM)
-    41: EPERM,  # pivot_root
+    117: EPERM,
+    167: EPERM,
+    51: EPERM,
+    40: EPERM,
+    39: EPERM,
+    224: EPERM,
+    225: EPERM,
+    142: EPERM,
+    105: EPERM,
+    106: EPERM,
+    97: EPERM,
+    268: EPERM,
+    270: EPERM,
+    271: EPERM,
+    273: EPERM,
+    294: EPERM,
+    280: EPERM,
+    241: EPERM,
+    217: EPERM,
+    218: EPERM,
+    219: EPERM,
+    41: EPERM,
 }
 
-# Socket-related syscalls that are blocked when network is denied
 SOCKET_X86_64 = {41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 288}
-#  41=socket, 42=connect, 43=accept, 44=sendto, 45=recvfrom, 46=sendmsg,
-#  47=recvmsg, 48=shutdown, 49=bind, 50=listen, 51=getsockname, 52=getpeername,
-#  53=socketpair, 54=setsockopt, 55=getsockopt, 288=accept4
 
 SOCKET_AARCH64 = {198, 203, 202, 206, 207, 211, 212, 210, 200, 201, 204, 205, 199, 208, 209, 242}
-#  198=socket, 203=connect, 202=accept, 206=sendto, 207=recvfrom, 211=sendmsg,
-#  212=recvmsg, 210=shutdown, 200=bind, 201=listen, 204=getsockname, 205=getpeername,
-#  199=socketpair, 208=setsockopt, 209=getsockopt, 242=accept4
 
 
 @dataclass
 class SeccompProfile:
     """A seccomp-BPF profile."""
 
-    blocked_syscalls: dict[int, int] = field(default_factory=dict)  # nr → errno
-    kill_on_unknown: bool = False  # False = EPERM on blocked, True = KILL_PROCESS
+    blocked_syscalls: dict[int, int] = field(default_factory=dict)
+    kill_on_unknown: bool = False
 
 
 def is_linux() -> bool:
@@ -214,38 +187,24 @@ def compile_bpf(profile: SeccompProfile, audit_arch: int) -> bytes:
     instructions: list[bytes] = []
     blocked = profile.blocked_syscalls
 
-    # 1. Load architecture
     instructions.append(bpf_stmt(LD_W_ABS, OFFSET_ARCH))
 
-    # 2. Verify architecture — if wrong, kill
-    # JEQ audit_arch → skip 1 (continue), else → ret KILL
     instructions.append(bpf_jump(JMP_JEQ_K, audit_arch, 1, 0))
     instructions.append(bpf_stmt(RET_K, SECCOMP_RET_KILL_PROCESS))
 
-    # 3. Load syscall number
     instructions.append(bpf_stmt(LD_W_ABS, OFFSET_NR))
 
-    # 4. For each blocked syscall: JEQ nr → jump to its RET_ERRNO
-    # We build a linear scan. For each blocked syscall, we jump over
-    # the remaining checks to the corresponding RET_ERRNO instruction.
-    blocked_list = sorted(blocked.items())  # deterministic order
+    blocked_list = sorted(blocked.items())
     n_blocked = len(blocked_list)
 
-    # After all JEQ checks, we have the default action (ALLOW),
-    # then n_blocked RET_ERRNO instructions.
-    # Jump offsets: if JEQ matches at position i, we need to jump
-    # (n_blocked - i - 1) remaining checks + 1 (the ALLOW) to reach
-    # the correct RET_ERRNO at position i.
     for i, (nr, errno) in enumerate(blocked_list):
         remaining_checks = n_blocked - i - 1
-        jt = remaining_checks + 1  # skip remaining checks + ALLOW → land on our RET_ERRNO
-        jf = 0  # continue to next check
+        jt = remaining_checks + 1
+        jf = 0
         instructions.append(bpf_jump(JMP_JEQ_K, nr, jt, jf))
 
-    # 5. Default action: ALLOW (reached if no blocked syscall matched)
     instructions.append(bpf_stmt(RET_K, SECCOMP_RET_ALLOW))
 
-    # 6. RET_ERRNO for each blocked syscall (in same order as checks)
     for _, errno_val in blocked_list:
         if profile.kill_on_unknown:
             instructions.append(bpf_stmt(RET_K, SECCOMP_RET_KILL_PROCESS))
@@ -279,7 +238,6 @@ def has_seccomp_support() -> bool:
         with open("/proc/sys/kernel/seccomp/actions_avail", "r") as f:
             return "allow" in f.read()
     except (OSError, FileNotFoundError):
-        # Fallback: try reading the seccomp status
         try:
             return Path("/proc/self/status").read_text().find("Seccomp:") >= 0
         except OSError:

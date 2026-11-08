@@ -14,8 +14,6 @@ from pathlib import Path
 
 MIGRATIONS_DIR = Path(__file__).resolve().parent.parent / "migrations"
 
-# The exact 16 tables named in the module brief. A file per table plus
-# extensions/realtime/storage-buckets = 19 migrations.
 EXPECTED_TABLES = {
     "agents", "llm_calls", "events", "utterances", "memories", "transactions",
     "businesses", "organizations", "petitions", "cases", "buildings", "skills",
@@ -29,11 +27,6 @@ def migration_files() -> list[Path]:
     return sorted(MIGRATIONS_DIR.glob("*.sql"))
 
 
-# The nineteen that BUILD the schema: extensions, sixteen tables, realtime
-# and storage. Later migrations alter what these created and are counted
-# separately - a schema that may never gain a column is a schema nobody can
-# fix, and freezing the total meant every real alteration arrived as a red
-# test with no way to go green except deleting it.
 SCHEMA_BUILDING_MIGRATIONS = 19
 
 
@@ -80,9 +73,6 @@ def test_migrations_apply_in_a_valid_dependency_order() -> None:
     directly or transitively), then realtime/storage last (they reference
     tables that must already exist).
     """
-    # The CREATION set's order, which is the dependency that matters.
-    # Alterations legitimately follow all of it - see
-    # test_every_alteration_runs_after_the_schema_it_alters.
     names = [f.name for f in creation_migrations()]
     assert names[0] == "20260730120000_extensions.sql"
     assert names[1] == "20260730120100_agents.sql"
@@ -105,7 +95,7 @@ def test_every_table_migration_enables_rls_grants_and_a_select_policy() -> None:
         text = path.read_text(encoding="utf-8")
         table_match = re.search(r"create table if not exists public\.(\w+)", text)
         if table_match is None:
-            continue  # extensions / realtime_publication / storage_buckets
+            continue
         table = table_match.group(1)
 
         assert f"alter table public.{table} enable row level security;" in text, table
@@ -154,8 +144,6 @@ def test_events_type_check_matches_every_example_in_conventions_md() -> None:
         assert pattern.match(event_type), event_type
 
     for bad in ["BadType", "no_dot_at_all", ".leadingdot", "trailing.", "UPPER.case.bad", "a.b.c.d"]:
-        # a.b.c.d (4 segments) is deliberately rejected too: the scheme
-        # is 2 or 3 segments, never more.
         assert not pattern.match(bad), bad
 
 
@@ -172,8 +160,6 @@ def test_realtime_publication_covers_events_and_utterances_only() -> None:
 
     assert "alter publication supabase_realtime add table public.events;" in text
     assert "alter publication supabase_realtime add table public.utterances;" in text
-    # No other table should be silently added to the live-view feed by this
-    # migration; every other table is a deliberate, separate decision.
     added_tables = re.findall(r"add table public\.(\w+);", text)
     assert set(added_tables) == {"events", "utterances"}
 

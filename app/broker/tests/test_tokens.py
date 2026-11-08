@@ -16,8 +16,6 @@ def test_roughly_four_chars_per_token() -> None:
 
 
 def test_partial_final_token_rounds_up() -> None:
-    # 401 chars -> 100 full tokens + 1 leftover char -> must round up to 101,
-    # never down (this feeds the wallet-check ceiling in pricing.py).
     assert estimate_tokens("x" * 401) == 101
 
 

@@ -25,11 +25,10 @@ def test_replay_returns_only_the_asked_thread():
 def test_after_seq_filters_within_thread_only():
     buf = ThreadBlockBuffers()
     s1 = buf.append(blk("t1", 1))
-    buf.append(blk("t2", 1))  # t2's seq 1 — must not appear in t1 replay
+    buf.append(blk("t2", 1))
     s2 = buf.append(blk("t1", 2))
     s3 = buf.append(blk("t1", 3))
 
-    # replay t1 after its own seq s1 → only t1's later blocks
     got = buf.replay("t1", after=s1)
     seqs = [seq for seq, _ in got]
     assert seqs == [s2, s3]

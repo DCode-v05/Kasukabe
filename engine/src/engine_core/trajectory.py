@@ -186,7 +186,6 @@ async def incremental_flush(
         logger.warning("incremental_flush: WM read failed for %s: %s", thread_id, e)
         return watermark
 
-    # Only items after the watermark
     new_items = items[watermark:]
     if not new_items:
         return watermark
@@ -254,7 +253,6 @@ async def record_feedback(
         return
 
     try:
-        # Find the most recent unprocessed entry for this task
         row = await db.fetchrow(
             """
             SELECT id, trajectory FROM lc_queue

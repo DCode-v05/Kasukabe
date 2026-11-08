@@ -38,7 +38,6 @@ async def test_an_intention_is_rendered_until_its_tool_succeeds(
     })
     assert world.intention_of("n06").text == "sell the cabbages at the market"
 
-    # Something else happening does not clear it.
     await registry.execute(world, "n06", "look_around", {})
     assert world.intention_of("n06") is not None
 
@@ -163,15 +162,10 @@ async def test_intentions_survive_a_checkpoint(world: WorldState, registry) -> N
     assert world.intention_of("n06").text == "harvest the strip"
 
 
-# ── how it reads ──────────────────────────────────────────────────────
-
-
 def test_the_line_says_when_and_what_and_nothing_else() -> None:
     line = format_intention({"text": "sell the wheat", "set_clock": "08:30"})
 
     assert line == "You set out at 08:30 to: sell the wheat"
-    # No advice, no "you should". The perception rules: state a fact and
-    # stop.
     assert "should" not in line and "consider" not in line
 
 

@@ -38,7 +38,7 @@ from world.core.clock import timestamp_for
 from world.ledger.core import BURNED_ACCOUNT_ID, TREASURY_ACCOUNT_ID, TOTAL_USD_CENTS
 from world.run_genesis import GenesisRunner, GenesisRunnerConfig, build_arg_parser, config_from_args
 
-EVENING = 108  # day 0, 18:00
+EVENING = 108
 
 
 def _runner(tmp_path: Path, **overrides: object) -> GenesisRunner:

@@ -51,12 +51,6 @@ from world.charter.models import (
 from world.charter.store import CharterStore
 
 
-# Attributes AmendmentEngine.__init__ sets that are references to sibling
-# objects, not owned state - the same "sibling vs. owned" split
-# world/tools/state.py's WorldState draws (see that module's docstring) and
-# world/charter/store.py's CharterStore self-check enforces for its own
-# fields. `proposals` is everything else __init__ sets, and therefore the
-# entire surface AMENDMENT_ENGINE_CHECKPOINTED_FIELDS below must cover.
 AMENDMENT_ENGINE_REFERENCE_FIELDS: frozenset[str] = frozenset({"store", "event_sink"})
 AMENDMENT_ENGINE_CHECKPOINTED_FIELDS: frozenset[str] = frozenset({"proposals"})
 
@@ -67,16 +61,6 @@ class AmendmentEngine:
         self.event_sink = event_sink if event_sink is not None else noop_sink
         self.proposals: dict[str, AmendmentProposal] = {}
 
-        # Self-check, every construction: mirrors CharterStore.__init__'s
-        # own guard (store.py) so the same class of bug (STATUS.md risk
-        # #3: an owned field added to __init__ without a matching entry in
-        # the thing snapshot()/restore() actually covers, silently dropped
-        # from every checkpoint) cannot recur here either. Only `proposals`
-        # is owned state today; a future field added to __init__ beyond
-        # the two reference attributes must be added to
-        # AMENDMENT_ENGINE_CHECKPOINTED_FIELDS and to snapshot()/restore()
-        # below, or this raises at the next AmendmentEngine() construction
-        # instead of silently vanishing on the next resume.
         actual_owned = set(vars(self)) - AMENDMENT_ENGINE_REFERENCE_FIELDS
         if actual_owned != set(AMENDMENT_ENGINE_CHECKPOINTED_FIELDS):
             missing = sorted(actual_owned - AMENDMENT_ENGINE_CHECKPOINTED_FIELDS)
@@ -90,20 +74,6 @@ class AmendmentEngine:
                 "amendment state."
             )
 
-    # -- checkpoint round-trip (STATUS.md risk #4) ------------------------
-    #
-    # `proposals` is the one piece of governance state charter/ keeps on a
-    # sub-engine instance rather than in CharterStore (see this class's
-    # `__init__` - unlike ElectionEngine/GovernmentActions/PatentOffice/
-    # LandPetitionQueue/OrganizationRegistry/ComplaintLedger, all of which
-    # are stateless wrappers around store methods, per those modules'
-    # `store.put_*`/`store.get_*` calls). world/run_genesis.py's
-    # CharterCheckpointAdapter must snapshot/restore this too, not just
-    # `store.snapshot()`/`.restore()`, or a resume mid-amendment would
-    # silently drop every proposal - proposed, passed-awaiting-president,
-    # enacted, vetoed, or rejected - exactly the "amendments" STATUS.md
-    # risk #4 names as lost data alongside the in-flight election and the
-    # sitting government.
 
     def snapshot(self) -> dict[str, Any]:
         return {proposal_id: p.model_dump(mode="json") for proposal_id, p in self.proposals.items()}
@@ -179,8 +149,6 @@ class AmendmentEngine:
         if not government_state.is_sitting(voter_agent_id):
             raise NotSittingGovernment(voter_agent_id)
 
-        # A seat holder may change their vote any time before the
-        # proposal resolves; only the latest vote per seat holder counts.
         proposal.votes[voter_agent_id] = support
 
         charter = await self.store.get_charter()
@@ -199,9 +167,6 @@ class AmendmentEngine:
                 )
             )
         elif cast_count >= total_seats:
-            # Every current seat holder has voted and the threshold is
-            # unreachable: the outcome is decided, no point leaving the
-            # proposal open for a vote that will never come.
             proposal.status = AmendmentStatus.REJECTED
             await self.event_sink(
                 build_event(
@@ -222,12 +187,6 @@ class AmendmentEngine:
             raise AmendmentNotPending(proposal_id, proposal.status.value)
 
         current = await self.store.get_charter()
-        # Build the candidate charter through the constructor, not
-        # model_copy(update=...): model_copy skips validation entirely,
-        # and a bad amendment value (wrong type, out-of-range number,
-        # window durations that no longer fit the interval) must be
-        # caught right here, not discovered the next time some unrelated
-        # code reads the charter.
         candidate_data = current.model_dump()
         candidate_data[proposal.field_name] = proposal.new_value
         candidate_data["version"] = current.version + 1

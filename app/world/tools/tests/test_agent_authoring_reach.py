@@ -51,8 +51,6 @@ async def test_what_the_agent_reads_about_a_tool_says_what_it_costs() -> None:
 
     assert "Cost:" in rows["harvest"]["description"]
     assert "sim-currency" in rows["harvest"]["description"]
-    # And the free ones say so, rather than staying silent and reading as
-    # unpriced-therefore-unknown.
     assert "0 sim-currency" in rows["toolify"]["description"]
     assert "0 sim-currency" in rows["skillify"]["description"]
 
@@ -91,19 +89,7 @@ async def test_a_repeated_job_earns_a_hint() -> None:
     hint = world.authoring_hint("ada")
     assert hint is not None
     assert "harvest" in hint
-    # It names the VERB, and nothing about the content.
-    #
-    # This assertion used to be the opposite - the hint named neither, so
-    # that what agents invent unprompted stayed the experiment. That still
-    # holds for what to write; it did not hold for which tool to reach for.
-    # Measured across one run: the hint fired in 61 of 351 sessions,
-    # `skillify` was called 0 times and `describe_primitives` once. An agent
-    # told "write a procedure down", with forty-eight tools in its schema,
-    # was not declining to author - it had not connected the sentence to
-    # the verb.
     assert "skillify" in hint and "toolify" in hint
-    # Every interesting decision is still the agent's: whether to write
-    # anything, what to write, what to call it, which steps it contains.
     assert "steps" not in hint.lower().split("steps you already have")[0].replace(
         "steps you already have", "")
     for invented in ("Harvest Routine", "call it", "name it"):
@@ -157,7 +143,6 @@ async def test_an_agent_invents_a_tool_and_calls_it_the_same_tick() -> None:
     assert world.ledger.sim_balance("ada") == before_balance, "no filing fee"
     assert registry.version > before_version, "engines will notice"
 
-    # And it really runs, this tick, without anyone approving anything.
     await registry.execute(world, "ada", "gather_and_look", {})
     assert world.inventory.quantity("ada", "wheat") > 0
 

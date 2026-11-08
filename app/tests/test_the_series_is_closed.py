@@ -85,9 +85,6 @@ def test_the_decision_to_stop_at_six_is_recorded(series_text: str) -> None:
     )
 
 
-# ── series_report.py ───────────────────────────────────────────────────
-
-
 def test_the_default_is_the_whole_series() -> None:
     assert series_report.THE_SERIES[:2] == ["short1", "run2"]
     for run in ("run7", "run8", "run9", "run10"):

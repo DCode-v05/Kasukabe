@@ -18,7 +18,7 @@ def test_advanced_by_returns_a_new_clock() -> None:
     advanced = clock.advanced_by(5.0)
 
     assert advanced.total_hours == 15.0
-    assert clock.total_hours == 10.0  # original untouched
+    assert clock.total_hours == 10.0
 
 
 def test_advanced_by_rejects_negative_hours() -> None:

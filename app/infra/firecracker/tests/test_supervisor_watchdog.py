@@ -13,8 +13,6 @@ from pathlib import Path
 
 import pytest
 
-# This package is imported flat, not as infra.firecracker.* - see
-# test_supervisor_protocol.py, which does the same.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from supervisor import (  # noqa: E402
@@ -50,7 +48,6 @@ class FakeSupervisor:
         self.put(unit_id, UnitState.RUNNING, last_health_check_at=NOW)
         return self.units[unit_id]
 
-    # the rest of the protocol, unused here
     async def start(self, spec: UnitSpec) -> UnitStatus: ...
     async def stop(self, unit_id: str, timeout_s: float = 10.0) -> UnitStatus: ...
     async def status(self, unit_id: str) -> UnitStatus: return self.units[unit_id]
@@ -68,8 +65,6 @@ def watchdog(sup: FakeSupervisor, **kw) -> SupervisorWatchdog:
     kw.setdefault("silence_timeout_s", 90.0)
     return SupervisorWatchdog(sup, **kw)
 
-
-# -- what it must act on ---------------------------------------------------
 
 @pytest.mark.asyncio
 async def test_a_failed_unit_is_restarted():
@@ -98,8 +93,6 @@ async def test_the_same_unit_id_comes_back():
     assert sup.restarts == ["agent-0003"]
     assert sup.units["agent-0003"].unit_id == "agent-0003"
 
-
-# -- what it must NOT act on ----------------------------------------------
 
 @pytest.mark.asyncio
 async def test_a_healthy_unit_is_left_alone():
@@ -144,8 +137,6 @@ async def test_a_brand_new_unit_with_no_heartbeat_yet_is_not_restarted():
     assert await watchdog(sup).check_once() == []
 
 
-# -- the policy ------------------------------------------------------------
-
 @pytest.mark.asyncio
 async def test_backoff_stops_a_restart_storm():
     """A unit that fails on startup fails again the moment it comes back."""
@@ -157,7 +148,7 @@ async def test_backoff_stops_a_restart_storm():
         policy=RestartPolicy(initial_backoff_s=10.0, backoff_factor=2.0),
     )
     assert await wd.check_once() == ["agent-0011"]
-    sup.put("agent-0011", UnitState.FAILED, clock["t"])     # failed again
+    sup.put("agent-0011", UnitState.FAILED, clock["t"])
     assert await wd.check_once() == [], "should still be backing off"
     clock["t"] += 11
     assert await wd.check_once() == ["agent-0011"]
@@ -225,8 +216,6 @@ async def test_the_watchdog_survives_a_backend_that_cannot_even_list():
     assert await watchdog(Broken()).check_once() == []
 
 
-# -- the loop --------------------------------------------------------------
-
 @pytest.mark.asyncio
 async def test_run_forever_polls_and_stops_cleanly():
     sup = FakeSupervisor()
@@ -261,7 +250,7 @@ def test_backoff_is_bounded():
     policy = RestartPolicy(initial_backoff_s=2.0, max_backoff_s=30.0, backoff_factor=10.0)
     assert policy.backoff_for(1) == 2.0
     assert policy.backoff_for(2) == 20.0
-    assert policy.backoff_for(3) == 30.0     # capped
+    assert policy.backoff_for(3) == 30.0
     assert policy.backoff_for(99) == 30.0
 
 

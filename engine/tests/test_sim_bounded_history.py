@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import pytest
 
-RESERVE_FLOOR = 25_000  # src/engine_core/context_engineering.py:31
+RESERVE_FLOOR = 25_000
 
 
 def test_the_window_no_longer_makes_compaction_unconditional():
@@ -31,8 +31,6 @@ def test_the_window_no_longer_makes_compaction_unconditional():
         "before a single message exists and every call takes the emergency "
         "path (ENG-02)"
     )
-    # Room for the tool schemas too (~16K by the engine's own estimator),
-    # or the preflight is still true on a turn with no history.
     assert SIM_CONTEXT_WINDOW > RESERVE_FLOOR + 16_000 + 2_000
 
 

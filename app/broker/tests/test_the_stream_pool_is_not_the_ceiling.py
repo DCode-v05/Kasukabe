@@ -21,8 +21,6 @@ import threading
 
 import pytest
 
-# BedrockGateway is the Protocol; Boto3BedrockGateway is the class
-# that actually talks to Bedrock and owns the pool.
 from broker.bedrock import STREAM_POOL_WORKERS, Boto3BedrockGateway
 
 

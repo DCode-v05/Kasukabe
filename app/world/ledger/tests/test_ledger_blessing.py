@@ -20,7 +20,7 @@ async def test_mint_sim_credits_the_agent_from_nothing() -> None:
     assert ledger.sim_balance("baby") == 5_000
     assert transaction.from_account == MINT_ACCOUNT_ID
     assert transaction.reason is TransactionReason.BLESSING
-    assert ledger.halted is False  # sim is not part of the USD invariant
+    assert ledger.halted is False
 
 
 @pytest.mark.asyncio

@@ -15,7 +15,7 @@ from typing import Any
 
 from src.memory.working_memory import LogEntry, EntryType
 
-MAX_CHARS_PER_SECTION = 8_000  # ~2000 tokens at 4 chars/token
+MAX_CHARS_PER_SECTION = 8_000
 NOISE_EVENTS = {"thread_state_change"}
 
 
@@ -56,7 +56,6 @@ def format_context_summary(
 
     recent = items[-max_items:]
 
-    # Buckets
     current_state: list[str] = []
     task_activity: list[str] = []
     tool_ops: list[str] = []
@@ -65,7 +64,6 @@ def format_context_summary(
     decisions: list[str] = []
     events: list[str] = []
 
-    # Single pass with lookahead for tool pairing
     i = 0
     last_user_msg = ""
     last_assistant_msg = ""
@@ -90,7 +88,6 @@ def format_context_summary(
             if fp:
                 files_touched.add(fp)
 
-            # Try to pair with next entry if it's the matching result
             result_line = ""
             if i + 1 < len(recent) and recent[i + 1].type == EntryType.TOOL_RESULT:
                 rdata = safe_json(recent[i + 1].content)
@@ -108,7 +105,7 @@ def format_context_summary(
                     rfp = extract_file_path(rdata)
                     if rfp:
                         files_touched.add(rfp)
-                    i += 1  # skip the paired result
+                    i += 1
 
             if result_line:
                 tool_ops.append(result_line)
@@ -116,7 +113,6 @@ def format_context_summary(
                 tool_ops.append(f"  → {tool_name}: {tool_input}")
 
         elif entry.type == EntryType.TOOL_RESULT:
-            # Unpaired result (wasn't consumed by a preceding TOOL_CALL)
             tool_name = data.get("tool", "unknown")
             success = data.get("success", True)
             result_text = truncate(data.get("result", entry.content), 200)
@@ -161,7 +157,6 @@ def format_context_summary(
 
         i += 1
 
-    # Build current state from latest messages + checkpoint
     if last_user_msg:
         current_state.append(f"Last user request: {last_user_msg}")
     if last_assistant_msg:
@@ -169,7 +164,6 @@ def format_context_summary(
     if decisions:
         current_state.append(decisions[-1])
 
-    # Assemble sections
     sections: list[tuple[str, list[str]]] = [
         ("Current State", current_state),
         ("Task Activity", task_activity),

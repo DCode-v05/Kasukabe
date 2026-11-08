@@ -1,11 +1,3 @@
-// Kasukabe operator console - plain JS, no build step (game/README.md:
-// "minimal tooling"). Every action here is a fetch() to this same
-// origin's /api/* routes; app.py forwards each call to world's admin API
-// through world_client.py - nothing about "what happens" is decided in
-// this file, only "what does the operator want to do" and "how do I show
-// what world said" (app/CONVENTIONS.md: "game/ ... never computes game
-// logic locally").
-
 const TOKEN_KEY = "kasukabe_operator_token";
 const REFRESH_INTERVAL_MS = 8000;
 
@@ -16,10 +8,6 @@ function esc(value) {
 }
 
 function splitNames(value) {
-  // UI-31. `null`, not `[]`, when the operator typed nothing: the world's
-  // expand_land treats an empty list and a missing one differently - a
-  // list means "carve the strip into these bands", and an EMPTY list would
-  // mean "carve it into no bands at all".
   const names = String(value || "")
     .split(",")
     .map((name) => name.trim())
@@ -80,7 +68,6 @@ async function apiFetch(path, options) {
       const body = await response.json();
       if (body && body.detail) detail = body.detail;
     } catch (_) {
-      /* body wasn't JSON, keep statusText */
     }
     showBanner("Request failed (" + response.status + "): " + detail);
     throw new Error(detail);
@@ -112,8 +99,6 @@ function renderList(containerId, items, renderFn, emptyMessage) {
   items.forEach((item) => container.appendChild(renderFn(item)));
 }
 
-// -- tabs ---------------------------------------------------------------
-
 function initTabs() {
   document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -125,8 +110,6 @@ function initTabs() {
   });
 }
 
-// -- token box ------------------------------------------------------------
-
 function initTokenBox() {
   const input = document.getElementById("operator-token");
   input.value = getToken();
@@ -137,23 +120,6 @@ function initTokenBox() {
   });
 }
 
-// -- irreversible actions: arm, then confirm ------------------------------
-//
-// UI-31. Approve grows the map, Deny closes a petition for good, a
-// disaster lands on real residents and the population dials change who
-// lives and who dies - and every one of them fired on a single click,
-// sitting a few pixels from the button that does the opposite.
-//
-// A native confirm() would be one line and is deliberately NOT used. It
-// blocks the page's event loop, which stops the 8-second refresh dead and
-// makes the console undriveable by anything but a human hand. Arming the
-// button instead keeps the page live, shows the operator exactly which
-// action is armed and in their own words, and gives up on its own if they
-// walk away - a dialog left open does not.
-//
-// Not applied to pause, resume, tick-speed or checkpoint: those are
-// reversible or additive, and a confirmation on a harmless button teaches
-// the operator to click through confirmations.
 const ARM_TIMEOUT_MS = 5000;
 
 function confirmable(button, run) {
@@ -177,15 +143,10 @@ function confirmable(button, run) {
       timer = window.setTimeout(disarm, ARM_TIMEOUT_MS);
       return;
     }
-    // Disarm BEFORE running, not after: `run` awaits the network, and a
-    // button left armed across that await is a double-send waiting to
-    // happen.
     disarm();
     await run();
   });
 }
-
-// -- President: land petitions --------------------------------------------
 
 function renderPetition(p) {
   const item = listItem(`
@@ -250,8 +211,6 @@ function renderPetition(p) {
   return item;
 }
 
-// -- President: amendments -------------------------------------------------
-
 function renderAmendment(a) {
   const item = listItem(`
     <div class="list-item-head">
@@ -284,8 +243,6 @@ function renderAmendment(a) {
   });
   return item;
 }
-
-// -- President: broadcasts + honors ----------------------------------------
 
 function renderBroadcast(b) {
   return listItem(
@@ -347,8 +304,6 @@ function initPresidentActions() {
   });
 }
 
-// -- God: prayers ------------------------------------------------------------
-
 function renderPrayer(p) {
   const item = listItem(`
     <div class="list-item-head">
@@ -380,8 +335,6 @@ function renderPrayer(p) {
   });
   return item;
 }
-
-// -- God: baby blessings -----------------------------------------------------
 
 function renderBlessing(b) {
   const item = listItem(`
@@ -416,8 +369,6 @@ function renderBlessing(b) {
   });
   return item;
 }
-
-// -- God: disasters, miracles, misfortunes -----------------------------------
 
 function renderDisaster(d) {
   return listItem(
@@ -480,8 +431,6 @@ function initDisasterAction() {
   });
 }
 
-// -- God: population dials ---------------------------------------------------
-
 async function refreshDials() {
   const dials = await apiFetch("/api/god/population-dials");
   document.getElementById("dial-min").value = dials.target_band_min;
@@ -523,24 +472,6 @@ async function refreshGod() {
   await refreshDials();
 }
 
-// -- Spend: live burn + rate ----------------------------------------------------
-
-// This run's operational budget guardrail (the operator brief's "HARD
-// BUDGET CAP $400" for today's genesis run) - distinct from
-// schemas.py's SpendStatusView.budget_total_usd_cents, which is the
-// ledger's fixed $1000 total pool (DESIGN.md section 3, app/CONVENTIONS.md's
-// invariant). The bar below turns amber/red as burned approaches THIS
-// cap so the operator sees it coming well before the ledger's own $1000
-// ceiling could ever be threatened.
-// UI-16. The cap comes from the run, not from this file.
-//
-// This was `const RUN_BUDGET_CAP_USD_CENTS = 40000` - $400 - while every
-// run this project has done was capped at $1 to $10. So the bar read about
-// 1% full on a run that had actually spent its whole budget, and the note
-// under it said "of $400 cap" every single time.
-//
-// Kept as the fallback for a world that reports no cap, so the panel still
-// renders rather than dividing by null.
 const RUN_BUDGET_CAP_FALLBACK_CENTS = 40000;
 
 function runCapCents(status) {
@@ -548,10 +479,6 @@ function runCapCents(status) {
   return (typeof cap === "number" && cap > 0) ? cap : RUN_BUDGET_CAP_FALLBACK_CENTS;
 }
 
-// { burnedCents, atMs } from the previous poll, or null before the first
-// one lands. A rate only means something as a delta between two point-in-
-// time samples (schemas.py's SpendStatusView docstring), so this is kept
-// here rather than asked of world/.
 let lastSpendSample = null;
 
 function usdFromCents(cents) {
@@ -594,8 +521,6 @@ async function refreshSpend() {
   renderSpend(status);
 }
 
-// -- Alerts --------------------------------------------------------------------
-
 function renderAlert(a) {
   return listItem(
     `<div class="list-item-head"><span class="badge">${esc(a.category)}</span>` +
@@ -608,8 +533,6 @@ async function refreshAlerts() {
   const alerts = await apiFetch("/api/alerts?limit=50");
   renderList("alerts-list", alerts, renderAlert, "no alerts");
 }
-
-// -- Top-level control strip ---------------------------------------------------
 
 function renderStatus(status) {
   document.getElementById("status-readout").textContent =
@@ -650,14 +573,6 @@ function initControlActions() {
     showBanner(`Checkpoint written for game day ${summary.game_day} (tick ${summary.tick_index}).`, "ok");
   });
 }
-
-// -- boot --------------------------------------------------------------------
-
-// -- B7: the town, in plain language -------------------------------------
-// Renders what game/console/framing.py already decided. This function
-// deliberately makes no judgement of its own: if it started deciding what
-// counted as "critical" here, that rule would live in two places and the
-// tested one would not be the one on screen.
 
 function confidenceClass(confidence) {
   if (!confidence) return "none";
@@ -754,7 +669,6 @@ async function refreshAll() {
       refreshTown(),
     ]);
   } catch (err) {
-    // apiFetch already surfaced a banner; nothing further to do here.
   }
 }
 

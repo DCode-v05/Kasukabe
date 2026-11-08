@@ -72,7 +72,6 @@ def test_the_dormant_count_tracks_reality(dormant_count: int) -> None:
     counted = sum(1 for r in records if r.dormancy.is_dormant)
     assert counted == dormant_count
 
-    # And the shape that used to be here reports nothing, always.
     broken = sum(1 for r in records if bool(getattr(r.dormancy, "dormant", False)))
     assert broken == 0
     if dormant_count:

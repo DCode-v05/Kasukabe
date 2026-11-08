@@ -155,9 +155,6 @@ async def test_a_real_tool_use_block_is_left_alone() -> None:
     assert len(blocks) == 1 and blocks[0]["id"] == "toolu_real"
 
 
-# ── the refusals ───────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_arguments_that_are_not_json_stay_as_text() -> None:
     """A turn that did nothing is bad; a turn that did SOMETHING ELSE is
@@ -209,9 +206,6 @@ def test_both_marker_spellings_are_recognised() -> None:
         '<|tool_call_argument_begin|> {"item": "bread"} <|function_call_end|>'
     )
     assert [c.name for c in calls] == ["world_eat"]
-
-
-# ── ENG-08: the same defect, found twice, closed once ────────────────
 
 
 class TestTheOpeningMarkerIsOptional:

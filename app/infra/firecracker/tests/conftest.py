@@ -5,11 +5,6 @@ from pathlib import Path
 
 import pytest
 
-# Flat top-level imports (config, supervisor, vm_manager, ...) rather than
-# a package: this track is intentionally not wired into app/pyproject.toml's
-# packages.find (app/infra has no Python package of its own there yet, see
-# app/infra/README.md), so tests add the track's own directory to
-# sys.path exactly the way Dockerfile.test's PYTHONPATH does for a real run.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config import FirecrackerSettings  # noqa: E402

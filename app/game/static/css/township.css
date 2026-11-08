@@ -1,87 +1,48 @@
-/* ═══════════════════════════════════════════════════════════════════
-   OBSERVATION DECK
-   ───────────────────────────────────────────────────────────────────
-   The town is a living specimen under instrument glass.
-
-   This page watches 314 minds spend real money to stay alive, and the
-   chrome should say so. The previous language - rounded display face,
-   mint greens, soft cards - read as a children's game, which quietly
-   undercut every honesty mechanism in the app: a REAL AGENTS badge means
-   less when it sits in a toy.
-
-   So: graphite instrument chrome, hairline ledger rules, and a warm
-   living map glowing inside it like something under observation. Colour
-   is spent, not sprinkled - the chrome is near-monochrome so that the
-   four signal hues MEAN something wherever they appear.
-
-     ember   money moving, spend, cost
-     mint    real / live / alive - the badge only earns this when all
-             three provenance axes are real
-     rust    death, insolvency, critical
-     brass   watch, warning, government
-
-   Everything below flows through these tokens: 402 var() references
-   across this sheet, which is why the whole surface turns over from
-   here rather than from 500 hand-edits.
-   ═══════════════════════════════════════════════════════════════════ */
-
 :root {
     color-scheme: dark;
 
-    /* ── instrument chrome: near-black with a cool cast ───────────── */
     --void:       #070A0E;
     --paper:      #0A0E13;
     --surface:    #10161E;
     --surface-2:  #161E28;
     --surface-3:  #1D2732;
 
-    /* Hairlines, not borders. A ledger is ruled, not boxed. */
     --line:       #253140;
     --line-soft:  #1A232E;
     --line-lit:   #3A4B5E;
 
-    /* ── ink: warm bone rather than white, so it reads as printed ─── */
     --ink:        #E8E3D8;
     --ink-soft:   #A3AEBB;
     --ink-faint:  #6B7885;
 
-    /* ── the four signals ─────────────────────────────────────────── */
-    --ember:      #F0863C;   /* money in motion */
+    --ember:      #F0863C;
     --ember-dim:  #8A4A20;
     --ember-soft: #2A1608;
-    --mint:       #4ADE9B;   /* real, live, alive */
+    --mint:       #4ADE9B;
     --mint-dim:   #2A8159;
     --mint-soft:  #072016;
-    --rust:       #E85C50;   /* death, critical */
+    --rust:       #E85C50;
     --rust-dim:   #8C332C;
     --rust-soft:  #2A0F0D;
-    --brass:      #DCA945;   /* watch, government */
+    --brass:      #DCA945;
     --brass-dim:  #85662A;
     --brass-soft: #251C08;
 
-    /* Aliases so the existing 400+ var() calls keep meaning what they
-       meant - good/watch/critical were already semantic, so they map
-       straight onto the new signals. */
     --good: var(--mint);       --good-soft: var(--mint-soft);
     --watch: var(--brass);     --watch-soft: var(--brass-soft);
     --critical: var(--rust);   --critical-soft: var(--rust-soft);
     --title: var(--ember);
 
-    /* The map keeps its daylight. It is the one warm thing on the page
-       and the chrome exists to frame it, not to match it. */
     --sky-top: #6FB8E4; --sky-bot: #BCE3F7;
     --grass: #6DBE5B;   --grass-dark: #58A548;
     --sun: #FFD24D;     --sun-strong: #F5A623;
     --brick: #EF6C3B;   --brick-dark: #D4501F;
     --ocean: #2F8FD8;   --ocean-dark: #1F6FAF;
 
-    /* ── type ─────────────────────────────────────────────────────── */
     --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
     --font-body: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
     --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
 
-    /* ── depth: rim light, not drop shadow. On near-black a shadow is
-       invisible; what reads is a lit edge. ───────────────────────── */
     --rim: inset 0 1px 0 rgba(255,255,255,.045);
     --shadow: 0 1px 0 rgba(255,255,255,.03), 0 8px 24px rgba(0,0,0,.55);
     --shadow-lift: 0 1px 0 rgba(255,255,255,.06), 0 18px 48px rgba(0,0,0,.7);
@@ -125,7 +86,6 @@
   .disclosure b { color: var(--ink-soft); }
   code { font-family: var(--font-mono); font-size: .9em; background: var(--surface-2); border: 1px solid var(--line-soft); border-radius: 3px; padding: 1px 5px; }
 
-  /* ---- HUD console ---- */
   .console {
     display: flex; flex-wrap: wrap; align-items: center; gap: 16px;
     background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
@@ -155,7 +115,6 @@
   .hud-stat b { color: var(--ink); font-size: 12.5px; font-weight: 800; }
   .hud-stat .ico { font-size: 14px; }
 
-  /* ---- layout ---- */
   .stage { display: grid; grid-template-columns: minmax(0,1fr) 360px; gap: 18px; align-items: start; }
   @media (max-width: 1040px) { .stage { grid-template-columns: 1fr; } }
 
@@ -166,7 +125,6 @@
   }
   .panel > .panel-head .hint { font-weight: 600; font-size: 11px; color: var(--ink-faint); font-family: var(--font-mono); text-transform: none; }
 
-  /* ---- village viewport (canvas) ---- */
   .viewport { position: relative; width: 100%; height: 780px; overflow: hidden; background: #7FC9F0; }
   #village { display: block; width: 100%; height: 100%; cursor: grab; }
   #village:active { cursor: grabbing; }
@@ -175,7 +133,6 @@
   .legend { display: flex; flex-wrap: wrap; gap: 12px; padding: 9px 16px 13px; font-family: var(--font-mono); font-weight: 700; font-size: 11px; color: var(--ink-soft); border-top: 1px solid var(--line-soft); }
   .legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; border: 1.5px solid #fff; }
 
-  /* ---- rail ---- */
   .rail { display: flex; flex-direction: column; gap: 16px; }
   .inspector-body { padding: 15px 16px; min-height: 180px; }
   .inspector-empty { color: var(--ink-faint); font-size: 13px; padding: 26px 6px; text-align: center; }
@@ -241,7 +198,6 @@
   .bar-row .bar-track > span { display: block; height: 100%; border-radius: 4px; }
   .bar-row .bar-n { font-family: var(--font-mono); width: 26px; text-align: right; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 
-  /* ---- Characters roster ---- */
   .roster-controls {
     display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
     padding: 13px 16px; border-bottom: 1px solid var(--line-soft); background: var(--surface-2);
@@ -319,7 +275,6 @@
   footer.sig { margin-top: 26px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--ink-faint); font-style: italic; }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 
-  /* ---- inspector head + tabs ---- */
   .insp-head { display: flex; gap: 11px; align-items: center; margin-bottom: 11px; }
   .insp-avatar { width: 46px; height: 46px; flex-shrink: 0; border-radius: 13px; display: grid; place-items: center; font-size: 23px; border: 2px solid rgba(255,255,255,.55); }
   .agent-sub2 { font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); margin: 1px 0 0; }
@@ -337,7 +292,6 @@
   dl.facts dd.neg { color: var(--critical); font-weight: 700; }
   .spark { width: 100%; height: 52px; display: block; margin: 4px 0 8px; }
 
-  /* ---- relationships ---- */
   .src-tag { font-family: var(--font-mono); font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 5px; margin-left: 6px; text-transform: none; letter-spacing: 0; }
   .src-tag.genesis { background: var(--good-soft); color: var(--good); border: 1px solid var(--good); }
   .src-tag.inferred { background: var(--watch-soft); color: var(--watch); border: 1px solid var(--watch); }
@@ -353,7 +307,6 @@
   .rel-name { font-weight: 800; }
   .rel-note { font-size: 11px; color: var(--ink-faint); line-height: 1.5; margin: 10px 0 0; font-style: italic; }
 
-  /* ---- memory stream ---- */
   .mem-list { display: flex; flex-direction: column; gap: 4px; max-height: 340px; overflow-y: auto; }
   .mem-row { display: flex; gap: 8px; align-items: baseline; font-size: 12px; padding: 6px 8px; border-radius: 7px; background: var(--surface-2); border-left: 3px solid var(--line); }
   .mem-row.mem-o { border-left-color: var(--ocean); }
@@ -364,7 +317,6 @@
   .mem-imp { font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); flex-shrink: 0; background: var(--surface); border: 1px solid var(--line-soft); border-radius: 4px; padding: 1px 5px; }
   .mem-legend { display: flex; gap: 12px; font-size: 10.5px; color: var(--ink-faint); margin-top: 9px; font-family: var(--font-mono); }
 
-  /* ---- live chat ---- */
   .chat { padding: 10px 14px 14px; max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 9px; }
   .chat-row { display: flex; gap: 9px; }
   .chat-avatar { width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; display: grid; place-items: center; font-size: 15px; border: 2px solid rgba(255,255,255,.5); }
@@ -378,7 +330,6 @@
   .chat-text { font-size: 12.5px; font-weight: 700; color: var(--ink); line-height: 1.45; margin: 1px 0; }
   .chat-meta { font-family: var(--font-mono); font-size: 9.5px; color: var(--ink-faint); }
 
-  /* ---- money scoreboard ---- */
   .score-body { padding: 14px 16px 16px; display: grid; grid-template-columns: 1fr; gap: 14px; }
   @media (min-width: 900px) { .score-body { grid-template-columns: 2fr 1fr 1fr; } }
   .score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
@@ -399,7 +350,6 @@
 
   .char-skill.mem { background: var(--surface-2); color: var(--ink-faint); border-color: var(--line); }
 
-  /* ---- expert reflection (Park et al. 2024) ---- */
   .expert-q { width: 100%; font-family: var(--font-body); font-size: 12.5px; padding: 8px 11px; border: 2px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); }
   .expert-q:focus-visible { outline: 2px solid var(--ocean); outline-offset: 1px; border-color: var(--ocean); }
   .routed { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-faint); margin: 6px 0 12px; }
@@ -411,7 +361,6 @@
 
   .chat-empty { font-size: 12px; color: var(--ink-faint); line-height: 1.5; margin: 6px 0; font-style: italic; }
 
-  /* ---- resident file popup ---- */
   .modal {
     position: fixed; inset: 0; z-index: 60; display: none;
     align-items: center; justify-content: center; padding: 24px;
@@ -438,7 +387,6 @@
   .modal .mem-list { max-height: none; }
   @media (max-width: 620px) { .modal { padding: 10px; } .modal-card { max-height: 94vh; } }
 
-  /* ---- alive / dead status ---- */
   .hud-stat.alive b { color: var(--good); }
   .hud-stat.dead b { color: var(--critical); }
   .two-up { display: grid; grid-template-columns: 1fr; gap: 18px; }
@@ -525,7 +473,6 @@
   .sim-tag { font-family: var(--font-mono); font-size: 9px; font-style: normal; text-transform: uppercase;
     letter-spacing: .06em; color: var(--watch); border: 1px solid var(--watch); border-radius: 4px; padding: 0 4px; }
 
-  /* ---- fullscreen map ---- */
   body.map-fullscreen { overflow: hidden; }
   .panel.fullscreen {
     position: fixed; inset: 0; z-index: 50; border-radius: 0; margin: 0;
@@ -533,11 +480,7 @@
   }
   .panel.fullscreen .viewport { flex: 1 1 auto; height: auto; }
 
-  /* ---- the map is the page: it opens filling the viewport ---- */
   .hero { margin-bottom: 14px; }
-  /* Capped: an unusually tall window would otherwise size the canvas to
-     thousands of pixels and make every frame redraw the whole town at that
-     resolution. */
   .hero .viewport { height: calc(100vh - 210px); min-height: 460px; max-height: 900px; }
   @media (max-width: 1040px) { .hero .viewport { height: 60vh; min-height: 380px; } }
   .scroll-cue {
@@ -550,7 +493,6 @@
   #profilePanel .mem-list { max-height: 420px; }
   .stage .rail { gap: 18px; }
 
-  /* ---- the card that opens on the map, at the person ---- */
   .map-card {
     position: absolute; z-index: 6; width: 236px;
     background: var(--surface); border: 2px solid var(--line);
@@ -561,7 +503,6 @@
   }
   @keyframes mcIn { from { opacity: 0; transform: translateY(5px) scale(.97); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { .map-card { animation: none; } }
-  /* pointer down at the resident; --tip tracks them when the card is clamped */
   .map-card::after {
     content: ''; position: absolute; bottom: -9px; left: var(--tip, 50%);
     margin-left: -8px; width: 0; height: 0;
@@ -604,7 +545,6 @@
   .mc-more:hover { border-color: var(--ocean); }
   .mc-more:focus-visible, .mc-close:focus-visible { outline: 2px solid var(--ocean); outline-offset: 1px; }
 
-  /* ---- zoom stepper ---- */
   .zoom-group { display: inline-flex; align-items: center; gap: 4px; }
   button.ctl.zoom {
     width: 34px; padding: 8px 0; font-size: 17px; line-height: 1;
@@ -616,18 +556,11 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* ---- v2 map frame: the canvas has a fixed 2013x1089 backing store and is
-     scaled by CSS, so what you see is exactly what exports ---- */
   .viewport.v2 { height: auto; background: #B9DEF7; display: flex; justify-content: center; }
   .viewport.v2 #village { width: 100%; height: auto; }
   .panel.fullscreen .viewport.v2 { flex: 1 1 auto; align-items: center; }
 
 
-/* ==========================================================================
-   Search, and the card that opens on a building (Google-Maps-shaped: the
-   search sits ON the map, results drop under it, and clicking a result
-   flies the camera there).
-   ========================================================================== */
 .map-search {
   position: absolute; top: 14px; left: 14px; z-index: 8; width: min(380px, 46vw);
   font-family: var(--font-ui, inherit);
@@ -674,7 +607,6 @@
 }
 .ms-empty { padding: 14px; font-size: 12.5px; font-weight: 600; color: var(--ink-faint); }
 
-/* the building card */
 .place-card {
   position: absolute; right: 14px; top: 14px; z-index: 7;
   width: min(340px, 45vw); max-height: calc(100% - 28px); overflow-y: auto;
@@ -703,7 +635,6 @@
 .pc-doing { font-size: 11px; color: var(--ink-soft); text-align: right; max-width: 46%; font-weight: 700; }
 .pc-more, .pc-empty { padding: 8px 4px; font-size: 11.5px; color: var(--ink-faint); }
 
-/* the government's own building programme */
 .init {
   display: flex; align-items: flex-start; gap: 10px;
   padding: 9px 4px; border-bottom: 1px solid var(--line-soft);
@@ -722,7 +653,6 @@
 .init.done .init-state { background: #D6EBD8; color: #24632c; }
 .init-note { margin-top: 8px; font-size: 11.5px; font-weight: 700; color: var(--ink-faint); }
 
-/* the pinned profile card's added detail */
 .map-card .mc-trait {
   margin-top: 8px; font-size: 11.5px; font-weight: 700; color: var(--ink-soft);
 }
@@ -732,15 +662,6 @@
 }
 
 
-/* ==========================================================================
-   Weight and contrast pass.
-   The page read as light and web-ish next to a map this heavy. Everything
-   below raises the type weight and tightens the contrast so the panels sit
-   at the same visual weight the town does - and so a number an operator has
-   to read across a room is actually readable.
-   Kept as one block at the end rather than edited through the file above, so
-   what changed for legibility is separable from what the layout needs.
-   ========================================================================== */
 :root { --line-strong: rgba(34,48,60,.28); }
 :root[data-theme="dark"], :root[data-theme="auto-dark"] { --line-strong: rgba(234,242,248,.30); }
 
@@ -756,7 +677,6 @@ h2, .panel > h2 {
   letter-spacing: .10em; text-transform: uppercase; color: var(--ink-faint);
 }
 
-/* controls: heavier, with a real pressed state */
 button.ctl {
   font-weight: 800; letter-spacing: .005em;
   border-width: 2px; border-color: var(--line-strong);
@@ -766,12 +686,10 @@ button.ctl[aria-pressed="true"], button.ctl.on {
   border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink);
 }
 
-/* the HUD numbers are the thing people actually read */
 .hud-stat { font-weight: 700; }
 .hud-stat b { font-weight: 900; letter-spacing: -.01em; }
 #clockLabel, .clock { font-weight: 900; letter-spacing: -.02em; }
 
-/* tables and figures */
 .facts dt { font-weight: 700; color: var(--ink-faint); }
 .facts dd { font-weight: 800; color: var(--ink); }
 .score-stat .sv { font-weight: 900; letter-spacing: -.015em; }
@@ -781,25 +699,18 @@ button.ctl[aria-pressed="true"], button.ctl.on {
 .gov-fact .k { font-weight: 700; }
 .gov-fact .v { font-weight: 900; }
 
-/* panels: a firmer edge, so a card reads as a card */
 .panel, .map-card, .place-card {
   border-width: 2px; border-color: var(--line-strong);
 }
 .panel { box-shadow: 0 2px 10px rgba(20,40,25,.06); }
 
-/* the roster cards */
 .rcard b, .char-row b { font-weight: 800; }
 .tab { font-weight: 800; letter-spacing: .01em; }
 .tab.on { font-weight: 900; }
 
-/* the map card's own head */
 .mc-id b { font-weight: 900; letter-spacing: -.01em; }
 .mc-doing { font-weight: 800; }
 
-/* ---- live-engine badge -------------------------------------------------
-   Says, in one glance, whether the residents on screen are being placed by
-   a running world server or by the page's own schedule. Never hidden: a
-   viewer that quietly falls back is a viewer you cannot trust. */
 .live-badge{
   display:inline-flex; align-items:center; gap:.4rem;
   padding:.34rem .72rem; border-radius:999px;
@@ -813,9 +724,6 @@ button.ctl[aria-pressed="true"], button.ctl.on {
 .live-badge.off{ background:#F2F1EE; color:#6B6559; border-color:#DAD6CD; }
 .live-badge.off::before{ background:#B4AEA2; }
 
-/* ---- household rows that open to the family ---------------------------
-   A household on the wealth leaderboard is a question — "who are they?" —
-   so the row opens rather than being a dead end. */
 .hh-row { cursor: pointer; }
 .hh-row:focus-visible { outline: 2px solid var(--ocean); outline-offset: 1px; }
 .hh-caret {
@@ -853,11 +761,7 @@ button.ctl[aria-pressed="true"], button.ctl.on {
   margin: 6px 2px 0; line-height: 1.45;
 }
 
-/* ---- place card: show everyone, and let the card scroll ---------------- */
 .place-card { display: flex; flex-direction: column; max-height: min(76vh, 680px); }
-/* A class selector beats the UA stylesheet's [hidden]{display:none}, so
-   giving the card a display value above un-hid it: an empty white box sat in
-   the corner of the map at all times. Restore the attribute's meaning. */
 .place-card[hidden] { display: none; }
 .place-card .pc-head { flex: 0 0 auto; }
 .pc-scroll { overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; }
@@ -867,11 +771,6 @@ button.ctl[aria-pressed="true"], button.ctl.on {
   font-weight: 900; font-size: 9.5px; letter-spacing: .04em; text-transform: uppercase;
 }
 
-/* ==========================================================================
-   MAP-FIRST SHELL
-   The map is the application, not an illustration in a report. It fills the
-   window; everything else floats over it and is opened only when asked for.
-   ========================================================================== */
 body.shell-on { overflow: hidden; height: 100vh; }
 body.shell-on .wrap { display: contents; }
 body.shell-on .sig { display: none; }
@@ -881,12 +780,8 @@ body.shell-on .sig { display: none; }
 .shell-map .viewport,
 .shell-map .viewport.v2 { position: absolute; inset: 0; width: 100%; height: 100%;
   border-radius: 0; border: 0; margin: 0; }
-/* The canvas carries its own inline width/height from Village.resize(); this
-   only guarantees it is a block that starts at the corner. Setting 100% here
-   as well would fight those inline values. */
 .shell-map canvas { display: block; position: absolute; inset: 0; }
 
-/* --- floating top bar --- */
 .shell-topbar {
   position: absolute; top: 12px; left: 12px; right: 12px; z-index: 30;
   display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
@@ -902,10 +797,8 @@ body.shell-on .sig { display: none; }
   padding: 0; border: 0; margin: 0; }
 @media (max-width: 900px) { .shell-topbar { gap: 6px; padding: 8px 10px; } }
 
-/* the map's own search box sits under the bar */
 body.shell-on .map-search { top: 82px; left: 22px; z-index: 25; }
 
-/* --- dock tabs (the handles) --- */
 .dock-tab {
   position: absolute; z-index: 28; display: inline-flex; align-items: center; gap: 7px;
   padding: 10px 14px; border-radius: 12px; cursor: pointer;
@@ -921,7 +814,6 @@ body.shell-on .map-search { top: 82px; left: 22px; z-index: 25; }
 body.dock-left .dock-tab.left,
 body.dock-chat .dock-tab.chat { display: none; }
 
-/* --- the docks --- */
 .dock {
   position: absolute; z-index: 32; top: 0; bottom: 0;
   display: flex; flex-direction: column;
@@ -960,7 +852,6 @@ body.dock-chat .dock-tab.chat { display: none; }
 .dock-body { flex: 1 1 auto; overflow-y: auto; padding: 12px; }
 .book-page > .panel, .book-page > .stage { margin: 0 0 14px; }
 
-/* the right dock holds whole panels, edge to edge */
 .dock.right > .panel,
 .dock.right > .place-card {
   position: static; inset: auto; width: auto; max-width: none; max-height: none;
@@ -968,11 +859,8 @@ body.dock-chat .dock-tab.chat { display: none; }
   flex: 1 1 auto; overflow-y: auto;
 }
 .dock.right > .panel[hidden], .dock.right > .place-card[hidden] { display: none; }
-/* The floating map card is retired by the shell: its content lives in the
-   dock now, and two summaries of the same person is one too many. */
 body.shell-on .map-card { display: none !important; }
 
-/* --- chat --- */
 .chat-log { flex: 1 1 auto; overflow-y: auto; padding: 14px; display: flex;
   flex-direction: column; gap: 10px; }
 .chat-row { max-width: 92%; padding: 9px 12px; border-radius: 12px; font-size: 13px; line-height: 1.5; }
@@ -997,11 +885,7 @@ body.shell-on .map-card { display: none !important; }
 }
 .chat-form button:hover { background: var(--ocean-dark); }
 
-/* search, docked into the floating bar */
 body.shell-on .map-search.in-bar {
-  /* `relative`, not `static`: the clear button inside is absolutely
-     positioned, and with no positioned ancestor here it escaped to the far
-     right of the floating bar and sat there as a stray ×. */
   position: relative; top: auto; left: auto; z-index: auto;
   flex: 1 1 260px; max-width: 340px; min-width: 200px;
 }
@@ -1010,9 +894,6 @@ body.shell-on .map-search.in-bar .ms-results {
   z-index: 40;
 }
 
-/* On a narrow window the bar wrapped into six rows and ate a third of the
-   map. One row that scrolls sideways keeps the map the thing you are
-   looking at, which is the whole point of the shell. */
 @media (max-width: 1100px) {
   .shell-topbar {
     flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain;
@@ -1021,8 +902,6 @@ body.shell-on .map-search.in-bar .ms-results {
   .shell-topbar > * { flex: 0 0 auto; }
   .shell-topbar .map-search.in-bar { flex: 0 0 190px; min-width: 190px; }
   .shell-topbar .controls { display: flex; gap: 6px; flex-wrap: nowrap; }
-  /* The stat pills are `.hud-stats`, not `.hud` — the wrong selector matched
-     nothing and they went on wrapping into a block 200px tall. */
   .shell-topbar .hud-stats { display: none; }
   .shell-topbar .spacer { display: none; }
   .shell-topbar .titles h1 { font-size: 14px; }
@@ -1030,7 +909,6 @@ body.shell-on .map-search.in-bar .ms-results {
 .score-bal.bad { color: var(--critical); }
 .score-stat.critical .sv { color: var(--critical); }
 
-/* what is on a shop's shelves */
 .shelf-row {
   display: grid; grid-template-columns: 1fr auto auto auto; gap: 9px;
   align-items: baseline; padding: 6px 8px; border-radius: 6px;
@@ -1045,7 +923,6 @@ body.shell-on .map-search.in-bar .ms-results {
 .sh-days  { color: var(--ink-faint); }
 .sh-price { font-weight: 800; color: var(--ink); }
 
-/* ---- stats you can open ------------------------------------------------ */
 .score-stat.openable { cursor: pointer; transition: border-color .12s, background .12s; }
 .score-stat.openable:hover { border-color: var(--ocean); background: var(--surface-2); }
 .score-stat.openable:focus-visible { outline: 2px solid var(--ocean); outline-offset: 1px; }
@@ -1066,7 +943,6 @@ body.shell-on .map-search.in-bar .ms-results {
 .drill-close:hover { background: var(--line-soft); color: var(--ink); }
 .stat-drill .score-row { cursor: pointer; }
 
-/* ---- who governs, and where ------------------------------------------- */
 .seat-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
 .seat-row {
   display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
@@ -1088,10 +964,6 @@ body.shell-on .map-search.in-bar .ms-results {
 .gov-fact.openable { cursor: pointer; }
 .gov-fact.openable:hover .k { color: var(--ocean-dark); }
 .gov-fact.openable:focus-visible { outline: 2px solid var(--ocean); outline-offset: 1px; }
-/* `.gov-fact` is a two-item flex row, so a third child was being squeezed onto
-   the same line beside the value instead of dropping under it - which is what
-   made this section read as a jumble. Let the row wrap and give the
-   explanation the full width. */
 .gov-fact { flex-wrap: wrap; align-items: baseline; row-gap: 2px; }
 .gov-fact .k { flex: 1 1 auto; min-width: 0; }
 .gov-fact .v { flex: 0 0 auto; margin-left: auto; }
@@ -1103,7 +975,6 @@ body.shell-on .map-search.in-bar .ms-results {
 .stat-drill .score-row { grid-template-columns: minmax(6em,1fr) auto auto auto; }
 .score-where { font-size: 10.5px; color: var(--ocean-dark); font-weight: 700; white-space: nowrap; }
 
-/* ---- run mode: mock vs real, and what the real one costs --------------- */
 .run-mode { display: inline-flex; gap: 0; border-radius: 10px; overflow: hidden;
   border: 2px solid var(--line); }
 .run-mode .ctl.mode {
@@ -1125,9 +996,6 @@ body.shell-on .map-search.in-bar .ms-results {
 .cost-label { font-size: 11.5px; font-weight: 800; color: var(--ink-faint);
   font-family: var(--font-body); white-space: nowrap; }
 .cost-figure { display: inline-flex; align-items: baseline; gap: 4px; }
-/* A class selector beats the UA stylesheet's [hidden]{display:none}, so the
-   figure kept showing "0 µ$" beside the word "Not spending". Same bug the
-   place card had. */
 .cost-figure[hidden], .cost-label[hidden] { display: none; }
 .cost-readout.live { border-color: var(--ocean); background: var(--surface); }
 .cost-readout.spending { border-color: var(--critical); background: var(--critical-soft); }
@@ -1139,7 +1007,6 @@ body.shell-on .map-search.in-bar .ms-results {
 .live-badge.on.real { background: var(--critical-soft); color: var(--critical); border-color: var(--critical); }
 .live-badge.on.real::before { background: var(--critical); box-shadow: 0 0 0 3px rgba(214,69,69,.25); }
 
-/* ---- the village clock ------------------------------------------------- */
 .clock .time { display: inline-flex; align-items: baseline; gap: 5px; }
 .clock .time #clockLabel { font-variant-numeric: tabular-nums; letter-spacing: .01em; }
 .clock .meridiem {
@@ -1148,10 +1015,6 @@ body.shell-on .map-search.in-bar .ms-results {
   background: var(--surface-2); border: 1px solid var(--line-soft);
 }
 
-/* ---- the Real sim panel --------------------------------------------------
- * Rendered into the same right-hand card a place or a resident uses, so it
- * inherits .pc-head / .pc-scroll / .pc-group and only needs its own rows.
- */
 .live-badge.clickable { cursor: pointer; }
 .live-badge.clickable:hover { filter: brightness(1.08); }
 .live-badge.clickable:focus-visible { outline: 2px solid var(--accent, #2E7D32); outline-offset: 2px; }
@@ -1164,8 +1027,6 @@ body.shell-on .map-search.in-bar .ms-results {
 .eng-row:last-child { border-bottom: 0; }
 .eng-k { font-size: 12.5px; color: var(--ink-soft); }
 .eng-v { font-family: var(--font-mono); font-size: 13.5px; font-weight: 700; color: var(--ink); }
-/* The note sits under the label, spanning both columns, so a long
-   explanation never squeezes the number it is explaining. */
 .eng-n { grid-column: 1 / -1; font-size: 11px; color: var(--ink-faint); }
 
 .eng-lane {
@@ -1178,8 +1039,6 @@ body.shell-on .map-search.in-bar .ms-results {
 .eng-lane-id em { font-style: normal; color: var(--ink-faint); font-weight: 400; }
 .eng-lane-state { margin-left: auto; color: var(--ink-soft); }
 .eng-lane-tok, .eng-lane-trip { font-family: var(--font-mono); color: var(--ink-faint); }
-/* A circuit-broken lane is not "slow", it is "this model is not serving you",
-   so it is called out rather than folded into the row's ordinary colours. */
 .eng-lane.broken { border-color: #C6553F; background: rgba(198, 85, 63, .10); }
 .eng-lane.broken .eng-lane-state { color: #C6553F; font-weight: 700; }
 
@@ -1193,11 +1052,6 @@ body.shell-on .map-search.in-bar .ms-results {
   color: var(--ink-soft); word-break: break-all;
 }
 
-/* ---- the Real sim setup dialog -------------------------------------------
- * Real sim starts a fresh town and begins spending, so it asks first. Modal
- * on purpose: the two numbers decide what the run measures, and they cannot
- * be changed once 50 engines are up.
- */
 .rs-backdrop {
   position: fixed; inset: 0; z-index: 90;
   background: rgba(12, 22, 30, .46);
@@ -1238,18 +1092,7 @@ body.shell-on .map-search.in-bar .ms-results {
 }
 .rs-actions .ctl.primary:disabled { opacity: .6; cursor: progress; }
 
-/* ═══════════════════════════════════════════════════════════════════
-   OBSERVATION DECK — component layer
-   Everything below restyles a component family. Ordered chrome-inward:
-   atmosphere, type, the instrument bar, controls, the glass, then the
-   panels and cards that hang off it.
-   ═══════════════════════════════════════════════════════════════════ */
 
-/* ── atmosphere ──────────────────────────────────────────────────────
-   A flat near-black reads as "unstyled dark mode". Two cheap layers fix
-   that: a fixed radial warm-up behind everything so the page has a light
-   source, and a fine grain so large dark areas are not dead flat. Both
-   are pointer-events:none and paint once. */
 body {
   background: var(--void);
   color: var(--ink);
@@ -1273,18 +1116,9 @@ body::after {
 <feColorMatrix type='saturate' values='0'/></filter>\
 <rect width='140' height='140' filter='url(%23n)' opacity='.55'/></svg>");
 }
-/* Only .wrap. NOT .shell: that is `position: fixed; inset: 0` (line ~879)
-   and forcing it `relative` collapses it to content height - measured at
-   35px - taking the map, the viewport and the canvas down with it. The
-   grain and glow layers are already fixed/z-indexed, so .shell does not
-   need lifting to sit above them. */
 .wrap { position: relative; z-index: 2; }
 .shell { z-index: 2; }
 
-/* ── type ────────────────────────────────────────────────────────────
-   Fraunces carries the voice; Archivo carries the work. The rule is
-   simple: anything a person reads as a NAME is display, anything they
-   read as a MEASUREMENT is mono, everything else is Archivo. */
 h1, .titles h1 {
   font-family: var(--font-display);
   font-variation-settings: 'opsz' 120, 'SOFT' 0, 'WONK' 1;
@@ -1307,11 +1141,6 @@ b, strong, .hud-stat b, .score-bal, .char-bal,
   font-variant-numeric: tabular-nums; font-weight: 500;
 }
 
-/* ── the instrument bar ──────────────────────────────────────────────
-   Was a stack of pill buttons on a white card. Now one slim strip of
-   smoked glass sitting ON the map, with hairline separators grouping it
-   into clusters: time · state · money · controls · census. Grouping is
-   what makes 18 controls readable at a glance. */
 .console, .shell-topbar {
   background: linear-gradient(180deg, rgba(16,22,30,.92), rgba(10,14,19,.88));
   backdrop-filter: blur(14px) saturate(140%);
@@ -1341,10 +1170,6 @@ b, strong, .hud-stat b, .score-bal, .char-bal,
   letter-spacing: .01em; box-shadow: var(--rim);
 }
 
-/* ── controls ────────────────────────────────────────────────────────
-   Flat, quiet, and identical in weight so the eye is not dragged around
-   a control strip it uses constantly. The only loud button is the one
-   that is ON. */
 .ctl {
   background: var(--surface-2);
   border: 1px solid var(--line);
@@ -1380,11 +1205,6 @@ b, strong, .hud-stat b, .score-bal, .char-bal,
 }
 .controls { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
-/* ── state readouts: badge, cost, census ─────────────────────────────
-   These three are the honesty surface of the whole app, so they get the
-   only saturated colour in the chrome. The rule that matters: the badge
-   EARNS its glow. `.on.real` is set only when source, cognition AND
-   inference are all real, so a pulsing badge is a fact, not decoration. */
 .live-badge {
   display: inline-flex; align-items: center; gap: 7px;
   font-family: var(--font-mono); font-size: 10px; font-weight: 500;
@@ -1408,7 +1228,6 @@ b, strong, .hud-stat b, .score-bal, .char-bal,
   box-shadow: var(--rim), var(--glow-mint);
 }
 .live-badge.on::before { background: var(--mint); animation: beacon 2.4s ease-in-out infinite; }
-/* Only a fully real run gets the heartbeat. */
 .live-badge.on.real::before { animation: beacon 1.1s ease-in-out infinite; }
 @keyframes beacon {
   0%,100% { box-shadow: 0 0 0 0 rgba(74,222,155,.55); }
@@ -1430,8 +1249,6 @@ b, strong, .hud-stat b, .score-bal, .char-bal,
   color: var(--ink); font-size: 12px;
 }
 .cost-unit { font-size: 9px; color: var(--ink-faint); margin-left: 1px; }
-/* Spending is the one thing on this page that should feel warm and
-   slightly alarming, because it is the one thing that cannot be undone. */
 .cost-readout.spending {
   background: var(--ember-soft); border-color: var(--ember-dim);
   box-shadow: var(--rim), var(--glow-ember);
@@ -1462,17 +1279,7 @@ b, strong, .hud-stat b, .score-bal, .char-bal,
   border: 1px solid var(--brass-dim); border-radius: 3px; padding: 1px 5px;
 }
 
-/* ── the glass ───────────────────────────────────────────────────────
-   The map is the only living thing here, so it gets treated as a
-   specimen: a lit rim, an inner vignette so the daylight falls off at
-   the edges, and nothing else on top of it. */
 .viewport, .viewport.v2, .shell-map {
-  /* NO `position` here, deliberately. .shell-map is `absolute; inset:0`
-     (line ~880) and .viewport inside it is the same; forcing them
-     `relative` stops the insets resolving and both collapse to height
-     0, which - with overflow:hidden - clips the canvas to nothing and
-     shows as a blank map with no console error. Measured that exact
-     way: canvas 1536x695 inside a parent measuring 1536x0. */
   border-radius: var(--r-xl); overflow: hidden;
   box-shadow:
     inset 0 0 0 1px rgba(255,255,255,.06),
@@ -1486,9 +1293,6 @@ b, strong, .hud-stat b, .score-bal, .char-bal,
 }
 #village { display: block; }
 
-/* ── search ──────────────────────────────────────────────────────────
-   Floats over the glass, so it has to be legible against grass, water
-   and roof tiles alike. Smoked glass rather than a white field. */
 .map-search { z-index: 6; }
 .map-search input {
   background: rgba(10,14,19,.86);
@@ -1519,11 +1323,6 @@ b, strong, .hud-stat b, .score-bal, .char-bal,
   color: var(--ink-faint); font-weight: 700;
 }
 
-/* ── panels & docks ──────────────────────────────────────────────────
-   Panels were floating white cards with soft shadows - a lot of visual
-   weight for what is, in every case, a table. Now they are ruled sheets:
-   a hairline frame, a small-caps header separated by a rule, and no
-   shadow at all inside the docks. The content is the design. */
 .panel, .dock, .rcard {
   background: linear-gradient(180deg, var(--surface), var(--paper));
   border: 1px solid var(--line);
@@ -1569,9 +1368,6 @@ b, strong, .hud-stat b, .score-bal, .char-bal,
 }
 .dock-close:hover { color: var(--rust); border-color: var(--rust-dim); background: var(--rust-soft); }
 
-/* Tabs read as a ruled index, not as buttons. The active one is marked
-   by a lit underline rather than a filled pill - it keeps the row calm
-   when five tabs sit side by side. */
 .dock-tabs, .tabs { display: flex; gap: 2px; padding: 0 10px; border-bottom: 1px solid var(--line-soft); }
 .dock-tabs .dock-tab, .book-tab, .tabs .tab {
   position: relative; background: transparent; border: 0;
@@ -1590,10 +1386,6 @@ b, strong, .hud-stat b, .score-bal, .char-bal,
   background: var(--ember); box-shadow: 0 0 12px rgba(240,134,60,.6);
 }
 
-/* ── cards over the map ──────────────────────────────────────────────
-   A resident file and a place card both sit ON the glass, so they use
-   the same smoked treatment as the search field - anything opaque and
-   pale here would punch a hole in the diorama. */
 .map-card, .place-card, .modal-card, .rs-dialog {
   background: linear-gradient(180deg, rgba(19,26,35,.97), rgba(10,14,19,.97));
   backdrop-filter: blur(20px) saturate(140%);
@@ -1629,10 +1421,6 @@ b, strong, .hud-stat b, .score-bal, .char-bal,
   border-left: 2px solid var(--ember-dim); padding-left: 10px;
 }
 
-/* ── data: rows, bars, scoreboards ───────────────────────────────────
-   Every panel in the left dock is ultimately a table of residents and
-   numbers. Ruled rows, tabular figures, and colour used only where a
-   number means something bad. */
 .score-row, .char-row, .hh-row, .seat-row, .rel-row, .mem-row,
 .eng-row, .occ-row, .bar-row, .feed-row, .hl-row, .cause-row,
 .build-row, .shelf-row, .bud-row, .init {
@@ -1650,7 +1438,6 @@ b, strong, .hud-stat b, .score-bal, .char-bal,
   font-family: var(--font-mono); font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
-/* Money that is running out is the finding this whole app exists for. */
 .score-bal.low, .char-bal.low, .low { color: var(--brass); }
 .crit, .critical, .score-bal.crit, .is-dead, .hl-death { color: var(--rust); }
 .good, .ok, .alive { color: var(--mint); }
@@ -1678,9 +1465,6 @@ b, strong, .hud-stat b, .score-bal, .char-bal,
   border-color: var(--ember-dim); background: var(--ember-soft); cursor: pointer;
 }
 
-/* ── conversation ────────────────────────────────────────────────────
-   The one place the town speaks. Given a voice: display italic for what
-   is said, mono for who and where. */
 .chat-row { border-bottom: 1px solid var(--line-soft); padding: 10px 13px; }
 .chat-who { font-family: var(--font-display); font-variation-settings: 'opsz' 40; font-weight: 600; color: var(--ink); }
 .chat-meta, .chat-rel { font-family: var(--font-mono); font-size: 9px; color: var(--ink-faint); letter-spacing: .04em; }
@@ -1693,9 +1477,6 @@ b, strong, .hud-stat b, .score-bal, .char-bal,
   box-shadow: var(--rim);
 }
 
-/* ── the run dialog ──────────────────────────────────────────────────
-   This is the one button on the page that spends money, so the dialog
-   says so in the only place the eye lands last: the confirm button. */
 .rs-backdrop { background: rgba(7,10,14,.78); backdrop-filter: blur(6px); }
 .rs-dialog { max-width: 460px; }
 .rs-dialog h3, .rs-dialog h2 {
@@ -1729,10 +1510,6 @@ input[type="search"]:focus, select:focus {
 #rsGo:hover { background: #FF9950; transform: translateY(-1px); }
 #rsStop { background: var(--rust-soft); border-color: var(--rust-dim); color: var(--rust); }
 
-/* ── load choreography ───────────────────────────────────────────────
-   One orchestrated reveal beats a dozen scattered micro-animations. The
-   map arrives first because it is the subject; the instruments settle
-   onto it after. Respects reduced-motion. */
 @keyframes deck-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes deck-glass { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: none; } }
 .shell-map, .viewport { animation: deck-glass .7s var(--tap) both; }
@@ -1748,8 +1525,6 @@ input[type="search"]:focus, select:focus {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
-/* Scrollbars, because a dark app with default light scrollbars looks
-   half-finished on Windows. */
 * { scrollbar-width: thin; scrollbar-color: var(--line-lit) transparent; }
 *::-webkit-scrollbar { width: 9px; height: 9px; }
 *::-webkit-scrollbar-track { background: transparent; }
@@ -1757,10 +1532,6 @@ input[type="search"]:focus, select:focus {
 *::-webkit-scrollbar-thumb:hover { background: var(--line-lit); background-clip: content-box; }
 
 
-/* The dock launcher (.dock-tab.left / .right) floats on the map, so it is
-   styled like the other things that float there - smoked glass, not a
-   flat tab. Position is left entirely alone: it is placed with bottom/
-   left offsets by the shell layout. */
 .dock-tab.left, .dock-tab.right {
   background: linear-gradient(180deg, rgba(19,26,35,.94), rgba(10,14,19,.94));
   backdrop-filter: blur(14px) saturate(140%);
@@ -1777,15 +1548,6 @@ input[type="search"]:focus, select:focus {
 }
 .dock-tab.left::after, .dock-tab.right::after { display: none; }
 
-/* ═══════════════════════════════════════════════════════════════════
-   MAP-ONLY LAYOUT — the controls pane
-   ───────────────────────────────────────────────────────────────────
-   Nothing sits on the map any more. The strip that used to run across
-   the top covered the north edge of the town permanently, and every
-   control in it is something you set once and then want gone. So the
-   map is the page, and two launchers hang off the bottom corners:
-   books on the left, controls on the right.
-   ═══════════════════════════════════════════════════════════════════ */
 
 .dock-tab.controls { position: fixed; right: 14px; bottom: 16px; z-index: 28; }
 body.dock-controls .dock-tab.controls { display: none; }
@@ -1794,34 +1556,17 @@ body.dock-controls .dock-tab.controls { display: none; }
 .dock.controls {
   right: 0; width: min(400px, 34vw);
   border-left: 1px solid var(--line); padding: 0;
-  /* GRID, not flex. The inherited flex rules (.dock-head is `flex: 0 0
-     auto`, .dock-body is `flex: 1 1 auto`) laid the head and body out
-     side by side - head content-width at the left edge, body filling and
-     overflowing 127px past the window. Two rows cannot do that. */
   display: grid; grid-template-rows: auto minmax(0, 1fr);
   align-items: stretch; justify-items: stretch;
 }
-/* `display:flex` above outranks the [hidden] attribute's `display:none`,
-   so without this the pane ignores its own hidden state and is open on
-   load - which is the one thing this layout exists to avoid. */
 .dock.controls[hidden] { display: none; }
-/* Nothing inside may set the pane's width. Several of these elements were
-   built for a full-width bar and carry their own min-widths, which pushed
-   the content out past the right edge of the window. */
 .dock.controls, .dock.controls * { min-width: 0; max-width: 100%; }
-/* `align-items: center` is inherited from .dock, where it suits a row. In
-   a column it stops children stretching and centres them at their content
-   width instead - which is what pushed the body off the pane's left edge
-   and out past the window. Panes stretch. */
 .dock.controls { align-items: stretch; }
 .dock.controls .dock-body { width: 100%; box-sizing: border-box; min-height: 0; }
 .dock.controls .dock-body > * { flex: 0 0 auto; }
 @media (max-width: 820px) { .dock.controls { width: 100vw; } }
 .dock.controls .dock-body { padding: 14px; overflow-y: auto; gap: 16px; display: flex; flex-direction: column; }
 
-/* The console was a horizontal instrument strip. In a 400px column it
-   becomes a stack of labelled blocks - same elements, same ids, read
-   top to bottom instead of left to right. */
 .dock.controls .console {
   display: flex; flex-direction: column; align-items: stretch; gap: 14px;
   background: transparent; border: 0; box-shadow: none;
@@ -1831,7 +1576,6 @@ body.dock-controls .dock-tab.controls { display: none; }
 .dock.controls .console > * { width: 100%; }
 .dock.controls .spacer { display: none; }
 
-/* Time reads as the headline of the pane. */
 .dock.controls .clock { justify-content: flex-start; gap: 10px; }
 .dock.controls .clock .time { font-size: 30px; letter-spacing: -.03em; }
 
@@ -1839,8 +1583,6 @@ body.dock-controls .dock-tab.controls { display: none; }
 .dock.controls .live-badge,
 .dock.controls .cost-readout { align-self: flex-start; }
 
-/* Buttons wrap into an even grid rather than a ragged row - at this width
-   a flex row leaves one orphan on its own line every time. */
 .dock.controls .controls {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
   padding-top: 12px; border-top: 1px solid var(--line-soft);
@@ -1848,7 +1590,6 @@ body.dock-controls .dock-tab.controls { display: none; }
 .dock.controls .controls .ctl { width: 100%; text-align: center; padding: 8px 6px; }
 .dock.controls .zoom-group { grid-column: span 3; justify-content: center; }
 
-/* Census becomes a two-column ledger, which is what it always was. */
 .dock.controls .hud-stats {
   display: grid; grid-template-columns: 1fr 1fr; gap: 0;
   padding-top: 12px; border-top: 1px solid var(--line-soft);
@@ -1862,7 +1603,6 @@ body.dock-controls .dock-tab.controls { display: none; }
 .dock.controls .hud-stat:nth-child(odd) { border-right: 1px solid var(--line-soft); }
 .dock.controls .hud-stat b { font-size: 15px; }
 
-/* Search fills the pane instead of floating over the town. */
 .map-search.in-pane { position: static; width: 100%; margin: 0; }
 .map-search.in-pane input { width: 100%; border-radius: var(--r-md); }
 .map-search.in-pane .ms-results {
@@ -1871,23 +1611,15 @@ body.dock-controls .dock-tab.controls { display: none; }
 .dock.controls .titles h1 { font-size: 17px; }
 .dock.controls .titles .kicker { display: block; margin-top: 3px; }
 
-/* Both launchers share one look; only the corner differs. */
 .dock-tab.left { position: fixed; left: 14px; bottom: 16px; z-index: 28; }
 
 
-/* The kicker is a caption, not a badge. An older rule gave it a filled
-   pill, which in the pane rendered as a full-width orange bar under the
-   wordmark. */
 .kicker {
   background: none; border: 0; padding: 0; border-radius: 0;
   color: var(--ink-faint); display: block;
 }
 
 
-
-
-/* Empty town: a normal state now that only engine-bound residents are
-   drawn. Quiet and explanatory - it is not an error, it is an idle run. */
 .empty-town {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   z-index: 8; max-width: 440px; text-align: center;
@@ -1899,8 +1631,6 @@ body.dock-controls .dock-tab.controls { display: none; }
   border: 1px solid var(--line-lit); box-shadow: var(--shadow-lift), var(--rim);
 }
 .empty-town[hidden] { display: none; }
-/* display:flex above outranks the UA [hidden] rule, so hiding it by
-   setting .hidden alone silently does nothing. This restores it. */
 .empty-town b {
   font-family: var(--font-display); font-variation-settings: 'opsz' 90;
   font-weight: 600; font-size: 16px; color: var(--ink); letter-spacing: -.01em;
@@ -1912,11 +1642,6 @@ body.dock-controls .dock-tab.controls { display: none; }
   border: 1px solid var(--ember-dim); border-radius: var(--r-sm); padding: 6px 9px;
 }
 
-/* ── group chat ───────────────────────────────────────────────────────
-   A conversation is a card: who is in it, where, whether it is still open,
-   then the remarks. The roster is always spelled out in full - "and 3
-   others" would hide the one fact this panel exists to show, which is how
-   many people are round the table. */
 .gc-summary { font-size: 12px; opacity: .8; margin: 2px 0 8px; }
 .gc-card { border: 1px solid rgba(128,128,128,.28); border-radius: 8px;
            padding: 8px 10px; margin: 0 0 10px; background: rgba(128,128,128,.06); }

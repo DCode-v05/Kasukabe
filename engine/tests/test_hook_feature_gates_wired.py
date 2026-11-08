@@ -124,7 +124,6 @@ async def test_pre_tool_gate_off_skips_the_pre_tool_hook(db):
     settings.pre_tool_hooks_enabled = False
     seen = await run_turn(db, settings, "sess-pre-off", "t-pre-off")
     assert seen["pre"] == 0
-    # The gates are independent: turning one off must not silence the other.
     assert seen["post"] == 1
 
 

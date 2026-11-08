@@ -64,10 +64,6 @@ async def test_a_later_step_reads_an_earlier_step_result(world, registry):
 
     assert outcome.result["steps_executed"] == 2
     assert outcome.result["steps_skipped"] == 0
-    # The move resolved to where the look said it was standing, so the
-    # journey was zero tiles. If the binding had not resolved, `move`
-    # would have been handed the literal string "@here.location_id" and
-    # refused - which is what makes this an assertion about the read.
     assert outcome.result["last_step_result"].get("location_id") == FIELD
 
 
@@ -159,8 +155,6 @@ async def test_a_condition_cannot_read_the_world(world, registry):
         )
         is False
     )
-    # And the supported way to ask the same question does work, because
-    # a step paid for the answer.
     assert (
         program.evaluate_condition(
             _condition("@here.location_id", "==", FIELD),

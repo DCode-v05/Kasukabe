@@ -42,33 +42,15 @@ from world.tools.models import Need, NeedKind
 if TYPE_CHECKING:  # pragma: no cover - typing only
     from world.tools.state import WorldState
 
-# A need at or above this is worth acting on, and is what the goal
-# trigger and the perception block both key off. Below it the resident
-# is not told, because a perception that listed seven mild pressures
-# every tick would be noise that crowds out what changed.
 NEED_PRESSING = 0.7
 NEED_WORTH_SHOWING = 0.5
 
-# How many days of upkeep in the wallet counts as "not worried about
-# money". Two days is the ladder's own horizon - malnutrition at 2
-# unpaid days, dormancy at 3 - so a resident with less than that is
-# genuinely close to the edge, not merely poorer than its neighbour.
 MONEY_COMFORTABLE_DAYS = 2.0
 
-# The USD wallet is the cognitive budget: at zero the resident goes
-# dormant and stops thinking at all. Half a dollar is roughly a day of
-# turns at run-24 prices, so that is where the pressure starts.
 ENERGY_COMFORTABLE_CENTS = 50
 
-# A day is 144 ticks. A resident that has taken a turn every tick since
-# the last night is tired in the only sense this town models - it has
-# been awake and acting - and the number is the fraction of a day.
 REST_FULL_DAY_TICKS = 144
 
-# Nobody has spoken to you in this many ticks and the social need is at
-# its ceiling. Half a game-day: long enough that a quiet morning does
-# not register, short enough that a resident nobody talks to notices
-# within the run.
 SOCIAL_SILENCE_TICKS = 72
 
 
@@ -82,10 +64,6 @@ def _food_pressure(world: "WorldState", agent_id: str) -> float:
     state = states.get(agent_id)
     if state is None:
         return 0.0
-    # Read straight off the model. `HungerState` declares both counters
-    # with defaults, so a three-argument getattr here would only ever
-    # hide a rename - which is exactly what test_no_silent_defaults is
-    # for, and it caught this.
     days = float(state.days_since_meal)
     return _clamp(days / float(HUNGER_DORMANCY_UNPAID_DAYS_THRESHOLD))
 
@@ -95,8 +73,6 @@ def _money_pressure(world: "WorldState", agent_id: str) -> float:
     try:
         sim = float(world.ledger.sim_balance(agent_id))
     except Exception:
-        # A resident with no account is not rich; it is un-banked, and
-        # the honest reading of that is maximum money pressure.
         return 1.0
     runway_days = sim / float(UPKEEP_TOTAL_SIM_PER_DAY or 1)
     shortfall = _clamp(1.0 - (runway_days / MONEY_COMFORTABLE_DAYS))
@@ -106,11 +82,6 @@ def _money_pressure(world: "WorldState", agent_id: str) -> float:
     unpaid = float(state.consecutive_unpaid_days) if state is not None else 0.0
     arrears = _clamp(unpaid / float(HUNGER_DORMANCY_UNPAID_DAYS_THRESHOLD))
 
-    # Debt is real pressure but not the same kind - it has no deadline
-    # in this town - so it lifts the floor rather than setting it.
-    # `debts_of` returns owed_by_you / owed_to_you / due_today_sim - there
-    # is no "total_owed" key, and reading for one would have made every
-    # debt weigh nothing.
     owed = 0.0
     try:
         debts = world.debts_of(agent_id) or {}
@@ -163,11 +134,6 @@ def _social_pressure(world: "WorldState", agent_id: str) -> float:
     """Silence toward you, and questions you have not answered."""
     now = world.tick()
     last_heard: int | None = None
-    # Keys per bootstrap.on_utterance, which is what actually writes
-    # these rows: speaker_agent_id / listener_agent_id /
-    # addressed_agent_ids. Guessing at "heard_by" or "to_agent_id" would
-    # have made this need silently zero for everyone forever - the
-    # EVAL-01 failure mode, a reader keyed to names nothing writes.
     for record in reversed(world.utterances or []):
         if record.get("speaker_agent_id") == agent_id:
             continue
@@ -181,9 +147,6 @@ def _social_pressure(world: "WorldState", agent_id: str) -> float:
     silence = now if last_heard is None else now - last_heard
     pressure = _clamp(silence / float(SOCIAL_SILENCE_TICKS))
 
-    # An unanswered question is a live thread, not silence: it lowers
-    # the pressure toward zero, because somebody is in fact talking to
-    # you and you owe them a turn.
     try:
         if world.awaiting_reply(agent_id, now):
             pressure = min(pressure, 0.3)
@@ -200,9 +163,6 @@ def _safety_pressure(world: "WorldState", agent_id: str) -> float:
         pressure = max(pressure, 0.8)
     if agent_id in (world.confined or {}):
         return 1.0
-    # Field names per world.tools.models: a Subpoena names its
-    # target_agent_id, a CrimeCase its against_agent_id and
-    # victim_agent_id, and a case is open until it has a verdict.
     for subpoena in (world.subpoenas or {}).values():
         if subpoena.target_agent_id == agent_id and subpoena.status in {
             "requested",
@@ -213,8 +173,6 @@ def _safety_pressure(world: "WorldState", agent_id: str) -> float:
         if case.verdict is not None:
             continue
         if case.against_agent_id == agent_id:
-            # Accused of something with no verdict yet: the sharpest
-            # form this town has of "something is coming for you".
             pressure = max(pressure, 0.7)
         elif case.victim_agent_id == agent_id:
             pressure = max(pressure, 0.5)
@@ -246,16 +204,10 @@ def compute_needs(world: "WorldState", agent_id: str) -> dict[str, Need]:
         try:
             level = float(reading(world, agent_id))
         except Exception:
-            # A reading that cannot be taken is not a pressure of zero -
-            # but it is also not a reason to fail a resident's turn, so
-            # it carries forward whatever was last known.
             was = previous.get(kind.value)
             level = float(was.level) if was is not None else 0.0
         level = _clamp(level)
         was = previous.get(kind.value)
-        # since_tick answers "how long has this been pressing", so it
-        # resets only when the need crosses up into pressing, not on
-        # every wobble underneath it.
         if was is not None and was.level >= NEED_WORTH_SHOWING and level >= NEED_WORTH_SHOWING:
             since = was.since_tick
         else:

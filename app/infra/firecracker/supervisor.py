@@ -172,21 +172,6 @@ class UnitAlreadyExistsError(SupervisorError):
     keeps unit_id a reliable idempotency key instead of a hint.
     """
 
-# ---------------------------------------------------------------------------
-# B1: the watchdog (The 250 section 33)
-# ---------------------------------------------------------------------------
-# "The real infrastructure for the second case already exists, partway...
-# What's missing is the loop that actually watches those states and calls
-# restart() when one goes bad - today, nothing in the codebase calls
-# .restart() automatically; a FAILED unit stays failed until someone
-# notices."
-#
-# This is that loop, and deliberately nothing more. It adds no new state to
-# the Supervisor protocol and no new method to either backend: it reads
-# `list()` and calls the `restart()` that both backends already implement,
-# which is why it works unchanged against the process backend today and the
-# Firecracker one later.
-
 
 class RestartPolicy:
     """How hard, and how often, the watchdog is willing to try.
@@ -278,7 +263,6 @@ class SupervisorWatchdog:
         self._task: "asyncio.Task[None] | None" = None
         self._stopping = asyncio.Event()
 
-    # -- the decision ------------------------------------------------------
 
     def needs_restart(self, status: UnitStatus) -> str | None:
         """Why this unit should be restarted, or None to leave it alone.
@@ -295,14 +279,8 @@ class SupervisorWatchdog:
         if status.state == UnitState.FAILED:
             return "reported FAILED"
         if status.state in (UnitState.STOPPED, UnitState.STOPPING, UnitState.PENDING):
-            # Stopped on purpose. Restarting a unit someone deliberately
-            # stopped would make `stop()` a suggestion rather than a command.
             return None
         if status.last_health_check_at is None:
-            # Never health-checked yet: a unit that has only just started.
-            # Give it the benefit of the doubt - `started_at` is not a
-            # heartbeat and treating it as one would restart every unit
-            # during a slow genesis boot.
             return None
         silent_for = self.clock() - status.last_health_check_at
         if silent_for > self.silence_timeout_s:
@@ -319,7 +297,6 @@ class SupervisorWatchdog:
         if self.on_event is not None:
             self.on_event(kind, status, record)
 
-    # -- one pass ----------------------------------------------------------
 
     async def check_once(self) -> list[str]:
         """Look at every managed unit once. Returns the units restarted.
@@ -341,9 +318,6 @@ class SupervisorWatchdog:
             reason = self.needs_restart(status)
             record = self._record(status.unit_id)
             if reason is None:
-                # A unit that came back and is healthy again has earned a
-                # clean slate, or a flaky unit would eventually exhaust its
-                # budget over a long run for failures hours apart.
                 if record.restarts and status.state == UnitState.RUNNING:
                     record.restarts = 0
                     record.last_error = ""
@@ -352,11 +326,6 @@ class SupervisorWatchdog:
                 continue
             if record.restarts >= self.policy.max_restarts:
                 record.given_up = True
-                # Keep the most specific failure already on file. If the
-                # restarts themselves were erroring ("no such microVM"),
-                # that is the diagnostic an operator needs - overwriting it
-                # with the generic "reported FAILED" throws away the only
-                # clue as to why this unit could not be brought back.
                 record.last_error = record.last_error or reason
                 logger.error(
                     "watchdog giving up on %s after %d restarts: %s",
@@ -367,7 +336,7 @@ class SupervisorWatchdog:
             if record.last_restart_at is not None:
                 wait = self.policy.backoff_for(record.restarts)
                 if now - record.last_restart_at < wait:
-                    continue                          # still backing off
+                    continue
             logger.warning("watchdog restarting %s: %s", status.unit_id, reason)
             self._emit("restarting", status, record)
             try:
@@ -375,9 +344,6 @@ class SupervisorWatchdog:
             except Exception as exc:                  # noqa: BLE001 - see docstring
                 record.last_error = f"restart failed: {exc}"
                 logger.error("watchdog restart of %s failed: %s", status.unit_id, exc)
-                # A failed restart still counts against the budget. It is a
-                # failed attempt, and not counting it is how an unrestartable
-                # unit becomes an infinite loop.
                 record.restarts += 1
                 record.last_restart_at = now
                 self._emit("restart_failed", status, record)
@@ -389,7 +355,6 @@ class SupervisorWatchdog:
             self._emit("restarted", status, record)
         return restarted
 
-    # -- the loop ----------------------------------------------------------
 
     async def run_forever(self) -> None:
         """Poll until stopped. Cancellation-safe."""

@@ -30,11 +30,6 @@ async def count_signals(db: SqlitePool) -> int:
     return int(row or 0)
 
 
-# ---------------------------------------------------------------------------
-# Single-write path
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_clean_signal_is_written(store, db):
     sig = LearningSignal(
@@ -110,11 +105,6 @@ async def test_empty_subject_and_content_does_not_raise(store, db):
     assert await count_signals(db) == 1
 
 
-# ---------------------------------------------------------------------------
-# Batch-write path
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_batch_all_clean_writes_everything(store, db):
     batch = [
@@ -153,7 +143,6 @@ async def test_batch_with_dirty_item_aborts_without_partial_writes(store, db):
         await store.write_batch(batch)
     assert "AWS Access Token" in str(exc_info.value)
     assert exc_info.value.where == "signal-ingest-batch"
-    # Pre-scan-all-then-insert semantics: zero rows on any dirty item.
     assert await count_signals(db) == 0
 
 
@@ -162,11 +151,6 @@ async def test_batch_empty_list_is_noop(store, db):
     stored = await store.write_batch([])
     assert stored == 0
     assert await count_signals(db) == 0
-
-
-# ---------------------------------------------------------------------------
-# flush_wm path — the highest-risk ingest surface for real tool-output secrets
-# ---------------------------------------------------------------------------
 
 
 class FakeWMItem:
@@ -195,7 +179,6 @@ async def test_flush_wm_blocks_tool_result_containing_secret(store, db):
     assert "AWS Access Token" in str(exc_info.value)
     assert FAKE_AWS not in str(exc_info.value)
     assert exc_info.value.where == "signal-ingest-flush-wm"
-    # The signal table must be empty — no partial writes on a dirty flush.
     assert await count_signals(db) == 0
 
 
@@ -218,6 +201,5 @@ async def test_flush_wm_clean_items_all_written(store, db):
         ),
     ]
     stored = await store.flush_wm("task-clean", items)
-    # 3 flushed items + 1 terminal outcome row the method always writes.
     assert stored == 4
     assert await count_signals(db) == 4

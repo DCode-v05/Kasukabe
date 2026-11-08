@@ -32,9 +32,6 @@ from .conftest import spawn_agent
 HERE = "Kasukabe Town Square"
 
 
-# ── TOOL-04 ───────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_holdings_are_ranked_biggest_pile_first(world):
     await spawn_agent(world, "n01", HERE)
@@ -63,7 +60,7 @@ async def test_a_long_list_is_capped_and_says_so(world):
 
     held = holdings_line(world, "n01", limit=8)
 
-    assert len(held) == 9  # eight piles plus the tail count
+    assert len(held) == 9
     assert held["…and more kinds"] == 4
 
 
@@ -102,9 +99,6 @@ def test_the_brief_renders_the_holdings_line():
     assert "You hold: flour 20, timber 3." in rendered
 
 
-# ── TOOL-13 ───────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_keep_doing_accepts_the_name_the_engine_showed(world, registry):
     """Both of run 23's `keep_doing` calls died on exactly this."""
@@ -117,7 +111,6 @@ async def test_keep_doing_accepts_the_name_the_engine_showed(world, registry):
         {"tool": "world_mine", "params": {"metal": "iron", "quantity": 1}, "until": {"ticks": 5}},
     )
 
-    # Committed under the registry's own name, not the resident's spelling.
     assert outcome.result["tool"] == "mine"
     assert world.continuing["n01"].tool == "mine"
 
@@ -177,9 +170,6 @@ async def test_set_intention_still_refuses_a_verb_that_does_not_exist(world, reg
         )
 
 
-# ── TOOL-14 ───────────────────────────────────────────────────────────
-
-
 def test_craft_and_cook_name_their_recipes():
     from world.tools.primitives.production import build_specs
 
@@ -193,8 +183,6 @@ def test_craft_and_cook_name_their_recipes():
     for recipe_id in cook_ids:
         assert recipe_id in specs["cook"].description, recipe_id
 
-    # And each verb advertises only its own - `cook` has no business
-    # naming what the smithy makes.
     assert "craft:iron_ore->iron_ingot" not in specs["cook"].description
 
 

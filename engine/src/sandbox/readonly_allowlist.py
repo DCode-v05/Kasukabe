@@ -17,24 +17,14 @@ from typing import Callable
 from src.sandbox.command_classifier import split_compound, strip_safe_redirections
 
 
-# ---------------------------------------------------------------------------
-# Types
-# ---------------------------------------------------------------------------
-
-
 @dataclass(frozen=True)
 class CommandConfig:
     safe_flags: dict[str, str] = field(
         default_factory=dict
-    )  # flag -> 'none'|'string'|'number'|'char'
+    )
     regex: re.Pattern[str] | None = None
     dangerous_callback: Callable[[str, list[str]], bool] | None = None
     respects_double_dash: bool = True
-
-
-# ---------------------------------------------------------------------------
-# Tokenizer
-# ---------------------------------------------------------------------------
 
 
 def tokenize(cmd: str) -> list[str] | None:
@@ -57,8 +47,8 @@ def tokenize(cmd: str) -> list[str] | None:
                 current.append(cmd[i])
                 i += 1
             if i >= n:
-                return None  # unbalanced
-            i += 1  # skip closing '
+                return None
+            i += 1
         elif c == '"':
             i += 1
             while i < n and cmd[i] != '"':
@@ -69,8 +59,8 @@ def tokenize(cmd: str) -> list[str] | None:
                     current.append(cmd[i])
                     i += 1
             if i >= n:
-                return None  # unbalanced
-            i += 1  # skip closing "
+                return None
+            i += 1
         elif c == "\\" and i + 1 < n:
             current.append(cmd[i + 1])
             i += 2
@@ -82,10 +72,6 @@ def tokenize(cmd: str) -> list[str] | None:
         tokens.append("".join(current))
     return tokens
 
-
-# ---------------------------------------------------------------------------
-# Flag validation
-# ---------------------------------------------------------------------------
 
 FLAG_RE = re.compile(r"^-[a-zA-Z0-9]")
 BRACE_EXPANSION = re.compile(r"\{[^}]*[,.]")
@@ -109,16 +95,13 @@ def validate_flags(tokens: list[str], start: int, config: CommandConfig) -> bool
     while i < len(tokens):
         tok = tokens[i]
 
-        # Security: reject variable expansion and brace expansion
         if "$" in tok:
             return False
         if BRACE_EXPANSION.search(tok):
             return False
 
-        # End of flags marker
         if tok == "--":
             if config.respects_double_dash:
-                # Rest are positionals — check them for $ and brace only
                 for j in range(i + 1, len(tokens)):
                     if "$" in tokens[j] or BRACE_EXPANSION.search(tokens[j]):
                         return False
@@ -126,9 +109,7 @@ def validate_flags(tokens: list[str], start: int, config: CommandConfig) -> bool
             i += 1
             continue
 
-        # Flag token
         if tok.startswith("-") and len(tok) > 1 and tok != "-":
-            # Handle --flag=value
             flag = tok
             inline_value = None
             has_equals = False
@@ -142,18 +123,16 @@ def validate_flags(tokens: list[str], start: int, config: CommandConfig) -> bool
                 arg_type = config.safe_flags[flag]
                 if arg_type == "none":
                     if has_equals:
-                        return False  # --flag=value but flag takes no arg
+                        return False
                     i += 1
                     continue
-                # Flag takes an argument
                 if inline_value is not None:
                     if not validate_flag_arg(inline_value, arg_type):
                         return False
                     i += 1
                     continue
-                # Consume next token
                 if i + 1 >= len(tokens):
-                    return False  # missing arg
+                    return False
                 next_tok = tokens[i + 1]
                 if "$" in next_tok or BRACE_EXPANSION.search(next_tok):
                     return False
@@ -162,7 +141,6 @@ def validate_flags(tokens: list[str], start: int, config: CommandConfig) -> bool
                 i += 2
                 continue
 
-            # Try combined short flags: -abc → -a, -b, -c (all must be 'none')
             if not tok.startswith("--") and len(tok) > 2:
                 all_valid = True
                 for ch in tok[1:]:
@@ -174,24 +152,16 @@ def validate_flags(tokens: list[str], start: int, config: CommandConfig) -> bool
                     i += 1
                     continue
 
-            # Git numeric shorthand: -5 means -n 5
             if not tok.startswith("--") and GIT_NUMERIC_SHORT.match(tok):
                 if "-n" in config.safe_flags:
                     i += 1
                     continue
 
-            # Unknown flag
             return False
         else:
-            # Positional argument — allowed (callbacks handle restrictions)
             i += 1
 
     return True
-
-
-# ---------------------------------------------------------------------------
-# Dangerous callbacks
-# ---------------------------------------------------------------------------
 
 
 def reject_positionals_unless_list(raw: str, args: list[str]) -> bool:
@@ -277,10 +247,6 @@ def tput_dangerous(raw: str, args: list[str]) -> bool:
             return True
     return False
 
-
-# ---------------------------------------------------------------------------
-# Shared flag sets
-# ---------------------------------------------------------------------------
 
 GIT_LOG_DISPLAY_FLAGS: dict[str, str] = {
     "--oneline": "none",
@@ -385,12 +351,8 @@ CHECKSUM_FLAGS: dict[str, str] = {
     "--ignore-missing": "none",
 }
 
-# ---------------------------------------------------------------------------
-# Command allowlist
-# ---------------------------------------------------------------------------
 
 COMMAND_ALLOWLIST: dict[str, CommandConfig] = {
-    # --- Git read-only ---
     "git status": CommandConfig(
         safe_flags={
             "--short": "none",
@@ -754,7 +716,6 @@ COMMAND_ALLOWLIST: dict[str, CommandConfig] = {
             "--stdin": "none",
         }
     ),
-    # --- Search tools ---
     "grep": CommandConfig(
         safe_flags={
             "-i": "none",
@@ -1103,7 +1064,6 @@ COMMAND_ALLOWLIST: dict[str, CommandConfig] = {
             "--path-to-ignore": "string",
         }
     ),
-    # --- File inspection (simple — all flags safe) ---
     "cat": CommandConfig(
         safe_flags={
             "-n": "none",
@@ -1365,7 +1325,6 @@ COMMAND_ALLOWLIST: dict[str, CommandConfig] = {
             "-f": "none",
         }
     ),
-    # --- Process / system ---
     "ps": CommandConfig(
         safe_flags={
             "-e": "none",
@@ -1454,17 +1413,14 @@ COMMAND_ALLOWLIST: dict[str, CommandConfig] = {
     "type": CommandConfig(safe_flags={"-a": "none", "-t": "none", "-p": "none", "-f": "none"}),
     "echo": CommandConfig(safe_flags={"-n": "none", "-e": "none", "-E": "none"}),
     "printf": CommandConfig(safe_flags={}),
-    # --- Dev version checks (exact match) ---
     "python --version": CommandConfig(safe_flags={}, regex=re.compile(r"^python\s+--version$")),
     "python3 --version": CommandConfig(safe_flags={}, regex=re.compile(r"^python3\s+--version$")),
     "node --version": CommandConfig(safe_flags={}, regex=re.compile(r"^node\s+--version$")),
     "node -v": CommandConfig(safe_flags={}, regex=re.compile(r"^node\s+-v$")),
     "npm --version": CommandConfig(safe_flags={}, regex=re.compile(r"^npm\s+--version$")),
-    # --- Checksums (shared config) ---
     "sha256sum": CommandConfig(safe_flags=CHECKSUM_FLAGS),
     "sha1sum": CommandConfig(safe_flags=CHECKSUM_FLAGS),
     "md5sum": CommandConfig(safe_flags=CHECKSUM_FLAGS),
-    # --- Other safe ---
     "sort": CommandConfig(
         safe_flags={
             "-b": "none",
@@ -1513,7 +1469,6 @@ COMMAND_ALLOWLIST: dict[str, CommandConfig] = {
             "--batch-size": "number",
             "--compress-program": "string",
             "--files0-from": "string",
-            # Explicitly NOT: -o/--output (writes to file)
         }
     ),
     "base64": CommandConfig(
@@ -1575,7 +1530,6 @@ COMMAND_ALLOWLIST: dict[str, CommandConfig] = {
             "-F": "none",
             "--inodes": "none",
             "--device": "none",
-            # Explicitly NOT: -o/--output (file write), -R (writes 00Tree.html)
         }
     ),
     "man": CommandConfig(
@@ -1630,20 +1584,12 @@ COMMAND_ALLOWLIST: dict[str, CommandConfig] = {
     ),
 }
 
-# fdfind shares fd's config
 COMMAND_ALLOWLIST["fdfind"] = COMMAND_ALLOWLIST["fd"]
 
-# Pre-sorted entries by key length (longest first) for prefix matching.
-# Key parts are precomputed as tuples to avoid per-call split().
 SORTED_ENTRIES: list[tuple[tuple[str, ...], CommandConfig]] = sorted(
     ((tuple(k.split()), v) for k, v in COMMAND_ALLOWLIST.items()),
     key=lambda e: -len(e[0]),
 )
-
-
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
 
 
 def is_command_read_only(command: str) -> bool:
@@ -1654,7 +1600,6 @@ def is_command_read_only(command: str) -> bool:
     if not command or not command.strip():
         return False
 
-    # Reject command substitution
     if "`" in command:
         return False
 
@@ -1676,7 +1621,6 @@ def is_subcommand_read_only(cmd: str) -> bool:
     if not tokens:
         return False
 
-    # Match against allowlist — longest prefix first (precomputed tuples)
     matched_config: CommandConfig | None = None
     prefix_len = 0
 
@@ -1690,19 +1634,15 @@ def is_subcommand_read_only(cmd: str) -> bool:
     if matched_config is None:
         return False
 
-    # Get args after the command prefix
     remaining_tokens = tokens[prefix_len:]
 
-    # Regex validation (on raw command)
     if matched_config.regex is not None:
         if not matched_config.regex.search(cleaned):
             return False
 
-    # Flag validation (skip if safe_flags is empty — command uses regex/callback only)
     if matched_config.safe_flags and not validate_flags(remaining_tokens, 0, matched_config):
         return False
 
-    # Dangerous callback
     if matched_config.dangerous_callback is not None:
         if matched_config.dangerous_callback(cleaned, remaining_tokens):
             return False

@@ -60,14 +60,8 @@ class SimModelNotAllowed(ValueError):
     broker is never reached when this fires."""
 
 
-# ── The allowlist: exactly one model ────────────────────────────────────
-
 MODEL_ID = "moonshotai.kimi-k2.5"
 
-# A frozenset of one, not a bare string constant, so every call site that
-# checks membership (assert_allowed, validate_sim_settings) reads the same
-# whether the roster has one entry or, hypothetically, more - the shape of
-# the check never has to change, only this literal would.
 ALLOWED_MODEL_IDS: frozenset[str] = frozenset({MODEL_ID})
 
 
@@ -102,76 +96,6 @@ class SimModelSpec:
     pricing: FlexPricing
 
 
-# Context window / max output figures are conservative placeholders pending
-# the broker's own /v1/models response (app/broker/, out of this module's
-# scope - see /Vat/kasukabe/app/CONVENTIONS.md: "broker/ owns ALL Bedrock
-# access"). They only affect herald's client-side context-budgeting math
-# (src/herald/catalog.py get_context_window); the broker enforces the real
-# limit server-side regardless of what this module claims.
-# The client-side context budget, and the one number that decides when a
-# conversation gets compacted.
-#
-# 256,000 was the model's advertised window. Nothing server-side depends on
-# this figure (the note above: "the broker enforces the real limit
-# server-side regardless of what this module claims"), but ONE thing
-# client-side does, and it is the important one:
-#
-#   context_engineering.needs_compaction(used, window) fires at
-#   window * 0.80, and `window` is exactly this value.
-#
-# At 256,000 that is 204,800 tokens - about 800 KB of prompt - so compaction
-# was never once going to fire in a town run. Measured over 510 real calls:
-# median 65 KB, p90 178 KB, worst 357 KB, growing from 51 KB to 135 KB across
-# a single run, with the largest body still carrying the agent's very first
-# turn at game-day 0, 06:20. Every one of those was billed in full.
-#
-# 40,000 puts the compaction point at 32,000 tokens, roughly 128 KB. That is
-# more than three times the largest healthy single turn - a perception plus
-# fifty-odd tool schemas is about 9,000 tokens - so a conversation stays a
-# conversation and only the long tail gets summarised away. It also matches
-# the max_tokens already written into each agent's compaction_config.
-#
-# A budget, not a claim about the model: the field is documented above as a
-# conservative client-side placeholder, which is precisely what this is.
-#
-# One knock-on, checked rather than discovered later: catalog.py sizes the
-# skill-metadata budget at 2% of this window, so it falls from 5,120 tokens
-# to 800. That is still 15-25 skill entries, and this town has authored one,
-# so nothing is being cut today - but a town that starts writing skills in
-# quantity will truncate that list before it hits any other limit, and this
-# line is why. Raise KASUKABE_CONTEXT_WINDOW if that day comes.
-#
-# ── B3 lowered this again, from 40,000 to 12,500 ─────────────────────
-#
-# Tool spec B3's companion setting: "compaction near 10k tokens rather
-# than 30k". The arithmetic is the same as above - needs_compaction fires
-# at window * 0.80 - so 12,500 puts the line at 10,000.
-#
-# WHY. Mean input across 240 sampled rows was 19,400 tokens and the
-# largest was 35,600, against a fresh context (system prompt plus 48 tool
-# schemas) of about 8,000. So a late-morning turn was paying for the whole
-# morning's history, every tick, and the compaction point at 32,000 was
-# above almost every turn that actually happened - it fired on the worst
-# turns only, after they had been billed. At 10,000 it fires on the second
-# or third exchange, which is where the money is.
-#
-# THE COST, stated rather than discovered later. catalog.py sizes the
-# skill-metadata budget at 2% of this window, so it falls from 800 tokens
-# to 250 - roughly one to three skill entries rather than fifteen to
-# twenty-five. This town has authored one skill in twenty runs, so nothing
-# is being cut today, but a town that starts authoring in quantity will
-# truncate that list before it hits any other limit. That is a real
-# regression waiting to happen and KASUKABE_CONTEXT_WINDOW is the knob:
-# raise it the day authoring takes off, and re-measure the cost.
-# Raised from 12,500 to the model's real window on 2026-09-04, with
-# history now bounded in the seam instead (sim/bounded_history.py).
-#
-# 12,500 was chosen to make the engine compact early. It did the opposite:
-# RESERVE_FLOOR alone is 25,000, so the preflight was true with zero
-# messages and EVERY call took the emergency path. The small window also
-# made cap_turn_tool_results (25% of window) truncate world tool results
-# to ~3K tokens, so a resident could not read what its own actions
-# returned. Both were paid for on every call in all 23 runs.
 SIM_CONTEXT_WINDOW = int(os.environ.get("KASUKABE_CONTEXT_WINDOW", "131072"))
 
 MODEL_SPEC = SimModelSpec(
@@ -182,11 +106,6 @@ MODEL_SPEC = SimModelSpec(
     pricing=FlexPricing(input_per_1m=0.36, output_per_1m=1.80),
 )
 
-# Kept as a one-entry dict (rather than exposing only MODEL_SPEC) because
-# register_into_catalog_overlay iterates it the same way it would if the
-# roster ever legitimately grew - see the module docstring on why growth is
-# a DESIGN.md change, not a config edit, but the plumbing shouldn't need to
-# change shape to accommodate that decision when it happens.
 SIM_MODEL_SPECS: dict[str, SimModelSpec] = {MODEL_ID: MODEL_SPEC}
 
 

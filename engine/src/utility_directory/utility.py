@@ -17,10 +17,7 @@ from src.utility_directory.tool_runtime import ToolRegistry
 
 logger = logging.getLogger(__name__)
 
-# Utility catalog freshness. Independent of the asset caches' TTL in
-# src/asset_directory/assets.py - the values are coincidentally equal, the
-# policies are not; do not unify them.
-CACHE_TTL_SECONDS = 900  # 15 minutes
+CACHE_TTL_SECONDS = 900
 
 
 class Utility:
@@ -48,7 +45,6 @@ class Utility:
     def invalidate(self, prefix: str = "") -> None:
         self.cache.invalidate(prefix)
 
-    # --- Agent provisioning ---
 
     async def get_agent(self, name: str, version: str) -> dict[str, Any] | None:
         """Get full agent definition with user overlays. Cached per name + version."""
@@ -65,7 +61,6 @@ class Utility:
             self.set_cached(cache_key, result)
         return result
 
-    # --- Skill provisioning ---
 
     async def get_skill(self, name: str, version: str) -> dict[str, Any] | None:
         """Get full skill definition with user overlays. Cached per name + version."""
@@ -100,7 +95,6 @@ class Utility:
         skill_dir_str = skill_data.get("_skill_dir", "")
 
         if not skill_dir_str:
-            # No folder on disk — return description as prompt context
             desc = skill_data.get("description", "")
             if desc:
                 result["prompt"] = desc
@@ -108,7 +102,6 @@ class Utility:
 
         skill_dir = Path(skill_dir_str)
 
-        # Build prompt context from available files
         parts: list[str] = []
         parts.append(f"### {skill_data.get('name', 'unknown')}")
         parts.append(skill_data.get("description", ""))
@@ -124,12 +117,10 @@ class Utility:
         if parts:
             result["prompt"] = "\n".join(parts)
 
-        # Collect reference file names
         refs_dir = skill_dir / "references"
         if refs_dir.exists() and refs_dir.is_dir():
             result["references"] = [f.name for f in refs_dir.iterdir() if f.is_file()]
 
-        # Execute script if present (in-process, trusted)
         scripts_dir = skill_dir / "scripts"
         if scripts_dir.exists() and scripts_dir.is_dir():
             for script_file in sorted(scripts_dir.iterdir()):
@@ -141,7 +132,6 @@ class Utility:
                     exec(source, module.__dict__)
                     run_fn = getattr(module, "run", None)
                     if run_fn and callable(run_fn):
-                        # Store the loaded run function for later invocation
                         result["_run_fn"] = run_fn
                         result["_script_loaded"] = True
                 except Exception as e:
@@ -154,7 +144,6 @@ class Utility:
 
         return result
 
-    # --- Tool provisioning ---
 
     async def get_tool(self, name: str, version: str) -> dict[str, Any] | None:
         """Get full tool definition. Cached per name + version."""
@@ -171,7 +160,6 @@ class Utility:
             self.set_cached(cache_key, result)
         return result
 
-    # --- Health ---
 
     def cache_stats(self) -> dict[str, Any]:
         return {

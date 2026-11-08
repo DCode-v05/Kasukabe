@@ -32,8 +32,6 @@ from game.console.tests.conftest import TEST_TOKEN
 AUTH = {"Authorization": f"Bearer {TEST_TOKEN}"}
 
 
-# -- the confidence rule ---------------------------------------------------
-
 def test_confidence_is_earned_by_evidence_not_by_drama():
     """A dashboard that says "high confidence" on two days of data is worse
     than one that shows a bare number."""
@@ -56,8 +54,6 @@ def test_confidence_never_decreases_with_more_evidence():
     ranks = [order.index(confidence_for(d)) for d in range(0, 20)]
     assert ranks == sorted(ranks)
 
-
-# -- the framing -----------------------------------------------------------
 
 def test_a_household_two_days_out_gets_the_scenario_sentence_verbatim():
     """Section 19.7's own worked example."""
@@ -109,7 +105,7 @@ def test_a_business_that_cannot_pay_wages_says_so_in_words():
     )
     assert framed.severity == "critical"
     assert "employees are about to be unpaid" in framed.answer
-    assert framed.confidence == CONFIDENCE_MEDIUM     # two days of books
+    assert framed.confidence == CONFIDENCE_MEDIUM
 
 
 def test_a_brand_new_business_is_not_given_a_confident_verdict():
@@ -158,8 +154,6 @@ def test_the_watchlist_headline_counts_only_the_genuinely_urgent():
     assert framed.severity == "critical"
 
 
-# -- the plumbing ----------------------------------------------------------
-
 def test_the_overview_route_answers_all_four_questions(client):
     body = client.get("/api/town/overview", headers=AUTH).json()
     assert body["headline"]["question"] == "Is anyone about to go hungry?"
@@ -172,7 +166,7 @@ def test_the_overview_derives_confidence_from_the_books_not_a_constant(client):
     """Claiming a confidence without knowing how long the town has run is
     exactly the failure section 19.7 warns against."""
     body = client.get("/api/town/overview", headers=AUTH).json()
-    assert body["days_observed"] == 2          # the fake's business has two days of books
+    assert body["days_observed"] == 2
     assert body["headline"]["confidence"] == CONFIDENCE_MEDIUM
 
 

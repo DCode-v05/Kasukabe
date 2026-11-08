@@ -1,25 +1,9 @@
-/* The start-of-run checklist, on screen.
- *
- * world/preflight.py runs fifteen checks and the runner REFUSES to start
- * when a critical one fails. That refusal used to be a traceback in a
- * terminal; a run that never began looked, from the browser, exactly like a
- * run that had begun and gone quiet. This panel is the same checks, answered
- * by the live world, so the reason is on the screen where the run is.
- *
- * The panel is deliberately loud on failure and quiet on success: fifteen
- * green lines nobody reads is worse than one red line nobody can miss, so a
- * ready run collapses to a single summary row and the failures stay open.
- *
- * Classic script, no IIFE-less globals: everything is inside the closure
- * below. township-v2.js's top-level bindings are NOT on window (it is a
- * classic script with no wrapper), so nothing here may reach for them.
- */
 (function () {
   'use strict';
 
-  var POLL_MS = 30000;          // the checks are cheap but not free
+  var POLL_MS = 30000;
   var body = null, headBtn = null;
-  var expanded = false;         // sticky once the reader opens it
+  var expanded = false;
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
@@ -34,8 +18,6 @@
       '<span class="pf-mark">' + mark + '</span>' +
       '<span class="pf-name">' + esc(c.name) + '</span>' +
       (c.detail ? '<span class="pf-detail">' + esc(c.detail) + '</span>' : '') +
-      // The fix line is the whole point of a failing check and is shown only
-      // when it is failing - on a passing row it is noise.
       (!c.ok && c.fix ? '<span class="pf-fix">' + esc(c.fix) + '</span>' : '') +
       '</li>';
   }
@@ -67,7 +49,6 @@
       '<button class="pf-toggle" type="button">' +
         (expanded ? 'hide all' : 'show all') + '</button></div>';
 
-    // Failures and warnings are always visible. Passing rows only when asked.
     var shown = expanded ? checks
       : checks.filter(function (c) { return !c.ok; });
     var list = shown.length
@@ -82,8 +63,6 @@
     });
   }
 
-  /* The panel's own border and the map's banner both turn on this. A blocked
-   * preflight is the one state the page must not let you scroll past. */
   function setPanelState(state) {
     var panel = document.getElementById('preflightPanel');
     if (panel) panel.dataset.state = state;

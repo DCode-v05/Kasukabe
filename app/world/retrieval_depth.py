@@ -57,41 +57,14 @@ from typing import Any, Mapping, Sequence
 
 from world.core.perception import PerceivedEvent, Perception
 
-# ── measured facts (task prompt "MEASURED FACTS (do not re-derive)" +
-# DESIGN.md section 11) ──────────────────────────────────────────────
 BASELINE_INPUT_TOKENS = 3443
 BASELINE_OUTPUT_TOKENS = 291
 MAX_INPUT_TOKENS = 5000
 
-# DESIGN.md section 4 (final decision 2026-07-30): Kimi K2.5 is the only
-# model the live sim calls. Duplicated here (matching broker/config.py's
-# MODEL_PRICES_USD_PER_MILLION) rather than imported, so this module never
-# crosses the world/broker package boundary for two constants - see
-# life/constants.py for the same "duplicate the DESIGN-pinned number,
-# don't cross-import for it" precedent elsewhere in this repo.
 KIMI_INPUT_USD_PER_MILLION = 0.36
 KIMI_OUTPUT_USD_PER_MILLION = 1.80
 
-# ── depth -> concrete knob ranges (ASSUMPTION: DESIGN.md fixes the token
-# ceiling, not the mechanism; these ranges are picked to be internally
-# consistent and to actually reach ~5000 tokens at fraction=1.0 with
-# render_perception_text()'s own text budget, not arbitrary) ──────────
-# A remark has to still be audible when the listener next gets a turn.
-#
-# This was 1, and the scheduler runs each agent every `cadence_ticks` - 3 at
-# the default target_fraction of 0.3. So an utterance was audible for one
-# tick and the person it was addressed to did not act for another three: two
-# of every three remarks were inaudible BY CONSTRUCTION, whatever the model
-# did. Measured: 23 utterances over 613 ticks, in 19 "exchanges", of which
-# almost every one was one turn with no reply.
-#
-# 4 is cadence_ticks + 1: the listener's next turn is at most 3 ticks away,
-# and the +1 covers the tick the speaking itself consumed. Raising the depth
-# dial widens it further, as it always did.
 MIN_HEARING_WINDOW_TICKS = 4
-# 18 ticks = 3 game-hours of recently-heard events at maximum depth - wide
-# enough to carry a real conversation's worth of context without pulling
-# in an entire game-day's firehose.
 MAX_HEARING_WINDOW_TICKS = 18
 
 MIN_VISIBLE_AGENT_BIOS = 0
@@ -100,10 +73,6 @@ MAX_VISIBLE_AGENT_BIOS = 6
 MIN_HEARD_EVENTS_RENDERED = 3
 MAX_HEARD_EVENTS_RENDERED = 20
 
-# Relationship notes (who this agent trusts, owes, married, etc.) are the
-# most expensive addition per DESIGN.md's "richer social... context", so
-# they only switch on in the top half of the depth range rather than
-# scaling in from fraction=0.
 RELATIONSHIP_NOTES_FRACTION_THRESHOLD = 0.5
 
 ENV_VAR = "KASUKABE_RETRIEVAL_DEPTH"
@@ -238,10 +207,6 @@ def format_ambient(perception: Perception, place_names: "Mapping[str, str] | Non
     if not where:
         return when
     shown = (place_names or {}).get(where, where)
-    # `home:h0043` is the id `move` accepts, so it stays in the sentence -
-    # but it is read by a person, not a parser, so it is introduced as a
-    # home rather than as a bare key. Sector names ("Kasukabe Temple",
-    # "Kasukabe Farmland") already read as places and are left alone.
     if shown.startswith("home:"):
         return f"{when} You are at home ({shown})."
     return f"{when} You are at {shown}."
@@ -284,10 +249,6 @@ def format_volatile_line(wallet: Mapping[str, Any] | None) -> str | None:
     if cents is None:
         return None
 
-    # Energy, not dollars (world/ledger/money.py, ENERGY_UNITS_PER_USD_CENT).
-    # This read "Energy: $5.34 in your wallet" - the right word and the wrong
-    # unit: a dollar sign in a wallet is how money is described, and dollars
-    # are not money in this town.
     from world.ledger.money import ENERGY_UNITS_PER_USD_CENT, energy_units
 
     parts = [f"Energy: {energy_units(int(cents)):,}."]
@@ -309,9 +270,6 @@ def format_volatile_line(wallet: Mapping[str, Any] | None) -> str | None:
     if sim is not None:
         parts.append(f"Money: {int(sim)} sim.")
 
-    # Only when something is actually owed. A run that has never crossed a
-    # day boundary owes nothing, and printing "upkeep 0, head tax 0" every
-    # tick teaches a resident that the words mean nothing.
     owed = []
     if wallet.get("upkeep_due_sim"):
         owed.append(f"upkeep {int(wallet['upkeep_due_sim'])}")
@@ -320,12 +278,6 @@ def format_volatile_line(wallet: Mapping[str, Any] | None) -> str | None:
     if owed:
         size = int(wallet.get("household_size") or 1)
         if size > 1:
-            # Run 28: both figures are the HOUSEHOLD's bill. A sixteen-year-old
-            # student with 400 sim read "Owed today: upkeep 450, head tax 150"
-            # as his own, gave away 395 sim on his first turn, and could not
-            # afford to speak for the rest of the run. Who is charged is a
-            # fact of the biller (collect_household_upkeep, who_pays_for),
-            # stated as one - never advice about whether to pay.
             taken = []
             if wallet.get("upkeep_due_sim"):
                 taken.append("upkeep is taken from its earners first")
@@ -338,18 +290,9 @@ def format_volatile_line(wallet: Mapping[str, Any] | None) -> str | None:
             )
         else:
             parts.append("Owed today: " + ", ".join(owed) + ".")
-        # Same run, same 18 refusals: "owed" read as "pay it now", and
-        # `pay_tax` answered "you owe no head tax". Both bills are collected,
-        # not paid - said as the fact it is.
         parts.append("Both are taken automatically at the day boundary." if len(owed) > 1
                      else "It is taken automatically at the day boundary.")
 
-    # B3, addendum section 10: "When a call budget was hit last turn, one
-    # more sentence." Past tense, a count, and NO verb - the addendum says
-    # so in as many words ("`buy_energy` must be found from the
-    # description, which is the L1 test for it"). A resident told to buy
-    # energy has been handed the answer; one told it ran out has been
-    # handed the fact, and which of those it does with it is S2.
     ran_out = wallet.get("ran_out_after_steps")
     if ran_out:
         from world.call_budget import spent_line
@@ -388,9 +331,6 @@ def format_standing_brief(brief: Mapping[str, Any] | None) -> str | None:
     elif where:
         lines.append(f"You are at {where}.")
 
-    # Food, plainly. DESIGN.md section 3: "living is not free" - upkeep is
-    # charged whether or not an agent earns, so an empty larder is a countdown
-    # and the agent is entitled to know the number.
     food = brief.get("food_units")
     if food is not None:
         if food <= 0:
@@ -402,17 +342,6 @@ def format_standing_brief(brief: Mapping[str, Any] | None) -> str | None:
                 "some, or buy, harvest or cook your own."
             )
         else:
-            # Doc 01 blocker 8. This line used to say "N units of food.
-            # `eat` consumes it" - a verb, a quantity, and as the object of
-            # that verb the one word in the town that is not an item.
-            # `eat('food')` is refused (living.py:78-85) and the refusal is
-            # correct, so a resident that did exactly what the brief said
-            # was punished for it: four times in run 23.
-            #
-            # `food_items` is the same sum broken back out into the names
-            # `eat` actually takes. The count stays because DESIGN.md
-            # section 3's "an empty larder is a countdown" is told by the
-            # number, and the names are what make it actionable.
             named = brief.get("food_items") or {}
             carried = ", ".join(f"{item} {qty}" for item, qty in named.items())
             what = f" - {carried}" if carried else ""
@@ -428,17 +357,6 @@ def format_standing_brief(brief: Mapping[str, Any] | None) -> str | None:
                     "somebody standing with you."
                 )
 
-    # TOOL-04: everything else you are carrying, not just the food.
-    #
-    # The food line above was the ONLY read a resident had of its own
-    # inventory, and it is a single number over one item class. Timber,
-    # ore, flour, planks and every tool were invisible - so the model ate
-    # the word the brief used (`eat: 'food' is not food`, four times) and
-    # guessed at quantities it could have been told (`you hold N X, not M`,
-    # thirteen times across give/trade/eat).
-    #
-    # Rendered as a plain list of facts, no verbs: what to do about holding
-    # nine wheat is the resident's question, not the world's.
     holding = brief.get("holding")
     if holding:
         carried = ", ".join(f"{item} {qty}" for item, qty in holding.items())
@@ -448,24 +366,6 @@ def format_standing_brief(brief: Mapping[str, Any] | None) -> str | None:
     if balance is not None:
         lines.append(f"You have {balance} sim in hand.")
 
-    # The shop, for whoever owns it - and what an employer may do.
-    #
-    # `run_genesis.ledger_of_self` has built `my_business` - the till, the
-    # stock and the staff - on every tick since CORE-16, for the stated
-    # reason that "a shop owner was told nothing about their own till, stock
-    # or staff, so 'run your business' meant guessing at the state of it".
-    # Nothing ever read the key. It was computed each tick and dropped, so
-    # the owner still guessed.
-    #
-    # The verbs are named for the same reason GOV-3 names a seat's: election30
-    # paid 0 wages and set 0, not because anybody refused - `set_wage` and
-    # `pay_wage` are free and were never called once - while its construction
-    # crew talked about "today's wages" that nothing paid. The seat notice is
-    # the precedent that this works: nine words in a Prime Minister's own
-    # perception moved `set_tax_rate` after twenty-three runs of nothing.
-    #
-    # What an employer MAY do, never that it should - the standing rule, and
-    # why `vote` has never been worded as an instruction either.
     for shop in (brief.get("my_business") or []):
         said = f"You own {shop.get('name') or shop.get('business_id')}"
         business_id = shop.get("business_id")
@@ -489,42 +389,11 @@ def format_standing_brief(brief: Mapping[str, Any] | None) -> str | None:
                 + " premises; `describe_primitives` lists the rest."
             )
         else:
-            # The half the sentence above could never reach. It sat inside
-            # `if staff:`, so an owner learned that wages exist only once
-            # somebody already worked for them - and nothing anywhere named
-            # `hire_employee`, so there was no way to acquire the staff that
-            # unlocked the telling.
-            #
-            # Four of the six shops in genesis_50_town open with nobody
-            # employed - the cafe and the pharmacy have one each - so most
-            # owners were told neither verb. ECON-5 has
-            # failed every run for want of this: 0 hires and 0 wage payments,
-            # while a miller told a neighbour "come to the mill and we can
-            # count a specific task against what the till can pay" and then
-            # had no verb in front of her to do it with.
-            #
-            # Same form as the branch above and as GOV-3's seat notice: what
-            # an employer MAY do, never that it should.
-            # `hire_employee` ONLY. `set_wage` and `pay_wage` stay unnamed
-            # here on purpose - test_an_owner_with_no_staff_is_not_told_about_
-            # wages made the call and it is right: a verb named where it
-            # cannot apply is noise, and this brief is read every tick by
-            # every owner in the town. You cannot pay nobody. You CAN hire,
-            # and that was the one verb missing.
             lines.append(
                 "Nobody works for you yet. An employer may `hire_employee`,"
                 " at its own premises; `describe_primitives` lists the rest."
             )
 
-    # Who else there is. Not who is present - that is the next block's job -
-    # but who exists at all.
-    #
-    # Without this the brief told an agent its own trade and never said who
-    # shared the town with it, so a resident looking for a buyer reached for
-    # whatever names were within reach: the ones written on the map's
-    # buildings, which belong to a cast of thirty who are not in this run.
-    # Tobias spent a morning hailing "Harvey" and "Isabella"; Bram walked to
-    # "sh_silva". No such people, so the words reached nobody.
     household = brief.get("household") or []
     townspeople = brief.get("townspeople") or []
     if household:
@@ -555,31 +424,13 @@ def format_visible_agents(
     cabbages is indistinguishable from a farmer standing in the market.
     """
     if not perception.visible_agents:
-        # Said this way round because "nobody else is here" was being read as
-        # scene-setting rather than as a constraint on who can hear you.
         return "Nobody else is here. Anything you say now will be heard by nobody."
     if max_bios <= 0 or not visible_agent_bios:
-        # NAMES, at every depth, including zero.
-        #
-        # This used to render bare ids - "With you: a0031, a0087" - and an
-        # agent cannot greet a0031. `say` takes a listener_agent_id, so the
-        # id has to stay; what was missing is the name beside it, and its
-        # absence is the most likely reason a 30-agent town produced nine
-        # utterances in 933 ticks. Naming costs a handful of tokens and is
-        # not "richer context" the depth dial should be able to withhold:
-        # it is the difference between a room of strangers and a town.
         names = ", ".join(
             _named(agent_id, visible_agent_names)
             + (f" ({offers[agent_id]})" if offers and agent_id in offers else "")
             for agent_id in perception.visible_agents
         )
-        # "and nobody else" is not padding.
-        #
-        # Liora Thorne, shown "With you: Wren Thorne, Marta Thorne, Idris
-        # Thorne", called out "Perrin! You walking or what?" twice - Perrin
-        # was across town. Agents carry strong priors about who they walk to
-        # college with and read a list of three names as "these are here
-        # too", not "these are the only ones here".
         return f"With you, and nobody else: {names}."
     lines = [
         f"With you ({len(perception.visible_agents)} present, and nobody else):"
@@ -625,19 +476,10 @@ def format_intention(
     return f"You set out{at} to: {text}"
 
 
-# ENG-24. How much of the turn this block is allowed to cost. Two needs,
-# three goals and three beliefs is roughly 80 tokens - about a third of
-# what the standing brief spends - and the cap is here rather than at
-# the call site because a block that silently grew would push the
-# addressed-to-you line down the prompt, which is the one thing the
-# perception rules say must stay near the top.
 MAX_NEEDS_SHOWN = 2
 MAX_GOALS_SHOWN = 3
 MAX_BELIEFS_SHOWN = 3
 
-# How a pressure reads in words. The resident is never shown the float:
-# "0.82" invites arithmetic, and the number is the world's bookkeeping,
-# not something a person feels.
 _NEED_WORDS: "dict[str, tuple[str, str]]" = {
     "food": ("hungry", "starving"),
     "money": ("short of money", "broke"),
@@ -738,8 +580,6 @@ def format_goals(
                 progress = float(goal.get("progress") or 0.0)
             except (TypeError, ValueError):
                 progress = 0.0
-            # Progress is shown only once there is some, because "0% done"
-            # on a goal set this tick is noise dressed as information.
             how_far = f" ({int(progress * 100)}% of the way)" if progress > 0 else ""
             when = f" [{horizon}]" if horizon and horizon != "today" else ""
             rendered.append(f"{text}{when}{how_far}")
@@ -783,9 +623,6 @@ def format_market_board(offers: "Sequence[Mapping[str, Any]] | None") -> "str | 
         if offer.get("ask_sim") is not None:
             stock = offer.get("stock") or 0
             held = f"{stock} in stock" if stock else "**none in stock**"
-            # Only ever said of a PERSON now: a shop with a posted price
-            # sells whoever is standing in it, so calling one unattended
-            # would send a resident away from a counter that would serve it.
             if offer.get("minded") is False:
                 held += ", nobody there to agree it right now"
             lines.append(
@@ -837,15 +674,6 @@ def format_addressed_to_you(
         if event.type == "agent.utterance.spoken"
         and event.involves_self
         and (event.payload or {}).get("listener_agent_id")
-        # Said BY you is not said TO you.
-        #
-        # involves_self is true for the speaker as well - involved_agent_ids
-        # carries both ends of a remark - and an utterance is an event at
-        # the speaker's own location, so an agent's own words came back to
-        # it inside the hearing window under the heading "Said to you, and
-        # not yet answered", followed by an instruction to reply to itself.
-        # Observed live: 3 of 9 delivered remarks were the reader's own,
-        # including Ainsley being asked to answer Ainsley.
         and (event.payload or {}).get("speaker_agent_id") != perception.agent_id
     ]
     if not spoken:
@@ -858,9 +686,6 @@ def format_addressed_to_you(
         speaker_id = str(payload.get("speaker_agent_id") or "")
         speaker = _named(speaker_id or "someone", names)
         content = str(payload.get("content") or "").strip()
-        # Where it was said, when that is not where the agent is standing
-        # now. The window spans several ticks and people walk off mid
-        # conversation.
         where = payload.get("location_id")
         elsewhere = bool(where and perception.location_id and where != perception.location_id)
         place = f" (at {where})" if elsewhere else ""
@@ -868,9 +693,6 @@ def format_addressed_to_you(
         if speaker_id and speaker_id in (perception.visible_agents or ()):
             still_here = True
 
-    # Only claimed when it is true. `say` gates on co-location, so telling
-    # an agent it can answer somebody who has walked off sends it into a
-    # refusal it was promised would work.
     if still_here:
         lines.append(
             "  They are standing with you and can hear a reply. Use `say` with "
@@ -921,23 +743,6 @@ def format_open_questions(
         if isinstance(tick, int):
             waited = f" ({now_tick - tick} ticks ago)"
         lines.append(f'  {speaker}{waited}: "{content}"')
-    # A fact and a verb, and nothing after it.
-    #
-    # This used to end "...or let it go and do what matters more", written
-    # to keep the mechanism from forcing a reply - one that forced a reply
-    # would score 100% and measure nothing. But measured on run5, all
-    # EIGHT turns that carried an open question produced no tool call at
-    # all, against a baseline of 57 in 94 on turns without one. Marta
-    # asked Wren three times in three separate remarks and he never
-    # answered once.
-    #
-    # "Let it go and do what matters more" is not neutral. It is the last
-    # thing in the section, it is an explicit invitation to do neither,
-    # and it arrives attached to a question somebody is waiting on.
-    # Reporting that a question is open and unanswered is a fact;
-    # suggesting it may be dropped is advice, and this section has no
-    # business giving any - the same rule the convening hint and the
-    # silent-turn report already follow.
     lines.append("  You have not answered. `say` is how an answer reaches them.")
     return "\n".join(lines)
 
@@ -978,8 +783,6 @@ def format_conversation(record: Mapping[str, Any] | None) -> str:
     lines = [f"A conversation is open here about {subject}{run}."]
     if people:
         lines.append("  In it: " + ", ".join(people) + ".")
-    # The id, because a resident who cannot name the thread cannot answer
-    # into it, and a room holding two conversations muddles them.
     lines.append(f"  Answer into it by passing conversation_id={conversation_id!r} to say.")
     return "\n".join(lines)
 
@@ -1057,60 +860,18 @@ def format_heard_event(
     if event.type == "agent.utterance.spoken":
         speaker = _named(str(payload.get("speaker_agent_id") or "someone"), names)
         content = str(payload.get("content") or "").strip()
-        # "to you" is the whole difference between a remark to answer and
-        # one to overhear, and it is the thing the raw dump buried deepest.
-        #
-        # Read from the full addressee list, not from `listener_agent_id`.
-        # Ezra answered Anselm and Tova in one remark; the world recorded
-        # both in `addressed_agent_ids` and told Tova "said", so the
-        # vocative that SELECTED her - and obliged her alone to answer -
-        # reached her as ambient speech. See
-        # world/tests/test_being_spoken_to_reaches_you.py.
-        #
-        # `event.for_agent_id` is who is reading this. Without it the old
-        # test was `involves_self and there_is_any_listener`, which said
-        # "said to you" to the SPEAKER about their own remark.
         reader = event.for_agent_id
         to_you = (
             bool(reader)
-            # Never about your own remark, whatever the record says. A
-            # resident that names itself mid-sentence would otherwise be
-            # told it had been spoken to, and the self-echo defect has
-            # been seen live before: three of nine delivered remarks in
-            # one run were the reader's own words.
             and reader != payload.get("speaker_agent_id")
             and reader in addressees_of(payload)
         )
         where = payload.get("location_id")
-        # Only when it is somewhere the agent is not standing now - the
-        # hearing window spans several ticks and an agent that has walked on
-        # would otherwise read old speech as happening in front of it.
         place = f" at {where}" if where and here and where != here else ""
         lead = "said to you" if to_you else "said"
         return f'  - {speaker} {lead}{place}: "{content}"'
 
     if event.type == "agent.conversation.opened":
-        # The other event that must not arrive as a dict.
-        #
-        # This function's docstring above makes the argument for speech -
-        # "a model has to reverse-engineer that somebody spoke before it
-        # can consider answering, and the speaker is an id it cannot
-        # address. Measured: 28 utterances and ZERO replies." Convening
-        # had the identical shape and was never fixed, and the numbers
-        # match: `start_conversation` called five times across six runs,
-        # and orphaned when it WAS used, because nobody could read the
-        # invitation. Perrin named four people and each of them got a
-        # UUID in a bracket.
-        #
-        # Carries the room picture at the moment it changes - who called
-        # it, what about, who else is in it - so a resident does not have
-        # to spend a `look_around` on news that it was invited to
-        # something. `look_around` was the second most-called tool of the
-        # series, 248 calls against 194 `say`.
-        #
-        # It gives no orders. Atlas follows its group announcement with a
-        # loop that makes each member speak; that loop is what ROADMAP
-        # Law 2 forbids.
         reader = event.for_agent_id
         convener_id = str(payload.get("opened_by_agent_id") or "")
         convener = _named(convener_id, names) if convener_id else "someone"
@@ -1139,10 +900,6 @@ def format_heard_event(
         return f"  - {convener} opened a conversation{about} here."
 
     if event.type == "health.agent.revived":
-        # A2. The first thing a revived resident reads has to say what
-        # happened to it and who paid, in words. The fallback below would
-        # hand somebody who has just come back from being unable to think
-        # a bracketed dict of its own resurrection.
         reader = event.for_agent_id
         revived_id = str(payload.get("revived_id") or payload.get("agent_id") or "")
         payer_id = str(payload.get("payer_id") or "")
@@ -1159,10 +916,6 @@ def format_heard_event(
         return f"  - {payer} paid to wake {who}."
 
     if event.type == "health.agent.dormant":
-        # The household's one chance to do anything about it. Where they
-        # fell and how long there is to reach them, because `revive` is
-        # gated on standing over them and nothing else in perception says
-        # where "them" is.
         reader = event.for_agent_id
         who_id = str(payload.get("agent_id") or payload.get("target_agent_id") or "")
         who = _named(who_id, names) if who_id else "someone"
@@ -1179,25 +932,10 @@ def format_heard_event(
         return f"  - {who} has fallen dormant{place}: their energy reached zero.{clock}"
 
     if event.type == "agent.moved":
-        # TOOL-05(b). This arrived as the raw fallback below -
-        # `- [agent.moved, nearby] {'agent_id': 'a0121', 'location_id':
-        # 'sector:900007', 'tile_x': 41, ...}` - which is the same defect
-        # this function's docstring makes the case about for speech: a
-        # model has to reverse-engineer that somebody arrived, and the
-        # person is an id it cannot address.
-        #
-        # Worse for the reader's OWN arrival. A resident that walked for
-        # ten ticks and got there read a dict about itself, so "am I
-        # there yet" was a question the perception could not answer and
-        # `look_around` had to be spent on.
         reader = event.for_agent_id
         who_id = str(payload.get("agent_id") or "")
         where = payload.get("location_id")
         shown = str(where) if where else "somewhere"
-        # Absent means "not stated", not "no". `MovementSystem.advance`
-        # and `move` both set it; a producer that does not is telling us
-        # nothing, and a silently-dropped event is worse than a slightly
-        # noisy one.
         mid_walk = payload.get("arrived") is False
         if reader and reader == who_id:
             if mid_walk:
@@ -1205,9 +943,6 @@ def format_heard_event(
             if payload.get("walked") is False:
                 return f"  - You stepped straight to {shown}; it is not on the map."
             return f"  - You arrived at {shown}."
-        # Somebody else. Only their arrival is worth a line: a passer-by
-        # crossing a tile is the noise `NOISY_EVENT_TYPES` drops from the
-        # trace for the same reason.
         if mid_walk:
             return ""
         who = _named(who_id, names) if who_id else "someone"
@@ -1228,9 +963,6 @@ def format_heard_events(
 ) -> str:
     if not perception.heard_events:
         return "Nothing notable happened recently."
-    # Speech first, and newest first within it. The window holds several
-    # ticks now, so a remark addressed to this agent could otherwise sit
-    # below three arrivals and departures and fall off the end of max_events.
     events = perception.heard_events
     if skip_addressed:
         events = [
@@ -1242,15 +974,9 @@ def format_heard_events(
     other = [e for e in events if e.type != "agent.utterance.spoken"]
     ordered = list(reversed(spoken)) + list(reversed(other))
     if not ordered:
-        # Everything the window held was the question quoted above. Saying
-        # "Recently: ...and 1 more event(s)" about a remark already printed
-        # in full is worse than saying nothing.
         return "Nothing else happened recently."
     shown = ordered[:max_events]
     lines = ["Recently:"]
-    # An empty string means "this event is not worth a line to this
-    # reader" - somebody else crossing a tile mid-walk (TOOL-05). Dropped
-    # rather than rendered blank, which would leave a hole in the list.
     lines.extend(
         line
         for line in (
@@ -1258,9 +984,6 @@ def format_heard_events(
         )
         if line
     )
-    # Counted against what this section is actually rendering, not against
-    # the raw window - anything pulled out above is not "more events", it is
-    # the same event.
     overflow = len(ordered) - len(shown)
     if overflow > 0:
         lines.append(f"  ...and {overflow} more event(s).")
@@ -1307,7 +1030,6 @@ def format_skill_playbook(entries: Sequence[Mapping[str, Any]] | None) -> str | 
     return "\n".join(lines)
 
 
-
 def format_civic_notice(notice: Mapping[str, Any] | None) -> str | None:
     """What the town's institutions are doing, as facts.
 
@@ -1348,24 +1070,8 @@ def format_civic_notice(notice: Mapping[str, Any] | None) -> str | None:
         if notice.get("you_have_voted"):
             line += " You have voted."
         elif notice.get("you_have_not_voted") and str(phase) == "voting_open":
-            # Said in the second person, because the third person is what
-            # failed. "An election is open for voting" is a fact about the
-            # town; "you have not voted" is a fact about the reader, and
-            # only the second kind gets acted on - the same difference GOV-3
-            # found between naming a government and naming a seat-holder's
-            # own verbs.
             hall = notice.get("where") or "the town hall"
             here = notice.get("you_are_at")
-            # The verb is named in EVERY branch. An earlier rewrite of this
-            # put it inside the journey sentence, so a notice built without a
-            # location lost it entirely - and naming the verb is the whole
-            # reason this line exists.
-            # The journey, not only the verb. `vote` is gated to the hall, so
-            # a resident anywhere else is offered it as an index line with no
-            # schema and cannot form the call however willing they are. Naming
-            # the move is the difference between a rule and a thing to do -
-            # the same lever GOV-3 found when it named a seat-holder's own
-            # verbs instead of the office.
             if not here:
                 journey = f" Go to {hall} and `vote` before it closes."
             elif here != hall:
@@ -1382,7 +1088,6 @@ def format_civic_notice(notice: Mapping[str, Any] | None) -> str | None:
                 else " You have not voted yet." + journey
             )
         lines.append(line)
-        # The rules of taking part, as facts (see civic_notice_for).
         rules = []
         if notice.get("where"):
             who = (f"; residents aged {notice['min_age']} and over may do both"
@@ -1408,20 +1113,6 @@ def format_civic_notice(notice: Mapping[str, Any] | None) -> str | None:
     elif notice.get("seats_vacant"):
         lines.append("Who governs: nobody. The seats are vacant.")
 
-    # GOV-3. The line above is a list of names in the third person, and a
-    # resident reading its own name in it is not told that the town's
-    # government verbs are now its own.
-    #
-    # The 8-resident run of 2026-09-23 elected a government that then used
-    # no government tool at all - not refused, never attempted, because
-    # `registry.visible_to` had already put every one of those verbs in
-    # the winner's schema and nothing connected the seat to them. It is
-    # the same gap `authoring_hint` closed for `skillify` by naming the
-    # verb, which moved it from 0% to 4 of 5.
-    #
-    # Names the seat, the verbs and the place, and stops. What a seat MAY
-    # do, never that it should do any of it - the standing rule, and the
-    # reason `vote` has never been worded as an instruction either.
     seat = notice.get("your_seat")
     if seat:
         held = (
@@ -1490,24 +1181,6 @@ def render_perception_text(
     """
     sections = [format_ambient(perception)]
 
-    # A duty with a deadline goes ABOVE the resident's own intention.
-    #
-    # Two fifty-resident elections were tallied with zero ballots. The notice
-    # was correct, said in the second person, named the verb, named the place,
-    # and every resident read it - one was told "You are at Kasukabe
-    # Government Complex: `vote` now" while standing there, and said something
-    # instead. It sat 55% of the way down a prompt that OPENS with "You set
-    # out at 11:20 to: ..." - the resident's own goal, stated first and in the
-    # second person, which is what it went on doing.
-    #
-    # Position is the whole intervention. GOV-3 moved `set_tax_rate` after
-    # twenty-three runs of nothing by putting a verb in a seat-holder's own
-    # perception; this puts a closing deadline above a standing preference,
-    # which is the order the two actually have.
-    #
-    # Only while voting is OPEN and only for somebody who has not voted, so
-    # it is a deadline rather than a nag: the moment the ballot is cast, or
-    # the window shuts, this disappears and the intention leads again.
     notice_now = civic_notice or {}
     if (
         str(notice_now.get("phase") or "") == "voting_open"
@@ -1517,19 +1190,6 @@ def render_perception_text(
         where_now = notice_now.get("you_are_at")
         hall_now = notice_now.get("where") or "the government complex"
         eid_now = notice_now.get("election_id") or ""
-        # The exact wording, chosen by measurement rather than taste. Asked of
-        # gpt-6-luna with the real 80-tool list and the real prompt n01 got
-        # while standing in the hall and did not vote:
-        #
-        #   the prompt as it was ................. 0/6
-        #   duty hoisted, "`vote` now" ........... 2/8   (it kept calling `move`)
-        #   + the call shape ..................... 4/8
-        #   + "you do not need to move" .......... 8/8
-        #
-        # Two things carried it. Saying it is ALREADY there stops the resident
-        # walking to a building it is standing in - four of the eight failures
-        # were `move`. And naming the election_id and the three arguments
-        # turns "vote" from a thing to work out into a call to make.
         if where_now and where_now == hall_now:
             sections.append(
                 "BEFORE ANYTHING ELSE: voting closes soon and you have not "
@@ -1547,37 +1207,16 @@ def render_perception_text(
                 "before anything else you had planned."
             )
 
-    # B1: why you are awake. First, before anything else, because a
-    # resident that stopped working and does not know why has been given a
-    # gap in its own morning where a reason should be.
     if stopped_working:
         sections.append(stopped_working)
 
-    # B2: what you set out to do, at the top, every turn until it is done.
-    #
-    # Aldous Vance decided to go to Oak Hill College on four consecutive
-    # ticks and never went - not because he changed his mind, but because
-    # each tick he arrived at the decision fresh, with no record that he
-    # had already made it. Nothing here enforces anything; it is a note to
-    # himself, which is exactly why the fulfilled ratio is worth counting.
     intention_line = format_intention(intention, intention_outcome)
     if intention_line:
         sections.append(intention_line)
 
-    # ENG-24: what you want, immediately under what you set out to do,
-    # because they are the same question at two scales and splitting them
-    # across the prompt would make a resident answer each without the
-    # other. Above the addressed-to-you line only in the sense that a
-    # goal is why you would answer at all.
-    # What became of a goal comes FIRST, above the standing list, for
-    # the same reason the intention outcome does: it is news, and the
-    # list underneath it is furniture.
     outcome_block = format_goal_outcomes(goal_outcomes)
     if outcome_block:
         sections.append(outcome_block)
-    # LIFE-01: what you are, immediately above what you want. They are
-    # the same question at two scales, and a resident reading its goals
-    # without its situation cannot tell which of them still belong to it.
     stage_line = format_life_stage(life_stage)
     if stage_line:
         sections.append(stage_line)
@@ -1585,33 +1224,10 @@ def render_perception_text(
     if goal_block:
         sections.append(goal_block)
 
-    # Anything said TO this agent: first, by itself, and above everything
-    # else it is about to read.
-    #
-    # A directed remark used to arrive inside "Recently:", below arrivals,
-    # departures and whatever else the window held, with nothing marking it
-    # as a thing awaiting an answer. An agent that is asked a question and
-    # shown it as the fourth bullet of an event log answers it about as
-    # often as a person would.
-    #
-    # Then it sat fifth, under a nine-name roster of the town. An open
-    # question addressed to you by name outranks a directory: the roster is
-    # reference material the agent consults if it wants somebody, and the
-    # question is the one thing in the whole prompt that another resident is
-    # actively waiting on. Placed above the brief for that reason, and above
-    # "With you:" because it names who is present itself.
-    #
-    # This is the whole A2A protocol: address, delivery, a standing
-    # expectation that an unanswered question stays open, and the question
-    # put where it will actually be read.
     addressed = format_addressed_to_you(perception, visible_agent_names)
     if addressed:
         sections.append(addressed)
 
-    # Questions still outstanding, including ones older than the hearing
-    # window. Anything already quoted in full by `addressed` above is
-    # dropped: printing the same remark twice costs tokens and makes one
-    # question look like two.
     outstanding = [
         q for q in (open_questions or [])
         if not addressed or str(q.get("content") or "").strip() not in addressed
@@ -1620,28 +1236,6 @@ def render_perception_text(
     if still_open:
         sections.append(still_open)
 
-    # The other side of the same fact: what THIS resident asked and nobody
-    # answered.
-    #
-    # `open_questions` above tells the person who was asked that they owe an
-    # answer. Nothing told the asker, so a resident who spoke into silence
-    # could not tell "they have not answered" from "I never said it" - and
-    # asking again is the rational move when you cannot tell. Run 19 has
-    # Marta Thorne repeating one sentence verbatim four ticks apart, Tova
-    # Okonjo demanding the same yes-or-no answer at t40 and t43, and Silas
-    # Vance giving the same speech about his unsold plank twice. Each repeat
-    # was a billed turn that changed nothing.
-    #
-    # States the fact and stops. It does not say to give up, to ask again,
-    # or to go elsewhere - what to do about being ignored is the resident's
-    # business, and DESIGN.md section 4's line is "told the prices and the
-    # rules, never the strategy".
-    #
-    # `_named`, not "the name or else the id". This line is read by a
-    # resident deciding whether to ask again, and asking again needs the id
-    # - so the name alone made the one thing it might act on unusable, and
-    # the id alone (`format_open_questions` next door has always used
-    # `_named`) is run 28b's "Someone is here - n02". Both halves, always.
     if awaiting_reply:
         waiting_lines = [
             "- " + _named(
@@ -1658,51 +1252,25 @@ def render_perception_text(
             "You asked, and have not been answered:\n" + "\n".join(waiting_lines)
         )
 
-    # Who this agent IS, and what it is meant to be doing.
-    #
-    # The prompt used to open with the time and the ids of whoever was in
-    # the room, and nothing else. An agent was never told its own trade, its
-    # own workplace, or whether it had eaten - so a farmer with a field and
-    # an empty larder read the same prompt as an idle child, and behaved the
-    # same way. Nine utterances in 933 ticks, and residents standing in
-    # their houses all day, are what that prompt produces.
     standing = format_standing_brief(self_brief)
     if standing:
         sections.append(standing)
 
-    # A6: last in the standing brief, after the sim balance line, exactly
-    # where the spec places it. This is the roadmap's VOLATILE layer - it
-    # changes every tick and belongs in the per-turn perception, never in
-    # the cached system prompt.
     volatile = format_volatile_line(wallet)
     if volatile:
         sections.append(volatile)
 
-    # GOV-17, beside the energy line and for the same reason: a standing
-    # fact about the resident's situation that it cannot get any other way.
     civic = format_civic_notice(civic_notice)
     if civic:
         sections.append(civic)
 
     if silent_turns:
-        # Placed with the standing brief rather than at the very end,
-        # deliberately. The turn-close line already occupies the last
-        # position and says the same thing as a RULE stated in advance;
-        # this says it as a FACT about what just happened, and a model
-        # that believes it complied with the rule needs the evidence
-        # before it starts composing, not after. See
-        # WorldState.silent_turns_report.
         sections.append(silent_turns)
 
     convened = format_conversation(conversation)
     if convened:
         sections.append(convened)
     elif convening_hint:
-        # Mutually exclusive with the section above by construction:
-        # WorldState.convening_hint returns None once a conversation is
-        # open here. The `elif` is belt and braces, so a future change to
-        # that rule cannot produce a prompt telling an agent to open the
-        # conversation it is already sitting in.
         sections.append(convening_hint)
 
     sections.append(format_visible_agents(
@@ -1712,12 +1280,6 @@ def render_perception_text(
         offers=visible_agent_offers,
     ))
 
-    # A3, rendered at every depth. What is for sale where you stand is not
-    # "richer context" the depth dial may withhold - without it `buy` has
-    # nothing to name, and the town is back to a bakery whose price exists
-    # only in the baker's speech.
-    # The town-wide board first: a resident deciding where to go needs to
-    # know what is for sale before it needs the shelf beside it.
     town = format_market_board(market)
     if town:
         sections.append(town)
@@ -1730,8 +1292,6 @@ def render_perception_text(
             perception,
             max_events=depth.max_heard_events_rendered,
             names=visible_agent_names,
-            # Already quoted in full above. Printing it twice costs tokens
-            # and makes one question look like two.
             skip_addressed=bool(addressed),
         )
     )
@@ -1741,60 +1301,16 @@ def render_perception_text(
         if notes is not None:
             sections.append(notes)
 
-    # Rendered at EVERY depth, unlike relationship notes. Retrieval depth
-    # governs how much of the world an agent takes in; its own procedures are
-    # not part of the world it is looking at, and an agent that stops being
-    # shown what it knows how to do at low depth would abandon every workflow
-    # the moment the operator turned the dial down.
     playbook = format_skill_playbook(skill_playbook)
     if playbook is not None:
         sections.append(playbook)
 
-    # One line, and only when the agent has earned it by repeating something -
-    # see WorldState.authoring_hint for why this is evidence-driven rather
-    # than a standing instruction in every prompt.
     if authoring_hint:
         sections.append(authoring_hint)
 
-    # Part D: the town's own unmet wants, named but not answered. Last,
-    # deliberately - it is context for what the agent might do next, not an
-    # instruction competing with what it can see in front of it.
     if gap_notice:
         sections.append(gap_notice)
 
-    # Last, and deliberately so.
-    #
-    # Law rule 6 already tells every resident that narrated words reach
-    # nobody, and it worked: `say` went from the fourth-most-used tool to the
-    # first, and turns-with-effect from 40% to 68%. But that rule lives in the
-    # STABLE cached section - first thing in, furthest from the moment a model
-    # decides it has finished. Measured after it landed: 79 of 232 cognition
-    # turns still ended in prose with no tool call, including Corwin Thorne
-    # writing "I need to answer him. Not with more explaining" and then
-    # stopping without saying anything to anyone.
-    #
-    # This is the same fact in the last position a model reads. It states a
-    # mechanism and nothing else - not who to answer, not whether to act - so
-    # an agent that reads it and still does nothing has made a real choice,
-    # which is what the experiment exists to observe.
-    # PROMPT-01. The last line grew a second sentence, and the reason is
-    # `deni-a6f9eb4-5h`: 3,341 of 3,741 turns ended with zero tool calls,
-    # and 595 of those wrote out the acts they had settled on and called
-    # none of them. The first sentence states the mechanism and has
-    # measurably worked before (turns-with-effect 40% -> 68%); it is not
-    # touched. What it never said is what to do about it - so a model
-    # that has reasoned its way to a decision reads a true statement,
-    # agrees with it, and stops anyway.
-    #
-    # The addition is Codex's persistence rule, translated. Its base
-    # instructions tell a coding agent to "keep going until the query is
-    # completely resolved, before ending your turn and yielding back" -
-    # and the thing that makes that work is the second half, that nobody
-    # is waiting to finish the job for you. A resident has no user to
-    # yield back TO, which is exactly why it needs telling.
-    #
-    # Still a mechanism, still no strategy: it does not say act, or
-    # trade, or speak. It says an unspent decision expires with the tick.
     sections.append(
         "Nothing you have thought or written above has happened yet. This turn "
         "ends when you stop, and only the tools you actually call will have "

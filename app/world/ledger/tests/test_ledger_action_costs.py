@@ -44,9 +44,6 @@ from world.ledger.tests.ledger_factories import build_genesis_ledger
 ACTOR = ActionActor(actor_id="a1")
 
 
-# -- labour -------------------------------------------------------------
-
-
 def test_labour_cost_scales_with_quantity() -> None:
     small = cost_for("harvest", {"crop": "wheat", "quantity": 1}, ACTOR)
     large = cost_for("harvest", {"crop": "wheat", "quantity": 10}, ACTOR)
@@ -58,15 +55,12 @@ def test_labour_cost_scales_with_quantity() -> None:
 def test_labour_cost_gets_a_skill_discount_at_high_proficiency() -> None:
     novice = cost_for("craft", {"recipe_id": "x", "batches": 10}, ActionActor("a1", skill_proficiency=0))
     master = cost_for("craft", {"recipe_id": "x", "batches": 10}, ActionActor("a1", skill_proficiency=100))
-    assert novice == 6 + 8 * 10  # 86, no discount at proficiency 0
+    assert novice == 6 + 8 * 10
     assert master < novice
-    assert master == 86 - (86 * 5_000 // 10_000)  # 50% max discount, floor-divided
+    assert master == 86 - (86 * 5_000 // 10_000)
 
 
 def test_skill_discount_never_pushes_cost_below_the_rule_floor() -> None:
-    # quantity=0 pushes the raw cost down to exactly base_cost (== min_cost
-    # for harvest); even at maximum proficiency the discount cannot cross
-    # the floor.
     cost = cost_for(
         "harvest", {"crop": "wheat", "quantity": 0}, ActionActor("a1", skill_proficiency=100)
     )
@@ -100,12 +94,9 @@ def test_build_structure_labour_cost_scales_with_footprint_tiles() -> None:
     assert cost == 25 + 15 * len(footprint)
 
 
-# -- trade ----------------------------------------------------------------
-
-
 def test_buy_cost_is_one_percent_of_total_price() -> None:
     cost = cost_for("buy", {"business_id": "b", "item": "bread", "quantity": 20, "unit_price_sim": 50}, ACTOR)
-    assert cost == (20 * 50) * 100 // 10_000  # 10
+    assert cost == (20 * 50) * 100 // 10_000
 
 
 def test_trade_cost_never_falls_below_its_floor_on_a_tiny_trade() -> None:
@@ -120,15 +111,12 @@ def test_sell_cost_matches_buy_rate() -> None:
 
 def test_transfer_cost_is_half_a_percent_of_amount_moved() -> None:
     cost = cost_for("transfer", {"to_agent_id": "a2", "amount_sim": 10_000}, ACTOR)
-    assert cost == 10_000 * 50 // 10_000  # 50
+    assert cost == 10_000 * 50 // 10_000
 
 
 def test_storage_handling_fee_scales_with_quantity_not_value() -> None:
     cost = cost_for("store_item", {"storage_id": "s", "item": "wheat", "quantity": 7}, ACTOR)
     assert cost == 1 + 1 * 7
-
-
-# -- social -----------------------------------------------------------------
 
 
 def test_social_costs_are_flat_regardless_of_params() -> None:
@@ -145,9 +133,6 @@ def test_social_costs_are_flat_regardless_of_params() -> None:
     )
 
 
-# -- travel -------------------------------------------------------------
-
-
 def test_move_cost_scales_with_resolved_distance() -> None:
     near = cost_for("move", {"destination_location_id": "mill"}, ActionActor("a1", distance_tiles=2))
     far = cost_for("move", {"destination_location_id": "mill"}, ActionActor("a1", distance_tiles=40))
@@ -157,14 +142,8 @@ def test_move_cost_scales_with_resolved_distance() -> None:
 
 
 def test_move_still_costs_something_with_unresolved_distance() -> None:
-    # The integration point's default when it has not yet resolved a real
-    # tile distance (module docstring: "always safe ... never a free
-    # ride, just a coarser price").
     cost = cost_for("move", {"destination_location_id": "mill"}, ActionActor("a1"))
     assert cost == SCHEDULE_TABLE["move"].min_cost == 1
-
-
-# -- fees -----------------------------------------------------------------
 
 
 def test_civic_and_administrative_fees_are_flat() -> None:
@@ -215,9 +194,6 @@ def test_unknown_tool_name_falls_back_to_a_nonzero_default() -> None:
     assert cost > 0
 
 
-# -- purity / determinism ----------------------------------------------------
-
-
 def test_cost_for_is_deterministic() -> None:
     params = {"crop": "wheat", "quantity": 5}
     first = cost_for("harvest", params, ActionActor("a1", skill_proficiency=40))
@@ -251,9 +227,6 @@ def test_cost_for_accepts_a_validated_pydantic_params_model_too() -> None:
     assert from_model == from_dict == 10
 
 
-# -- quote(): the disclosure surface world.tools.cost_disclosure.py assumed --
-
-
 def test_quote_returns_the_per_unit_reference_rate_with_no_params() -> None:
     quote = DEFAULT_SCHEDULE.quote("move")
     assert quote is not None
@@ -285,9 +258,6 @@ def test_quote_returns_none_for_a_tool_name_with_no_row_at_all() -> None:
 
 
 def test_quote_discloses_a_deliberately_free_row_as_zero_not_none() -> None:
-    # define_business_tool really is priced (at 0, by design - see
-    # SCHEDULE_TABLE) - that is a different fact than "no row exists",
-    # and quote() must not conflate the two.
     quote = DEFAULT_SCHEDULE.quote("define_business_tool")
     assert quote is not None
     assert quote.sim_cost == 0
@@ -328,17 +298,9 @@ def test_quote_interoperates_with_the_real_cost_disclosure_module() -> None:
     assert poor_quote.sim_cost == 3_000
     assert poor_quote.affordable is False
 
-    # An uncosted tool name (no SCHEDULE_TABLE row) reads as genuinely
-    # free/uncosted through their disclosure text, not DEFAULT_RULE's
-    # enforcement-side fallback number - see quote()'s own docstring for
-    # why that distinction is deliberate.
     assert describe_cost("a_tool_nobody_has_invented", DEFAULT_SCHEDULE) == (
         "Cost: no published sim-currency charge for this action."
     )
-    # quote_action_cost used to be the example here, precisely because it had
-    # no row. It has one now (an explicit 0 - bootstrap.py registers the tool,
-    # and every registered tool must carry a real price), so the distinction
-    # this asserts needs a name the table genuinely does not know.
     assert describe_cost("quote_action_cost", DEFAULT_SCHEDULE).startswith("Cost: 0 sim-currency")
 
 
@@ -352,9 +314,6 @@ def test_describe_returns_json_able_rows_sorted_by_tool_name() -> None:
     assert harvest_row["base_cost"] == 2
 
 
-# -- charging through the real ledger --------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_charge_moves_sim_from_actor_to_treasury_and_attributes_the_tool() -> None:
     ledger = await build_genesis_ledger(["farmer"], sim_per_agent=1_000)
@@ -364,12 +323,8 @@ async def test_charge_moves_sim_from_actor_to_treasury_and_attributes_the_tool()
     )
 
     assert transaction is not None
-    assert transaction.amount == 32  # 2 + 3*10
+    assert transaction.amount == 32
     assert transaction.currency is Currency.SIM
-    # ECON-03: an action cost is a BILL and now says so. It was filed as
-    # TRANSFER, which made it indistinguishable from a resident handing
-    # money away - and `run_report` groups this table by `reason`, so
-    # neither GDP-per-inference-dollar nor velocity could be computed.
     assert transaction.reason is TransactionReason.ACTION_COST
     assert transaction.from_account == "farmer"
     assert transaction.to_account == TREASURY_ACCOUNT_ID
@@ -412,30 +367,25 @@ async def test_charge_refuses_when_balance_cannot_cover_the_cost() -> None:
     assert excinfo.value.cost == 3_000
     assert excinfo.value.balance == 10
     assert excinfo.value.shortfall == 2_990
-    # Refused, not charged: balance and the transaction log are both
-    # untouched.
     assert ledger.sim_balance("pauper") == 10
     assert len(ledger.transactions) == transactions_before
 
 
 @pytest.mark.asyncio
 async def test_a_refusal_never_lets_the_balance_go_negative() -> None:
-    ledger = await build_genesis_ledger(["worker"], sim_per_agent=2)  # exactly one vote's worth
+    ledger = await build_genesis_ledger(["worker"], sim_per_agent=2)
 
-    # Affordable: balance covers it exactly.
     first = await charge_for_action(
         ledger, "vote", {"election_id": "e", "candidate_agent_id": "c"}, ActionActor("worker"), tick=1
     )
     assert first is not None
     assert ledger.sim_balance("worker") == 0
 
-    # Now broke: even the cheapest fee tool in the table is refused, not
-    # charged into debt.
     with pytest.raises(ActionUnaffordableError):
         await charge_for_action(
             ledger, "vote", {"election_id": "e", "candidate_agent_id": "c"}, ActionActor("worker"), tick=2
         )
-    assert ledger.sim_balance("worker") == 0  # never negative, never re-debited
+    assert ledger.sim_balance("worker") == 0
 
 
 @pytest.mark.asyncio
@@ -486,7 +436,7 @@ async def test_ledger_invariant_holds_across_a_long_random_sequence_of_charged_a
         transaction = await charge_for_action(ledger, tool_name, build_params(), actor, tick=tick)
 
         assert ledger.halted is False
-        ledger.check_invariant()  # must not raise: sim-only movement never trips the USD tripwire
+        ledger.check_invariant()
         balance = ledger.sim_balance("citizen")
         assert balance >= 0
 
@@ -497,15 +447,6 @@ async def test_ledger_invariant_holds_across_a_long_random_sequence_of_charged_a
     assert ledger.sim_balance("citizen") == starting_balance - successful_amounts
     assert ledger.sim_balance(TREASURY_ACCOUNT_ID) == successful_amounts
 
-    # Now drain deliberately: keep spending on `petition` until it is refused
-    # for lack of funds, proving the refusal path is reached for real (not
-    # just asserted never to trigger above) and still leaves the ledger in a
-    # consistent, non-negative state.
-    #
-    # An earlier draft computed the cheapest tool in the whole table here and
-    # meant to drain past THAT, but never wrote the assertion - so the
-    # variable sat unused and the comment described a stronger test than the
-    # one below. The comment now describes what actually runs.
     refused = 0
     for _ in range(100_000):
         tick += 1
@@ -524,7 +465,7 @@ async def test_ledger_invariant_holds_across_a_long_random_sequence_of_charged_a
         await charge_for_action(
             ledger, "petition", {"title": "t", "description": "d", "tile_count_requested": 1}, ActionActor("citizen"), tick=tick + 1
         )
-    assert ledger.sim_balance("citizen") == final_balance_before_probe  # refusal moved nothing
+    assert ledger.sim_balance("citizen") == final_balance_before_probe
     ledger.check_invariant()
 
 
@@ -549,7 +490,7 @@ async def test_schedule_covers_every_registered_tool_in_the_real_build_world() -
     assert not stale_in_schedule, (
         f"SCHEDULE_TABLE row(s) for a tool build_world() no longer registers: {stale_in_schedule}"
     )
-    del world_state  # unused beyond proving build_world() itself succeeds
+    del world_state
 
 
 def test_a_custom_small_schedule_can_be_built_for_focused_tests() -> None:

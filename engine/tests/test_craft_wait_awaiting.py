@@ -106,7 +106,7 @@ def test_wait_false_craft_streams_without_awaiting(monkeypatch):
         )
     )
     items = drain(q)
-    assert len(items) == 1  # the frame, no sentinel
+    assert len(items) == 1
     assert not has_sentinel(items, "craft:thr1:2")
 
 
@@ -141,13 +141,12 @@ def test_craft_gate_off_suppresses_the_block(monkeypatch):
             final=True,
         )
     )
-    assert drain(q) == []  # craft gate off → nothing reaches the stream
+    assert drain(q) == []
 
 
 def test_ask_user_permission_still_awaits_by_default(monkeypatch):
     make_state(monkeypatch)
     q = reg("thr1", Gates(craft=True, craft_wait=True))
-    # CraftRequest.wait defaults True → ask_user/permission pause as in M1.
     b = BlockSerializer("r1").fold(
         CraftRequest(thread_id="thr1", question="ok?", block_id="craft:thr1:5")
     )
@@ -166,8 +165,6 @@ def block_dicts(items):
 def test_craft_off_degrades_prompt_to_text_and_still_awaits(monkeypatch):
     make_state(monkeypatch)
     q = reg("thr1", Gates(craft=False, craft_wait=True))
-    # craft gate OFF: an engine-raised prompt must NOT vanish — it degrades to a
-    # plain text block (same id) and still pauses so the turn can be answered.
     b = BlockSerializer("r1").fold(
         CraftRequest(
             thread_id="thr1",
@@ -180,17 +177,16 @@ def test_craft_off_degrades_prompt_to_text_and_still_awaits(monkeypatch):
     items = drain(q)
     blocks = block_dicts(items)
     assert len(blocks) == 1
-    assert blocks[0]["type"] == "text"  # degraded, not craft
-    assert blocks[0]["id"] == "craft:thr1:9"  # same id → block_input resumes it
+    assert blocks[0]["type"] == "text"
+    assert blocks[0]["id"] == "craft:thr1:9"
     text = blocks[0]["payload"]["text"]
     assert "Delete 200 files?" in text and "Yes" in text and "No" in text
-    assert has_sentinel(items, "craft:thr1:9")  # still awaits an answer
+    assert has_sentinel(items, "craft:thr1:9")
 
 
 def test_craft_off_drops_authored_craft(monkeypatch):
     make_state(monkeypatch)
     q = reg("thr1", Gates(craft=False, craft_wait=True))
-    # an authored craft (no "question") has nothing to degrade → suppressed
     server.fan_block(
         authored(
             block_id="craft:thr1:10",

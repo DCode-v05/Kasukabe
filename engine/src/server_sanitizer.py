@@ -16,9 +16,6 @@ from __future__ import annotations
 
 from typing import Any
 
-# Substrings that must never appear in any response body served to the
-# product layer. Longer patterns come first so shorter substrings they
-# contain don't shadow them during scrub_text's sequential replacement.
 FORBIDDEN_SUBSTRINGS: tuple[str, ...] = (
     "src.herald",
     "src.raven",

@@ -10,9 +10,6 @@ from src.herald.token_budget_parser import (
 )
 
 
-# --- parse_token_budget: start shorthand ---
-
-
 class TestStartShorthand:
     def test_plain_start_k(self):
         assert parse_token_budget("+500k refactor this module") == 500_000
@@ -41,9 +38,6 @@ class TestStartShorthand:
         assert parse_token_budget("+500k") == 500_000
 
 
-# --- parse_token_budget: end shorthand ---
-
-
 class TestEndShorthand:
     def test_plain_end_k(self):
         assert parse_token_budget("refactor this module +500k") == 500_000
@@ -70,9 +64,6 @@ class TestEndShorthand:
         assert parse_token_budget("analyse +500k   ") == 500_000
 
 
-# --- parse_token_budget: verbose form ---
-
-
 class TestVerboseForm:
     def test_use_k_tokens(self):
         assert parse_token_budget("use 500k tokens for this") == 500_000
@@ -97,19 +88,14 @@ class TestVerboseForm:
         assert parse_token_budget("this is a task, use 500k tokens please") == 500_000
 
 
-# --- parse_token_budget: precedence and negative cases ---
-
-
 class TestPrecedence:
     def test_start_wins_over_end_when_both_present(self):
-        # Start shorthand is tried first; if it matches, that's what's used.
         assert parse_token_budget("+500k do a thing +1m") == 500_000
 
     def test_end_used_when_no_start(self):
         assert parse_token_budget("do a thing +1m") == 1_000_000
 
     def test_verbose_fallback(self):
-        # No shorthand, verbose matches.
         assert parse_token_budget("please use 500k tokens here") == 500_000
 
 
@@ -121,15 +107,12 @@ class TestNoMatch:
         assert parse_token_budget("refactor this module please") is None
 
     def test_no_suffix(self):
-        # "+500" without k/m/b does not match any pattern.
         assert parse_token_budget("+500 tokens") is None
 
     def test_zero_suffix(self):
-        # "+0k" matches the regex but yields 0 → treated as invalid (None).
         assert parse_token_budget("+0k") is None
 
     def test_negative_sign_does_not_match_shorthand(self):
-        # Shorthand is "+digit", not "-digit". "-500k" should not match.
         assert parse_token_budget("-500k refactor") is None
 
     def test_verbose_without_tokens_word(self):
@@ -150,15 +133,10 @@ class TestEdgeCases:
         assert parse_token_budget("+9b enormous") == 9_000_000_000
 
     def test_fractional_below_one(self):
-        # "+0.5k" → 500. Regex matches; result is 500, which is > 0 so valid.
         assert parse_token_budget("+0.5k small") == 500
 
     def test_fractional_yielding_zero(self):
-        # "+0.0k" → 0 → None
         assert parse_token_budget("+0.0k") is None
-
-
-# --- get_budget_continuation_message ---
 
 
 class TestContinuationMessage:
@@ -187,7 +165,6 @@ class TestContinuationMessage:
         assert "1,000,000,000" in msg
 
     def test_exact_src_format(self):
-        # Match src formatter output shape exactly, including Unicode em-dash.
         msg = get_budget_continuation_message(pct=24, turn_tokens=120_000, budget=500_000)
         assert (
             msg
@@ -195,7 +172,6 @@ class TestContinuationMessage:
         )
 
     def test_em_dash_is_unicode(self):
-        # 1:1 parity with src/utils/tokenBudget.ts:72 which uses \u2014, not "--"
         msg = get_budget_continuation_message(pct=50, turn_tokens=1_000, budget=2_000)
         assert "\u2014" in msg
         assert "--" not in msg

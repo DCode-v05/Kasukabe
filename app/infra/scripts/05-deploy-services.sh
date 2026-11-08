@@ -1,16 +1,4 @@
 #!/usr/bin/env bash
-# Kasukabe host-bringup, step 5 (RUNBOOK.md section 7).
-#
-# Run ON THE m5.metal INSTANCE, after 03-bootstrap-host.sh and after the
-# repo has been synced to /opt/kasukabe (04-sync-repo.sh) AND after you
-# have copied app/infra/env/*.env.example -> *.env and filled in every
-# REPLACE_ME (RUNBOOK.md section 7 walks through each one). This script
-# refuses to proceed if any *.env file is still missing - it will NOT
-# silently start services with example placeholders.
-#
-# Installs the venv, installs the four systemd units (world/broker/game/
-# console - NOT litestream, see RUNBOOK.md section 10 for why that one is
-# separate), and starts them.
 set -euo pipefail
 
 APP_DIR=/opt/kasukabe/app

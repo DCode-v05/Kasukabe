@@ -24,7 +24,6 @@ def make_client(handler) -> CitadelClient:
     settings.cdt_url = "http://citadel.test"
     settings.cdt_key = "sk-sept-cit-test"
     client = CitadelClient(settings)
-    # Swap the real transport for the mock; keep the configured headers/base_url.
     client.client = httpx.AsyncClient(
         base_url="http://citadel.test",
         headers=dict(client.client.headers),
@@ -66,7 +65,7 @@ async def test_post_messages_returns_parsed_json():
     assert result["content"][0]["text"] == "hi"
     assert captured["url"].endswith("/v1/messages")
     assert captured["auth"] == "Bearer sk-sept-cit-test"
-    assert captured["version"] == "2023-06-01"  # the wire version pin is sent
+    assert captured["version"] == "2023-06-01"
 
 
 @pytest.mark.asyncio
@@ -79,7 +78,6 @@ async def test_post_messages_raises_citadel_api_error():
         await client.post_messages({"model": "m", "messages": []})
     assert ei.value.status_code == 429
     assert ei.value.body["error"]["code"] == "QUOTA_EXCEEDED"
-    # retry.py duck-typing shim
     assert ei.value.response.status_code == 429
 
 
@@ -127,7 +125,7 @@ async def test_stream_messages_sets_stream_flag_and_decodes_events():
 
     client = make_client(handler)
     events = [e async for e in client.stream_messages({"model": "m", "messages": []})]
-    assert captured["body"]["stream"] is True  # transport sets stream=True
+    assert captured["body"]["stream"] is True
     types = [e["type"] for e in events]
     assert types == [
         "message_start",
@@ -143,8 +141,6 @@ async def test_stream_messages_sets_stream_flag_and_decodes_events():
 
 @pytest.mark.asyncio
 async def test_stream_messages_raises_on_error_status():
-    # A non-retryable 4xx surfaces immediately as CitadelAPIError. (5xx is now
-    # retried — see the transient-retry tests below.)
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(400, json={"error": {"message": "boom"}})
 
@@ -154,8 +150,6 @@ async def test_stream_messages_raises_on_error_status():
             pass
     assert ei.value.status_code == 400
 
-
-# --- transient-failure retry (no SDK; pure httpx + backoff) --------------------
 
 NO_BACKOFF = "src.herald.transport.transient_backoff"
 
@@ -174,7 +168,7 @@ async def test_post_messages_retries_transient_httpx_then_succeeds(monkeypatch):
     client = make_client(handler)
     result = await client.post_messages({"model": "m", "messages": []})
     assert result["id"] == "ok"
-    assert calls["n"] == 2  # one transient failure, then success
+    assert calls["n"] == 2
 
 
 @pytest.mark.asyncio
@@ -191,7 +185,7 @@ async def test_post_messages_retries_5xx_then_succeeds(monkeypatch):
     client = make_client(handler)
     result = await client.post_messages({"model": "m", "messages": []})
     assert result["id"] == "ok2"
-    assert calls["n"] == 3  # 503, 503, 200 — within MAX_RETRIES=2
+    assert calls["n"] == 3
 
 
 @pytest.mark.asyncio
@@ -207,7 +201,7 @@ async def test_post_messages_does_not_retry_529(monkeypatch):
     with pytest.raises(CitadelAPIError) as ei:
         await client.post_messages({"model": "m", "messages": []})
     assert ei.value.status_code == 529
-    assert calls["n"] == 1  # the OverloadTracker owns 529 — herald must NOT retry it
+    assert calls["n"] == 1
 
 
 @pytest.mark.asyncio
@@ -223,7 +217,7 @@ async def test_post_messages_5xx_exhausts_retries_then_raises(monkeypatch):
     with pytest.raises(CitadelAPIError) as ei:
         await client.post_messages({"model": "m", "messages": []})
     assert ei.value.status_code == 500
-    assert calls["n"] == 3  # 1 initial + 2 retries, then it gives up
+    assert calls["n"] == 3
 
 
 @pytest.mark.asyncio
@@ -241,7 +235,7 @@ async def test_stream_retries_pre_stream_5xx_then_streams(monkeypatch):
     client = make_client(handler)
     events = [e async for e in client.stream_messages({"model": "m", "messages": []})]
     assert [e["type"] for e in events] == ["message_stop"]
-    assert calls["n"] == 2  # one 503 (before any event), then the real stream
+    assert calls["n"] == 2
 
 
 @pytest.mark.asyncio
@@ -308,8 +302,8 @@ async def test_stream_mid_stream_drop_is_not_retried(monkeypatch):
     with pytest.raises(httpx.RemoteProtocolError):
         async for e in client.stream_messages({"model": "m", "messages": []}):
             seen.append(e)
-    assert len(seen) == 1  # the one pre-drop event was delivered
-    assert fake.opens == 1  # NOT retried after a partial stream
+    assert len(seen) == 1
+    assert fake.opens == 1
 
 
 @pytest.mark.asyncio

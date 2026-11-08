@@ -29,11 +29,6 @@ from world.ledger.money import TREASURY_ACCOUNT_ID
 from world.wiring import WorldConfig, build_world_server
 from world.tests.map_assets import needs_the_map
 
-# TOOL-27. This module needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped, and red for environment hides real regressions inside the
-# noise - which is how TOOL-09 stayed invisible for a whole cycle.
 pytestmark = needs_the_map
 
 
@@ -61,8 +56,6 @@ async def run_election(server, winner: str, voters: list[str], at_tick_offset: i
     await elections.tally(election.election_id, now_tick=election.voting_closes_tick)
     return election
 
-
-# -- the treasury ---------------------------------------------------------
 
 @pytest.mark.asyncio
 async def test_the_treasury_balance_is_visible():
@@ -102,8 +95,6 @@ async def test_the_policy_is_served_next_to_the_balance_it_feeds():
     policy_only = make_client(server).get("/governance/policy").json()
     assert body["policy"]["tax_rate_bps"] == policy_only["tax_rate_bps"]
 
-
-# -- terms ----------------------------------------------------------------
 
 @pytest.mark.asyncio
 async def test_a_real_election_produces_a_term():

@@ -43,12 +43,6 @@ from pathlib import Path
 
 SCHEMA_PATH = Path(__file__).resolve().parent / "sqlite_schema.sql"
 
-# The three tables the 2026-07-31 incident actually damaged (see module
-# docstring). Deliberately a fixed, named list rather than "every table in
-# the schema" - dropping and rebuilding a table this script has not been
-# specifically told is broken (agents, businesses, ...) is exactly the
-# kind of "quickly fix something nearby" this repo's task split forbids;
-# a repair tool for production data should do only what it was asked to.
 TARGET_TABLES = ("llm_calls", "events", "transactions")
 
 
@@ -102,7 +96,7 @@ def repair(db_path: str, *, dry_run: bool = False) -> str:
     log(f"repair_live_schema: target={db_path} dry_run={dry_run}")
 
     conn = sqlite3.connect(str(path))
-    conn.execute("PRAGMA foreign_keys = OFF")  # dropping/recreating tables mid-repair
+    conn.execute("PRAGMA foreign_keys = OFF")
     try:
         pre_counts: dict[str, "int | None"] = {}
         for table in TARGET_TABLES:
@@ -129,14 +123,14 @@ def repair(db_path: str, *, dry_run: bool = False) -> str:
         log(f"  backed up to {backup_path} (SQLite backup API, WAL-safe)")
 
         for table in TARGET_TABLES:
-            if pre_counts[table] is not None:  # existed and was confirmed empty above
+            if pre_counts[table] is not None:
                 conn.execute(f"drop table {table}")  # noqa: S608 - fixed table list
                 log(f"  dropped empty {table}")
         conn.commit()
 
         schema_sql = SCHEMA_PATH.read_text(encoding="utf-8")
-        conn.executescript(schema_sql)  # every statement is IF NOT EXISTS - a no-op for
-        conn.commit()                    # every table this script did not just drop
+        conn.executescript(schema_sql)
+        conn.commit()
         log(f"  reapplied {SCHEMA_PATH.name} ({len(schema_sql)} bytes)")
 
         integrity = conn.execute("PRAGMA integrity_check").fetchall()
@@ -149,9 +143,6 @@ def repair(db_path: str, *, dry_run: bool = False) -> str:
             columns = [r[1] for r in conn.execute(f"PRAGMA table_xinfo({table})").fetchall()]  # noqa: S608
             log(f"  post-repair {table}: {count} row(s), columns={columns}")
 
-        # Checkpoint the WAL so the rebuilt schema is durable in the main
-        # file immediately, not left waiting for SQLite's own checkpoint
-        # policy - the same reasoning connect_sqlite()'s crash-safety
         # pragmas exist for elsewhere in this package.
         conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
         log("  WAL checkpointed")

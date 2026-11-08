@@ -1,22 +1,6 @@
 <!doctype html>
-<!--
-  Kasukabe Township - the live isometric village for all 250 residents
-  (DESIGN.md section 8's Viewers, AGENT_LIFE_FRAMEWORK.md "The 250").
-  Self-contained and read-only: open this file straight off disk, or serve
-  game/static/ over http. Sibling pages: agents.html (agent views),
-  views.html (world/governance/social), console/static/index.html (the
-  separate, write-capable President/God console).
 
-  Every panel here reads the RUNNING world. The client-side model that used
-  to drive Health, Food, Treasury and the build order has been removed along
-  with those panels, and the invented "Live conversation" is replaced by Talk,
-  which shows real `say` utterances threaded into exchanges.
 
-  What remains from build time is the cast itself - names, families,
-  occupations, personas - read from world/genesis.json. live-cast.js prunes it
-  to the agents a bound run actually reports, so the map and every book
-  describe the run rather than the file.
--->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -24,31 +8,14 @@
   <title>Kasukabe — Township v2</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <!-- Fraunces for display: a variable serif with optical sizing and real
-       character - the wordmark and panel titles need a voice, and this is a
-       research instrument, not a toy. Archivo for UI: an engineered
-       grotesque that stays legible at 11px in a dense control strip.
-       JetBrains Mono for every number, because money and tick counts belong
-       in tabular figures that do not jitter as they change. -->
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&amp;family=Archivo:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/township.css" />
-  <!-- The revamp layer. township.css owns the tokens and 402 var()
-       references depend on them; this extends that vocabulary and
-       replaces the component surface, and must load second to win on
-       equal specificity. It touches nothing the map draws. -->
   <link rel="stylesheet" href="css/instrument.css" />
-  <!-- The revamp, split by surface so each part stays readable and so the
-       four were written independently without fighting over one file.
-       Order matters only in that these load after instrument.css and win
-       on equal specificity; they do not overlap each other. -->
   <link rel="stylesheet" href="css/parts/controls.css" />
   <link rel="stylesheet" href="css/parts/books.css" />
   <link rel="stylesheet" href="css/parts/resident.css" />
   <link rel="stylesheet" href="css/parts/overlays.css" />
   <link rel="stylesheet" href="css/parts/election.css" />
-  <!-- The non-map surfaces, rebuilt on one spacing scale and one accent.
-       Loads last so it wins on equal specificity; it touches nothing the
-       canvas draws. See the file header for what was wrong and why. -->
   <link rel="stylesheet" href="css/parts/revamp.css?v=20260826193627" />
 </head>
 <body>
@@ -62,18 +29,12 @@
   </header>
 
 
-
   <div class="console">
     <div class="clock">
       <span class="day" id="dayLabel">Day 1</span>
       <span class="time"><span id="clockLabel">06:00:00</span><span class="meridiem" id="clockMeridiem">AM</span></span>
     </div>
     <div class="phase-pill" id="phasePill">town waking</div>
-    <!-- The Mock run / Real sim toggle is gone: there is only one mode.
-         game/ serves a real world server and the broker only talks to
-         real Bedrock, so a "mock" button would have nothing to switch
-         to - and a button that silently does nothing is worse than no
-         button. Live polling is on from load. -->
     <div class="live-badge off" id="liveBadge" title="No live world server bound.">SIMULATED SCHEDULE</div>
     <div class="cost-readout idle" id="costReadout"
          title="Real spend, read from the broker's spend governor.">
@@ -102,11 +63,6 @@
     </div>
     <div class="spacer"></div>
     <div class="hud-stats">
-      <!-- The "Model spend" figure is gone. It was a client-side estimate
-           of what a run WOULD cost, sitting inches from figures that are
-           real, distinguished only by a small MODELLED tag. Real spend is
-           metered by the broker's spend governor and shown in the cost
-           readout above; there is no second, invented number now. -->
       <span class="hud-stat">Town wealth <b id="hudWealth">0</b> sim</span>
       <span class="hud-stat">Treasury <b id="hudTreasury">0</b> sim</span>
       <span class="hud-stat alive">Alive <b id="hudAlive">250</b></span>
@@ -114,15 +70,6 @@
     </div>
   </div>
 
-  <!-- The Talk book. Present in the markup because shell.js shelves panels
-       that already exist when it runs; talk.js only fills the body. -->
-  <!-- Who reached for skillify and toolify. The Workshop says what the town
-       has; this says which residents are authoring, which is the split that
-       matters when most agents never invent anything. -->
-  <!-- The start-of-run checklist. The runner refuses to start when a
-       critical line here fails; this panel is the same fifteen checks,
-       re-answered live, so a run that stops names the reason on screen
-       instead of only in a terminal nobody has open. preflight.js fills it. -->
   <div class="panel" id="preflightPanel">
     <div class="panel-head"><span>Preflight</span>
       <span class="hint">every line must pass before a run starts</span>
@@ -162,10 +109,6 @@
           <button class="ms-clear" id="mapSearchClear" type="button" aria-label="Clear">×</button>
           <div class="ms-results" id="mapSearchResults" hidden></div>
         </div>
-        <!-- Shown when the map has nobody to draw. Only engine-bound
-             residents are drawn now, so "no residents" is a normal
-             state - and an empty town with no explanation reads as a
-             broken page rather than an idle one. -->
         <div class="empty-town" id="emptyTown" hidden>
           <b>No residents to show</b>
           <span>Nobody is drawn unless a world server reports them, so this town
@@ -173,9 +116,6 @@
           running:
           <code>WORLD_BASE_URL=http://127.0.0.1:8100</code></span>
         </div>
-        <!-- The election, on the map: phase, who is standing or how many
-             ballots are in, the next deadline. election.js fills it; it
-             stays hidden until the world has an election to show. -->
         <div class="election-strip" id="electionStrip" hidden></div>
         <div class="map-card" id="mapCard" hidden></div>
         <div class="place-card" id="placeCard" hidden></div>
@@ -204,11 +144,6 @@
 
   <div class="stage" style="margin-top:18px;">
     <div class="rail">
-      <!-- "Live conversation" removed. It was the deterministic client-side
-           model talking to itself - invented dialogue with no agent behind it,
-           sitting inches from figures that are real. The Talk book is the same
-           idea backed by `say`. Two chat panels where one is fiction is worse
-           than one. -->
       <div class="panel">
         <div class="panel-head">🔨 What the town is doing <span class="hint">right now</span></div>
         <div class="occupancy" id="workBody"></div>
@@ -228,12 +163,6 @@
 
   <div class="two-up" style="margin-top:18px;">
       <div class="panel">
-        <!-- Bodies renamed vit* so the legacy client-side renders in
-     township-v2.js cannot find them: each guards with
-     `if (!el) return`, so a renamed target switches the model off
-     without editing that file. vitals.js fills these with world data.
-     This also stops healthSim writing the top bar's Alive count,
-     which raced live-cast and put 314 back over the real 30. -->
         <div class="panel-head">🩺 Health &amp; mortality <span class="hint">live from the world</span></div>
         <div class="score-body single" id="vitHealth"><div class="book-empty">Loading…</div></div>
       </div>
@@ -324,20 +253,12 @@
 </div>
 
 
-
 <script src="js/township/rules.js"></script>
 <script src="js/township/agents.js"></script>
 <script src="js/township/village2.js"></script>
-<!-- Part E before township-v2.js: it subscribes to the `kasukabe:live` event
-     that township-v2.js dispatches, and a listener registered after the first
-     poll would miss it. -->
 <script src="js/township/part-e.js"></script>
 <script src="js/township/township-v2.js?v=20260826193627"></script>
 <script src="js/township/shell.js?v=20260826193627"></script>
-<!-- Talk feed + the authored strip on the resident file. After shell.js so
-     the docks exist; it waits for DOMContentLoaded regardless. -->
-<!-- Prune the 314-resident static cast to the agents a bound run actually
-     reports, so the map and every book describe the run instead of the file. -->
 <script src="js/township/live-cast.js?v=20260826193627"></script>
 <script src="js/township/vitals.js?v=20260826193627"></script>
 <script src="js/township/talk.js?v=20260826193627"></script>

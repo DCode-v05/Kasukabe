@@ -35,12 +35,6 @@ class TestTheReportGroupsByEveryoneNamed:
                 "location_id": "Kasukabe Bakery", "content": "Anselm, Girl - bread?",
                 "conversation_id": None,
             },
-            # n03 - named by the remark above, never its speaker or its
-            # listener - now talks to n04. The ONLY thing that can join this
-            # to the thread above is n03 having been counted as a
-            # participant, which happens only if `addressed_agent_ids` was
-            # read. A reply aimed back at n01 would overlap through the
-            # speaker and prove nothing.
             {
                 "tick": 11, "speaker_agent_id": "n03",
                 "listener_agent_id": "n04",
@@ -119,7 +113,6 @@ class TestTheActivityFeedNamesThem:
         with TestClient(app) as client:
             body = client.get("/world/activity").json()
 
-        # The route wraps its payload: {tick, count, agents}.
         doing = ((body.get("agents") or {}).get(speaker) or {}).get("doing", "")
         names = world.agent_names
         assert names.get(second, second) in doing, (

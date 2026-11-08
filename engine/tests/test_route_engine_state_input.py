@@ -33,7 +33,7 @@ def capture(coord: Coordinator) -> dict:
         options=None,
         thread_id_box=None,
         craft=False,
-        **gates,  # output-gate kwargs resume_block forwards (voice, image, ...)
+        **gates,
     ):
         captured.update(
             message=message,
@@ -63,11 +63,11 @@ async def test_dict_value_snapshot_reaches_the_turn() -> None:
     )
 
     msg = captured["message"]
-    assert "rebalance fleet" in msg  # the command survives
-    assert "stopped_trucks" in msg and "t1" in msg  # the snapshot is NOT dropped
+    assert "rebalance fleet" in msg
+    assert "stopped_trucks" in msg and "t1" in msg
     assert captured["thread_id"] == "thr_8f2"
-    assert captured["craft"] is True  # gate threaded through
-    assert captured["craft_edit"] is None  # not an edit
+    assert captured["craft"] is True
+    assert captured["craft_edit"] is None
 
 
 @pytest.mark.asyncio
@@ -88,4 +88,4 @@ def test_compose_block_input_serializes_dict_after_command() -> None:
 def test_detect_craft_edit_ignores_plain_snapshot() -> None:
     assert Coordinator.detect_craft_edit({"objective": "fuel"}) is None
     assert Coordinator.detect_craft_edit("hello") is None
-    assert Coordinator.detect_craft_edit({"edit": "x"}) is None  # no current dict
+    assert Coordinator.detect_craft_edit({"edit": "x"}) is None

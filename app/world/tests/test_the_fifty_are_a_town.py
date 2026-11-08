@@ -25,11 +25,6 @@ from pathlib import Path
 import pytest
 from world.tests.map_assets import needs_the_map
 
-# TOOL-27. This module needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped, and red for environment hides real regressions inside the
-# noise - which is how TOOL-09 stayed invisible for a whole cycle.
 pytestmark = needs_the_map
 
 GENESIS = Path(__file__).resolve().parent.parent / "genesis_50_town.json"
@@ -60,11 +55,6 @@ def test_the_authored_twenty_are_untouched(town: dict) -> None:
         kept = by_id.get(original["agent_id"])
         assert kept is not None, f"{original['name']} was dropped from the cast"
         assert kept["name"] == original["name"]
-        # Every authored field is untouched, and every relationship they
-        # arrived with survives. Opinions may be ADDED - the newcomers have
-        # to be knowable, and a town where the original twenty have never
-        # heard of the thirty who joined is two towns on one map - but
-        # nothing authored may be edited or dropped.
         for field, value in original["persona"].items():
             if field == "opinions":
                 continue
@@ -198,8 +188,6 @@ def test_nobody_is_seeded_before_their_own_parent(town: dict) -> None:
         for p in a.get("parent_ids") or []
         if order[p] > order[a["agent_id"]]
     ]
-    # Reported, not failed: the deferral in seed_agent handles it, and the
-    # authored cast deliberately has Hester last.
     assert len(late) <= 2, f"more forward kin references than the fix was built for: {late}"
 
 
@@ -242,12 +230,6 @@ def test_the_town_still_has_the_trades_it_depends_on(town: dict) -> None:
     for trade in ("farmer", "baker", "miller", "trader", "pharmacist", "miner"):
         assert occupations[trade] >= 1, f"nobody in this town is a {trade}"
     assert len(occupations) >= 12, f"only {len(occupations)} trades in fifty people"
-
-
-# ── the parts a valid file can still get wrong ────────────────────────
-#
-# Everything above passed on the first build, and the town was still
-# broken in two ways that only reading it showed.
 
 
 def test_nobody_arrives_knowing_nobody(town: dict) -> None:

@@ -21,16 +21,8 @@ from src.engine_core.tool_result_builder import ToolResultBuilder
 from src.herald.types import PersistedBlock, TextBlock, format_persisted_block_xml
 
 
-# Default cap if a tool name has no override below. ~50K chars =
-# ~25K tokens at the dense estimation rate, which is roughly 12% of
-# a 200K context window for a single tool result — already on the
-# edge of "too much."
 DEFAULT_MAX_RESULT_SIZE_CHARS: int = 50_000
 
-# Per-tool overrides. Bash gets a higher cap because compile/build
-# logs and test runs are often legitimately large. Read gets a lower
-# cap because it's typically used for source files where 30K is
-# already a 700+ line file. Web fetch sits between.
 PER_TOOL_RESULT_CAPS: dict[str, int] = {
     "Bash": 100_000,
     "bash": 100_000,
@@ -42,10 +34,6 @@ PER_TOOL_RESULT_CAPS: dict[str, int] = {
     "WebFetch": 80_000,
 }
 
-# Length of the head excerpt that rides on the PersistedBlock as a
-# retrieval hint for the model. Long enough that the model can usually
-# answer follow-up questions from the excerpt alone; short enough that
-# spilling 1MB of output costs <1KB of context.
 PERSISTED_SUMMARY_CHARS: int = 500
 
 
@@ -111,20 +99,12 @@ def cap_builder_size(
     if callable(results_dir):
         results_dir = results_dir()
 
-    # Concatenate all text-bearing blocks for the on-disk record.
-    # We reach into the builder's internal block list deliberately —
-    # this is the only place outside ToolResultBuilder that needs raw
-    # block access, and we keep it private by living in the same
-    # package.
     parts: list[str] = []
     for block in builder.blocks:  # noqa: SLF001 — same-package access
         if isinstance(block, TextBlock):
             parts.append(block.text)
         elif isinstance(block, PersistedBlock):
-            # Already persisted — preserve the hint inline so the
-            # final on-disk record points back to the prior file.
             parts.append(format_persisted_block_xml(block))
-        # ImageBlock contributes nothing to the on-disk text record.
     full_text = "\n\n".join(parts)
 
     persisted = persist_oversized_result(

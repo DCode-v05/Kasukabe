@@ -85,7 +85,6 @@ async def test_run_continuous_stops_on_request() -> None:
     controller = PacingController(tick_fn, PacingConfig(continuous_interval_s=0.0))
     task = asyncio.create_task(controller.run_continuous())
 
-    # Let a handful of ticks run before asking it to stop.
     for _ in range(50):
         await asyncio.sleep(0)
         if len(calls) >= 3:

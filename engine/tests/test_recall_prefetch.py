@@ -40,11 +40,6 @@ from src.engine_core.thread import (
 )
 
 
-# --------------------------------------------------------------------------
-# build_recall_reminder
-# --------------------------------------------------------------------------
-
-
 class TestBuildRecallReminder:
     def test_empty_bundle_returns_none(self):
         assert build_recall_reminder({}) is None
@@ -65,7 +60,6 @@ class TestBuildRecallReminder:
         assert "Relevant past context:" in out
         assert "ep_1" in out
         assert "talked about engine latency" in out
-        # Skip-marker labels for the unrelated sections must not appear.
         assert "Known facts:" not in out
         assert "People context:" not in out
 
@@ -82,8 +76,6 @@ class TestBuildRecallReminder:
         assert out is not None
         assert "Known facts:" in out
         assert "User prefers terse summaries." in out
-        # Falls back to the key when content is missing — verifies the helper
-        # still surfaces a row instead of swallowing the result.
         assert "fallback_key" in out
 
     def test_social_only_renders_people_block_capped_at_three(self):
@@ -103,7 +95,6 @@ class TestBuildRecallReminder:
         assert "Aanya" in out
         assert "Beena" in out
         assert "Chitra" in out
-        # Cap at 3 — the engine must not flood the prompt with people.
         assert "Devika" not in out
 
     def test_all_three_render_in_one_reminder_in_order(self):
@@ -114,21 +105,14 @@ class TestBuildRecallReminder:
         }
         out = build_recall_reminder(bundle)
         assert out is not None
-        # Stable output ordering: episodes -> knowledge -> social.
         idx_past = out.index("Relevant past context:")
         idx_known = out.index("Known facts:")
         idx_people = out.index("People context:")
         assert idx_past < idx_known < idx_people
 
     def test_missing_keys_are_treated_as_empty(self):
-        # Bundle from an older prefetch_memory implementation must not crash.
         assert build_recall_reminder({"episodes": None}) is None
         assert build_recall_reminder({"knowledge": None, "social": None}) is None
-
-
-# --------------------------------------------------------------------------
-# consume_pending_recall
-# --------------------------------------------------------------------------
 
 
 @dataclass
@@ -155,13 +139,11 @@ class TestConsumePendingRecall:
 
     @pytest.mark.asyncio
     async def test_already_consumed_short_circuits(self):
-        # Task is settled but the agent loop already consumed it on a prior
-        # iteration. We must not append a second copy.
         async def settled():
             return {"episodes": [{"key": "k", "description": "d"}]}
 
         task = asyncio.create_task(settled())
-        await task  # ensure done
+        await task
 
         messages, consumed = consume_pending_recall(
             ["hi"],
@@ -174,7 +156,6 @@ class TestConsumePendingRecall:
 
     @pytest.mark.asyncio
     async def test_pending_task_skipped_zero_wait(self):
-        # Task that has not resolved yet — must not block, must not append.
         loop_event = asyncio.Event()
 
         async def slow():
@@ -221,8 +202,6 @@ class TestConsumePendingRecall:
         assert appended.content.startswith("<system-reminder>")
         assert "prior latency probe" in appended.content
 
-        # Subsequent calls in the same turn cycle must not append again,
-        # even if the caller forgot to flip ``recall_consumed`` (defensive).
         messages_after, consumed_after = consume_pending_recall(
             messages,
             task,
@@ -234,8 +213,6 @@ class TestConsumePendingRecall:
 
     @pytest.mark.asyncio
     async def test_settled_task_with_empty_bundle_marks_consumed_no_inject(self):
-        # Recall ran but nothing matched — we should still mark consumed so
-        # we do not keep re-checking in every iteration.
         async def settled():
             return {"episodes": [], "knowledge": [], "social": []}
 
@@ -257,7 +234,6 @@ class TestConsumePendingRecall:
             raise RuntimeError("recall storage offline")
 
         task = asyncio.create_task(boom())
-        # Surface the exception so .result() raises (not pending).
         with pytest.raises(RuntimeError):
             await task
 
@@ -268,5 +244,4 @@ class TestConsumePendingRecall:
             message_factory=make_fake,
         )
         assert messages == ["hi"]
-        # Still consumed so we don't keep retrying inside the loop.
         assert consumed is True

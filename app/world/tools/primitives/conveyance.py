@@ -108,12 +108,6 @@ class TeachToolParams(BaseModel):
     tool_name: str
     student_id: str
     fee_sim: int = Field(default=0, ge=0)
-    # REQUIRED, for the reason `hire_employee.employee_consent` is: a
-    # defaulted field is not in pydantic's `required`, an index row carries
-    # only the required names (TRADE-02), and so a flag that gates the
-    # handler is dropped from the schema and the tool cannot be called
-    # correctly by anybody who was sent one. `teach_skill` next door has
-    # always had this required; these two diverged from it silently.
     student_consent: bool = Field(
         description="True once they have agreed, in conversation, to be taught.",
     )
@@ -281,12 +275,6 @@ async def teach_tool_handler(
         )
     if params.tool_name not in world.custom_tools:
         raise NotFoundError("invented tool", params.tool_name, sorted(world.custom_tools))
-    # OWNING it, or holding a taught copy - not merely a licence.
-    #
-    # `may_call_tool` is the wrong test here and it matters: it counts
-    # licensees, so a one-day rent would let the renter teach the whole
-    # town a permanent copy, and the term the owner set would mean
-    # nothing after the first lesson. A rent is not a right to sublet.
     holds_it = agent.agent_id == world.tool_owner(params.tool_name) or (
         agent.agent_id in (world.tool_copies.get(params.tool_name) or set())
     )
@@ -334,7 +322,6 @@ def build_specs() -> list[ToolSpec]:
         ToolSpec(
             name="license_tool",
             description=(
-                # Addendum section 9, 76 words.
                 "Grant a person standing with you the right to call a tool you "
                 "invented, for a fee now and for a term in game-days. You keep "
                 "ownership and may revoke it if you said so. They call it under "

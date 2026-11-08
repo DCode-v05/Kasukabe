@@ -99,38 +99,20 @@ async def test_routing_one_model_only_one_thread_and_forking_impossible(
     engine = await boot_sim_engine(profile, "http://world.test", world_client=world)
 
     try:
-        # ── 2. Herald catalog: exactly one model id, always ─────────────
         assert set(catalog_sync.get_catalog_overlay().keys()) == {MODEL_ID}
         assert ALLOWED_MODEL_IDS == {MODEL_ID}
 
-        # ── 3. Exactly one thread for this engine ───────────────────────
         assert list(engine.coordinator.threads.keys()) == [engine.thread_id]
         assert engine.coordinator.is_thread_pinned(engine.thread_id) is True
 
-        # ── 1. Routing works ──────────────────────────────────────────
-        # ThreadRouter is never constructed (set_router is never called),
-        # and every tick addresses the pinned thread by explicit thread_id -
-        # Coordinator.build_dispatch's own documented bypass.
         assert engine.coordinator.router is None
 
         broker.queue(MODEL_ID, "sse", text_turn_sse("You see grain in the field."))
         reply = await engine.send_tick("what do you see?")
 
         assert reply == "You see grain in the field."
-        # Still exactly one thread after a real tick - nothing spawned a second.
         assert list(engine.coordinator.threads.keys()) == [engine.thread_id]
 
-        # ── 4. A fork attempt: denied before it can reach a second
-        # model or a second thread, then the SAME adapter finishes the turn ──
-        # Input kept under 20 chars on purpose: thread.py's post-turn signal
-        # capture fires one extra, non-streaming, order-varying
-        # adapter.generate() call whenever the user input is >= 20 chars -
-        # a real engine behavior with its own try/except fallback, but
-        # unrelated to what THIS test is scoped to prove (routing, model
-        # purity, thread count, forking), and its relative ordering against
-        # the streamed calls is engine_core's internal business, not a
-        # contract this seam module owns. Staying under the threshold keeps
-        # this test's call sequence exactly the two calls it scripts.
         broker.queue(
             MODEL_ID,
             "sse",
@@ -141,21 +123,14 @@ async def test_routing_one_model_only_one_thread_and_forking_impossible(
         reply2 = await engine.send_tick("need help")
 
         assert reply2 == "Understood, I will do it myself."
-        # No SubAgent was ever constructed: the deny rule fired in
-        # check_permission (step 2) before register_spawn_sub_agent_tool's
-        # handler ran, so nothing here was ever populated.
         assert engine.thread.sub_agent_results == []
         assert engine.thread.active_sub_agents == []
         assert engine.thread.sub_agent_count == 0
-        # Forking would be a second thread; there still isn't one.
         assert list(engine.coordinator.threads.keys()) == [engine.thread_id]
 
-        # Exactly 3 primary-thread calls so far: turn1, the fork attempt,
-        # and its post-denial continuation.
         primary_call_count = len(broker.requested_models)
         assert primary_call_count == 3
 
-        # ── Learning centre: same model, sleep-onset only ────────────────
         await SignalStore(engine.db).write(
             LearningSignal(
                 type="fact",
@@ -164,34 +139,19 @@ async def test_routing_one_model_only_one_thread_and_forking_impossible(
                 thread_id=engine.thread_id,
             )
         )
-        # The two turns above also feed the post-turn hook, so the batch may
-        # process more than the one signal written above - exactly how many
-        # is learning_centre's own accounting, not this module's concern.
-        # What this module guarantees is which MODEL every one of those
-        # calls names, so queue generously (empty JSON: nothing to encode,
-        # nothing to consolidate) rather than pin an exact call count that
-        # belongs to a package this test isn't exercising.
         for _ in range(32):
             broker.queue(MODEL_ID, "json", json_message_response("{}"))
 
-        assert await engine.learning_gate.on_tick(is_sleeping=False) is None  # awake: never runs
-        result = await engine.learning_gate.on_tick(is_sleeping=True)  # sleep onset: runs once
+        assert await engine.learning_gate.on_tick(is_sleeping=False) is None
+        result = await engine.learning_gate.on_tick(is_sleeping=True)
 
         assert result is not None
-        assert result.signals_processed >= 1  # at least the signal written above
+        assert result.signals_processed >= 1
         assert engine.learning_gate.runs_triggered == 1
-        # The learning batch made at least one call of its own.
         assert len(broker.requested_models) > primary_call_count
 
-        # ── The wire-level proof ─────────────────────────────────────
-        # Every single /v1/messages request this whole scenario made - the
-        # primary turn, the denied fork attempt, its continuation, and the
-        # learning batch - named the one allowed model. Nothing else was
-        # ever requested, not even transiently, and no request failed for
-        # lack of a scripted response (the generous queue above would have
-        # raised loudly if any call landed on an unscripted model).
         assert set(broker.requested_models) == {MODEL_ID}
-        assert world_calls == []  # no world tool was ever available to call in this scenario
+        assert world_calls == []
     finally:
         await engine.shutdown()
 

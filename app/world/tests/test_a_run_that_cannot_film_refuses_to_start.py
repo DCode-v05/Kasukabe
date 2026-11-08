@@ -79,7 +79,6 @@ def test_no_video_is_a_real_escape_hatch() -> None:
     text = _launcher()
     assert 'NO_VIDEO=1 $0 $*' in text, "the refusal must show how to proceed without video"
 
-    # the launch site guards on it too, not just the check
     launch_region = text[text.index('PORT=9600'): text.index("scripts/record_ui.py --out")]
     assert re.search(r'if \[ "\$\{NO_VIDEO:-\}" = "1" \]', launch_region), (
         "NO_VIDEO skips the check but not the cameras"

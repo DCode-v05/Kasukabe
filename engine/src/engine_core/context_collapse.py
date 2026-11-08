@@ -54,36 +54,18 @@ if TYPE_CHECKING:
     from src.infra.sqlite_pool import SqlitePool
 
 
-# ── Thresholds ────────────────────────────────────────────────────
-
-# Strategy name reported on CompactionResult / CompactionEvent when the
-# collapse pre-pass handled the compaction pressure on its own. Shared
-# with the orchestrator and tests so nobody matches on a raw string.
 STRATEGY_CONTEXT_COLLAPSE = "context_collapse"
 
-# Usage ratio bands. Below LOW nothing happens; between LOW and MID
-# only very low-risk spans stage; between MID and HIGH medium-risk
-# spans stage; at or above HIGH the staged queue commits immediately.
 USAGE_LOW = 0.75
 USAGE_MID = 0.85
 USAGE_HIGH = 0.95
 
-# Risk thresholds per band. A span's risk is the max score of any
-# message in the span — the riskiest member decides the span's band.
 RISK_LOW = 0.30
 RISK_MID = 0.60
 
-# Minimum span length. Spans of one message are not worth the summary
-# overhead — the summary itself costs tokens.
 MIN_SPAN_MESSAGES = 2
 
-# Summary token budget: a committed summary may not exceed this
-# fraction of the original span's tokens. If the mechanical summary
-# would exceed this it gets truncated.
 SUMMARY_BUDGET_RATIO = 0.10
-
-
-# ── Data classes ──────────────────────────────────────────────────
 
 
 @dataclass(frozen=True)
@@ -100,7 +82,7 @@ class StagedSpan:
     end_fp: str
     risk: float
     staged_at: float
-    payload: tuple = field(default_factory=tuple)  # tuple[Message, ...]
+    payload: tuple = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
@@ -115,9 +97,6 @@ class CommittedCollapse:
     original_tokens: int
     summary_tokens: int
     committed_at: float
-
-
-# ── Fingerprints ──────────────────────────────────────────────────
 
 
 def fingerprint(msg: Any) -> str:
@@ -164,9 +143,6 @@ def fingerprint(msg: Any) -> str:
     preview = text[:200]
     payload = f"{ts:.6f}|{role}|{len(text)}|{preview}"
     return hashlib.sha1(payload.encode("utf-8")).hexdigest()[:16]
-
-
-# ── Mechanical summary generation ─────────────────────────────────
 
 
 def describe_message(msg: Any) -> list[str]:
@@ -236,7 +212,6 @@ def generate_collapse_summary(span_messages: Sequence[Any]) -> str:
     if not span_messages:
         return ""
 
-    # Count tool calls for the rollup line.
     tool_call_count = 0
     for msg in span_messages:
         content = getattr(msg, "content", "")
@@ -253,9 +228,6 @@ def generate_collapse_summary(span_messages: Sequence[Any]) -> str:
     body = "\n".join(f"  - {d}" for d in descriptors)
     summary = f"{header}\n{body}" if body else header
 
-    # Enforce the summary token budget. estimate_tokens is
-    # int(len/4 * SAFETY_MARGIN) where SAFETY_MARGIN=1.2 — invert it
-    # to get the character budget for a given token budget.
     from src.engine_core.context_engineering import SAFETY_MARGIN
 
     original_tokens = max(1, estimate_messages_tokens(list(span_messages)))
@@ -266,9 +238,6 @@ def generate_collapse_summary(span_messages: Sequence[Any]) -> str:
         keep = max(len(header) + 1, max_chars - len(marker))
         summary = summary[:keep].rstrip() + marker
     return summary
-
-
-# ── Span detection ────────────────────────────────────────────────
 
 
 def has_tool_result(msg: Any) -> bool:
@@ -320,8 +289,6 @@ def shrink_span_to_whole_pairs(
         missing_uses = result_ids - use_ids
         if not missing_results and not missing_uses:
             break
-        # An orphaned tool_use at the tail? Drop the last message.
-        # An orphaned tool_result at the head? Drop the first message.
         shrunk = False
         if missing_results:
             end -= 1
@@ -334,9 +301,6 @@ def shrink_span_to_whole_pairs(
     if end - start < MIN_SPAN_MESSAGES:
         return None
     return start, end
-
-
-# ── Manager ───────────────────────────────────────────────────────
 
 
 class ContextCollapseManager:
@@ -363,7 +327,6 @@ class ContextCollapseManager:
         self.staged: list[StagedSpan] = []
         self.committed: list[CommittedCollapse] = []
 
-    # ── properties ─────────────────────────────────────────────
 
     def has_staged(self) -> bool:
         return bool(self.staged)
@@ -377,7 +340,6 @@ class ContextCollapseManager:
     def committed_collapses(self) -> list[CommittedCollapse]:
         return list(self.committed)
 
-    # ── evaluation / staging ───────────────────────────────────
 
     def evaluate_and_stage(
         self,
@@ -404,7 +366,7 @@ class ContextCollapseManager:
         elif ratio < USAGE_HIGH:
             risk_threshold = RISK_MID
         else:
-            risk_threshold = 1.0  # commit anything collapsible
+            risk_threshold = 1.0
 
         from src.engine_core.context_engineering import PRESERVE_RECENT
         from src.engine_core.importance_scoring import score_message_importance
@@ -414,20 +376,10 @@ class ContextCollapseManager:
         if last_touchable < MIN_SPAN_MESSAGES:
             return
 
-        # Single-pass fingerprint cache. Every other stage of this
-        # function — exclusion checks, span boundaries, duplicate
-        # detection — needs a fingerprint for the same message, so
-        # computing it once up front is meaningfully cheaper than
-        # recomputing per check.
         fps = [fingerprint(m) for m in messages]
 
-        # Messages already inside a committed OR staged collapse are
-        # off-limits. The staged set is the key to avoiding duplicate
-        # spans when evaluate_and_stage runs several times at the same
-        # usage band before commit drains the queue.
         excluded_fps = self.excluded_fingerprints(fps)
 
-        # Walk forward accumulating consecutive low-risk candidates.
         i = 0
         while i < last_touchable:
             msg = messages[i]
@@ -441,9 +393,6 @@ class ContextCollapseManager:
             if score >= risk_threshold:
                 i += 1
                 continue
-            # Start of a candidate span — extend while scores stay
-            # under the threshold and we don't cross a user anchor or
-            # an already-staged / already-committed region.
             start = i
             max_risk = score
             j = i + 1
@@ -459,7 +408,7 @@ class ContextCollapseManager:
                 if nxt_score > max_risk:
                     max_risk = nxt_score
                 j += 1
-            end = j  # exclusive
+            end = j
             adjusted = shrink_span_to_whole_pairs(messages, start, end)
             if adjusted is not None:
                 a_start, a_end = adjusted
@@ -475,11 +424,9 @@ class ContextCollapseManager:
                 self.staged.append(span)
             i = max(end, i + 1)
 
-        # Emergency band — commit everything we just staged.
         if ratio >= USAGE_HIGH and self.staged:
             self.commit_all_staged()
 
-    # ── commit ─────────────────────────────────────────────────
 
     def commit_all_staged(self) -> list[CommittedCollapse]:
         """Turn every staged span into a committed collapse and clear
@@ -509,7 +456,6 @@ class ContextCollapseManager:
         self.staged.clear()
         return commits
 
-    # ── projection ─────────────────────────────────────────────
 
     def project_messages(self, messages: Sequence[Any]) -> list[Any]:
         """Apply every committed collapse to the message list.
@@ -534,9 +480,6 @@ class ContextCollapseManager:
             if fp not in fp_to_index:
                 fp_to_index[fp] = i
 
-        # Apply commits in reverse index order so earlier splices
-        # don't shift the indices of later ones. Collect resolved
-        # ranges first, then sort by start_idx descending.
         resolved: list[tuple[int, int, CommittedCollapse]] = []
         for commit in self.committed:
             start_idx = fp_to_index.get(commit.start_fp)
@@ -585,7 +528,6 @@ class ContextCollapseManager:
                 inside.add(fps[i])
         return inside
 
-    # ── reset ──────────────────────────────────────────────────
 
     def reset(self) -> None:
         """Drop all staged and committed state. Called after a full
@@ -594,7 +536,6 @@ class ContextCollapseManager:
         self.staged.clear()
         self.committed.clear()
 
-    # ── persistence ────────────────────────────────────────────
 
     def snapshot_payload(self) -> dict:
         return {
@@ -605,10 +546,6 @@ class ContextCollapseManager:
                     "end_fp": s.end_fp,
                     "risk": s.risk,
                     "staged_at": s.staged_at,
-                    # payload is intentionally dropped — it's only
-                    # meaningful for in-session commits. After a
-                    # restore the caller can re-stage from the live
-                    # message list.
                 }
                 for s in self.staged
             ],
@@ -653,11 +590,6 @@ class ContextCollapseManager:
                 "updated_at=excluded.updated_at",
                 (thread_id, payload),
             )
-            # Append new commits in one batch. The unique index
-            # idx_context_collapse_commits_collapse_id (on
-            # thread_id, collapse_id) makes INSERT OR IGNORE a safe
-            # no-op for rows that already exist, so we don't need a
-            # per-row existence check.
             if self.committed:
                 await self.db.executemany(
                     "INSERT OR IGNORE INTO context_collapse_commits "

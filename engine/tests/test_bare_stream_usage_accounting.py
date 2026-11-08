@@ -60,9 +60,6 @@ def make_provider(body: bytes) -> Provider:
     return provider
 
 
-# A complete no-tools streamed turn: message_start carries the input usage,
-# a text delta carries the visible body, and message_delta carries the final
-# output token count plus citadel's pre-computed quota dict.
 STREAM_BODY = sse(
     (
         "message_start",
@@ -134,7 +131,7 @@ async def test_bare_stream_records_usage_into_accumulator():
     assert total.output_tokens == 58
     assert total.cache_read_input_tokens == 40
     assert total.cache_creation_input_tokens == 5
-    assert acc.call_count == 1  # exactly one record_usage for the turn
+    assert acc.call_count == 1
 
 
 @pytest.mark.asyncio

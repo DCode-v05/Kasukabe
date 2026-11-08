@@ -26,11 +26,6 @@ from world.tools.place_aliases import known_tool_locations, satisfies_gate
 from world.tools.primitives.places import known_places
 from world.tools.tests.conftest import needs_the_map
 
-# TOOL-27. Every test here needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped - and red for environment hides real regressions inside the
-# noise, which is how TOOL-09 stayed invisible.
 pytestmark = needs_the_map
 
 

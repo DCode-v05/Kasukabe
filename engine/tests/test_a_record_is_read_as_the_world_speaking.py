@@ -124,7 +124,6 @@ def test_a_record_never_reaches_the_model_as_its_own_words() -> None:
     sent = adapter.seen[0]
     assert all("RECORD OF THE TURN" not in _text(m) for m in sent if m.role == "assistant")
     joined = "\n".join(_text(m) for m in sent)
-    # Nothing is lost, and it stays in the order it happened.
     order = [joined.index(s) for s in (
         "21:50", "world:say", "06:00", "no tool was called", "06:10",
     )]

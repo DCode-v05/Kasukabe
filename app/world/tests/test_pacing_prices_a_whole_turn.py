@@ -46,7 +46,6 @@ def test_before_any_turn_it_assumes_a_whole_turn(tmp_path):
 def test_it_averages_what_the_engines_reported(tmp_path):
     runner = _runner(tmp_path)
     runner.recent_steps_used.extend([2, 4, 6])
-    # +1 for the post-turn summariser, a real call on the same lane.
     assert runner.calls_per_turn_estimate() == pytest.approx(4.0 + 1.0)
 
 

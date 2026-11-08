@@ -65,8 +65,6 @@ def source() -> str:
     return TOWNSHIP.read_text(encoding="utf-8")
 
 
-# -- the cabinet ---------------------------------------------------------
-
 def test_the_seats_are_the_worlds(ran: dict) -> None:
     """The world's PM is a0002 - a day_laborer, whom the hash would never
     have picked. The model's cabinet is a0001 first. One of these is a
@@ -98,8 +96,6 @@ def test_the_title_follows_the_seat(ran: dict) -> None:
     assert ran["unbound"]["boundTitle"] == "Prime Minister"
 
 
-# -- money ---------------------------------------------------------------
-
 def test_a_bound_balance_is_the_worlds(ran: dict) -> None:
     """The world says this resident holds ZERO. The model says 999,999.
     Zero is the case that matters: a truth test would have taken the
@@ -126,8 +122,6 @@ def test_the_usd_meter_is_the_worlds(ran: dict) -> None:
     assert ran["unbound"]["boundSpend"] == pytest.approx(0.9024, abs=1e-3)
 
 
-# -- births --------------------------------------------------------------
-
 def test_a_bound_town_invents_no_children(ran: dict) -> None:
     """`b0001` in `AGENTS` is a resident the world has never heard of, and
     `POP`, the census bars and every per-capita figure move with them.
@@ -142,13 +136,9 @@ def test_a_bound_town_invents_no_children(ran: dict) -> None:
     )
 
 
-# -- skills --------------------------------------------------------------
-
 def test_the_skill_line_is_what_was_practised(ran: dict) -> None:
     assert ran["bound"]["skillLine"] == "Baking"
 
-
-# -- the acceptance grep, at the source ----------------------------------
 
 def test_every_fiction_the_finding_names_is_gated(source: str) -> None:
     """The finding's acceptance is a DOM grep for `unlocks day`, `Prime
@@ -159,11 +149,6 @@ def test_every_fiction_the_finding_names_is_gated(source: str) -> None:
     above it).
     """
     lines = source.splitlines()
-    # Literal DOM text, not a loose pattern. An earlier draft matched
-    # "day ' +" and caught `makeNewborn`'s bio prose - which is gated one
-    # level up by `stepBirths`, so the test was reporting a site that was
-    # already correct. A guard that cries wolf gets its assertion widened
-    # until it proves nothing.
     for phrase, emitter in (
         ("unlocks day", "isBound(a)"),
         ("\U0001f512 day ", "isBound(a)"),

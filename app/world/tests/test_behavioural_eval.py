@@ -31,9 +31,6 @@ from world.evals import behavioural as B
 BASELINES = pathlib.Path(__file__).resolve().parents[2].parent / "docs" / "HUMAN_BASELINES.md"
 
 
-# -- The bars are the researched ones, still ---------------------------
-
-
 def test_the_answer_floor_is_the_slowest_human_language() -> None:
     """Stivers et al. measured 64% in Korean and 87% in Dutch. The floor
     is the FLOOR, not the mean: a town under 64% is outside the range
@@ -63,9 +60,6 @@ def test_the_ceiling_contradicts_our_own_gate_and_says_so() -> None:
     text = BASELINES.read_text(encoding="utf-8")
     assert "G3" in text
     assert "fission" in text.lower()
-
-
-# -- The arithmetic --------------------------------------------------
 
 
 def spoken(tick, speaker, listener, content="...", conversation="c1", location="market"):
@@ -145,9 +139,6 @@ def test_a_conversation_of_four_is_not_over_large() -> None:
     assert B.fissioned(utts) == (0, 0)
 
 
-# -- The eval cannot answer 0 for what it cannot see -------------------
-
-
 def store(tmp_path, tables: dict[str, str]) -> sqlite3.Connection:
     conn = sqlite3.connect(str(tmp_path / "t.db"))
     for ddl in tables.values():
@@ -214,9 +205,6 @@ def test_a_correctly_recorded_remark_is_not_counted(tmp_path) -> None:
     assert B.unrecorded_addressees(conn) == 0
 
 
-# -- Reciprocity is reported, and must stay reported -------------------
-
-
 def test_the_favour_measure_has_no_bar() -> None:
     """Gouldner's whole point is that reciprocity is DELAYED. A 72-tick
     run is one morning, so a bar on the return rate would measure the run
@@ -269,9 +257,6 @@ def test_speech_about_owing_is_counted() -> None:
     assert B.debts_spoken(utts) == 1
 
 
-# -- No orders, anywhere in the eval ----------------------------------
-
-
 def test_the_eval_never_tells_the_town_what_to_do() -> None:
     """An eval is a measurement. The moment a bar becomes an instruction
     in a prompt, it measures the prompt - the trap SERIES.md section 4
@@ -280,16 +265,6 @@ def test_the_eval_never_tells_the_town_what_to_do() -> None:
     source = pathlib.Path(B.__file__).read_text(encoding="utf-8").lower()
     for order in ("you must", "you should", "make sure you", "remember to"):
         assert order not in source
-
-
-# -- The live judge: its pairing, and its honesty ---------------------
-#
-# The judge itself needs a real model and real money, so what is pinned
-# here is everything AROUND the model call: which exchanges it picks, that
-# a broker failure cannot take the run down, and that it never presents
-# itself as a gate. One model grading another's conversation is evidence,
-# not a verdict, and a tool that forgot that would be the worst kind of
-# measurement - confident and unfalsifiable.
 
 
 def test_the_judge_pairs_a_question_with_the_reply_to_the_asker() -> None:
@@ -334,7 +309,7 @@ def test_a_broker_failure_does_not_take_the_run_down() -> None:
     partial one with its failures counted is worth more than nothing."""
 
     old = os.environ.get("BROKER_BASE_URL")
-    os.environ["BROKER_BASE_URL"] = "http://127.0.0.1:1"  # nothing listens
+    os.environ["BROKER_BASE_URL"] = "http://127.0.0.1:1"
     try:
         import importlib
 

@@ -37,8 +37,6 @@ import asyncio
 import time
 from typing import Any, Awaitable, Callable
 
-# Kept as the historical default TTL; each call site defines its own policy
-# constant (they are independent policies that happen to share a value).
 DEFAULT_TTL_SECONDS = 900.0
 
 
@@ -123,12 +121,9 @@ class TTLCache:
                 del self.in_flight[key]
             if not future.done():
                 future.set_exception(e)
-                # At least one retrieval keeps the future's exception from
-                # being flagged unretrieved when no other caller awaits it.
                 future.exception()
             raise
         if self.in_flight.get(key) is future:
-            # Still the registered load -> no invalidate() raced us; store.
             self.set(key, result, ttl)
             del self.in_flight[key]
         if not future.done():

@@ -103,23 +103,12 @@ def run_post_compact_cleanup(
         except Exception:
             logger.debug("Post-compact: assets cache invalidation failed")
 
-    # Context Collapse state reset. Committed collapses are now folded
-    # into the LLM compaction summary that just ran, so keeping them
-    # would double-project on the next turn. Staged spans are dropped
-    # too because their payloads point at messages that the compaction
-    # already rewrote. Per-instance state, safe in both main-thread and
-    # subagent contexts because the manager is scoped to one orchestrator.
     if collapse_manager is not None:
         try:
             collapse_manager.reset()
         except Exception:
             logger.debug("Post-compact: collapse_manager reset failed")
 
-    # Beta header latching reset. Once thinking is latched on the LLM
-    # provider, it stays latched for the session to avoid cache busting.
-    # After compaction the session context is effectively reset, so the
-    # latch must be cleared — next turn evaluates fresh. Matches src's
-    # clearBetaHeaderLatches() called on /clear and /compact.
     if llm_provider is not None:
         try:
             if hasattr(llm_provider, "latched_thinking"):
@@ -127,12 +116,6 @@ def run_post_compact_cleanup(
         except Exception:
             logger.debug("Post-compact: llm_provider latch reset failed")
 
-    # Cached-snip state lives on the LLM provider instance (not module-level),
-    # so it is safe to reset in both main-thread and subagent contexts. After
-    # compaction the message history is rewritten from scratch, so pending
-    # and pinned cache_edits referring to old indices become invalid.
-    # header_latched is intentionally preserved — once committed to the beta
-    # header, keep sending it for the session to avoid busting the prompt cache.
     if llm_provider is not None:
         try:
             if hasattr(llm_provider, "reset_snip_state"):

@@ -18,11 +18,8 @@ from pathlib import Path
 
 APP_ROOT = Path(__file__).resolve().parent.parent
 
-# Only broker/ may import boto3 (DESIGN.md section 9: "Broker is the ONLY
-# path to Bedrock").
 BOTO3_ALLOWED_TOP_LEVEL_DIRS = {"broker"}
 
-# Never walk into virtualenvs, caches, or build output looking for source.
 SKIP_DIR_NAMES = {
     ".venv",
     "venv",
@@ -74,38 +71,8 @@ def test_only_broker_imports_boto3() -> None:
     )
 
 
-# ── game/ never imports world/ ─────────────────────────────────────────
-#
-# UI-14. app/CONVENTIONS.md: "no package imports another package's
-# internals across this diagram", and game/README.md makes game/
-# presentation only - "possibly a separately deployed process", which an
-# import of world/ makes impossible.
-#
-# The file above enforced exactly one boundary, boto3, so this one was
-# crossed and nothing said anything: `game/realsim.py` imported
-# `world.make_genesis_subset` and wrote its output INTO `app/world/`, and
-# three tests in `game/tests/test_realsim.py` imported `world.life` and
-# `world.make_genesis_subset` besides. A boundary with no test is a
-# comment.
-#
-# game/ talks to world/ over HTTP and, for the real-sim controller, by
-# spawning it as a process. Both are still fine; a Python import is not.
-
 GAME_MAY_NOT_IMPORT = "world"
 
-# One exemption, named, with a reason, and asserted to stay exactly one.
-#
-# `build_rules.py` is a BUILD-TIME script under `static/`, run by hand
-# ("regenerate: python3 game/static/js/township/build_rules.py") and
-# imported by nothing. It bundles `world/rules/village_rules.json` into a
-# JS constant because `township-v2.html` is openable straight off disk and
-# `fetch()` cannot read a `file://` path. It is not part of the deployed
-# game package, so it does not make game/ undeployable - which is what
-# this boundary exists to protect.
-#
-# Anything else that appears here is a real violation, which is why the
-# set is pinned rather than pattern-matched: a second file quietly joining
-# a wildcard is how a boundary stops meaning anything.
 BUILD_TIME_EXEMPT = {"game/static/js/township/build_rules.py"}
 
 
@@ -128,7 +95,6 @@ def imports_package(path: Path, package: str) -> list[str]:
                     hits.append(alias.name)
         elif isinstance(node, ast.ImportFrom):
             module = node.module or ""
-            # `from . import x` inside game/ is level>0 and never crosses.
             if node.level == 0 and (module == package or module.startswith(package + ".")):
                 hits.append(module)
     return hits

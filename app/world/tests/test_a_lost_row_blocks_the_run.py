@@ -38,8 +38,6 @@ def test_preflight_actually_reads_the_drop_counter():
     """The call site, checked the way every predicate in this work now is."""
     from world.run_genesis import build_embedded_world_app
 
-    # The check lives in the `/world/preflight` route, which is a nested
-    # function inside the app builder - so read the builder.
     src = inspect.getsource(build_embedded_world_app)
     assert "rows_dropped" in src, (
         "preflight never asks the recorder whether it has lost anything, so "

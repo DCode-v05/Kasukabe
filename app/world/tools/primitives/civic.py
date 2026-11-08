@@ -75,32 +75,12 @@ from world.tools.place_aliases import place_for_charter, resolve_business, satis
 from world.tools.registry import ActorRequirements, ToolNamespace, ToolOutcome, ToolSpec
 from world.tools.state import WorldState
 
-# One `buy_energy` may spend at most this share of the sim its buyer holds.
-#
-# Run 26: Giselle Ingram converted all 4,900 of her sim into energy in one
-# call. She ended the run holding more energy than anyone in town and no sim
-# at all - refused `move`, `rest`, `say`, `find_people`, `describe_person`
-# and `draw_from_till` for the next 130 ticks - and her household defaulted
-# on its upkeep at the day boundary. Programs are held to 50% of the caller's
-# wallet because "a program that can empty a wallet inside one turn takes the
-# run's behaviour with it"; this was the one act left that could take every
-# sim a resident had in a single call, and energy cannot be turned back.
-#
-# Read with the program ceilings' own reader, so it behaves like them: at
-# import, failing at boot on a value it cannot parse (its message names the
-# variable), 0 allowed as the strictest setting. Buying again is still
-# allowed - each purchase is its own decision - but no single call empties a
-# resident's sim.
 from world.tools.program import _cap as _operator_ceiling  # noqa: E402
 
 ENERGY_PURCHASE_MAX_SHARE_PERCENT = _operator_ceiling(
     "KASUKABE_ENERGY_PURCHASE_MAX_SHARE_PERCENT", 50
 )
 
-# ASSUMPTION: DESIGN.md section 3 says businesses "register with government
-# (fee + taxes)" but never prices the fee. charter/models.py's Charter has
-# no business_registration_fee_sim field either (only patent/permit/builder
-# fees) - flagged here for whoever eventually owns that field.
 BUSINESS_REGISTRATION_FEE_SIM = 5_000
 
 MIN_CIVIC_AGE_YEARS = 18.0
@@ -136,12 +116,6 @@ def eligibility_facts_for(world: WorldState, agent: AgentLifeRecord) -> Eligibil
 class VoteParams(BaseModel):
     election_id: str
     candidate_agent_id: str
-    #: Required, because an optional one is not filled in. The last 50-resident
-    #: run recorded "0 of 1523 remarks said why" against an optional intent
-    #: field - a town given the option to explain itself never took it. A
-    #: ballot with no reason makes the one question an election run is for -
-    #: why did they vote as they did - answerable only by reading the
-    #: conversation around it and guessing.
     because: str = Field(
         min_length=8, max_length=300,
         description="Why this candidate and not another. One sentence, in your own words.",
@@ -159,10 +133,6 @@ async def vote_handler(world: WorldState, agent: AgentLifeRecord, params: VotePa
         location,
         because=params.because,
     )
-    # GOV-04: `charter.elections.cast_vote` above emits politics.vote.cast.
-    # This handler emitted a second copy, which was invisible while the
-    # charter sink was `noop_sink` and became a DOUBLE row the moment the
-    # runner wired the sink to the bus.
     return ToolOutcome(result={"election_id": params.election_id}, events=[])
 
 
@@ -179,8 +149,6 @@ async def petition_handler(
     petition = await world.charter.land_petitions.file_petition(
         agent.agent_id, params.title, params.description, params.tile_count_requested, location, world.tick()
     )
-    # GOV-04: `file_petition` above emits politics.petition.filed, with a
-    # `title` this copy did not even carry. Duplicate removed.
     return ToolOutcome(result={"petition_id": petition.petition_id}, events=[])
 
 
@@ -241,19 +209,6 @@ async def register_business_handler(
         raise AlreadyExistsError("business", params.business_id)
     await _require_licensed_to_found(world, agent.agent_id)
 
-    # TOOL-11: registering is gated at the government complex, and the
-    # premises used to be `world.location_of(agent)` - so EVERY business
-    # registered in a run had the town hall as its shop, and `buy`, `sell`,
-    # `post_price` and `pay_wage` for it all gated on the complex from then
-    # on. A resident who founded a bakery could only sell bread in the
-    # government building.
-    #
-    # `premises` is optional so the old call still works, but it is folded
-    # through the same destination logic `move` uses and checked against
-    # `is_real_destination` - the function that has been sitting in
-    # place_aliases.py with no caller since it was written (TOOL-25).
-    # Inventing a shop nobody can walk to is the one outcome worse than the
-    # town hall.
     location = world.location_of(agent.agent_id) or ""
     if params.premises is not None:
         from world.tools.place_aliases import is_real_destination
@@ -311,8 +266,6 @@ async def register_org_handler(
     organization = await world.charter.organizations.register_organization(
         params.kind, params.name, agent.agent_id, params.charter_text, location, world.tick()
     )
-    # GOV-04: `register_organization` above emits this same event with the
-    # same payload. Duplicate removed.
     return ToolOutcome(result={"org_id": organization.org_id}, events=[])
 
 
@@ -379,7 +332,6 @@ async def admit_to_org_handler(
     await world.charter.organizations.add_member(
         params.org_id, params.agent_id, world.tick()
     )
-    # GOV-04: the charter engine emits politics.organization.member_added.
     return ToolOutcome(
         result={"org_id": params.org_id, "agent_id": params.agent_id},
         events=[],
@@ -434,23 +386,6 @@ class FileComplaintParams(BaseModel):
             "against you reported. Leave unset to open a new one."
         ),
     )
-    # GOV-22. Who you are complaining ABOUT, as a kind of thing.
-    #
-    # DESIGN section 7 makes the immutable complaint ledger one of only
-    # TWO genesis checks on government power, and
-    # `ComplaintLedger.file_complaint` had no caller anywhere - so
-    # `GET /governance/complaints` served a permanently empty list and "no
-    # grievances" was indistinguishable from "no writer".
-    #
-    # Routed through this verb rather than a new one: residents already
-    # know `file_complaint`, and a separate `complain_about_government`
-    # would be a second word for the same act that a resident has to
-    # discover before it can hold anybody to account.
-    #
-    # "resident" opens an ordinary crime case as before. "official" and
-    # "government" write the constitutional ledger instead, which is
-    # append-only and never returns a verdict - a complaint about power is
-    # a record, not a prosecution.
     against_kind: str = Field(
         default="resident",
         description=(
@@ -473,13 +408,6 @@ async def file_complaint_handler(
             [f"against_kind must be resident, official or government, not {kind!r}"],
         )
 
-    # GOV-22: a complaint about power goes in the constitutional ledger.
-    #
-    # Append-only, and it returns no verdict: DESIGN section 7 makes this
-    # a RECORD that a government cannot erase, which is a different thing
-    # from a prosecution. `ComplaintLedger.file_complaint` has existed
-    # since genesis with no caller, so the ledger the design leans on was
-    # empty by construction rather than by contentment.
     if kind in {"official", "government"}:
         if kind == "official" and params.against_agent_id not in world.agents:
             raise NotFoundError("agent", params.against_agent_id)
@@ -496,22 +424,12 @@ async def file_complaint_handler(
                 "against_kind": kind,
                 "recorded": True,
             },
-            # The charter's own sink emits politics.complaint.filed
-            # (GOV-04: the handler does not duplicate it).
             events=[],
         )
 
     if params.against_agent_id not in world.agents:
         raise NotFoundError("agent", params.against_agent_id)
 
-    # GOV-02: naming somebody on an existing theft.
-    #
-    # A theft opens a case that accuses nobody, because the town does not
-    # know who did it. This is how a name gets onto that case - and it is
-    # deliberately possible to name the WRONG person, because a justice
-    # system where the accusation is always correct is not one. The case
-    # keeps its ground truth underneath, unread by any tool, so the
-    # false-conviction rate is a query rather than an assumption.
     if params.case_id is not None:
         existing = next(
             (c for c in world.crime_cases if c.case_id == params.case_id), None
@@ -550,9 +468,6 @@ async def file_complaint_handler(
         tick=world.tick(),
         filer_or_actor_agent_id=agent.agent_id,
         against_agent_id=params.against_agent_id,
-        # The complainant is the wronged party in a complaint they filed
-        # themselves. Ground truth stays None: unlike a theft, the world
-        # did not witness this one and has no view on who is right.
         victim_agent_id=agent.agent_id,
         description=params.description,
     )
@@ -582,27 +497,6 @@ def require_owned_business(world: WorldState, agent: AgentLifeRecord, business_i
 class HireEmployeeParams(BaseModel):
     business_id: str
     employee_agent_id: str
-    # TOOL-11.7. Teaching asks; hiring did not, so an owner could name
-    # anyone in the town as their employee without that person knowing,
-    # and the first they would learn of it is a wage they did not agree
-    # to. This is the same consent path `teach_skill` uses - a declared
-    # flag the caller must set after actually asking, which the transcript
-    # then records as a claim the owner made.
-    # REQUIRED, not defaulted - and that is the whole of run 25's bakery.
-    #
-    # A field with a default is not in pydantic's `required`, and an index
-    # row carries only the required names (TRADE-02). So this flag - the
-    # one thing deciding whether the call succeeds - was absent from the
-    # schema Marta Thorne was sent: no property, no mention in `Needs:`.
-    # She and Tova Okonjo negotiated a full contract out loud ("I agree.
-    # Fifteen a day, six days, paid weekly."), she called `hire_employee`
-    # six times, and every one was refused for a parameter she had never
-    # been shown. She ended up paying Tova by hand and saying so in the
-    # town: "the system's being stubborn about your agreement".
-    #
-    # `teach_skill.student_consent` is required and has always worked.
-    # The comment above claiming this "is the same consent path" was true
-    # of the intent and false of the code.
     employee_consent: bool = Field(
         description="True once they have agreed, in conversation, to work for you.",
     )
@@ -614,12 +508,6 @@ async def hire_employee_handler(
     business = require_owned_business(world, agent, params.business_id, "hire_employee")
     if params.employee_agent_id not in world.agents:
         raise NotFoundError("agent", params.employee_agent_id)
-    # TOOL-15. An owner hiring themselves and then paying themselves a
-    # wage was, until `draw_from_till` existed, the ONLY way to get money
-    # out of a business account - an accident of two missing checks that
-    # residents would eventually have found. It also corrupts every wage
-    # measurement: S6 asks whether a promise made is a promise kept, and a
-    # promise to yourself answers nothing.
     if not params.employee_consent:
         raise ActorRequirementError(
             "hire_employee",
@@ -705,8 +593,6 @@ async def transfer_business_handler(
 
     previous_owner_agent_id = business.owner_agent_id
     business.owner_agent_id = params.new_owner_agent_id
-    # The new owner inherits the going concern as-is, staff included - see
-    # this module's docstring; they may `fire_employee` afterward if not.
     event = WorldEvent(
         type="business.ownership.transferred",
         tick=world.tick(),
@@ -772,8 +658,6 @@ async def buy_energy_handler(
             ],
         )
 
-    # See ENERGY_PURCHASE_MAX_SHARE_PERCENT. Checked before the margin is
-    # taken, so nothing has moved when this refuses.
     ceiling = held * ENERGY_PURCHASE_MAX_SHARE_PERCENT // 100
     if params.sim_amount > ceiling:
         raise ToolValidationError(
@@ -786,20 +670,6 @@ async def buy_energy_handler(
             ],
         )
 
-    # ECON-30: the government's margin, at last read by something.
-    #
-    # `credit_store_margin_bps` is a power DESIGN section 7 gives the
-    # government, with a setter (`government.set_credit_store_margin`) and
-    # a validator and an API field - and no reader anywhere. A government
-    # could set it, the treasury view would echo it back, and every
-    # `buy_energy` still exchanged at the fixed rate. A lever with no
-    # linkage is worse than no lever: it reads as a policy the town HAS.
-    #
-    # The margin is kept by the treasury, per the finding: the resident
-    # spends the full amount, and only the remainder buys thinking. So a
-    # government that raises the margin makes cognition dearer for
-    # everybody and funds itself doing it, which is the trade-off the
-    # power is for.
     policy = await world.charter.store.get_policy()
     margin_bps = max(0, policy.credit_store_margin_bps)
     margin = params.sim_amount * margin_bps // 10_000
@@ -834,16 +704,7 @@ async def buy_energy_handler(
     )
     balance_after = world.ledger.usd_balance(agent.agent_id)
 
-    # What the ledger actually credited, not what the full sim amount would
-    # have bought. This was `sim_to_usd_cents(params.sim_amount)` - the
-    # amount BEFORE the government's margin - so with a 10% margin a
-    # resident was told it bought 400 energy and received 360, and the run
-    # report, reading the same number off the event below, overstated every
-    # purchase. Read off the wallet, so it cannot disagree with it.
     bought = balance_after - balance_before
-    # Tool spec A1's event row, exactly: the run report and the stakes
-    # measures (S2, "residents who reach buy_energy by day 3") read this,
-    # and a purchase with no event is a purchase no measurement can see.
     event = WorldEvent(
         type="economy.energy.bought",
         tick=world.tick(),
@@ -857,10 +718,6 @@ async def buy_energy_handler(
     return ToolOutcome(
         result={
             "sim_spent": params.sim_amount,
-            # Energy, not dollars. The event above keeps `usd_cents`: the
-            # trace and the stakes measures read it, and the ledger is in
-            # cents. What the RESIDENT is handed back is in the unit it
-            # is shown everywhere else.
             "energy_bought": energy_units(bought),
             "energy_now": energy_units(world.ledger.usd_balance(agent.agent_id)),
             "sim_now": world.ledger.sim_balance(agent.agent_id),
@@ -896,19 +753,10 @@ async def pay_tax_handler(
 
     debts = world.head_tax_debts
     if debts is None:
-        # Not reachable from either composition root, both of which
-        # publish the store. Refuse in the resident's own vocabulary
-        # rather than raising AttributeError into a tick.
         raise ActorRequirementError("pay_tax", ["there is no tax office to pay"])
 
     outstanding = await debts.outstanding(agent.agent_id)
     if outstanding <= 0:
-        # The 50-resident run (2026-09-16): 18 refusals, met by residents who
-        # had just read "Owed today: ... head tax 30" - Hendrik Whitlock:
-        # "Someone told me I owe no head tax, yet my notice says thirty sim
-        # due today." Both were true. Today's tax is TAKEN at the day
-        # boundary; `pay_tax` clears arrears. The refusal now says so, since
-        # a refusal met five times without a change is a text defect (X10).
         raise ActorRequirementError("pay_tax", [
             "you owe no head tax in arrears. The head tax shown as owed today is "
             "taken automatically at the day boundary, from whoever in your "
@@ -917,9 +765,6 @@ async def pay_tax_handler(
             "a household could not cover; `check_debts` shows any"
         ])
 
-    # Overpaying is a refusal in `repay_head_tax_debt`. Clamping instead:
-    # "pay everything I owe" is the commonest thing a resident means, and
-    # making it an error teaches it not to try.
     amount = min(int(params.amount_sim), outstanding)
 
     event = await repay_head_tax_debt(
@@ -928,10 +773,6 @@ async def pay_tax_handler(
         debtor_agent_id=agent.agent_id,
         amount_sim=amount,
         tick=world.tick(),
-        # The ledger's own sink, which is what every other head-tax
-        # caller passes (`day_jobs.py:326`, `run_genesis.py:7132`). The
-        # EventBus itself is not callable and passing it raises inside the
-        # repayment, after the debt check and before the money moves.
         event_sink=world.ledger.event_sink,
         memo="head tax repaid by the resident",
     )
@@ -951,19 +792,6 @@ def build_specs() -> list[ToolSpec]:
         ToolSpec(
             name="buy_energy",
             description=(
-                # ECON-27. Three things in this sentence were false.
-                #
-                # "Cost: 2 sim-currency" against a schedule of base 0 - the
-                # finding names that one. Worse, and it does not: "a fixed
-                # rate of 10,000 sim to the dollar" when SIM_PER_USD is
-                # 5,000. ECON-05 halved the rate and this text was never
-                # touched, so a resident budgeting from the description of
-                # the one act that keeps it alive bought half the thinking
-                # it expected. And "fixed" stopped being true again the
-                # moment ECON-30 made the government's margin real.
-                #
-                # Derived from the constants rather than quoted, so the
-                # next re-rating cannot leave a lie here.
                 "Buy energy with sim-currency, in person at the government store. "
                 "Energy is what your thinking runs on; it is not money, and nobody "
                 "can pay, trade, lend or give it. "
@@ -980,22 +808,11 @@ def build_specs() -> list[ToolSpec]:
             handler=buy_energy_handler,
             namespace=ToolNamespace.PUBLIC,
             location_gate=LOCATION_GOVERNMENT_COMPLEX,
-            # A1: alive, not dormant. A dormant resident cannot act at all,
-            # which is the point of dormancy - it may not buy its way out
-            # of having stopped thinking.
             actor_requirements=ActorRequirements(require_alive=True, require_not_dormant=True),
         ),
         ToolSpec(
             name="vote",
             description=(
-                # "town hall" is not what this town calls the building. The
-                # world's name for it is Kasukabe Government Complex, which is
-                # what `move` accepts, what the civic notice prints and what a
-                # resident standing in it is told it is standing in. A tool
-                # that names a third thing invites the reader to conclude it is
-                # somewhere else - and two elections were tallied with zero
-                # ballots by residents who were told "You are at Kasukabe
-                # Government Complex: `vote` now" and did not.
                 "Cast a ballot in an open election. You must be at the "
                 "government complex - the same place the civic notice names, "
                 "and where `declare_candidacy` is done. The election_id and "
@@ -1005,20 +822,6 @@ def build_specs() -> list[ToolSpec]:
             handler=vote_handler,
             namespace=ToolNamespace.PUBLIC,
             location_gate=LOCATION_TOWN_HALL,
-            # GOV-13: no `min_age` here, deliberately.
-            #
-            # It used to carry `min_age=MIN_CIVIC_AGE_YEARS`, a constant in
-            # this file, while `elections.check_suffrage` reads
-            # `charter.suffrage_min_age`. Two rules for one question, and
-            # the stricter won - so an amendment LOWERING suffrage to 16
-            # changed nothing at all, because the registry refused a
-            # sixteen-year-old before the charter was ever consulted.
-            # (Raising it worked, which is the sort of asymmetry nobody
-            # notices until the town votes for the other one.)
-            #
-            # The charter decides who may vote. `cast_vote` calls
-            # `check_suffrage` on every ballot, and since TOOL-08 its
-            # refusal is a logged one that names the rule.
             actor_requirements=ActorRequirements(),
         ),
         ToolSpec(
@@ -1048,8 +851,6 @@ def build_specs() -> list[ToolSpec]:
             params_model=AdmitToOrgParams,
             handler=admit_to_org_handler,
             namespace=ToolNamespace.PUBLIC,
-            # GOV-10: wherever the two of you are, like `teach_skill` and
-            # `trade`. An organisation has no premises of its own.
             location_gate=None,
             actor_requirements=ActorRequirements(),
         ),

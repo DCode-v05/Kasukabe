@@ -27,27 +27,21 @@ from pathlib import Path
 SEPTEMBER_HOME_ENV = "SEPTEMBER_HOME"
 DEFAULT_HOME_DIRNAME = ".september"
 
-# Directory layout under the root. The database is not here: SQLite creates the
-# file, we only guarantee the directory it sits in.
 LAYOUT: dict[str, str] = {
-    "config": "config",  # permissions.json, settings.json, hooks.json
-    "credentials": "credentials",  # engine key hash, tokens at rest
-    "skills": "skills",  # user-created and LC-forked skills
-    "plugins": "plugins",  # hook plugins
-    "workspaces": "workspaces",  # sandbox execution workspaces
-    "sidechains": "sidechains",  # sub-agent transcripts
-    "results": "results",  # overflowed tool output
-    "cache": "cache",  # model and embedding caches
-    "tmp": "tmp",  # scratch that must survive a read-only rootfs
+    "config": "config",
+    "credentials": "credentials",
+    "skills": "skills",
+    "plugins": "plugins",
+    "workspaces": "workspaces",
+    "sidechains": "sidechains",
+    "results": "results",
+    "cache": "cache",
+    "tmp": "tmp",
     "log": "log",
 }
 
 DB_FILENAME = "brain.sqlite"
 
-# The root holds a user's memory, their credentials at rest, and the engine key
-# hash. On a shared host the default 0755 would let any local user read all of
-# it. Claude Code applies the same 0o700 to every directory holding session data
-# (utils/sessionStorage.ts).
 HOME_MODE = 0o700
 
 

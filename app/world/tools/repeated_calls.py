@@ -38,26 +38,6 @@ from __future__ import annotations
 import json
 from typing import Any
 
-# Tools that only report. None of these changes anything, so two
-# identical calls on one tick are the same question twice.
-#
-# Named explicitly rather than derived from "has no events" or "is not
-# LABOUR": a tool that quietly acquires a lock, bumps a counter or wakes
-# somebody would pass a derived test and must never be folded.
-# EVERY NAME HERE IS A TOOL THAT EXISTS. The first draft of this list
-# carried seven that do not - `check_wallet`, `check_inventory`,
-# `check_prices`, `authoring_context`, and the three memory verbs - and a
-# name nothing registers is a rule that silently never applies, which is
-# the EVAL-01 failure this project keeps re-learning.
-#
-# The three memory verbs (`search_memory`, `recall_memories`,
-# `recall_session_log`) are real, but they are registered ENGINE-side in
-# `pinned_boot` and never pass through this registry, so folding them
-# would have to happen there and does not happen here.
-#
-# `check_wallet` and `check_inventory` do not exist at all: a resident's
-# money and holdings are in the perception every turn, not behind a
-# verb. `world/tools/registry.py`'s ALWAYS_IN_FULL still named them.
 READ_ONLY_TOOLS = frozenset({
     "look_around",
     "describe_place",
@@ -123,35 +103,8 @@ def costs_nothing_because_it_does_nothing(
     try:
         return bool(satisfies_gate(world.location_of(actor_id), wanted))
     except Exception:
-        # Cannot establish it, so charge - the existing behaviour, and
-        # never the surprising one.
         return False
 
-
-# THE FIRST ATTEMPT AT TRADE-06 WAS A FOLD, AND IT WAS WRONG.
-#
-# TRADE-04 folds reads and leaves 136 of run `deni-a6f9eb4-5h`'s 199
-# repeats standing - 125 of them `move` (64) and `rest` (61). Both look
-# idempotent. Neither is.
-#
-# `rest` is a unit of WORK. `keep_doing` repeats it through this same
-# dispatch precisely so each repetition earns proficiency and is charged
-# - that identity is the mechanism behind "a mastered trade is a cheap
-# one" (`test_proficiency_rises_under_a_continuing_action`). Folding it
-# collapsed three repetitions into one and silently disabled the
-# feature.
-#
-# `move` to where you already stand still has to PUBLISH. Its
-# `agent.moved` carries real tile coordinates and `arrived: True`, and
-# that event is how perception and the map learn where the resident is
-# (`test_move_already_at_destination_is_zero_tick_but_still_real`).
-# Short-circuiting it before the handler dropped the event.
-#
-# So the waste is real and measured, and the fold is not the way to get
-# it. Charging nothing for a `move` that goes nowhere is still probably
-# right - but it has to happen inside the handler, keeping the event,
-# and it needs the charge path to be told rather than bypassed. That is
-# a change to how `dispatch` prices a call, not a repeat rule.
 
 def _signature(tool_name: str, params: dict[str, Any]) -> str:
     return tool_name + "|" + json.dumps(params, sort_keys=True, default=str)
@@ -172,8 +125,6 @@ def already_answered_this_tick(
     wanted = _signature(tool_name, params)
     for record in reversed(world.tool_invocations or ()):
         if record.tick != tick:
-            # `tool_invocations` is append-ordered, so the first record
-            # from an earlier tick means there are no more from this one.
             break
         if record.actor_id != actor_id:
             continue

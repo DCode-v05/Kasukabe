@@ -35,11 +35,6 @@ from enum import Enum
 from typing import Any
 
 
-# ---------------------------------------------------------------------------
-# HookEvent enum: 25 lifecycle events
-# ---------------------------------------------------------------------------
-
-
 class HookEvent(str, Enum):
     """All lifecycle points where hooks may be registered.
 
@@ -49,14 +44,12 @@ class HookEvent(str, Enum):
     in ``src/entrypoints/sdk/coreTypes.ts``.
     """
 
-    # Tool lifecycle
     PRE_TOOL_USE = "PreToolUse"
     POST_TOOL_USE = "PostToolUse"
     POST_TOOL_USE_FAILURE = "PostToolUseFailure"
     PERMISSION_REQUEST = "PermissionRequest"
     PERMISSION_DENIED = "PermissionDenied"
 
-    # Agent lifecycle
     SESSION_START = "SessionStart"
     SESSION_END = "SessionEnd"
     SETUP = "Setup"
@@ -65,37 +58,26 @@ class HookEvent(str, Enum):
     SUBAGENT_START = "SubagentStart"
     SUBAGENT_STOP = "SubagentStop"
 
-    # Compression
     PRE_COMPACT = "PreCompact"
     POST_COMPACT = "PostCompact"
 
-    # Notifications
     NOTIFICATION = "Notification"
     USER_PROMPT_SUBMIT = "UserPromptSubmit"
     TEAMMATE_IDLE = "TeammateIdle"
 
-    # Tasks
     TASK_CREATED = "TaskCreated"
     TASK_COMPLETED = "TaskCompleted"
 
-    # Config / environment
     CONFIG_CHANGE = "ConfigChange"
     CWD_CHANGED = "CwdChanged"
     FILE_CHANGED = "FileChanged"
     INSTRUCTIONS_LOADED = "InstructionsLoaded"
 
-    # Worktrees
     WORKTREE_CREATE = "WorktreeCreate"
     WORKTREE_REMOVE = "WorktreeRemove"
 
 
-# Set of all valid event names for fast membership checks.
 HOOK_EVENTS: frozenset[str] = frozenset(e.value for e in HookEvent)
-
-
-# ---------------------------------------------------------------------------
-# HookMatcher — targets a specific event + tool name pattern
-# ---------------------------------------------------------------------------
 
 
 @dataclass
@@ -120,11 +102,6 @@ class HookMatcher:
     event: HookEvent
     matcher: str = "*"
     hooks: list[dict[str, Any]] = field(default_factory=list)
-
-
-# ---------------------------------------------------------------------------
-# Matcher evaluation
-# ---------------------------------------------------------------------------
 
 
 def matches_tool(
@@ -154,13 +131,11 @@ def matches_tool(
     if not m or m == "*":
         return True
 
-    # Condition form: "bash(npm publish)" or "Bash(some text)"
     condition_match = re.fullmatch(r"([^(]+)\((.+)\)", m)
     if condition_match:
         name_pat, condition = condition_match.group(1).strip(), condition_match.group(2)
         if not name_matches(name_pat, tool_name):
             return False
-        # Check if any string field in tool_input contains the condition substring.
         if tool_input is None:
             return False
         condition_lower = condition.lower()
@@ -173,19 +148,15 @@ def matches_tool(
 
 def name_matches(pattern: str, tool_name: str) -> bool:
     """Evaluate a pure name pattern (no condition) against a tool name."""
-    # Regex: pattern contains regex metacharacters (starts with ^ or
-    # contains .* / [ / ] / + / ? / ( / ) outside of condition form).
     if looks_like_regex(pattern):
         try:
             return bool(re.fullmatch(pattern, tool_name))
         except re.error:
-            return pattern == tool_name  # fall back to exact match
+            return pattern == tool_name
 
-    # Pipe-OR: "bash|write|edit"
     if "|" in pattern:
         return tool_name in {p.strip() for p in pattern.split("|")}
 
-    # Exact match
     return pattern == tool_name
 
 
@@ -193,10 +164,6 @@ def looks_like_regex(pattern: str) -> bool:
     """Heuristic: does the pattern look like a regex rather than a name?"""
     return bool(re.search(r"[.+*?\[\]()^$\\]", pattern))
 
-
-# ---------------------------------------------------------------------------
-# Convenience constants for the most common tool-event groups
-# ---------------------------------------------------------------------------
 
 TOOL_LIFECYCLE_EVENTS: frozenset[HookEvent] = frozenset(
     {

@@ -1,6 +1,4 @@
 #!/bin/bash
-# Kasukabe genesis: 250 engines, real Kimi K2.5 + DeepSeek V3.2 via the
-# six-lane broker. Spend is capped in the broker itself, not here.
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -8,24 +6,8 @@ cd "$(dirname "$0")"
 DATA=/tmp/kasukabe-data
 mkdir -p "$DATA/checkpoints"
 
-# 38000 cents = $380. Sized to the window left before the 23:59 deadline at
-# roughly $79/hr, so the governor is a backstop rather than the thing that
-# ends the run. Compute (~$70 across both hosts) is on top of this.
 BUDGET_CAP_CENTS=${BUDGET_CAP_CENTS:-38000}
 
-# INFRA-05: the two shared secrets, from the environment, generated fresh
-# when unset.
-#
-# Both were fixed literals in this file, which puts them in git history
-# permanently - and a comment naming them here would leave them in the
-# working tree too, which is why this one does not. The operator token is
-# the whole of the console's authentication (grant a blessing, unleash a
-# disaster, move the population dials), and the shared secret is what stops a caller from
-# billing any resident's wallet by naming it.
-#
-# Generated rather than defaulted, so an operator who sets neither gets a
-# run nobody else can drive instead of a run everybody can. Printed once,
-# because a token nobody can read is a console nobody can open.
 AUTH_SHARED_SECRET=${AUTH_SHARED_SECRET:-$(python -c "import secrets;print(secrets.token_hex(24))")}
 OPERATOR_TOKEN=${OPERATOR_TOKEN:-$(python -c "import secrets;print(secrets.token_hex(24))")}
 echo "operator token for this run: $OPERATOR_TOKEN"

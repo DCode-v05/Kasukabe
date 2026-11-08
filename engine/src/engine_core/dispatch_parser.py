@@ -64,8 +64,6 @@ def resolve_thread_id(candidate: str | None, known_ids: set[str]) -> str | None:
     """
     if not isinstance(candidate, str):
         if candidate is not None:
-            # Distinguishable in the logs from an id that simply named no
-            # thread: this one was the wrong TYPE, which points at the prompt.
             logger.warning(
                 "dispatch: non-string thread id %r (%s) - treating as unresolved",
                 candidate,
@@ -136,8 +134,6 @@ def parse_dispatch(raw: str, message: str, known_ids: set[str]) -> Dispatch:
 
         extract = str(item.get("extract", "") or "")
         if not is_verbatim(extract, message):
-            # Not the user's words. Hand the thread the whole input rather
-            # than text the model composed.
             logger.warning(
                 "dispatch: non-verbatim extract %r - falling back to full input",
                 extract[:80],
@@ -145,8 +141,6 @@ def parse_dispatch(raw: str, message: str, known_ids: set[str]) -> Dispatch:
             extract = message
 
         target = resolve_thread_id(item.get("target"), known_ids)
-        # Resolve, drop what does not name a real thread, dedupe - in one pass,
-        # with a dict as the ordered set so first mention wins.
         seen: dict[str, None] = {}
         for rid in item.get("related_ids") or []:
             if not isinstance(rid, str):
@@ -156,8 +150,6 @@ def parse_dispatch(raw: str, message: str, known_ids: set[str]) -> Dispatch:
                 seen[resolved] = None
         related = list(seen)
 
-        # Shape rules. A verdict that has lost the thread it depends on is
-        # downgraded rather than dropped: the work still needs a home.
         if verdict in TARGETED_VERDICTS and target is None:
             logger.warning("dispatch: %s without a known target - downgrading to open", verdict)
             verdict = "open"

@@ -59,7 +59,7 @@ async def test_fine_requires_a_granted_warrant(economy: FakeEconomy, recorder: E
     _, case = await desk_.file_complaint("victim", CrimeKind.THEFT, "desc", LOCATION_GOVERNMENT_COMPLEX, now_tick=0)
     warrants = WarrantOffice(store, government)
     warrant = await warrants.request_warrant(case.case_id, "officer_a", "suspect", "j", LOCATION_GOVERNMENT_COMPLEX, now_tick=1)
-    assert warrant.status == WarrantStatus.REQUESTED  # never signed
+    assert warrant.status == WarrantStatus.REQUESTED
 
     desk = OutcomeDesk(store, economy, government, event_sink=recorder.sink)
     with pytest.raises(WarrantNotGranted):

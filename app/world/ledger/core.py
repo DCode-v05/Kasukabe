@@ -70,21 +70,10 @@ import os
 
 EventSink = Callable[[LedgerEvent], Awaitable[None]]
 
-# The purposes the broker routes to its background lanes
-# (broker/lanes.py's BACKGROUND_PURPOSE_PREFIXES): the town's own
-# bookkeeping over a morning it has already paid for, as opposed to a
-# resident deciding what to do next.
 HOUSEKEEPING_PURPOSES = ("learning_centre", "summarizer", "importance_scoring", "dream_probe")
 
-# Who pays for that bookkeeping when the resident's wallet is empty.
-# "treasury_fallback" (default) charges the town's reserve rather than
-# losing the consolidation; "resident" restores the refusals the
-# 50-resident run recorded 58 of. Thinking is never affected either way.
 HOUSEKEEPING_PAYER = os.environ.get("KASUKABE_HOUSEKEEPING_PAYER", "treasury_fallback").strip().lower()
 
-# Accounts whose usd_cents participates in the $1000 invariant. Business
-# accounts are sim-only by design (see Account's docstring in models.py)
-# and are deliberately excluded.
 USD_CAPABLE_KINDS = frozenset({AccountKind.AGENT, AccountKind.TREASURY, AccountKind.BURNED})
 
 
@@ -92,8 +81,6 @@ class Ledger:
     """In-memory dual-currency double-entry ledger for one simulation run."""
 
     def __init__(self, event_sink: EventSink | None = None) -> None:
-        # Treasury and burned always exist, even before genesis funds
-        # them, so every other operation can assume they are present.
         self.accounts: dict[str, Account] = {
             TREASURY_ACCOUNT_ID: Account(TREASURY_ACCOUNT_ID, AccountKind.TREASURY),
             BURNED_ACCOUNT_ID: Account(BURNED_ACCOUNT_ID, AccountKind.BURNED),
@@ -102,16 +89,8 @@ class Ledger:
         self.event_sink = event_sink
         self.halted = False
         self.halt_reason: str | None = None
-        # The invariant total is whatever genesis() actually seeded, not a
-        # hardcoded $1000. money.py's constants describe the DEFAULT run
-        # (250 agents x $2 + $500 treasury); a smaller cohort - say 50
-        # agents at $1 for a short experiment - is still a perfectly valid
-        # closed economy, and hardcoding the total would halt the ledger on
-        # its very first check for no reason other than the population
-        # being different. genesis() overwrites this with the real sum.
         self.expected_total_usd_cents = TOTAL_USD_CENTS
 
-    # -- account lookup and creation --------------------------------
 
     def get_account(self, account_id: str) -> Account:
         account = self.accounts.get(account_id)
@@ -198,7 +177,6 @@ class Ledger:
         self.accounts[business_id] = account
         return account
 
-    # -- genesis ------------------------------------------------------
 
     async def genesis(
         self,
@@ -256,15 +234,10 @@ class Ledger:
                 )
             )
 
-        # The closed economy is exactly what was just minted: treasury plus
-        # every wallet. Recording it here is what lets a 50-agent-at-$1 run
-        # hold its own invariant as strictly as the default 250-at-$2 one,
-        # instead of being measured against a population it does not have.
         self.expected_total_usd_cents = treasury_usd_cents + agent_usd_cents * len(agent_ids)
 
         await self.enforce_invariant(tick)
 
-    # -- the invariant --------------------------------------------------
 
     def usd_total(self) -> int:
         """Sum of every USD-capable account's usd_cents: agent wallets
@@ -320,7 +293,6 @@ class Ledger:
         if self.event_sink is not None:
             await self.event_sink(event)
 
-    # -- the one mutation primitive --------------------------------------
 
     def apply_movement(
         self,
@@ -348,12 +320,6 @@ class Ledger:
         if from_account_id == to_account_id:
             raise SameAccountTransferError(from_account_id)
         if currency is Currency.USD and from_account_id == MINT_ACCOUNT_ID:
-            # Genesis is the one place USD enters the books, and it
-            # writes directly to account balances instead of going
-            # through this method (see genesis()'s docstring). A move()
-            # call reaching here with MINT_ACCOUNT_ID and USD is a bug:
-            # DESIGN.md section 3 fixes the USD total at genesis, only
-            # sim currency is minted at runtime (baby blessings).
             raise LedgerError(
                 "USD cannot be minted outside genesis, MINT_ACCOUNT_ID is a sim-only "
                 "faucet (DESIGN.md section 3: only sim blessings are minted at "
@@ -462,7 +428,6 @@ class Ledger:
             )
         )
 
-    # -- parent-debit resolution -----------------------------------------
 
     def resolve_usd_payer(self, agent_id: str) -> str:
         """DESIGN.md section 4: "broker auto-debits the PARENT'S wallet
@@ -505,7 +470,6 @@ class Ledger:
             memo=memo,
         )
 
-    # -- exchange --------------------------------------------------------
 
     async def exchange_sim_for_usd(
         self, agent_id: str, sim_amount: int, tick: int, *, memo: str = ""
@@ -565,7 +529,6 @@ class Ledger:
         await self.emit_movement_events(usd_leg)
         return sim_leg, usd_leg
 
-    # -- inference burn ----------------------------------------------------
 
     def _housekeeping_payer(self, agent_id: str, usd_cents: int, memo: str) -> "str | None":
         """The treasury, when this is housekeeping and the resident is broke.
@@ -624,8 +587,6 @@ class Ledger:
         """
         treasury = self._housekeeping_payer(agent_id, usd_cents, memo)
         if treasury is not None:
-            # Treasury to burned is the same leg of the invariant as wallet
-            # to burned, so the $1,000 identity is untouched.
             return await self.move(
                 from_account_id=treasury,
                 to_account_id=BURNED_ACCOUNT_ID,
@@ -645,7 +606,6 @@ class Ledger:
             memo=memo or f"inference cost for {agent_id}",
         )
 
-    # -- baby blessings / sim minting ---------------------------------------
 
     async def mint_sim(
         self,
@@ -675,7 +635,6 @@ class Ledger:
             memo=memo,
         )
 
-    # -- wages, taxes, business fees, pensions -------------------------------
 
     async def pay_wage(
         self,
@@ -805,7 +764,6 @@ class Ledger:
             memo=memo or f"{pct}% pension of last salary {last_salary_sim}",
         )
 
-    # -- inheritance -------------------------------------------------------
 
     async def settle_inheritance(
         self, deceased_agent_id: str, heirs: list[str], tick: int, *, memo: str = ""

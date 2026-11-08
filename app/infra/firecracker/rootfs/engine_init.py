@@ -67,9 +67,6 @@ def build_engine_env(cmdline: dict[str, str]) -> dict[str, str]:
     env["CDT_KEY"] = urllib.parse.unquote(cmdline.get("cdt_key", ""))
     env["SEPTEMBER_HOME"] = "/data"
     env["KASUKABE_UNIT_ID"] = cmdline.get("unit_id", "")
-    # See vm_manager.py's build_boot_args() docstring: extra__<KEY> tokens
-    # are the escape hatch for anything beyond the four identity fields
-    # above, url-quoted the same way and decoded the same way here.
     prefix = "extra__"
     for key, value in cmdline.items():
         if key.startswith(prefix):
@@ -99,7 +96,7 @@ def main() -> None:
             ["uvicorn", "src.server:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"],
             env,
         )
-        os._exit(127)  # only reached if execvpe itself failed
+        os._exit(127)
 
     sys.stderr.write(f"engine-init: engine started as pid {child_pid}\n")
 

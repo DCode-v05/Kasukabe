@@ -192,7 +192,7 @@ async def test_a_resident_with_no_heir_does_not_break_the_run(runner) -> None:
     )
     runner.ledger.get_account(hermit.agent_id).sim_units = 300
 
-    await runner.apply_death(hermit, "terminal", 10)      # must not raise
+    await runner.apply_death(hermit, "terminal", 10)
 
     assert runner.ledger.get_account(hermit.agent_id).closed is True
 
@@ -204,7 +204,7 @@ async def test_settling_twice_does_not_raise(runner) -> None:
     logged no-op, not the end of the run."""
     deceased, _ = _living_pair(runner)
     await runner.apply_death(deceased, "terminal", 10)
-    await runner.apply_death(deceased, "terminal", 11)    # must not raise
+    await runner.apply_death(deceased, "terminal", 11)
 
 
 def test_every_caller_awaits_it() -> None:

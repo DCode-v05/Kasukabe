@@ -45,12 +45,6 @@ async def _pair(
         world, "n03", where_target, starting_sim=0, household_id=target_household
     )
     world.agent_names["n03"] = "Tobias Holloway"
-    # A treasury with dollars in it, which is what genesis builds: the
-    # $1,000 starts there and revival moves a dollar of it into the
-    # revived resident's wallet. The fixture opens every account at zero,
-    # and a treasury with no dollars cannot buy anybody any thinking - a
-    # true refusal, and not the one under test. Exactly the hundred
-    # thousand cents the invariant demands, or the ledger halts.
     from world.ledger.core import TREASURY_ACCOUNT_ID
 
     wallets = sum(
@@ -70,9 +64,6 @@ def _make_dormant(world: WorldState, agent_id: str, since_hours: float = 4.0) ->
             )
         }
     )
-
-
-# ── the act itself ────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -114,7 +105,6 @@ async def test_the_revival_is_recorded_with_who_paid_for_whom(
     assert payload["revived_id"] == "n03"
     assert payload["sim_paid"] == REVIVAL_COST_SIM
     assert payload["same_household"] is True
-    # Both sides see it on their next turn.
     assert set(payload["involved_agent_ids"]) == {"n01", "n03"}
 
 
@@ -139,14 +129,11 @@ async def test_how_long_they_were_dark_is_told_to_the_payer(
     is told what its money bought."""
     await _pair(world)
     _make_dormant(world, "n03", since_hours=0.0)
-    world.current_tick = 42  # 7 game-hours in at 10 minutes a tick
+    world.current_tick = 42
 
     outcome = await registry.execute(world, "n01", "revive", {"agent_id": "n03"})
 
     assert outcome.result["ticks_dormant"] == 42
-
-
-# ── the refusals, and whether they teach ──────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -229,9 +216,6 @@ async def test_reviving_a_stranger_who_is_not_in_this_town(
 
     with pytest.raises(NotFoundError):
         await registry.execute(world, "n01", "revive", {"agent_id": "nobody"})
-
-
-# ── the invariant the whole ledger rests on ───────────────────────────
 
 
 @pytest.mark.asyncio

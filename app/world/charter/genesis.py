@@ -34,27 +34,6 @@ from world.charter.models import Charter, GovernmentPolicy, GovernmentState
 from world.charter.store import CharterStore
 
 
-
-# ECON-01 / GOV-06 / GOV-18: what the town starts out taxing.
-#
-# `GovernmentPolicy.tax_rate_bps` defaults to 0, and nothing ever changed
-# it: `set_tax_rate` is government-namespace, seats are vacant because no
-# election has ever been tallied (GOV-01), so the only rate Kasukabe has
-# ever had is nothing. `head_tax_sim_per_head` then returns 0,
-# `charge_daily_head_tax` skips every move, and the S1 gate - which counted
-# households visited, not sim moved - reported a fully taxed day. The tax
-# is the government's only revenue, the complaints desk's only cause, and
-# the thing an election is about; at zero, none of those exist.
-#
-# The number is READ from `world/rules/village_rules.json` rather than
-# retyped here. That file already says 300 bps and, per GOV-18, was a
-# second rulebook only the browser consulted - the world's charter said 0
-# while the viewer's economy said 3%, and the two could disagree with
-# nobody noticing. One of them has to be the source; this makes it that
-# one, for this field.
-#
-# A zero rate remains a legal policy: a government may vote the tax away.
-# What is fixed here is that the town does not START at zero by accident.
 GENESIS_TAX_RATE_BPS_FALLBACK = 300
 
 
@@ -87,29 +66,11 @@ async def seed_genesis(
     `create_genesis_charter_engine` does.
     """
     sink = event_sink if event_sink is not None else noop_sink
-    # `charter_fields` is how a scenario (world/scenario.py) seeds its own
-    # rules - four-hour election windows instead of day-long ones, fewer
-    # minister seats - at VERSION 0. Amending them afterwards would record
-    # the town as having changed its own constitution before anyone woke up,
-    # which is a different fact from the one the run is testing.
     charter = Charter(version=0, genesis_tick=genesis_tick, **(charter_fields or {}))
     policy = GovernmentPolicy(version=0, tax_rate_bps=genesis_tax_rate_bps())
     await store.seed_charter(charter)
     await store.seed_policy(policy)
 
-    # GROW-12: a caretaker, only if a genesis file named one.
-    #
-    # Seats vacant is still the default and still what every run so far
-    # did. The problem that made this switch necessary: no run has ever
-    # crossed a first election, so `petition` - the only in-world entry to
-    # the land-expansion pipeline - has refused every resident in every
-    # run, and DESIGN section 1's "the town physically grows" has never
-    # been reachable from inside the town.
-    #
-    # `terms_served` is left EMPTY on purpose. A caretaker was not
-    # elected, so they have not served a term, and DESIGN section 10's
-    # regime-transition metrics must not count them as one. `caretaker`
-    # on the state is what lets a reader tell the difference.
     if caretaker_pm_agent_id:
         await store.set_government_state(
             GovernmentState(

@@ -24,8 +24,6 @@ def test_extract_bearer_token_is_header_case_insensitive() -> None:
 
 
 def test_extract_bearer_token_without_bearer_prefix() -> None:
-    # Some clients omit "Bearer "; tolerate it rather than reject a
-    # credential that is otherwise perfectly usable.
     token = extract_bearer_token({"Authorization": "agent-xyz"})
     assert token == "agent-xyz"
 
@@ -41,9 +39,6 @@ def test_resolve_agent_id_unsigned_when_no_secret() -> None:
 
 
 def test_resolve_agent_id_unsigned_strips_any_dotted_suffix() -> None:
-    # Unsigned mode: everything before the first '.' is the agent id, so
-    # a signed-looking token still resolves sensibly even with no secret
-    # configured to check it against.
     agent_id = resolve_agent_id({"Authorization": "Bearer agent-42.deadbeef"}, auth_shared_secret="")
     assert agent_id == "agent-42"
 

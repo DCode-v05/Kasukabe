@@ -43,7 +43,6 @@ async def test_grant_subpoena_reveals_target_invocation_records(world, registry)
     await spawn_agent(world, "target", LOCATION_GOVERNMENT_COMPLEX)
     case_id = await file_a_complaint(world, registry, "pm", "target")
 
-    # target does something ordinary (PUBLIC namespace) - still logged.
     await registry.execute(world, "target", "move", {"destination_location_id": "park"})
 
     filing = await registry.execute(
@@ -58,7 +57,6 @@ async def test_grant_subpoena_reveals_target_invocation_records(world, registry)
 
     records = granted.result["invocation_records"]
     assert any(r["tool_name"] == "move" and r["actor_id"] == "target" for r in records)
-    # Nothing about another agent leaks through.
     assert all(r["actor_id"] == "target" for r in records)
 
 
@@ -72,7 +70,6 @@ async def test_grant_subpoena_reveals_confidential_namespace_calls_too(world, re
     await make_government(world, "pm", "minister")
     case_id = await file_a_complaint(world, registry, "minister", "pm")
 
-    # pm exercises a confidential GOVERNMENT-namespace tool.
     await registry.execute(
         world, "pm", "petition", {"title": "More farmland", "description": "need it", "tile_count_requested": 5}
     )
@@ -166,7 +163,7 @@ async def test_failed_call_is_not_added_to_the_invocation_log(world, registry) -
     before = len(world.tool_invocations)
 
     with pytest.raises(Exception):
-        await registry.execute(world, "a1", "move", {})  # missing required param
+        await registry.execute(world, "a1", "move", {})
 
     assert len(world.tool_invocations) == before
 

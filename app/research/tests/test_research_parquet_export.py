@@ -71,9 +71,6 @@ SCHEMA_TABLES = {
 }
 
 
-# ── TABLE_TICK_COLUMNS exhaustiveness ──────────────────────────────
-
-
 def test_table_tick_columns_covers_every_table_in_the_real_schema() -> None:
     assert set(TABLE_TICK_COLUMNS.keys()) == SCHEMA_TABLES
 
@@ -87,21 +84,11 @@ def test_table_tick_columns_reference_real_columns_in_the_schema() -> None:
         assert table_match is not None, table
         table_body = table_match.group(1)
         for column in columns:
-            # The column must exist and be an integer the exporter can bucket
-            # on. NOT NULL is deliberately not required any more: the
-            # trace-store fix made llm_calls.tick and events.tick nullable
-            # because broker has no access to world's current tick, and
-            # honestly leaving it unset beats defaulting to a false 0 that
-            # would silently mis-bucket every broker row into game day zero
-            # forever (see broker/trace.py's TraceRecord.tick).
             assert re.search(rf"\b{column} integer\b", table_body), f"{table}.{column}"
 
 
 def test_ticks_per_game_day_matches_design_constant() -> None:
     assert TICKS_PER_GAME_DAY == 144
-
-
-# ── build_where_clause ─────────────────────────────────────────────
 
 
 def test_build_where_clause_single_column() -> None:
@@ -110,9 +97,6 @@ def test_build_where_clause_single_column() -> None:
 
 def test_build_where_clause_multiple_columns_ored() -> None:
     assert build_where_clause(("birth_tick", "created_tick")) == "birth_tick // 144 = ? OR created_tick // 144 = ?"
-
-
-# ── export_game_day_sync (real DuckDB, real SQLite) ────────────────
 
 
 @pytest.fixture
@@ -177,14 +161,6 @@ async def test_export_empty_game_day_writes_zero_row_parquet_with_correct_schema
     events_result = next(r for r in results if r.table == "events")
     assert events_result.row_count == 0
     columns = duckdb.connect().execute(f"DESCRIBE SELECT * FROM read_parquet('{events_result.local_path}')").fetchall()
-    # id, type, tick, agent_id, payload, created_at - the real, visible
-    # (non-generated) columns of events per supabase/sqlite_schema.sql;
-    # domain/game_day/game_minute_of_day are generated columns DuckDB's
-    # sqlite scanner does not expose at all (see this module's docstring).
-    # `model` joined this list with the trace-store fix: broker/trace.py's
-    # BrokerEvent carries the lane model that served the call, and
-    # supabase/schema_gen.py now generates this table's DDL from that
-    # dataclass, so the two can no longer drift apart silently.
     assert {c[0] for c in columns} == {
         "id",
         "type",
@@ -207,8 +183,8 @@ async def test_export_agents_matches_birth_day_or_created_day(trace_store: tuple
                 "slug": "agent-001",
                 "display_name": "Aiko Tanaka",
                 "sex": "female",
-                "birth_tick": 0,  # day 0
-                "created_tick": 288,  # day 2
+                "birth_tick": 0,
+                "created_tick": 288,
             }
         ],
     )
@@ -221,9 +197,9 @@ async def test_export_agents_matches_birth_day_or_created_day(trace_store: tuple
     def agents_count(results: list) -> int:
         return next(r for r in results if r.table == "agents").row_count
 
-    assert agents_count(day0) == 1  # born day 0
-    assert agents_count(day1) == 0  # nothing happened day 1
-    assert agents_count(day2) == 1  # created (registered in the sim) day 2
+    assert agents_count(day0) == 1
+    assert agents_count(day1) == 0
+    assert agents_count(day2) == 1
 
 
 @pytest.mark.asyncio
@@ -240,7 +216,7 @@ async def test_export_businesses_filters_by_registered_tick(trace_store: tuple[s
                 "name": "Kasukabe Bakery",
                 "business_type": "bakery",
                 "owner_agent_id": agent["id"],
-                "registered_tick": 200,  # day 1
+                "registered_tick": 200,
             }
         ],
     )
@@ -271,9 +247,6 @@ async def test_export_does_not_write_to_the_source_database(trace_store: tuple[s
     await verify_client.close()
 
     assert row_count_after == row_count_before
-
-
-# ── export_game_day (async wrapper + S3 upload) ────────────────────
 
 
 class FakeS3Client:

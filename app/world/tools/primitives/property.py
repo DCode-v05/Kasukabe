@@ -45,10 +45,6 @@ from world.tools.models import Bequest, OwnerClass, TileOwnership, Will
 from world.tools.registry import ActorRequirements, ToolNamespace, ToolOutcome, ToolSpec
 from world.tools.state import WorldState, tile_key
 
-# The government's own owner id. The treasury account already exists under
-# this id in the ledger (ledger/money.py), so land the town holds and money
-# the town holds answer to the same name - an auction that credits
-# TREASURY_ACCOUNT_ID is visibly the same entity releasing the tile.
 GOVERNMENT_OWNER_ID = TREASURY_ACCOUNT_ID
 
 
@@ -67,12 +63,6 @@ def require_tile(world: WorldState, x: int, y: int) -> TileOwnership:
         return existing
     return TileOwnership(
         tile_x=x, tile_y=y, owner_id=GOVERNMENT_OWNER_ID, owner_class=OwnerClass.GOVERNMENT,
-        # GROW-20: whether this ground arrived through a land petition.
-        # The flag has existed since section 31.2 asked `auction_land` to
-        # scope itself to "newly petitioned/expanded land" and nothing ever
-        # set it, because the fact lives on the map and the record is
-        # materialised lazily, one tile at a time, long after the strip was
-        # added. `WorldState.expanded_rects` is where the answer is kept.
         from_expansion=world.came_from_expansion(x, y),
     )
 
@@ -117,8 +107,6 @@ async def transfer_tile_handler(
             "transfer_tile", ["cannot transfer a tile to its current owner"]
         )
 
-    # Money first: the ledger is the system this handler cannot undo, so a
-    # buyer who cannot pay must fail before the deed changes hands.
     if params.price_sim > 0:
         await world.ledger.move(
             from_account_id=params.to_owner_id,
@@ -257,8 +245,6 @@ async def set_will_handler(
             raise ActorRequirementError(
                 "set_will", [f"cannot name {bequest.heir_id}, who is not alive, as heir"]
             )
-        # C1: you can only leave what is yours. Checked while the author is
-        # still here to fix it, for the same reason the heir check is.
         for tool_name in bequest.tools:
             if tool_name not in world.custom_tools:
                 raise NotFoundError(
@@ -356,7 +342,7 @@ def settle_property_estate(
     if will is not None:
         for bequest in will.bequests:
             if not world.agents.get(bequest.heir_id) or not world.agents[bequest.heir_id].alive:
-                continue                       # a named heir who died first falls through
+                continue
             for tx, ty in bequest.tiles:
                 willed[tile_key(tx, ty)] = bequest.heir_id
 
@@ -406,8 +392,6 @@ def build_specs() -> list[ToolSpec]:
             params_model=TransferTileParams,
             handler=transfer_tile_handler,
             namespace=ToolNamespace.PUBLIC,
-            # No location gate: a deed changes hands wherever the two
-            # parties are, the same as commerce.py's `transfer`.
             location_gate=None,
             actor_requirements=ActorRequirements(),
         ),
@@ -421,7 +405,6 @@ def build_specs() -> list[ToolSpec]:
             handler=auction_land_handler,
             namespace=ToolNamespace.PUBLIC,
             location_gate=None,
-            # Only a seat-holder may sell the town's own land.
             actor_requirements=ActorRequirements(require_government_seat=True),
         ),
         ToolSpec(

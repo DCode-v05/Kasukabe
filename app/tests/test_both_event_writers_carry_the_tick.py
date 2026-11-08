@@ -60,9 +60,6 @@ def test_the_column_is_there_for_both() -> None:
     assert "tick" in columns
 
 
-# ── INFRA-16: the world writes SOME events, not none and not all ───────
-
-
 def test_a_decision_earns_a_row() -> None:
     from world.run_genesis import is_worth_recording
 

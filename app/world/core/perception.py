@@ -36,18 +36,6 @@ from world.core.events import EventBus, WorldEvent
 
 logger = logging.getLogger(__name__)
 
-# Payload key convention other world/ submodules follow so their events
-# participate in perception and scheduler interrupts (see
-# default_interrupt_policy and PerceptionSystem.build_perception below):
-#   "location_id"          - str; where the event happened. Present on
-#                             any event an agent could plausibly overhear.
-#   "target_agent_id"      - str; the one agent this event is principally
-#                             about (e.g. crime.theft.attempted's victim).
-#   "involved_agent_ids"   - list[str]; every agent directly party to the
-#                             event (e.g. both sides of a trade).
-#   "witness_agent_ids"    - list[str]; agents who saw it happen but were
-#                             not principals (DESIGN.md section 6's "~30%
-#                             witness memory generated" on theft).
 INTERRUPT_SINGLE_KEYS: tuple[str, ...] = ("target_agent_id",)
 INTERRUPT_LIST_KEYS: tuple[str, ...] = ("involved_agent_ids", "witness_agent_ids")
 
@@ -111,25 +99,9 @@ class LocationIndex:
         the lifetime of the process without any caller having to remember
         to update it on every move."""
 
-        # The three event types that can move an agent between locations.
-        # Everything else in the "agent" domain is none of this index's
-        # business.
         placement_events = ("agent.moved", "agent.spawned", "agent.died")
 
         async def handle(event: WorldEvent) -> None:
-            # Filter by TYPE first, then validate the payload. The other
-            # order looks equivalent and is not: this index subscribes to
-            # the whole "agent" domain, so it also receives events it has
-            # no interest in - agent.utterance.spoken, for one, which
-            # carries speaker_agent_id rather than agent_id because an
-            # utterance has a speaker, not a subject. Validating first
-            # logged a WARNING for every one of them saying it had been
-            # "ignored by LocationIndex". Ignoring it is CORRECT - speech
-            # moves nobody - so the warning reported right behaviour as a
-            # fault, in a log an operator is scanning for real faults.
-            #
-            # The genuine warnings below are untouched: an agent.moved with
-            # no agent_id really is broken and must still say so.
             if event.type not in placement_events:
                 return
             agent_id = event.payload.get("agent_id")
@@ -188,16 +160,6 @@ class PerceivedEvent(BaseModel):
     tick: int
     payload: dict[str, Any]
     involves_self: bool
-    # WHO is reading this. `involves_self` is already a per-reader field,
-    # so the reader's own id belongs on the same object rather than being
-    # threaded separately through every renderer.
-    #
-    # Without it, "was this said to me?" could only be asked as
-    # `involves_self and there_is_any_listener`, which answers True for
-    # the SPEAKER about their own remark - measured, and it did.
-    #
-    # Optional so every existing construction still parses; the renderer
-    # treats a missing reader as "cannot tell", which is the safe answer.
     for_agent_id: str | None = None
 
 
@@ -214,21 +176,8 @@ class Perception(BaseModel):
     ambient: AmbientInfo
 
 
-# The one event type that is a person speaking to another person. Named
-# here rather than typed inline twice: perception is the only place that
-# has to tell "said to you" apart from every other thing that involves you.
 UTTERANCE_EVENT = "agent.utterance.spoken"
 
-# How long a question addressed to you keeps being put back in front of you
-# while you have not answered it.
-#
-# 30 ticks is five game-hours. A question does not stop being open because
-# the person asked happened to be busy on the turn it arrived, and one
-# delivery is exactly one chance to notice it - measured, agents took that
-# chance about a third of the time. Beyond this, it lapses: an unanswered
-# question from half a day ago is no longer a live obligation, and a
-# perception that accumulated every one of them forever would crowd out the
-# present.
 UNANSWERED_LOOKBACK_TICKS = 30
 
 
@@ -284,13 +233,6 @@ class PerceptionSystem:
         self.event_bus = event_bus
         self.interrupt_policy = interrupt_policy
         self.hearing_window_ticks = hearing_window_ticks
-        # The last tick each agent was actually given a perception for.
-        #
-        # Only build_perception() writes it, and the one production caller
-        # (core/engine.py's tick loop) builds perceptions solely for the
-        # agents the scheduler says are due THIS tick - so this advances
-        # once per turn taken, which is exactly what "until you next think"
-        # has to mean for it to be true.
         self._last_perceived: dict[str, int] = {}
 
     def attach(self, scheduler: Any) -> None:
@@ -321,29 +263,6 @@ class PerceptionSystem:
 
         window_start = max(0, tick - self.hearing_window_ticks + 1)
 
-        # Something said TO you waits until you next think. Ambient noise
-        # does not.
-        #
-        # The window is measured in ticks; an agent's turns are not. At the
-        # default cadence a resident acts on roughly one tick in three, but
-        # MEASURED on a live ten-resident run the gap between one agent's
-        # turns ran to a median of 33 ticks and a maximum of 207 - every
-        # single gap longer than the four-tick window. So a remark expired
-        # before the person it was aimed at ever thought again, and only 7
-        # of 615 perceptions in that run carried a remark at all.
-        #
-        # What that looked like from inside: Ainsley told Perrin "Perrin.
-        # Walk home. Tell Bram." while the two of them stood alone together
-        # in the pharmacy. Perrin's next perception said "With you, and
-        # nobody else: Ainsley Holloway" and, directly underneath,
-        # "Nothing notable happened recently." He was never told she had
-        # spoken. Nobody ever replied to anybody, and the reason was not
-        # that they would not - it was that they were never asked.
-        #
-        # Overheard chatter still expires on the window: you do not walk
-        # into a room and hear yesterday's gossip. Being addressed by name
-        # is different, and is what "Said to you, and not yet answered"
-        # has always claimed to mean.
         last_seen = self._last_perceived.get(agent_id)
         scan_start = window_start
         if last_seen is not None:
@@ -352,8 +271,6 @@ class PerceptionSystem:
 
         candidates = self.event_bus.recent(since_tick=scan_start)
 
-        # When this agent last said something back to each person, so a
-        # question it HAS answered stops being put in front of it.
         answered_at: dict[str, int] = {}
         for event in candidates:
             payload = event.payload or {}
@@ -361,20 +278,6 @@ class PerceptionSystem:
                 continue
             if payload.get("speaker_agent_id") != agent_id:
                 continue
-            # CORE-15 / EVAL-11. Everyone this reply named, not just its
-            # primary listener.
-            #
-            # `WorldState.open_questions` has always read
-            # `addressed_agent_ids`; this loop read `listener_agent_id`
-            # alone, so the two mechanisms disagreed about whether a
-            # question had been answered. A reply naming two people closed
-            # the question for one of them and left it open for the other,
-            # and the resident was handed a question it had already
-            # answered - which reads, from the outside, as a resident
-            # ignoring somebody.
-            #
-            # Run 23 carried more than one addressee on 172 of 229
-            # utterances, so this was the common case rather than an edge.
             for spoken_to in _addressees_of(payload):
                 answered_at[spoken_to] = max(answered_at.get(spoken_to, -1), event.tick)
 
@@ -385,36 +288,16 @@ class PerceptionSystem:
             event_location = event.payload.get("location_id")
             heard_here = location_id is not None and event_location == location_id
             in_window = event.tick >= window_start
-            # Addressed to me, by someone else, and not yet delivered. The
-            # speaker check matters: involved_agent_ids carries the speaker
-            # too, and an agent must not be handed back its own remarks.
             speaker = event.payload.get("speaker_agent_id")
-            # CORE-15: named by the remark, by any of the ways a remark can
-            # name somebody. `format_addressed_to_you` and
-            # `state.open_questions` both already count every addressee;
-            # this counted only the first, so a remark aimed at three
-            # residents reached the second and third as background chatter
-            # under "Recently" rather than as a question they were asked.
             addressed_to_me = (
                 event.type == UTTERANCE_EVENT
                 and involves_self
                 and speaker != agent_id
                 and agent_id in _addressees_of(event.payload)
             )
-            # Never yet put in front of me. This is the guarantee that
-            # matters most and it has NO age limit: the measured gap between
-            # one agent's turns ran to a median of 33 ticks and a maximum of
-            # 207, so any cutoff short of that silently reinstates the
-            # original bug - a remark expiring before its listener ever
-            # thought again.
             never_delivered = addressed_to_me and (
                 last_seen is None or event.tick > last_seen
             )
-            # Already seen, still open: I have said nothing back to them
-            # since. "Not yet answered" is a claim the perception makes in
-            # those words, and it should stay true for as long as it is made -
-            # bounded, so a question from half a day ago lapses instead of
-            # crowding out the present.
             still_unanswered = (
                 addressed_to_me
                 and event.tick > answered_at.get(str(speaker), -1)

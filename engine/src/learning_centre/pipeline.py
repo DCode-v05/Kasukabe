@@ -64,10 +64,6 @@ def repair_json(text: str) -> str:
     return text
 
 
-# ---------------------------------------------------------------------------
-# LLM System Prompts (v2 — signal-based)
-# ---------------------------------------------------------------------------
-
 EPISODE_ENCODING_SYSTEM = (
     "You are an episode creation engine for a personal AI assistant's memory.\n\n"
     "Given a set of learning signals from a conversation (both user-side and "
@@ -148,11 +144,6 @@ CONSOLIDATION_SYSTEM = (
 )
 
 
-# ---------------------------------------------------------------------------
-# Result dataclass: per-stage counts returned by one run_batch()
-# ---------------------------------------------------------------------------
-
-
 @dataclass
 class LCPipelineResult:
     episodes_created: int = 0
@@ -174,31 +165,13 @@ class LCPipelineResult:
     secrets_blocked: int = 0
 
 
-# Dedup thresholds (unchanged)
-# How many signals of one task thread reach the episode encoder.
-#
-# AUTHORISED LAW 1 EXCEPTION (docs/TEST_RUN.md Finding 2). There was no cap
-# at all, so a thread alive for six hours replayed its whole history into a
-# single prompt and the run lost roughly half its calls to "request body too
-# large".
-#
-# 120 is arithmetic, not taste: one entry serialises to roughly 400 bytes
-# once `content` is trimmed to 300 chars, so 120 of them is about 48 KB -
-# comfortably inside broker/trace.py's 64 KB body cap with room for the
-# system prompt beside it.
 EPISODE_CONTEXT_MAX_SIGNALS = 120
 
 DEDUP_SKIP_THRESHOLD = 0.8
 DEDUP_UPDATE_THRESHOLD = 0.5
 MAX_LC_CONFIDENCE = 0.8
 
-# Signal types that indicate meaningful user content (for episode filtering)
 MEANINGFUL_USER_TYPES = {"fact", "preference", "person", "correction", "event", "relationship"}
-
-
-# ---------------------------------------------------------------------------
-# Pipeline
-# ---------------------------------------------------------------------------
 
 
 class LCPipeline:
@@ -257,7 +230,6 @@ class LCPipeline:
         result.signals_processed = len(signals)
         logger.info("LC batch %s: %d signals to process", batch_id, len(signals))
 
-        # Build signal context once — shared by all 3 agents
         by_task = self.group_by_task(signals)
         all_signal_context = json.dumps(
             [
@@ -273,33 +245,11 @@ class LCPipeline:
             default=str,
         )
 
-        # ── Agent 1: Episode creation (per thread_id) ──────────────
 
         episode_descriptions: list[str] = []
         for thread_id, task_signals in by_task.items():
             if self.is_trivial_task(task_signals):
                 continue
-            # AUTHORISED LAW 1 EXCEPTION (see docs/TEST_RUN.md Finding 2).
-            #
-            # This comprehension trimmed each signal's CONTENT to 300 chars
-            # but capped neither the NUMBER of signals nor `system_event`,
-            # while both of its siblings in this same file (the reflection
-            # context above, and the consolidation context below) filter
-            # `system_event` already. Nothing bounded it, so a long-lived
-            # thread replayed its entire history into one prompt: the
-            # six-hour run sent a request carrying 118,179 records, 36,673
-            # of them bare `thread_state_change` noise, and lost 506 of its
-            # 893 failures to "request body too large" alone.
-            #
-            # `thread_state_change` is emitted as a SYSTEM_EVENT entry (see
-            # engine_core/thread.py), so the sibling filter removes every
-            # one of them - which is why the fix is to do what the siblings
-            # already do rather than to invent a new rule here.
-            #
-            # The cap is the last N because an episode is encoded from what
-            # a task most recently did; the beginning of a thread that has
-            # run for six hours is not what the encoder needs, and it is
-            # exactly what was making the prompt unbounded.
             recent_signals = [
                 s
                 for s in task_signals
@@ -326,9 +276,6 @@ class LCPipeline:
                 parsed = json.loads(repair_json(strip_markdown_json(raw)))
                 if parsed.get("key") and parsed.get("description"):
                     value = self.build_episode_value(task_signals)
-                    # Signals are pre-scanned at ingest; re-scan every field
-                    # that lands in the episode row in case the LLM encoder
-                    # paraphrased a secret into any of them.
                     if self.has_secrets(
                         parsed["key"] + "\n" + parsed["description"] + "\n" + value,
                         "episode-create",
@@ -345,7 +292,6 @@ class LCPipeline:
             except Exception as exc:
                 result.errors.append(f"Episode agent (task {thread_id}): {exc}")
 
-        # ── Agent 2: Knowledge extraction ────────────────────────
 
         batch_entry_ids: list[tuple[str, str]] = []
         groups = await self.cluster_signals(signals)
@@ -375,7 +321,6 @@ class LCPipeline:
             except Exception as exc:
                 result.errors.append(f"Knowledge agent: {exc}")
 
-        # ── Agent 3: Social graph extraction ─────────────────────
 
         try:
             raw = await self.adapter.generate(
@@ -387,11 +332,9 @@ class LCPipeline:
         except Exception as exc:
             result.errors.append(f"Social agent: {exc}")
 
-        # Mark signals processed
         signal_ids = [s["id"] for s in signals]
         await self.signal_store.mark_processed(signal_ids, batch_id)
 
-        # ── Phase 3: Consolidation ───────────────────────────────
 
         try:
             await self.consolidate(
@@ -402,13 +345,9 @@ class LCPipeline:
         except Exception as exc:
             result.errors.append(f"Consolidation: {exc}")
 
-        # ── Phase 4: Deterministic steps ─────────────────────────
 
         await self.run_deterministic_steps(result)
 
-        # ── Phase 5: Cleanup ─────────────────────────────────────
-        # Only delete signals if encoding produced results.
-        # If nothing was written, keep signals for next batch to retry.
 
         wrote_something = (
             result.episodes_created > 0
@@ -418,24 +357,11 @@ class LCPipeline:
         )
         if wrote_something:
             try:
-                # AUTHORISED LAW 1 EXCEPTION (2026-09-10, operator-directed;
-                # see docs/policy/LAW-1-MANIFEST.md).
-                #
-                # `delete_batch`, not `delete_processed`. The old call was
-                # `DELETE ... WHERE processed = 1` - every claimed row in
-                # the table, not this batch's. Safe by accident while
-                # batches were six hours apart and never overlapped; a
-                # silent data-loss window now that `SimLearningGate` runs
-                # one every 18 waking ticks and `trigger_extra()` runs
-                # another at end-of-run. The learning-cadence spec put this
-                # first in its plan and said it must land BEFORE the
-                # cadence change; the cadence change landed first.
                 deleted = await self.signal_store.delete_batch(batch_id)
                 logger.info("LC batch %s: deleted %d of its own signals", batch_id, deleted)
             except Exception as exc:
                 result.errors.append(f"Signal cleanup: {exc}")
         else:
-            # Unmark signals so next batch retries them
             await self.signal_store.unmark_processed(batch_id)
             logger.warning(
                 "LC batch %s: encoding produced 0 results from %d signals — keeping for retry",
@@ -457,7 +383,6 @@ class LCPipeline:
 
         return result
 
-    # ── Helpers ───────────────────────────────────────────────────
 
     def group_by_task(self, signals: list[dict]) -> dict[str, list[dict]]:
         groups: dict[str, list[dict]] = {}
@@ -496,7 +421,6 @@ class LCPipeline:
             return [signals] if signals else []
 
         if self.embedding_service is None or not getattr(self.embedding_service, "is_real", False):
-            # No embeddings — group by subject prefix as fallback
             groups: dict[str, list[dict]] = {}
             for s in signals:
                 key = (s.get("subject") or "general")[:30]
@@ -570,9 +494,6 @@ class LCPipeline:
         if not is_user_stated:
             confidence = min(confidence, MAX_LC_CONFIDENCE)
 
-        # LLM encoder output may paraphrase a secret even when input signals
-        # were clean — scan before dedup so a dirty entry can't mutate an
-        # existing clean row via `update_confidence` / `increment_usage`.
         if self.has_secrets(
             subject + "\n" + content,
             "knowledge-write",
@@ -621,9 +542,6 @@ class LCPipeline:
                     for a in node.get("attributes", [])
                     if a.get("key") and a.get("value")
                 }
-                # Scan attrs (both keys and values) BEFORE calling
-                # find_or_create_person, so a dirty enrichment can't leave
-                # behind an orphan stub person row.
                 if attrs and self.has_secrets(
                     "\n".join(
                         [str(k) for k in attrs] + [str(v) for v in attrs.values()],
@@ -732,16 +650,12 @@ class LCPipeline:
         )
         parsed = json.loads(repair_json(strip_markdown_json(raw)))
 
-        # Cross-batch patterns
         for entry in parsed.get("cross_patterns", []):
             subject = entry.get("subject", "")
             content = entry.get("content", "")
             if not subject or not content:
                 continue
             confidence = min(float(entry.get("confidence", 0.6)), MAX_LC_CONFIDENCE)
-            # Consolidation LLM re-synthesizes across episodes/knowledge, so
-            # its output is a fresh paraphrase-attack surface. Scan before
-            # dedup so the clean dedup target isn't mutated by a dirty row.
             if self.has_secrets(
                 subject + "\n" + content,
                 "cross-batch-knowledge",
@@ -763,7 +677,6 @@ class LCPipeline:
             except Exception:
                 logger.warning("Failed to write cross-batch %r", subject, exc_info=True)
 
-        # Soul updates (never weaken enforcement)
         existing_traits = {t["trait"]: t for t in current_traits}
         for update in parsed.get("soul_updates", []):
             trait = update.get("trait", "")
@@ -780,8 +693,6 @@ class LCPipeline:
                 confidence = max(confidence, float(ex.get("confidence", 0)))
                 evidence = max(evidence, int(ex.get("evidence_count", 0)))
 
-            # Trait name is an internal identifier; only the LLM-generated
-            # value needs scanning.
             if self.has_secrets(value, "soul-update", result):
                 continue
 
@@ -796,7 +707,6 @@ class LCPipeline:
             except Exception:
                 logger.warning("Failed to update soul trait %r", trait, exc_info=True)
 
-        # Contradiction resolution
         for c in parsed.get("contradictions", []):
             action = c.get("action", "")
             try:
@@ -809,7 +719,6 @@ class LCPipeline:
             except Exception:
                 logger.warning("Contradiction resolution failed", exc_info=True)
 
-    # ── Deterministic steps ──────────────────────────────────────
 
     async def run_deterministic_steps(self, result: LCPipelineResult) -> None:
         try:
@@ -882,7 +791,6 @@ class LCPipeline:
         gotchas_added = 0
         forks_created = 0
 
-        # Read recent correction signals (processed ones from this batch)
         try:
             corrections = await self.db.fetch(
                 "SELECT content, thread_id FROM learning_signals "
@@ -892,7 +800,6 @@ class LCPipeline:
         except Exception:
             return (0, 0)
 
-        # Read recent tool_call signals to find which skills were used
         try:
             tool_calls = await self.db.fetch(
                 "SELECT subject, thread_id FROM learning_signals "
@@ -902,14 +809,12 @@ class LCPipeline:
         except Exception:
             return (0, 0)
 
-        # Map thread_id → skills used
         task_skills: dict[str, set[str]] = {}
         for tc in tool_calls:
             tid = tc["thread_id"]
             skill = tc["subject"].replace("skill:", "")
             task_skills.setdefault(tid, set()).add(skill)
 
-        # For each correction, find associated skills
         for corr in corrections:
             tid = corr["thread_id"]
             skills = task_skills.get(tid, set())

@@ -65,17 +65,12 @@ class HeldSkillView(BaseModel):
     name: str
     proficiency: int
     completions: int
-    # True when this agent wrote it. A built-in trade (farming, forestry, ...)
-    # has no definition at all, so `authored` is False and `steps` is empty -
-    # the viewer shows a bar and no document, which is the truth.
     authored: bool = False
     author_agent_id: str | None = None
     author_name: str | None = None
     taught_by_agent_id: str | None = None
     taught_by_name: str | None = None
     steps: list[StepView] = Field(default_factory=list)
-    # Index into `steps` of the step expected next, or None when this agent
-    # is not currently partway through the workflow.
     next_step: int | None = None
     following: bool = False
     version: int = 1
@@ -109,26 +104,15 @@ class AgentRow(BaseModel):
     tile_y: int | None
     is_minor: bool
     alive: bool
-    # Dicts, not scalars: game/world_client.py's _agent_summary_from_world
-    # does `raw.get("dormancy") or {}` then `.get(...)` on the result, so a
-    # bare bool/str here makes every row raise and get silently skipped -
-    # which is exactly why the snapshot came back with 0 agents while
-    # /agents itself returned 200 with all 250.
     dormancy: dict[str, Any]
     health: dict[str, Any]
     usd_wallet_cents: int
     sim_balance: int
     ablation_arm: str
-    # Part E. Carried on the row rather than fetched separately so a
-    # resident's money and the step they are on are true at the same moment -
-    # two polls would disagree by a tick and nobody would know why.
     skills: list[HeldSkillView] = Field(default_factory=list)
     following: FollowingView | None = None
 
 
-# Minted once, when this process imports the module - so it is constant for
-# one run of the world and different for the next, which is exactly the
-# property a per-run document needs.
 RUN_ID = f"{int(time.time())}-{uuid.uuid4().hex[:8]}"
 
 
@@ -145,12 +129,6 @@ class WorldStateView(BaseModel):
     businesses: int
     buildings: int
     crime_cases: int
-    # Which BOOT of the world this is.
-    #
-    # Nothing else here identifies a run: tick 0 is not it (a resumed run
-    # starts at 1048) and wall-clock now is not it (it changes every poll).
-    # world/run_report.py uses this to decide whether it is refreshing the
-    # current run's document or opening a new one for a fresh start.
     run_id: str = ""
 
 
@@ -262,23 +240,6 @@ def build_agent_row(agent_id: str, record: Any, persona: Any, deps: AgentsDeps) 
     )
 
 
-# ---------------------------------------------------------------------------
-# B4: business profit and loss over time (The 250 section 23)
-# ---------------------------------------------------------------------------
-# "Visible profit/loss over time, so a failing business is something the town
-# (and the operator) can see coming, not just a business that silently
-# vanishes - and, because businesses are often family-owned in practice, a
-# failing business is very often a failing household too."
-#
-# This is a new query and a view model, not a new ledger. Every number below
-# is derived from `world.ledger` Transaction rows that `buy`, `sell`,
-# `hire_employee` and `register_business` already write today - nothing here
-# records anything new, and nothing here mutates.
-
-# Which side of the books a transaction reason lands on, from the business's
-# point of view. A reason absent from both is counted as neither rather than
-# guessed at: an unclassified row showing up as profit would be a lie, and
-# showing up as a loss would be a different one.
 BUSINESS_REVENUE_REASONS = frozenset({"exchange", "transfer"})
 BUSINESS_COST_REASONS = frozenset(
     {"wage", "tax", "business_registration_fee", "exchange", "transfer"}
@@ -365,8 +326,6 @@ def business_pnl(
     ]
     balance = account.sim_units if account is not None else 0
     employees = len(getattr(business, "employee_agent_ids", ()) or ())
-    # What the books actually have to answer: can this business make payroll
-    # again? A daily wage bill of zero means there is no payroll to miss.
     daily_wages = wages // max(1, len(by_day)) if by_day else 0
     covered = balance // daily_wages if daily_wages > 0 else 999
 
@@ -398,7 +357,6 @@ def business_pnl(
         trend=trend,
         by_day=by_day,
     )
-
 
 
 async def add_cors_headers(response: Response) -> None:
@@ -462,7 +420,6 @@ def build_agents_router(get_deps: Callable[[], AgentsDeps]) -> APIRouter:
             else [],
         }
 
-    # -- B4: business books (section 23) ---------------------------------
 
     @router.get("/businesses/pnl", response_model=list[BusinessPnL])
     async def all_business_pnl(since_tick: int = 0) -> list[BusinessPnL]:
@@ -493,8 +450,6 @@ def build_agents_router(get_deps: Callable[[], AgentsDeps]) -> APIRouter:
             location_id = world.locations.location_of(agent_id)
             if location_id:
                 seen.setdefault(location_id, []).append(agent_id)
-        # Every known place, not only occupied ones: an empty temple is
-        # still a place the operator can look at.
         known = set(seen)
         for building in world.buildings.values():
             location_id = getattr(building, "location_id", None) or getattr(building, "plot_id", None)
@@ -528,35 +483,9 @@ def build_agents_router(get_deps: Callable[[], AgentsDeps]) -> APIRouter:
     @router.get("/world/state", response_model=WorldStateView)
     async def world_state(deps: AgentsDeps = Depends(deps_dependency)) -> WorldStateView:
         world = deps.world
-        # core/'s own pure tick -> timestamp function, not world.game_clock().
-        #
-        # game_clock() returns a life.clock.GameClock, which carries
-        # total_hours and a `day` property and NOTHING named `hour` or
-        # `minute` - so `getattr(clock, "hour", 0)` and its `minute` twin
-        # silently took their defaults on every poll, and the town clock
-        # read 00:00 for the whole of every run while the day counter
-        # beside it advanced. timestamp_for names hour and minute outright,
-        # so a future rename breaks this line instead of freezing it.
         clock = timestamp_for(world.tick())
         records = list(world.agents.values())
-        # `is_dormant`, which is what DormancyState actually calls it.
-        #
-        # This read `getattr(dormancy, "dormant", False)` - a field that does
-        # not exist - so the default fired for every resident on every poll
-        # and this route reported `dormant: 0` no matter how many residents
-        # were dormant. Exactly the failure the clock above had, in the same
-        # function, and it survived that fix.
-        #
-        # It matters more than the clock did: dormancy is the last step of
-        # the starvation escalation (hunger -> illness -> dormancy -> death),
-        # so the one number that would show a household starving was pinned
-        # at zero. No fallback chain here - a rename should break this line
-        # loudly rather than quietly resume reporting nobody.
         dormant = sum(1 for r in records if r.dormancy.is_dormant)
-        # Read directly, like the two beside it. A default of True here
-        # would report a town of corpses as fully alive the moment the
-        # field were renamed - the same shape as the clock and the dormant
-        # count, and the third instance of it found in this one function.
         alive = sum(1 for r in records if r.alive)
         return WorldStateView(
             tick=world.tick(),

@@ -58,11 +58,8 @@ from collections.abc import AsyncIterator, Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
-# One act the brain intends: a verb and its arguments.
 Act = tuple[str, dict[str, Any]]
 
-# What a plan may return for a turn: acts, a line of speech-free text, or
-# nothing at all (a turn that calls no tool - 34% of real cognition turns).
 Intent = Sequence[Act] | str | None
 
 _WHO = re.compile(r"You are ([^,.\n]+)")
@@ -121,11 +118,6 @@ class Turn:
         nothing.
         """
         return any(t == name or t.endswith(f"_{name}") or t.endswith(f":{name}") for t in self.tools)
-
-
-# ---------------------------------------------------------------------------
-# the well-formed stream
-# ---------------------------------------------------------------------------
 
 
 def events_for(intent: Intent, *, text_block_start: bool = False) -> list[dict]:
@@ -226,11 +218,6 @@ def response_for(intent: Intent) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
-# the brain
-# ---------------------------------------------------------------------------
-
-
 @dataclass
 class ScriptedBrain:
     """A `BedrockGateway` whose answers come from a plan instead of a model.
@@ -271,7 +258,6 @@ class ScriptedBrain:
         for event in events:
             yield event
 
-    # -- what a story asks afterwards ------------------------------------
 
     def acts(self) -> list[Act]:
         out: list[Act] = []

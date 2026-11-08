@@ -37,8 +37,6 @@ def town(n: int, **kw) -> list[Person]:
     return [person(f"a{i}", **kw) for i in range(n)]
 
 
-# -- the bands -------------------------------------------------------------
-
 def test_age_bands_match_the_towns_own_mechanical_cutoffs():
     """Minor / working / elderly are the bands the town's rules already
     treat differently, so they are what a difference must be read against."""
@@ -57,13 +55,10 @@ def test_wealth_brackets_are_quartiles_not_fixed_thresholds():
     balances = [10, 20, 30, 40, 50, 60, 70, 80]
     assert wealth_bracket(10, balances) == "poorest quarter"
     assert wealth_bracket(80, balances) == "richest quarter"
-    # ten times richer town, same shape, same answer
     big = [b * 1000 for b in balances]
     assert wealth_bracket(10_000, big) == "poorest quarter"
     assert wealth_bracket(80_000, big) == "richest quarter"
 
-
-# -- slicing (24, bullet 1) -----------------------------------------------
 
 def test_the_town_is_broken_down_by_every_requested_dimension():
     people = town(10, sex="f") + town(10, sex="m")
@@ -79,8 +74,6 @@ def test_an_empty_town_measures_as_nothing_rather_than_crashing():
     assert bias_report([]).population == 0
     assert emergence_check([], lambda p: True) == []
 
-
-# -- the bias check (24, bullet 1) ----------------------------------------
 
 def test_a_gap_no_mechanic_explains_is_flagged():
     """Nothing in the codebase reads sex, so a wealth gap along it comes
@@ -132,8 +125,8 @@ def test_an_even_town_produces_no_flags():
 
 def test_the_threshold_is_what_decides_a_flag():
     people = town(10, sex="m", balance_sim=1_400) + town(10, sex="f", balance_sim=1_000)
-    assert bias_report(people, ["sex"]).flagged == []          # 1.4 < 1.5
-    assert bias_report(people, ["sex"], threshold=1.3).flagged  # same data, lower bar
+    assert bias_report(people, ["sex"]).flagged == []
+    assert bias_report(people, ["sex"], threshold=1.3).flagged
     assert DISPARITY_THRESHOLD == 1.5
 
 
@@ -141,8 +134,6 @@ def test_the_report_serialises_for_a_dashboard():
     body = bias_report(town(10), ["sex"]).to_dict()
     assert set(body) == {"population", "dimensions", "slices", "disparities", "flagged"}
 
-
-# -- household outcomes (24, bullet 2) ------------------------------------
 
 def test_household_shapes_are_ranked_worst_first():
     rows = household_outcomes([
@@ -179,8 +170,6 @@ def test_it_takes_the_rows_family_api_already_returns():
     assert household_outcomes([row])[0].shape == "single, no dependents"
 
 
-# -- emergence (24, bullet 3) ---------------------------------------------
-
 def test_a_behaviour_concentrated_in_one_slice_shows_a_lift():
     people = town(10, sex="m", balance_sim=9_000) + town(10, sex="f", balance_sim=100)
     rows = emergence_check(people, lambda p: p.balance_sim > 1_000, ["sex"])
@@ -203,8 +192,6 @@ def test_small_slices_are_left_out_of_emergence_too():
     assert values == {"f"}
 
 
-# -- against the real world -----------------------------------------------
-
 @pytest.mark.asyncio
 async def test_it_measures_a_real_genesis_town():
     from world.wiring import WorldConfig, build_world_server
@@ -214,7 +201,5 @@ async def test_it_measures_a_real_genesis_town():
     assert len(people) == len(server.world.agents)
     report = bias_report(people)
     assert report.population == len(people)
-    # Every dimension asked for is present in the breakdown, so a slice
-    # never silently vanishes because nobody happened to be in it.
     assert {s.dimension for s in report.slices} <= set(report.dimensions)
     assert all(0.0 <= s.share_of_town <= 1.0 for s in report.slices)

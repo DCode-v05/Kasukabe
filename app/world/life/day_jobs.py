@@ -80,14 +80,8 @@ from world.life.upkeep import HungerState, run_daily_upkeep_tick
 
 logger = logging.getLogger(__name__)
 
-# ``GenesisRunner.publish_life_events``'s exact signature. Named so a
-# caller that already has that method can pass it unchanged.
 PublishLifeEvents = Callable[[Sequence[LifeEvent], int], Awaitable[None]]
 
-# A resident with no household is a household of one (ECON-31). Keyed on
-# the agent id rather than a minted household id, because inventing one
-# would put a household in ``world.households`` that nobody created and
-# that the family API would then have to explain.
 SOLO_HOUSEHOLD_PREFIX = "solo:"
 
 
@@ -191,22 +185,10 @@ async def sweep_zero_wallets(
         if not agent.alive or agent.dormancy.is_dormant:
             continue
         try:
-            # A minor's calls are billed to the parent (DESIGN.md
-            # section 4), so it is the PAYER's wallet that decides
-            # whether this resident can still think - the same resolution
-            # burn_inference already makes before it burns.
             payer_id = ledger.resolve_usd_payer(agent_id)
             balance = ledger.usd_balance(payer_id)
         except LedgerError:
-            # No account, or a minor with no parent on file. Not a
-            # resident who has run out of money; a resident the ledger
-            # cannot answer for at all, and inventing "$0" for them would
-            # mark the whole cohort dormant on the first tick.
             continue
-        # The named threshold, not a bare zero: the law block quotes this
-        # same constant back to the resident (ECON-24), and a law that
-        # reads its number from a different copy than the code does is
-        # how a rule stops being true.
         if balance > DORMANCY_THRESHOLD_USD_CENTS:
             continue
         dormancy, events = mark_dormant(
@@ -214,18 +196,12 @@ async def sweep_zero_wallets(
         if not events:
             continue
         world.agents[agent_id] = agent.model_copy(update={"dormancy": dormancy})
-        # B1's interruption rule: a worker that has run out of money to
-        # think with is not left mid-job. Nothing wakes them - they are
-        # dormant - but the commitment must not outlive the tick, or a
-        # revived resident resumes a job it decided on before it went dark.
         world.continuing.pop(agent_id, None)
         household_id = agent.household_id
         for event in events:
             event.agent_id = agent_id
             event.payload["location_id"] = world.location_of(agent_id)
             event.payload["household_id"] = household_id
-            # Their household reads this on its next turn - that is who
-            # can reach them in time.
             event.payload["involved_agent_ids"] = [
                 other_id
                 for other_id, other in world.agents.items()
@@ -247,9 +223,6 @@ async def run_daily_upkeep(
     day: int,
     publish: PublishLifeEvents,
     report: DayJobsReport,
-    # ECON-16: who has eaten since the last day boundary. Defaults to
-    # nobody so an untaught caller keeps the old behaviour rather than
-    # silently feeding the whole town.
     fed_agent_ids: set[str] | None = None,
 ) -> None:
     """Charge every household its day's living costs, and escalate.
@@ -276,7 +249,6 @@ async def run_daily_upkeep(
                 hunger_by_agent,
                 economy,
                 dials,
-                # ECON-16: eating relieves hunger without paying the bill.
                 fed_agent_ids=fed_agent_ids,
             )
         except Exception as exc:  # noqa: BLE001 - see docstring
@@ -331,22 +303,12 @@ async def charge_head_tax(
                 household_id=(
                     None if household_id.startswith(SOLO_HOUSEHOLD_PREFIX) else household_id
                 ),
-                # The ledger's own sink, not None: with None the
-                # `economy.head_tax_debt.accrued`/`.repaid` events are
-                # never published at all, so a report reading arrears off
-                # the bus prints a zero over a run that did charge the tax
-                # (CORE-03).
                 event_sink=ledger.event_sink,
             )
         except Exception as exc:  # noqa: BLE001 - one household must not
-            # take the day down for the others, same as upkeep above.
             logger.warning("head tax failed for %s: %s", household_id, exc)
             continue
         report.head_tax_households += 1
-        # ECON-01: the SIM, not just the call. At a rate of 0 bps this
-        # correctly stays zero while the household count still rises,
-        # which is the distinction a caller gating on "was the day
-        # charged" needs and did not have.
         report.head_tax_sim += int(result.total_paid_sim)
         for debt in result.new_debts:
             bucket = world.arrears.setdefault(debt.debtor_agent_id, {})

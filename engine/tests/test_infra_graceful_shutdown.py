@@ -33,7 +33,6 @@ class TestIsShuttingDown:
     async def test_true_after_shutdown_starts(self):
         from src.infra.graceful_shutdown import is_shutting_down, graceful_shutdown
 
-        # Patch sys.exit so the test process doesn't actually die
         exit_code_seen = []
         original_exit = sys.exit
 
@@ -65,13 +64,11 @@ class TestGracefulShutdownIdempotency:
 
         sys.exit = fake_exit
         try:
-            # First call triggers shutdown
             with pytest.raises(SystemExit):
                 await graceful_shutdown(0)
             assert len(called) == 1
 
-            # Second call must be a no-op — shutting_down is already True
-            await graceful_shutdown(0)  # should return without calling sys.exit
+            await graceful_shutdown(0)
             assert len(called) == 1, "sys.exit should not be called a second time"
         finally:
             sys.exit = original_exit
@@ -111,7 +108,6 @@ class TestDrainCallbacks:
 
         register_drain_callback(slow_drain)
 
-        # Patch wait_for timeout to be very short for this test
         original_exit = sys.exit
 
         def fake_exit(code=0):
@@ -119,10 +115,7 @@ class TestDrainCallbacks:
 
         sys.exit = fake_exit
         try:
-            # Even with a slow drain callback, shutdown should complete
-            # (drain has its own 30s timeout; here we just verify no hang)
             with pytest.raises(SystemExit):
-                # Reduce the internal timeout to avoid slow test
                 original_wait_for = asyncio.wait_for
 
                 async def fast_wait_for(coro, timeout):
@@ -179,7 +172,6 @@ class TestCleanupRegistryIntegration:
         async def scheduler_stop():
             order.append("scheduler")
 
-        # Simulate boot order: sqlite first, then coordinator, then scheduler
         register_cleanup("sqlite", sqlite_close)
         register_cleanup("coordinator", coordinator_stop)
         register_cleanup("scheduler", scheduler_stop)
@@ -193,7 +185,6 @@ class TestCleanupRegistryIntegration:
         try:
             with pytest.raises(SystemExit):
                 await graceful_shutdown(0)
-            # LIFO: scheduler → coordinator → sqlite
             assert order == ["scheduler", "coordinator", "sqlite"]
         finally:
             sys.exit = original_exit
@@ -203,7 +194,6 @@ class TestSignalHandlers:
     def test_setup_signal_handlers_is_idempotent(self):
         from src.infra.graceful_shutdown import setup_signal_handlers
 
-        # Calling twice should not raise
         setup_signal_handlers(register_sigint=False)
         setup_signal_handlers(register_sigint=False)
 
@@ -250,9 +240,7 @@ class TestFailsafeArming:
 
         os._exit = fake_os_exit  # type: ignore[assignment]
         try:
-            # Arm a very short failsafe (0.1s)
             gs_mod.arm_failsafe(99, 0.1)
-            # Wait for it to fire
             await asyncio.sleep(0.3)
             assert len(force_exit_calls) == 1
             assert force_exit_calls[0] == 99
@@ -309,7 +297,6 @@ class TestExceptionHandlers:
     def test_sys_excepthook_forwards_keyboard_interrupt_to_prior(self, monkeypatch):
         from src.infra.graceful_shutdown import install_exception_handlers, reset_for_testing
 
-        # Reset first so we can stage a fake prior hook before installing.
         reset_for_testing()
         prior_called = []
         monkeypatch.setattr(sys, "excepthook", lambda *a: prior_called.append(a))
@@ -327,7 +314,6 @@ class TestExceptionHandlers:
         import logging
         from src.infra.graceful_shutdown import install_exception_handlers
 
-        # Re-invoke under the running loop so the asyncio handler attaches.
         install_exception_handlers()
         loop = asyncio.get_running_loop()
         with caplog.at_level(logging.ERROR, logger="src.infra.graceful_shutdown"):
@@ -351,7 +337,7 @@ class TestExceptionHandlers:
     def test_reset_restores_prior_excepthook(self):
         from src.infra.graceful_shutdown import install_exception_handlers, reset_for_testing
 
-        reset_for_testing()  # clear autouse install
+        reset_for_testing()
         original = sys.excepthook
         install_exception_handlers()
         assert sys.excepthook is not original

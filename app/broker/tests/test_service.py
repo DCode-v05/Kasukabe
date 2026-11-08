@@ -68,17 +68,6 @@ def headers_for(agent_id: str, purpose: "str | None" = None) -> dict[str, str]:
     return h
 
 
-# A response big enough that a SINGLE call's exact cost crosses at least
-# one whole cent (NANO_PER_CENT = 10,000,000 nano-dollars). Kimi's output
-# price is 1800 nano-$/token (see pricing.py); ~62,500 output tokens ->
-# ~112,500,000 nano-$ -> ~11 cents, comfortably past the boundary. A call
-# this size is unrealistic for a single sim tick (DESIGN.md section 11:
-# ~$0.003, i.e. LESS than one cent, per real tick - most real ticks
-# accumulate as an unbilled remainder for several ticks before crossing a
-# cent, which is the exact-conservation property test_pricing.py's
-# CostAccountant tests cover directly). Using an oversized response here
-# keeps these particular integration tests about "does a debit actually
-# reach the ledger", not about hitting a remainder-carry boundary by luck.
 LARGE_TEXT = "word " * 50_000
 
 
@@ -95,9 +84,6 @@ async def drain(service: BrokerService) -> None:
     await service.event_writer.flush()
 
 
-# ── Non-streaming: success path ─────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_success_debits_the_agents_own_wallet() -> None:
     service, ledger, bedrock, _, _ = build_service(fixed_text=LARGE_TEXT)
@@ -109,7 +95,7 @@ async def test_success_debits_the_agents_own_wallet() -> None:
     await drain(service)
 
     assert response["content"] == [{"type": "text", "text": LARGE_TEXT}]
-    assert ledger.accounts["agent-1"].balance_cents < 100_000  # something was debited
+    assert ledger.accounts["agent-1"].balance_cents < 100_000
     assert len(bedrock.calls) == 1
 
 
@@ -129,13 +115,6 @@ async def test_success_writes_a_trace_record_with_costs_and_tokens() -> None:
     assert record.requested_model == "moonshotai.kimi-k2.5"
     assert record.region in ("ap-south-1", "us-east-1", "us-west-2")
     assert record.call_class == "cognition"
-    # Derived, not "unspecified".
-    #
-    # Every call in every run logged purpose="unspecified", because the
-    # header carrying it is set by nothing - the engine's call site is in
-    # frozen engine_core. Cost could be attributed to WHO burned it and
-    # never to WHAT FOR. It is inferred from the request shape now, and the
-    # `auto:` prefix says it was inferred rather than declared.
     assert record.purpose == "auto:other"
     assert record.success is True
     assert record.input_tokens > 0
@@ -170,8 +149,6 @@ async def test_purpose_header_is_captured_when_present() -> None:
 
 @pytest.mark.asyncio
 async def test_background_purpose_is_served_by_a_deepseek_lane() -> None:
-    # TASK spec: "background work (learning centre, dream probes,
-    # importance scoring, summarizer) uses DeepSeek lanes."
     service, ledger, _, trace_sink, _ = build_service()
     ledger.seed("agent-1", balance_cents=1000)
 
@@ -183,9 +160,6 @@ async def test_background_purpose_is_served_by_a_deepseek_lane() -> None:
     record = trace_sink.rows[0]
     assert record.call_class == "background"
     assert record.model == "deepseek.v3.2"
-
-
-# ── Non-streaming: rejections ────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -201,7 +175,7 @@ async def test_model_not_allowed_is_rejected_before_any_bedrock_call() -> None:
     assert bedrock.calls == []
     assert trace_sink.rows[0].success is False
     assert trace_sink.rows[0].error_type == "ModelNotAllowedError"
-    assert trace_sink.rows[0].region is None  # rejected before any lane was selected
+    assert trace_sink.rows[0].region is None
     assert event_sink.rows[0].type == "broker.call.rejected"
 
 
@@ -215,8 +189,6 @@ async def test_unknown_agent_is_rejected_and_traced() -> None:
 
     assert bedrock.calls == []
     assert trace_sink.rows[0].error_type == "UnknownAgentError"
-    # A lane WAS selected (the wallet check happens after routing) so the
-    # rejection trace still carries which lane would have served this.
     assert trace_sink.rows[0].region in ("ap-south-1", "us-east-1", "us-west-2")
 
 
@@ -229,16 +201,14 @@ async def test_insufficient_funds_refuses_before_dispatch() -> None:
         await service.handle_messages(basic_request(max_tokens=100_000), headers_for("agent-poor"))
     await drain(service)
 
-    assert bedrock.calls == []  # money never dispatched to Bedrock
-    assert ledger.accounts["agent-poor"].balance_cents == 0  # untouched
+    assert bedrock.calls == []
+    assert ledger.accounts["agent-poor"].balance_cents == 0
     assert trace_sink.rows[0].error_type == "InsufficientFundsError"
 
 
 @pytest.mark.asyncio
 async def test_sufficient_funds_for_worst_case_is_allowed_through() -> None:
     service, ledger, *_ = build_service()
-    # A tiny max_tokens keeps the worst-case ceiling estimate small even
-    # at a modest balance.
     ledger.seed("agent-1", balance_cents=10)
 
     response = await service.handle_messages(basic_request(max_tokens=50), headers_for("agent-1"))
@@ -248,11 +218,6 @@ async def test_sufficient_funds_for_worst_case_is_allowed_through() -> None:
 
 @pytest.mark.asyncio
 async def test_spend_cap_reached_refuses_before_any_lane_or_wallet_check() -> None:
-    # TASK spec: "at 100% stop dispatch". SpendGovernor starts already at
-    # its cap (cap_usd=0.0 is rejected by BrokerSettings.validate(), so
-    # this constructs the governor directly rather than through
-    # build_service's settings path - a 1-cent cap crossed by the first
-    # recorded call is the smallest realistic HALTED state).
     from broker.errors import SpendCapExceededError
 
     service, ledger, bedrock, trace_sink, _ = build_service()
@@ -268,9 +233,6 @@ async def test_spend_cap_reached_refuses_before_any_lane_or_wallet_check() -> No
     assert trace_sink.rows[0].error_type == "SpendCapExceededError"
 
 
-# ── Minors debit parents (DESIGN.md section 4) ──────────────────────
-
-
 @pytest.mark.asyncio
 async def test_minor_calls_debit_the_parents_wallet_not_their_own() -> None:
     service, ledger, _, trace_sink, *_ = build_service(fixed_text=LARGE_TEXT)
@@ -280,8 +242,8 @@ async def test_minor_calls_debit_the_parents_wallet_not_their_own() -> None:
     await service.handle_messages(basic_request(max_tokens=100_000), headers_for("child-1"))
     await drain(service)
 
-    assert ledger.accounts["child-1"].balance_cents == 0  # child's own balance untouched
-    assert ledger.accounts["parent-1"].balance_cents < 100_000  # parent paid
+    assert ledger.accounts["child-1"].balance_cents == 0
+    assert ledger.accounts["parent-1"].balance_cents < 100_000
     assert trace_sink.rows[0].agent_id == "child-1"
     assert trace_sink.rows[0].payer_agent_id == "parent-1"
 
@@ -298,27 +260,8 @@ async def test_minor_with_broke_parent_is_refused() -> None:
     assert bedrock.calls == []
 
 
-# ── Rate limiting integration ────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_throttled_call_emits_rpm_throttled_event() -> None:
-    # A fake clock AND a matching fake sleep, exactly like
-    # test_rate_limit.py's FakeClock pattern - a fake sleep alone (with
-    # the real time.monotonic clock) would make TokenBucket busy-loop on
-    # REAL wall-clock time until it genuinely refills, which for a 1
-    # RPM/60s-period bucket means a real ~60 second test.
-    #
-    # Uses BACKGROUND purpose so cognition's Kimi lanes stay out of it
-    # not 6): call 1-3 each drain one of the three DeepSeek lanes'
-    # single-token bucket (LanePool.select's round-robin rotation visits
-    # a fresh lane each time), call 4 finds every DeepSeek lane at 0
-    # tokens and has to genuinely wait on bucket.acquire() - the
-    # deterministic trigger for broker.rpm.throttled. A cognition call
-    # would instead overflow onto still-fresh Kimi lanes at this point
-    # (broker/lanes.py's module docstring), which is correct routing
-    # behavior but would make this specific assertion non-deterministic
-    # without draining all 6 lanes first.
     fake_now = [0.0]
 
     def fake_clock() -> float:
@@ -347,12 +290,6 @@ async def test_throttled_call_emits_rpm_throttled_event() -> None:
         event_writer=BatchWriter(sink=event_sink, batch_size=1000, flush_interval_s=1000.0),
     )
 
-    # One call per BACKGROUND lane drains every bucket (rpm_per_lane=1);
-    # the NEXT one has nowhere fresh to go and must wait. Derived from the
-    # preference order rather than fixed at 4: background gained a second
-    # model (Qwen behind DeepSeek), so four calls now land on four
-    # different fresh lanes and throttle nothing - the assertion silently
-    # stopped testing throttling and started testing fallback.
     background_lanes = sum(
         len(lane_pool.lanes_by_model[model])
         for model in MODEL_PREFERENCE_ORDER[CallClass.BACKGROUND]
@@ -365,9 +302,6 @@ async def test_throttled_call_emits_rpm_throttled_event() -> None:
 
     types = [e.type for e in event_sink.rows]
     assert "broker.rpm.throttled" in types
-
-
-# ── Streaming ─────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -459,17 +393,12 @@ async def test_stream_mid_stream_failure_settles_with_zero_usage_and_is_traced()
             collected.append(event)
     await drain(service)
 
-    # Partial output was yielded to the caller before the failure.
     assert any(e["type"] == "content_block_delta" for e in collected)
-    # No exact usage arrived (Bedrock never sent `metadata`), so nothing
-    # was debited - a partial, unmetered failure costs the payer nothing.
     assert ledger.accounts["agent-1"].balance_cents == 1000
     record = trace_sink.rows[0]
     assert record.success is False
     assert record.error_type == "UpstreamError"
     assert record.response_body["content"] == [{"type": "text", "text": "partial"}]
-    # The lane that failed mid-stream is a real dispatch failure, not a
-    # throttle - it must not have tripped that lane's circuit breaker.
     served_lane = service.lane_pool.lane_by_id(f"{record.model}@{record.region}")
     assert served_lane is not None
     assert served_lane.circuit.consecutive_failures == 0
@@ -481,16 +410,7 @@ async def test_close_flushes_and_does_not_raise() -> None:
     ledger.seed("agent-1", balance_cents=1000)
     await service.handle_messages(basic_request(), headers_for("agent-1"))
 
-    await service.close()  # must not raise; also closes ledger if it exposes close()
-
-
-# ── Ledger debit failure must not discard an already-good response ────
-# See service.py's module docstring: world's real Ledger enforces a
-# strict non-negative balance floor and CAN reject a debit outright
-# (confirmed against world/ledger/core.py while building this module) -
-# by the time settle() runs, Bedrock has already produced the response,
-# so a debit-side failure must degrade gracefully, not turn a successful
-# call into a 500.
+    await service.close()
 
 
 class DebitFailsLedger(InMemoryLedgerClient):
@@ -511,8 +431,6 @@ async def test_ledger_debit_failure_still_returns_the_inference_result() -> None
         MockBedrockGateway(fixed_text=LARGE_TEXT), ledger, trace_sink, event_sink
     )
 
-    # Must NOT raise, despite the ledger debit failing - the caller gets
-    # the real model output either way.
     response = await service.handle_messages(
         basic_request(max_tokens=100_000), headers_for("agent-1")
     )
@@ -534,15 +452,9 @@ async def test_ledger_debit_failure_credits_the_cost_back_for_next_time() -> Non
     await service.handle_messages(basic_request(max_tokens=100_000), headers_for("agent-1"))
     await drain(service)
 
-    # The real ledger balance was never touched (the debit raised before
-    # any mutation), and the trace shows the queryable signature of this
-    # happening: real cost incurred, nothing collected, call still
-    # succeeded.
     assert ledger.accounts["agent-1"].balance_cents == 100_000
     record = trace_sink.rows[0]
     assert record.success is True
     assert record.cost_nano_dollars > 0
     assert record.cents_debited == 0
-    # And the accountant's remainder for this payer reflects the full
-    # un-collected cost, ready to be billed on the payer's next call.
     assert cost_accountant.remainders_nano["agent-1"] == record.cost_nano_dollars

@@ -49,22 +49,10 @@ class OwnedField:
     """
 
     name: str
-    shape: str  # "list_model" | "dict_model" | "single_model"
+    shape: str
     model: type
 
 
-# Every piece of state CharterStore owns, for snapshot()/restore() (world/
-# run_genesis.py's CharterCheckpointAdapter is the caller - STATUS.md risk
-# #4: before this, a resume silently re-seeded a fresh genesis charter
-# instead of restoring the real one, dropping any in-flight election,
-# amendment, or sitting government with no error). Declared once, here,
-# next to the fields it describes - not hand-duplicated in run_genesis.py
-# the way world/tools/state.py's WORLD_STATE_DICT_MODEL_TYPES drifted from
-# OWNED_STATE_FIELDS (STATUS.md risk #3) - and self-checked against
-# CharterStore.__init__'s real attributes below so a future field added to
-# __init__ without a matching entry here fails loudly at the next
-# CharterStore() construction (this repo's "hard-fail boot" convention),
-# not silently at the next checkpoint.
 CHARTER_STORE_FIELDS: tuple[OwnedField, ...] = (
     OwnedField("charter_history", "list_model", Charter),
     OwnedField("policy_history", "list_model", GovernmentPolicy),
@@ -105,16 +93,6 @@ class CharterStore:
         self.organizations: dict[str, Organization] = {}
         self.complaint_ledger: list[ComplaintEntry] = []
 
-        # Self-check, every construction: CHARTER_STORE_FIELDS must name
-        # exactly the attributes just set above (everything but `lock`,
-        # the one field that is infrastructure, not state - see that
-        # tuple's own docstring for why this exists). A field added to
-        # __init__ without a matching OwnedField entry would otherwise be
-        # silently dropped from every checkpoint the same way subpoenas/
-        # tool_invocations were dropped from world/tools/state.py before
-        # that bug was fixed (STATUS.md risk #3) - this makes the
-        # equivalent drift here impossible to ship instead of merely
-        # possible to notice.
         declared = {f.name for f in CHARTER_STORE_FIELDS}
         actual = set(vars(self)) - {"lock"}
         if declared != actual:
@@ -283,10 +261,6 @@ class CharterStore:
         description: str,
         filed_tick: int,
     ) -> ComplaintEntry:
-        # ledger_index is assigned from len(self.complaint_ledger) inside
-        # the same lock acquisition as the append, not read separately
-        # beforehand: two concurrent complaints must not be able to race
-        # each other onto the same index.
         async with self.lock:
             entry = ComplaintEntry(
                 ledger_index=len(self.complaint_ledger),
@@ -300,23 +274,9 @@ class CharterStore:
             return entry
 
     async def list_complaints(self) -> list[ComplaintEntry]:
-        # Returns a copy, never the live list: the ledger's immutability
-        # guarantee lives in the fact that nothing outside `append_complaint`
-        # can reach the real list, not in the caller's good behavior.
         async with self.lock:
             return list(self.complaint_ledger)
 
-    # -- checkpoint round-trip (STATUS.md risk #4) ------------------------
-    #
-    # Synchronous, unlike every method above: world/run_genesis.py's
-    # CharterCheckpointAdapter calls these from CheckpointManager.write()/
-    # .restore() (world/core/checkpoint.py's Checkpointable protocol,
-    # exactly the shape world/tools/state.py's WorldState.snapshot()/
-    # restore() already uses for the same reason - see that module's own
-    # docstring). No lock needed here for the same reason
-    # WorldStateCheckpointAdapter's wrapped snapshot()/restore() takes
-    # none: a checkpoint only ever runs at a day boundary or on shutdown,
-    # never concurrently with a tool handler already holding this lock.
 
     def snapshot(self) -> dict[str, Any]:
         """JSON-safe dump of every field CHARTER_STORE_FIELDS names -
@@ -333,7 +293,7 @@ class CharterStore:
                 data[owned.name] = [item.model_dump(mode="json") for item in value]
             elif owned.shape == "dict_model":
                 data[owned.name] = {k: v.model_dump(mode="json") for k, v in value.items()}
-            else:  # "single_model"
+            else:
                 data[owned.name] = value.model_dump(mode="json")
         return data
 
@@ -358,5 +318,5 @@ class CharterStore:
                 setattr(
                     self, owned.name, {k: owned.model.model_validate(v) for k, v in raw.items()}
                 )
-            else:  # "single_model"
+            else:
                 setattr(self, owned.name, owned.model.model_validate(raw))

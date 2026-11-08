@@ -157,10 +157,8 @@ async def test_revive_debits_the_rate_in_sim_and_credits_target_one_dollar(
     assert updated.is_dormant is False
     assert updated.dormant_since_hours is None
     assert economy.sim_balances["payer"] == 15_000 - REVIVAL_COST_SIM
-    # The rate, not a literal: reviving buys exactly $1 of runway,
-    # whatever a dollar costs in sim (re-rated 2026-09-04).
     assert economy.debits == [("payer", REVIVAL_COST_SIM, "revival_payment")]
-    assert economy.usd_credits == [("target", 100, "revival_credit")]  # 100 cents == $1
+    assert economy.usd_credits == [("target", 100, "revival_credit")]
     assert events[0].type == "health.agent.revived"
 
 
@@ -172,7 +170,7 @@ async def test_revive_raises_when_payer_cannot_afford_it(economy: InMemoryEconom
     with pytest.raises(InsufficientFundsError):
         await revive("payer", "target", dormancy, economy, GameClock(total_hours=1.0))
 
-    assert economy.usd_credits == []  # never credited if the debit failed
+    assert economy.usd_credits == []
 
 
 @pytest.mark.asyncio

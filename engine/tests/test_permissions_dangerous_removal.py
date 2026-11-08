@@ -23,11 +23,6 @@ from src.sandbox.permissions import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Shared helpers
-# ---------------------------------------------------------------------------
-
-
 def bash(command: str) -> dict[str, str]:
     """Build a SANDBOXED bash tool_input shape."""
     return {"command": command}
@@ -60,11 +55,6 @@ def ensure_flag_off(monkeypatch):
     monkeypatch.setenv("FEATURE_DANGEROUS_REMOVAL", "false")
 
 
-# ---------------------------------------------------------------------------
-# Hard-deny: the catastrophic shapes
-# ---------------------------------------------------------------------------
-
-
 class TestDangerousRemovalHardDeny:
     """Exercises step 1.7 in isolation.
 
@@ -78,7 +68,6 @@ class TestDangerousRemovalHardDeny:
     @pytest.mark.asyncio
     async def test_rm_root_no_flags_hard_denied(self, monkeypatch):
         ensure_flag_on(monkeypatch)
-        # `rm /` (no -rf) bypasses HARDCODED_DENIALS; step 1.7 catches.
         result = await check("rm /")
         assert result.allowed is False
         assert "Dangerous removal blocked" in result.reason
@@ -93,7 +82,6 @@ class TestDangerousRemovalHardDeny:
     @pytest.mark.asyncio
     async def test_rm_usr_single_r_flag_hard_denied(self, monkeypatch):
         ensure_flag_on(monkeypatch)
-        # `-r` alone (no `f`) bypasses the `-rf` literal in the regex.
         result = await check("rm -r /usr")
         assert result.allowed is False
         assert "Dangerous removal blocked" in result.reason
@@ -108,7 +96,6 @@ class TestDangerousRemovalHardDeny:
     @pytest.mark.asyncio
     async def test_rm_tilde_no_flags_hard_denied(self, monkeypatch):
         ensure_flag_on(monkeypatch)
-        # Without -rf, HARDCODED_DENIALS does not match; step 1.7 does.
         result = await check("rm ~")
         assert result.allowed is False
         assert "Dangerous removal blocked" in result.reason
@@ -116,7 +103,6 @@ class TestDangerousRemovalHardDeny:
     @pytest.mark.asyncio
     async def test_rm_wildcard_alone_hard_denied(self, monkeypatch):
         ensure_flag_on(monkeypatch)
-        # `rm *` — regex expects `rm -rf *`, `*` without flags bypasses.
         result = await check("rm *")
         assert result.allowed is False
         assert "Dangerous removal blocked" in result.reason
@@ -124,7 +110,6 @@ class TestDangerousRemovalHardDeny:
     @pytest.mark.asyncio
     async def test_rm_wildcard_suffix_hard_denied(self, monkeypatch):
         ensure_flag_on(monkeypatch)
-        # `rm /home/*` — no -rf, HARDCODED_DENIALS does not match.
         result = await check("rm /home/*")
         assert result.allowed is False
         assert "Dangerous removal blocked" in result.reason
@@ -166,16 +151,12 @@ class TestDangerousRemovalHardDeny:
         an exception.
         """
         ensure_flag_on(monkeypatch)
-        # Not asserting allowed=False — this payload is out-of-scope for
-        # the dangerous-removal gate (step 1.6 handles it). We just want
-        # no crash and a deterministic PermissionResult.
         result = await check("rm -- -/../.claude/settings.local.json")
         assert isinstance(result, PermissionResult)
 
     @pytest.mark.asyncio
     async def test_rm_quoted_etc_hard_denied(self, monkeypatch):
         ensure_flag_on(monkeypatch)
-        # Quoted path without -rf — bypasses step-1 regex, hits step 1.7.
         result = await check('rm "/etc"')
         assert result.allowed is False
         assert "Dangerous removal blocked" in result.reason
@@ -183,14 +164,6 @@ class TestDangerousRemovalHardDeny:
     @pytest.mark.asyncio
     async def test_rm_double_slash_root_denied_by_defense_in_depth(self, monkeypatch):
         ensure_flag_on(monkeypatch)
-        # `rm //` is a catastrophic shape (step 1.7 would catch it after
-        # slash normalisation), but step 1.6 catches it first because
-        # `//` is a UNC path prefix on Windows and `check_path_safety`
-        # treats UNC paths as a bypass-immune evasion pattern. This test
-        # asserts the outer guarantee — the command IS denied — without
-        # caring which specific layer fires first. Both step 1.6 and
-        # step 1.7 would catch it, which is defense in depth working as
-        # designed.
         result = await check("rm //")
         assert result.allowed is False
         assert "Dangerous removal blocked" in result.reason or "path-evasion" in result.reason
@@ -207,16 +180,9 @@ class TestDangerousRemovalHardDeny:
         ensure_flag_on(monkeypatch)
         result = await check("rm -rf /")
         assert result.allowed is False
-        # Either layer is acceptable; assert the command IS denied, not
-        # which layer fired.
         assert (
             "Dangerous removal blocked" in result.reason or "catastrophic deletion" in result.reason
         )
-
-
-# ---------------------------------------------------------------------------
-# Legitimate uses must NOT be blocked by the gate
-# ---------------------------------------------------------------------------
 
 
 class TestDangerousRemovalLegitimate:
@@ -226,16 +192,11 @@ class TestDangerousRemovalLegitimate:
         target = tmp_path / "build"
         target.mkdir()
         result = await check(f"rm -rf {target}")
-        # The gate does not hard-deny. A sandbox-level destructive
-        # classifier at later steps may still ask for approval; this
-        # test only asserts the gate did not fire.
         assert "Dangerous removal blocked" not in result.reason
 
     @pytest.mark.asyncio
     async def test_rm_etc_subfile_not_gate_blocked(self, monkeypatch):
         ensure_flag_on(monkeypatch)
-        # /etc/nginx/conf.d/site.conf is a deep subpath, not a direct
-        # child of /, so the gate does not fire.
         result = await check("rm /etc/nginx/conf.d/site.conf")
         assert "Dangerous removal blocked" not in result.reason
 
@@ -248,11 +209,6 @@ class TestDangerousRemovalLegitimate:
         assert "Dangerous removal blocked" not in result.reason
 
 
-# ---------------------------------------------------------------------------
-# Bypass attempts — rules, modes, prompts cannot override step 1.7
-# ---------------------------------------------------------------------------
-
-
 class TestDangerousRemovalBypassAttempts:
     @pytest.mark.asyncio
     async def test_broad_allow_rule_does_not_override(self, monkeypatch):
@@ -263,8 +219,6 @@ class TestDangerousRemovalBypassAttempts:
             behavior=PermissionBehavior.ALLOW,
             reason="permissive test rule",
         )
-        # `rm /etc` bypasses HARDCODED_DENIALS (no -rf). The allow rule
-        # would trip step 3 normally — step 1.7 must run first.
         result = await check("rm /etc", rules=[allow_rule])
         assert result.allowed is False
         assert "Dangerous removal blocked" in result.reason
@@ -301,11 +255,6 @@ class TestDangerousRemovalBypassAttempts:
         assert "Dangerous removal blocked" in result.reason
 
 
-# ---------------------------------------------------------------------------
-# Symlink attack — raw safe, resolved dangerous
-# ---------------------------------------------------------------------------
-
-
 class TestDangerousRemovalSymlinkAttack:
     @pytest.mark.asyncio
     async def test_symlink_to_etc_hard_denied(self, monkeypatch, tmp_path):
@@ -315,17 +264,9 @@ class TestDangerousRemovalSymlinkAttack:
             os.symlink("/etc", str(link))
         except (OSError, NotImplementedError):
             pytest.skip("symlink creation unsupported on this filesystem")
-        # `rm -r` (no `f`) bypasses the `rm -rf` literal in the
-        # HARDCODED_DENIALS regex so step 1.7 gets a chance to fire on
-        # the symlink target.
         result = await check(f"rm -r {link}")
         assert result.allowed is False
         assert "Dangerous removal blocked" in result.reason
-
-
-# ---------------------------------------------------------------------------
-# Compound commands — every segment must be inspected
-# ---------------------------------------------------------------------------
 
 
 class TestDangerousRemovalCompound:
@@ -341,7 +282,6 @@ class TestDangerousRemovalCompound:
         ensure_flag_on(monkeypatch)
         safe = tmp_path / "safe"
         safe.mkdir()
-        # First segment safe, second segment catastrophic.
         result = await check(f"rm -r {safe} ; rm /etc")
         assert result.allowed is False
         assert "Dangerous removal blocked" in result.reason
@@ -363,27 +303,15 @@ class TestDangerousRemovalCompound:
     @pytest.mark.asyncio
     async def test_pipe_segment_hard_denies(self, monkeypatch):
         ensure_flag_on(monkeypatch)
-        # Nonsensical pipeline but the second segment still carries a
-        # dangerous rm — the gate must still fire.
         result = await check("echo x | rm /etc")
         assert result.allowed is False
         assert "Dangerous removal blocked" in result.reason
-
-
-# ---------------------------------------------------------------------------
-# Feature flag — rollback path must work
-# ---------------------------------------------------------------------------
 
 
 class TestDangerousRemovalFeatureFlag:
     @pytest.mark.asyncio
     async def test_flag_off_gate_does_not_fire(self, monkeypatch):
         ensure_flag_off(monkeypatch)
-        # `rm /etc` without -rf flags is a bare rm. The legacy
-        # `DESTRUCTIVE_PATTERNS` in command_classifier do NOT match
-        # flag-less rm — so with the new gate off, this falls through
-        # to the normal pipeline. The gate-specific "Dangerous removal
-        # blocked" reason MUST NOT appear.
         result = await check("rm /etc")
         assert "Dangerous removal blocked" not in result.reason
 
@@ -391,15 +319,11 @@ class TestDangerousRemovalFeatureFlag:
     async def test_flag_off_rmdir_root_not_gate_blocked(self, monkeypatch):
         ensure_flag_off(monkeypatch)
         result = await check("rmdir /")
-        # rmdir is not in the legacy DESTRUCTIVE_PATTERNS, so with the
-        # gate off rmdir / falls through without the specific message.
         assert "Dangerous removal blocked" not in result.reason
 
     @pytest.mark.asyncio
     async def test_flag_off_rm_rf_root_still_caught_by_hardcoded(self, monkeypatch):
         ensure_flag_off(monkeypatch)
-        # HARDCODED_DENIALS has `rm\s+-rf\s+[/~]` which still catches
-        # the classic shape even without the new gate.
         result = await check("rm -rf /")
         assert result.allowed is False
 
@@ -407,8 +331,6 @@ class TestDangerousRemovalFeatureFlag:
     async def test_flag_on_then_off_is_per_call(self, monkeypatch):
         """The feature-flag check is evaluated per call, not at import."""
         ensure_flag_on(monkeypatch)
-        # `rm /etc` bypasses HARDCODED_DENIALS so step 1.7 is the
-        # definitive gate when the flag is on.
         on = await check("rm /etc")
         assert on.allowed is False
         assert "Dangerous removal blocked" in on.reason
@@ -418,19 +340,11 @@ class TestDangerousRemovalFeatureFlag:
         assert "Dangerous removal blocked" not in off.reason
 
 
-# ---------------------------------------------------------------------------
-# Regression: existing destructive patterns must still be caught
-# ---------------------------------------------------------------------------
-
-
 class TestDangerousRemovalRegression:
     @pytest.mark.asyncio
     async def test_git_reset_hard_still_classified_destructive(self, monkeypatch):
         ensure_flag_on(monkeypatch)
         result = await check("git reset --hard HEAD~1")
-        # New gate does not touch git. The destructive classification
-        # still runs at later pipeline steps. We assert the new gate did
-        # not fire spuriously on a non-removal command.
         assert "Dangerous removal blocked" not in result.reason
 
     @pytest.mark.asyncio
@@ -448,7 +362,5 @@ class TestDangerousRemovalRegression:
     @pytest.mark.asyncio
     async def test_drop_table_not_affected(self, monkeypatch):
         ensure_flag_on(monkeypatch)
-        # SQL is passed as a command by some agents; the gate must
-        # ignore it since DROP is not a removal command.
         result = await check("psql -c 'DROP TABLE users'")
         assert "Dangerous removal blocked" not in result.reason

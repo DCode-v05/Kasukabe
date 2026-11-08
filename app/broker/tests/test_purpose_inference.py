@@ -71,9 +71,6 @@ def request(system: str = "", last_user_text: str = "", tools: int = 0) -> dict:
     return body
 
 
-# ── The header always wins ───────────────────────────────────────────
-
-
 def test_an_explicit_header_is_believed_over_any_inference() -> None:
     """A caller that tags itself is trusted, even when the body looks
     like something else. Inference is a fallback for silence, not a
@@ -90,9 +87,6 @@ def test_an_explicit_cognition_header_is_not_downgraded() -> None:
     purpose = infer_purpose(header="agent.turn", body=request(system=EPISODE_SYSTEM))
     assert purpose == "agent.turn"
     assert classify_purpose(purpose) is CallClass.COGNITION
-
-
-# ── Inference, when nothing tagged the call ──────────────────────────
 
 
 def test_the_post_turn_summariser_is_inferred_as_background() -> None:
@@ -163,28 +157,6 @@ def test_a_tool_result_continuation_is_still_cognition() -> None:
         ],
     }
     assert classify_purpose(infer_purpose(header="", body=body)) is CallClass.COGNITION
-
-
-# ── Reconciling two inferences that were built in parallel ───────────
-#
-# `lanes.derive_purpose` landed on the Real branch at the same time as this
-# module, answering the same question with a different and deliberately
-# weaker claim: it labels a call by SHAPE (`auto:agent_turn`,
-# `auto:compaction`, `auto:other`) and its own test asserts that a guess
-# can never move traffic to another lane, because "rerouting real traffic
-# on an inference would be a much larger claim than this function is
-# entitled to make."
-#
-# That caution is right for a rule as broad as `"learning" in system`. It
-# is not right for a verbatim match on a literal that lives in frozen
-# learning-centre code. So the two are layered rather than one deleted:
-# the NARROW marker match may reroute, the BROAD shape tag may not, and
-# the tests below pin exactly which is which.
-#
-# The veto that makes the narrow rule safe is measured, not assumed. In
-# data/loop5.db all 118 post-turn summariser calls carry no tools and all
-# 106 agent turns carry the town's tool schemas, so "carries tools" and
-# "is a resident thinking" were the same set in every call of that run.
 
 
 def test_an_inferred_background_tag_says_it_was_inferred() -> None:

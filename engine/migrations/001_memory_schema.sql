@@ -1,11 +1,3 @@
--- Memory Schema: Episodes, Knowledge Store, Social Graph, Soul.
--- SQLite + sqlite-vec (vec0 virtual tables) + FTS5.
--- Single-user engine — no user_id columns. One brain.sqlite = one user.
-
--- =====================================================================
--- EPISODIC MEMORY
--- =====================================================================
-
 CREATE TABLE IF NOT EXISTS episodes (
     id                  TEXT PRIMARY KEY,
     key                 TEXT         NOT NULL,
@@ -29,10 +21,6 @@ CREATE VIRTUAL TABLE IF NOT EXISTS episodes_fts USING fts5(
     description,
     id UNINDEXED
 );
-
--- =====================================================================
--- KNOWLEDGE STORE
--- =====================================================================
 
 CREATE TABLE IF NOT EXISTS knowledge_store (
     id                  TEXT PRIMARY KEY,
@@ -67,10 +55,6 @@ CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_store_fts USING fts5(
     id UNINDEXED
 );
 
--- =====================================================================
--- SOCIAL GRAPH — NODES
--- =====================================================================
-
 CREATE TABLE IF NOT EXISTS social_graph_nodes (
     id              TEXT PRIMARY KEY,
     name            TEXT         NOT NULL,
@@ -92,7 +76,6 @@ CREATE VIRTUAL TABLE IF NOT EXISTS social_graph_nodes_fts USING fts5(
     id UNINDEXED
 );
 
--- Node attributes: unbounded key-value pairs per person node.
 CREATE TABLE IF NOT EXISTS social_graph_node_attributes (
     id              TEXT PRIMARY KEY,
     node_id         TEXT         NOT NULL REFERENCES social_graph_nodes(id),
@@ -108,10 +91,6 @@ CREATE VIRTUAL TABLE IF NOT EXISTS social_graph_node_attributes_vec USING vec0(
     id TEXT PRIMARY KEY,
     embedding FLOAT[1536]
 );
-
--- =====================================================================
--- SOCIAL GRAPH — EDGES
--- =====================================================================
 
 CREATE TABLE IF NOT EXISTS social_graph_edges (
     id                  TEXT PRIMARY KEY,
@@ -133,10 +112,6 @@ CREATE VIRTUAL TABLE IF NOT EXISTS social_graph_edges_vec USING vec0(
     id TEXT PRIMARY KEY,
     embedding FLOAT[1536]
 );
-
--- =====================================================================
--- SOUL — EVOLVED (core_soul loaded from catalog volume at boot)
--- =====================================================================
 
 CREATE TABLE IF NOT EXISTS evolved_soul (
     id              TEXT PRIMARY KEY,

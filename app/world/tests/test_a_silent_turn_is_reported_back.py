@@ -63,9 +63,6 @@ def world_with(*invocations: Invocation) -> WorldState:
     return world
 
 
-# -- Noticing ---------------------------------------------------------
-
-
 def test_a_resident_who_acted_last_turn_is_told_nothing() -> None:
     world = world_with(Invocation("n06", 10))
     WorldState.note_turn(world, "n06", 10)
@@ -150,9 +147,6 @@ def test_malformed_invocation_rows_do_not_break_it() -> None:
     for tick in range(10, 10 + 3 * (SILENT_TURN_REPORT_MIN + 1), 3):
         WorldState.note_turn(world, "n06", tick)
     assert WorldState.silent_turns_report(world, "n06") is not None
-
-
-# -- Rendering --------------------------------------------------------
 
 
 def test_it_reaches_the_perception() -> None:

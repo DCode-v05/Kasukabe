@@ -69,7 +69,7 @@ def test_routing_moves_past_the_absent_lane() -> None:
 def test_cognition_still_overflows_to_deepseek_when_kimi_is_open_circuit() -> None:
     pool = build_lane_pool(_settings(KIMI_MODEL_ID, DEEPSEEK_MODEL_ID), lambda m, r: object())
     for lane in pool.lanes_by_model[KIMI_MODEL_ID]:
-        lane.circuit.try_reserve = lambda: False  # every Kimi lane refusing
+        lane.circuit.try_reserve = lambda: False
 
     assert pool.select(CallClass.COGNITION).model == DEEPSEEK_MODEL_ID
 

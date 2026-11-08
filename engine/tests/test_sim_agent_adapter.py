@@ -79,19 +79,7 @@ class FakeEngine:
     budgets: list[int | None] = field(default_factory=list)
     last_turn_steps: int = 0
     last_turn_hit_budget: bool = False
-    # CORE-11. The real SimEngineState answers this off `_turn_lock`, and
-    # `/tick` refuses with 409 when it is True. Modelled here rather than
-    # read off the adapter with a three-argument getattr: a default would
-    # mean a double that forgot the attribute silently reports "not busy",
-    # so the refusal would quietly stop happening on any engine that
-    # drifted from the contract - which is the failure Build Spec v2
-    # clause 4.4 exists to prevent.
     busy: bool = False
-    # WIRE-02. `/health` reports how this engine's link to the world has
-    # been behaving, so the double has to have one. Modelled rather than
-    # defaulted, for the reason the `busy` comment above gives: a double
-    # that forgets an attribute must fail loudly, not quietly report a
-    # healthy zero.
     world: "FakeWorldLink" = field(default_factory=lambda: FakeWorldLink())
 
     @property
@@ -138,26 +126,12 @@ def test_awake_tick_drives_the_pinned_thread_and_reports_no_batch_when_none_ran(
         "is_sleeping": False,
         "reply": "reply to: you see grain",
         "learning_ran": False,
-        # B3: nothing was budgeted, so nothing ran out.
         "steps_used": 0,
         "budget_hit": False,
-        # ENG-24: an AWAKE tick never reflects. The reflection is sleep
-        # work by design (DESIGN.md section 1 - "no interactive LLM calls"
-        # while asleep is the other side of the same rule), so these two
-        # staying false on this path is the assertion, not a formality.
         "reflected": False,
         "goal_revisions": 0,
     }
     assert engine.sent_ticks == ["you see grain"]
-    # ENG-17: this used to assert the gate had been called DURING the tick,
-    # which it was - awaited, before the turn, inside the same
-    # tick_timeout_s. The batch is now started after the turn and not
-    # awaited, so whether it has been reached yet is not this route's
-    # business and not something a synchronous client can pin down. The
-    # lifecycle is driven deterministically in
-    # tests/test_learning_does_not_spend_the_ticks_budget.py; what belongs
-    # here is that the response claims no batch it cannot know about, which
-    # the body assertion above already says.
 
 
 def test_a_waking_interval_batch_is_not_reported_on_the_tick_that_starts_it():
@@ -186,7 +160,6 @@ def test_a_waking_interval_batch_is_not_reported_on_the_tick_that_starts_it():
     assert resp.status_code == 200
     body = resp.json()
     assert body["learning_ran"] is False
-    # And the turn still happened. Consolidating is not instead of living.
     assert body["reply"] == "reply to: noon"
     assert engine.sent_ticks == ["noon"]
 
@@ -205,12 +178,10 @@ def test_the_learn_route_consolidates_on_demand():
         "thread_id": "kasukabe-agent-agent-9",
         "learning_ran": True,
         "runs_triggered": 1,
-        # ENG-01: what was actually written, not just that a batch ran.
         "knowledge_written": 1,
         "errors": 0,
     }
     assert engine.learning_gate.extra_calls == 1
-    # No turn is taken. Draining is bookkeeping about turns already had.
     assert engine.sent_ticks == []
 
 
@@ -249,13 +220,8 @@ def test_sleeping_tick_never_reaches_the_primary_adapter():
     body = resp.json()
     assert body["reply"] == ""
     assert body["learning_ran"] is True
-    # No interactive LLM call while asleep (DESIGN.md section 1): send_tick,
-    # which drives the primary kimi-k2.5 adapter, must never be called.
     assert engine.sent_ticks == []
     assert engine.learning_gate.calls == [True]
-
-
-# ── B3: the per-tick call budget ──────────────────────────────────────
 
 
 def test_the_call_budget_reaches_the_engine():

@@ -76,8 +76,6 @@ def test_it_names_the_move_when_the_resident_is_elsewhere() -> None:
     an instruction it can follow."""
     block = _assembly()
 
-    # the source wraps the sentence across lines, so match the pieces rather
-    # than a phrase that only exists once rendered
     assert "`move` " in block and "{hall_now}" in block and "`vote`" in block
 
 

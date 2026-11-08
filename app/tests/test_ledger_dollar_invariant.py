@@ -48,10 +48,6 @@ async def test_a_bad_config_halts_instead_of_serving_a_broken_ledger() -> None:
     stopped one." """
     ledger = Ledger()
 
-    # Genesis defines the closed economy's total, so a one-agent town is
-    # valid, not a misconfiguration. What must still halt the simulation is
-    # the total CHANGING afterwards - money conjured or destroyed once the
-    # economy is sealed.
     await ledger.genesis(["only-one-agent"], treasury_usd_cents=GENESIS_TREASURY_USD_CENTS)
     assert ledger.halted is False
 

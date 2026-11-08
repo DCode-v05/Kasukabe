@@ -39,7 +39,6 @@ class UDMeta:
         """
         results: list[dict[str, Any]] = []
 
-        # Platform agents from catalog (in-memory, Python-side filtering)
         for agent in self.catalog.all_agents():
             if capabilities:
                 agent_caps = agent.get("capabilities", [])
@@ -61,7 +60,6 @@ class UDMeta:
                 }
             )
 
-        # User-created agents from SQLite
         u_query = """
             SELECT name, type, capabilities, input_signature,
                    output_signature, description
@@ -124,7 +122,6 @@ class UDMeta:
                 if not all(c in skill_caps for c in capabilities):
                     continue
 
-            # Determine skill_type from nullable fields
             source_code = skill.get("source_code")
             prompt_template = skill.get("prompt_template") or skill.get("prompt")
             if source_code and prompt_template:
@@ -163,7 +160,6 @@ class UDMeta:
                 if not all(c in tool_caps for c in capabilities):
                     continue
 
-            # Build a compact interface summary from the JSON Schema
             iface = tool.get("interface", {})
             props = iface.get("properties", {})
             summary = {

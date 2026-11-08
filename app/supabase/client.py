@@ -31,12 +31,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
-# A table row, decoded to native Python types (str/int/float/bool/None/
-# dict/list). Both backends hand back this shape from every method:
-# PostgREST because its response body already is JSON; SqliteClient
-# because it decodes JSON-text and 0/1-int columns back to dict/list/bool
-# before returning (see sqlite_client.py's SQLITE_JSON_COLUMNS and
-# SQLITE_BOOL_COLUMNS) so a caller never has to know which backend it got.
 Row = dict[str, Any]
 
 
@@ -136,15 +130,6 @@ class SupabaseClient(ABC):
 
     async def __aexit__(self, *exc_info: object) -> None:
         await self.close()
-
-
-# ── PostgREST filter helpers ─────────────────────────────────────────
-# Every function returns the "<op>.<operand>" string PostgREST expects as
-# a query parameter value; sqlite_client.py's build_where parses the same
-# strings. Keep this list to the operators both backends actually
-# implement (see sqlite_client.py's OP_TO_SQL) - adding a helper here
-# without a matching sqlite translation would make that operator silently
-# postgrest-only.
 
 
 def eq(value: Any) -> str:

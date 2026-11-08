@@ -47,7 +47,6 @@ class TestResolveModel:
         assert resolve_model(ModelRole.REASONING, s) == MODEL_DEFAULTS.reasoning
 
     def test_fallback_default_is_empty(self):
-        # No mid-turn overload fallback unless a deploy opts in.
         assert resolve_model(ModelRole.FALLBACK) == ""
 
 

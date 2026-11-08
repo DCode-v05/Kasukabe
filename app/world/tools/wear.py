@@ -27,32 +27,12 @@ half-solved.
 """
 from __future__ import annotations
 
-# The one made item that is genuinely a tool. `furniture` and `cloth` are
-# goods a household would want; a wear model is not what they are missing.
 TOOL_ITEM = "iron_tool"
 
-# The verbs that wear a tool out. Exactly the LABOUR verbs whose cost rule
-# says `skill_discount=True` and whose description says "tool wear" - the
-# fee was already claiming this happened.
 WEARING_TOOLS = frozenset({"harvest", "mine", "fell_timber", "craft", "cook", "work_site"})
 
-# How many acts of manual work one tool survives.
-#
-# ASSUMPTION, and flagged as one: DESIGN pins no durability. 40 is chosen
-# so a full-time labourer wears out roughly one tool per two game-days
-# (144 ticks/day, a resident acts on a fraction of them), which is often
-# enough that a smith has steady work and rare enough that it does not
-# dominate a resident's decisions. Moving it changes how much of the
-# town's economy is toolmaking, so it is one number in one place.
 USES_PER_TOOL = 40
 
-# What holding a tool is worth: the wear fee is charged at this fraction
-# while the resident has one. Bare-handed work is not forbidden - it is
-# more expensive, which is the incentive a market needs and a refusal
-# would not be.
-#
-# Imported, not retyped: the number is a PRICE and lives with the rest of
-# the schedule. Two copies would agree until the first time either moved.
 from world.ledger.action_costs import TOOL_HELD_FEE_BPS as FEE_WITH_A_TOOL_BPS  # noqa: E402
 
 

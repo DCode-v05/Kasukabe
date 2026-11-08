@@ -62,11 +62,7 @@ from src.sandbox.permissions import ToolSource
 from src.utility_directory.tool_runtime import ToolDef, ToolRegistry
 
 
-# Real model for LLM-backed scenarios. Cheap, fast, wide availability.
 LIVE_MODEL = "gpt-4o-mini"
-
-
-# ── Recorder + fakes kept in-file so the demo is self-contained ──
 
 
 class Recorder(EventEmitter):
@@ -96,13 +92,10 @@ def make_live_adapter(settings: Settings):
     return create_llm(settings, LIVE_MODEL)
 
 
-# ── Scenario framework ──────────────────────────────────────────
-
-
 @dataclass
 class Scenario:
     name: str
-    run: Callable[[Settings], Any]  # async fn
+    run: Callable[[Settings], Any]
     asserts: list[str] = field(default_factory=list)
 
 
@@ -141,9 +134,6 @@ async def run_scenario(name: str, fn) -> Result:
         duration_ms=dur,
         details=details or {},
     )
-
-
-# ── Scenarios ────────────────────────────────────────────────────
 
 
 async def scenario_live_basic(settings):
@@ -216,7 +206,7 @@ async def scenario_budget_exhausted_live(settings):
         memory=FakeMemory(),
         agent_name="miser",
         task="Write a 100-word essay about subatomic particles.",
-        model_id="gpt-5.4-nano",  # priced in catalog
+        model_id="gpt-5.4-nano",
         budgets=BudgetConfig(max_budget_usd=0.00001),
     )
     r = await sa.run()
@@ -241,7 +231,6 @@ async def scenario_cancellation_live(settings):
         model_id=LIVE_MODEL,
         budgets=BudgetConfig(max_turns=20),
     )
-    # Cancel right before run so the first turn check trips.
     sa.cancel("live-cancel")
     r = await sa.run()
     ok, reason = check(
@@ -271,7 +260,6 @@ async def scenario_parent_cancel_propagates(settings):
     parent.cancel("parent-shutdown")
     ok1, r1 = check("child sees cancel", sa.cancel_token.cancelled)
     ok2, r2 = check("reason propagated", "parent-shutdown" in (sa.cancel_token.reason or ""))
-    # Child cancel must NOT propagate to parent.
     parent2 = CancellationToken()
     sa2 = SubAgent(
         adapter=make_live_adapter(settings),
@@ -300,7 +288,6 @@ async def scenario_run_async_collect(settings):
     bg_id = sa.run_async()
     ok1, r1 = check("registered", bg_id in ASYNC_TASKS)
     r = await get_async_result(bg_id, timeout=30.0)
-    # After await, callback should have popped entry.
     await asyncio.sleep(0)
     ok2, r2 = check(
         "evicted after done", bg_id not in ASYNC_TASKS, f"leaked tasks: {list(ASYNC_TASKS)}"
@@ -386,7 +373,6 @@ async def scenario_idle_watchdog_live(settings):
             self.real = real
 
         async def generate_with_tools(self, *a, **k):
-            # Force the loop to appear idle longer than the threshold.
             await asyncio.sleep(1.2)
             return await self.real.generate_with_tools(*a, **k)
 
@@ -536,16 +522,14 @@ async def scenario_from_ud_row_falsy_survival(settings):
         "agent_type": "explore",
         "max_turns": 40,
         "custom_config": {
-            "agent_type": "",  # explicit "no type"
-            "max_turns": 0,  # explicit "disabled"
+            "agent_type": "",
+            "max_turns": 0,
         },
     }
     ad = AgentDefinition.from_ud_row(row)
     ok1, r1 = check("empty string → general", ad.agent_type == "general")
     ok2, r2 = check("zero preserved", ad.max_turns == 0, f"got {ad.max_turns}")
     return ok1 and ok2, (r1 or r2), {}
-
-
 
 
 async def scenario_track_background_evict(settings):
@@ -574,7 +558,6 @@ async def scenario_exit_reason_enum_consistent(settings):
     from src.engine_core import sub_agent as mod
 
     src = inspect.getsource(mod)
-    # Any literal exit_reason = "foo" would have slipped past the enum.
     banned = ['exit_reason = "', "exit_reason='"]
     found = [b for b in banned if b in src]
     ok, reason = check("no raw exit_reason strings", not found, f"found: {found}")
@@ -583,7 +566,6 @@ async def scenario_exit_reason_enum_consistent(settings):
 
 async def scenario_parent_state_tools_not_leaked(settings):
     """Filtered sub-tool registry strips spawn/collect/resume/ask_user."""
-    # Fabricate a parent-like registry with every "danger" tool present.
     from src.engine_core.thread import ExecutionThread
 
     reg = ToolRegistry()
@@ -610,8 +592,6 @@ async def scenario_parent_state_tools_not_leaked(settings):
             )
         )
 
-    # Minimal shim to reach the method — ExecutionThread's ctor is heavy,
-    # so instantiate the method on a stub.
     class Shim:
         tools = reg
         PARENT_STATE_TOOLS = ExecutionThread.PARENT_STATE_TOOLS
@@ -691,8 +671,6 @@ async def scenario_prompt_injection_explore(settings):
         for c in calls
         if c.get("name") == "file_write"
     )
-    # Either the LLM never asked for file_write (filtered out of the tools
-    # the model could see), OR it asked and was refused. Both are wins.
     ok, reason = check(
         "no successful write",
         not wrote or refused,
@@ -718,14 +696,12 @@ async def scenario_concurrent_bg_storm(settings):
         for i, a in enumerate(adapters)
     ]
     bg_ids = [s.run_async() for s in sas]
-    # All registered immediately.
     ok_reg, r_reg = check(
         "all registered",
         all(b in ASYNC_TASKS for b in bg_ids),
         f"registered={sum(b in ASYNC_TASKS for b in bg_ids)}/8",
     )
     results = await asyncio.gather(*[get_async_result(b, timeout=30.0) for b in bg_ids])
-    # Drain pending callbacks.
     for _ in range(3):
         await asyncio.sleep(0)
     ok_done, r_done = check(
@@ -754,7 +730,6 @@ async def scenario_live_tool_loop(settings):
 
     async def grep(p):
         needle = p.get("pattern", "")
-        # Hardcoded corpus.
         corpus = "alpha=1\nbeta=2\nthe answer is 42\ngamma=3\n"
         matches = [line for line in corpus.splitlines() if needle in line]
         return "\n".join(matches) or "(no match)"
@@ -831,8 +806,6 @@ async def scenario_max_turns_exhausted_live(settings):
         agent_name="loop",
         task="Call the ping tool exactly once now with no arguments.",
         model_id=LIVE_MODEL,
-        # max_turns=1: after the first tool-use turn the loop runs out of
-        # iterations (for/else path), so exit_reason must be turns_exhausted.
         budgets=BudgetConfig(max_turns=1),
     )
     r = await sa.run()
@@ -907,9 +880,6 @@ async def scenario_resume_from_transcript_live(settings):
             "transcript captured facts",
             any("fact-XYZ-123" in (e.get("content_preview") or "") for e in entries),
         )
-        # Feed replay into a new SubAgent via ForkConfig — the recursive-fork
-        # guard must NOT trip because the replayed messages don't carry the
-        # boilerplate tag (they're plain previews).
         sa2 = SubAgent(
             adapter=make_live_adapter(settings),
             emitter=Recorder(),
@@ -965,9 +935,6 @@ async def scenario_allowed_tools_allowlist(settings):
     return ok, reason, {}
 
 
-# ── Orchestration ────────────────────────────────────────────────
-
-
 SCENARIOS: list[tuple[str, Callable]] = [
     ("live basic run", scenario_live_basic),
     ("explore tool filter", scenario_explore_filter),
@@ -987,7 +954,6 @@ SCENARIOS: list[tuple[str, Callable]] = [
     ("exit_reason enum consistent", scenario_exit_reason_enum_consistent),
     ("parent-state tools blocked", scenario_parent_state_tools_not_leaked),
     ("allowed_tools allowlist", scenario_allowed_tools_allowlist),
-    # ── Hard / adversarial ──────────────────────────────────────────
     ("prompt injection on EXPLORE", scenario_prompt_injection_explore),
     ("concurrent 8-agent bg storm", scenario_concurrent_bg_storm),
     ("live multi-turn tool loop", scenario_live_tool_loop),

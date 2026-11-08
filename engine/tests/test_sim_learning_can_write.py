@@ -21,8 +21,6 @@ import inspect
 import pytest
 
 
-# ── the wiring ──────────────────────────────────────────────────────────
-
 def test_boot_constructs_all_four_stores():
     """All four take `embedding_service=None` and skip the vector insert, so
     there is no cost argument for leaving them out."""
@@ -71,8 +69,6 @@ def test_a_batch_that_writes_something_invalidates_the_prompt():
     )
 
 
-# ── the guard ───────────────────────────────────────────────────────────
-
 @pytest.mark.parametrize(
     "error",
     [
@@ -99,8 +95,6 @@ def test_a_real_failure_is_not_mistaken_for_a_wiring_fault(error):
         "that would send the next reader to the wrong place"
     )
 
-
-# ── behaviour: the stores actually write, with no embedder ──────────────
 
 @pytest.mark.asyncio
 async def test_an_episode_reaches_the_database_with_no_embedder(db):

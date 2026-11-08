@@ -51,21 +51,10 @@ MINUTES_PER_DAY = 24 * 60
 DAY_START_HOUR = 6
 NIGHT_START_HOUR = 22
 
-# The_ville is a 140x100 tile grid (world/map/model.py's WorldMap, loaded
-# from smallville/.../the_ville_jan7.json: "width": 140, "height": 100).
-# Kept here only as the fallback's jitter bound, not as a general map
-# size - a grown town (DESIGN.md section 1's land expansion) is strictly
-# larger, so this is a conservative "somewhere inside the original town
-# square" box, never a claim about the live map's true extent.
 FALLBACK_MAP_WIDTH_TILES = 140
 FALLBACK_MAP_HEIGHT_TILES = 100
 FALLBACK_JITTER_TILES = 6
 
-# DESIGN.md section 4: "~50/50 male/female ... pre-linked households" says
-# nothing about sprite art, this roster is purely which Apache-2.0
-# spritesheet renders which agent. Names match the .png stems under
-# game/static/assets/characters/ exactly (sprite_key is also the Phaser
-# texture key preload.js loads each atlas under, see static/js/town.js).
 SPRITE_ROSTER: tuple[str, ...] = (
     "Abigail_Chen",
     "Adam_Smith",
@@ -133,25 +122,15 @@ def day_night_tint(tick: int) -> tuple[str, float]:
     ramp_hours = 2.0
 
     if day_start <= hour < day_start + ramp_hours:
-        # Dawn: night alpha ramping down to 0.
         alpha = 1.0 - (hour - day_start) / ramp_hours
     elif day_start + ramp_hours <= hour < night_start - ramp_hours:
-        # Full day.
         alpha = 0.0
     elif night_start - ramp_hours <= hour < night_start:
-        # Dusk: alpha ramping up to full night.
         alpha = (hour - (night_start - ramp_hours)) / ramp_hours
     else:
-        # Full night (wraps past midnight through day_start).
         alpha = 1.0
 
     alpha = max(0.0, min(1.0, alpha))
-    # Capped below 1.0 so even deep night keeps the map faintly legible -
-    # a fully opaque overlay would hide agent sprites entirely, which
-    # defeats the point of a live town view.
-    # 0.38, kept in lockstep with game/static/js/daynight.js's ceiling: the
-    # night overlay now covers the whole map in world space, and at 0.72
-    # midnight rendered the town as a solid black rectangle.
     return "#0b1230", round(alpha * 0.38, 3)
 
 
@@ -204,26 +183,6 @@ def resolve_tile(location_id: str | None, tile_x: int | None, tile_y: int | None
     raise ValueError("resolve_tile requires either (tile_x, tile_y) or a location_id")
 
 
-# ---------------------------------------------------------------------------
-# 4. engine location_id -> township district
-# ---------------------------------------------------------------------------
-# The township viewer (static/township-v2.html) draws its own procedurally
-# generated 104x104 town, NOT the Ville map world/ paths agents over. The two
-# tile spaces are unrelated, so a live engine tile CANNOT be plotted directly
-# on it - the honest bridge is the named place, not the coordinate.
-#
-# world/ says "this agent is at Hobbs Cafe" / "cafe" / "home:h0021"; the
-# viewer owns a district called `cafe` and knows where that is on its own
-# map. This table is the whole mapping, and it is deliberately partial:
-# anything that does not resolve returns None and the viewer leaves that
-# resident on its built-in schedule rather than inventing a position.
-#
-# Every key here is a real location_id string that already exists elsewhere
-# in the repo - charter/models.py's LOCATION_* constants, tools/locations.py's
-# constants, genesis business_type values, and wiring.py's "home:<id>" prefix
-# - never a string invented for this table. The values are township zone ids
-# from static/js/township/village2.js's ZONES.
-
 TOWNSHIP_ZONE_BY_LOCATION: dict[str, str] = {
     "town_hall": "government",
     "government_complex": "government",
@@ -260,8 +219,6 @@ TOWNSHIP_ZONE_BY_LOCATION: dict[str, str] = {
     "park": "park",
 }
 
-# Prefixed families: "farmland:wheat" -> farmland, "ore:iron" -> ore outcrop,
-# "home:h0021" -> the housing district. Checked after the exact table.
 TOWNSHIP_ZONE_BY_PREFIX: tuple[tuple[str, str], ...] = (
     ("home:", "housing"),
     ("household:", "housing"),
@@ -283,12 +240,8 @@ def township_zone_for(location_id: str | None) -> str | None:
         return None
     raw = location_id.strip().lower()
 
-    # A map-resolved sector display name ("Hobbs Cafe") comes through with
-    # its spaces intact and is checked first, before the slug forms.
     if raw in TOWNSHIP_ZONE_BY_SECTOR:
         return TOWNSHIP_ZONE_BY_SECTOR[raw]
-    # "Dorm for Oak Hill College" must not read as residential, so the
-    # exact table above always wins before this substring sweep.
     if any(marker in raw for marker in _RESIDENTIAL_MARKERS):
         return "housing"
 
@@ -299,38 +252,13 @@ def township_zone_for(location_id: str | None) -> str | None:
         if key.startswith(prefix):
             return zone
 
-    # A genesis-minted business the tables above have never seen. "Kasukabe
-    # Grocery" was exactly this: a real, occupied place that resolved to
-    # None, so one resident of thirty vanished from the map and the badge
-    # read "29 of 30" with nothing to explain the missing one.
-    #
-    # The trade word in the name is the evidence. It is weaker than an exact
-    # match - hence its own return path below - but it is evidence, and
-    # drawing a grocer in the grocery beats not drawing them at all.
     zone = _zone_by_trade_word(raw)
     if zone:
         return zone
 
-    # Still nothing. None remains a real answer here: a string this module
-    # cannot recognise at all might not be a place, and a wrong district
-    # teleports that resident across town on every poll. The game server
-    # decides what to do about a live, occupied location that lands here -
-    # it knows the place exists; this function does not.
     return None
 
 
-# Matched against WORDS, not raw substrings. "Ferris Hardware Store" contains
-# "ore" and was placed at the ore outcrop; "Public Library" contains "pub".
-# Both are why this splits the name up first.
-#
-# _PREFIX words may start a longer word - "grocer" catches "grocery" and
-# "grocers", "farm" catches "farmland". _EXACT words must be the whole word,
-# because every one of them is a substring of something unrelated.
-#
-# Ordered: the first hit wins, so the more specific word comes first. "The
-# Willows Market and Pharmacy" holds both "market" and "pharmacy"; the exact
-# table above already answers that one, and this ordering keeps the sweep
-# honest for the next name like it.
 _SECTOR_KEYWORDS_PREFIX: tuple[tuple[str, str], ...] = (
     ("pharmac", "pharmacy"), ("grocer", "grocery"), ("baker", "bakery"),
     ("cafe", "cafe"), ("coffee", "cafe"), ("restaurant", "restaurant"),
@@ -401,17 +329,6 @@ def township_zone_detail(location_id: str | None) -> tuple[str | None, bool]:
     return township_zone_for(location_id), False
 
 
-# Real Ville sector display names, which is what a map-resolved snapshot
-# actually reports (world/location_api.py: "real, human-readable names
-# ('Hobbs Cafe', 'Kasukabe Government Complex', 'Adam Smith's house')").
-#
-# These strings are COPIED from world/map/genesis.py's
-# KNOWN_SECTOR_CATEGORIES and world/map/expansion.py's *_SECTOR_NAME
-# constants, not imported - same reason this module already copies
-# world/core/clock.py's tick constants: game/ has zero import-time
-# dependency on world/ (app/CONVENTIONS.md). If the map ever renames a
-# sector, test_township_zone_bridge.py fails loudly rather than silently
-# unbinding those residents.
 TOWNSHIP_ZONE_BY_SECTOR: dict[str, str] = {
     "hobbs cafe": "cafe",
     "the rose and crown pub": "inn",
@@ -419,19 +336,12 @@ TOWNSHIP_ZONE_BY_SECTOR: dict[str, str] = {
     "dorm for oak hill college": "college",
     "johnson park": "park",
     "harvey oak supply store": "marketrow",
-    # Grocery and pharmacy share one sector on the base map; the township
-    # draws them as two. "Market" leads the name, so it binds to grocery.
     "the willows market and pharmacy": "grocery",
     "kasukabe government complex": "government",
-    # The township has no temple. The square is the nearest thing it has to
-    # a public gathering place that is not an administrative building.
     "kasukabe temple": "townsquare",
     "kasukabe farmland": "farmland",
     "kasukabe ore outcrop": "oreoutcrop",
     "kasukabe forest": "forest",
 }
 
-# Any residential sector on the base map - six named family houses and five
-# apartments - is the township's housing district. Checked by substring so a
-# newly minted "<family> family's house" binds without this table changing.
 _RESIDENTIAL_MARKERS: tuple[str, ...] = ("'s house", "family's house", "apartment", "co-living")

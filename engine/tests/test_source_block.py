@@ -24,7 +24,6 @@ def test_source_discovered_folds_to_source_block():
     )
     assert block is not None
     assert block.type == "source"
-    # turn-scoped id so handles never collide across turns
     assert block.id == "source:turn_8a1:m1" == source_block_id("turn_8a1", "m1")
     assert block.thread_id == "th1"
 
@@ -39,7 +38,6 @@ def test_source_payload_is_display_only_flattened():
             turn_id="t",
         )
     )
-    # {kind, **data} — no handle, no turn_id, no nested data
     assert block.payload == {"kind": "asset", "name": "Stripe", "info": "account active"}
     assert "handle" not in block.payload
     assert "turn_id" not in block.payload
@@ -72,11 +70,10 @@ def test_source_block_gated_by_sources_flag():
         )
     )
     assert passes_gates(block, Gates(sources=True)) is True
-    assert passes_gates(block, Gates(sources=False)) is False  # default off → dropped
+    assert passes_gates(block, Gates(sources=False)) is False
 
 
 def test_text_without_citations_is_byte_identical():
-    # Off-path: a plain TextDelta folds to exactly {"text": ...} — no citations key.
     block = BlockSerializer("s").fold(TextDelta(thread_id="th", text="hello"))
     assert block.type == "text"
     assert block.payload == {"text": "hello"}

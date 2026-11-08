@@ -64,11 +64,6 @@ from src.engine_core.compaction_orchestrator import (
 pytestmark = pytest.mark.asyncio
 
 
-# ---------------------------------------------------------------------------
-# GenericHookRegistry
-# ---------------------------------------------------------------------------
-
-
 @dataclass(frozen=True)
 class DummyInput:
     value: str = ""
@@ -143,7 +138,6 @@ class TestGenericHookRegistry:
         reg.register("ok", CallableGenericHook(ok))
 
         agg = await reg.execute_all(DummyInput())
-        # Broken hook failed but the ok one still contributed.
         assert agg.additional_contexts == ["ok"]
         assert any(o["name"] == "boom" and not o["ok"] for o in agg.hook_outcomes)
 
@@ -168,11 +162,6 @@ class TestGenericHookRegistry:
         reg.register("h", CallableGenericHook(h))
         reg.unregister("h")
         assert not reg.has_hooks()
-
-
-# ---------------------------------------------------------------------------
-# CommandGenericHook — subprocess
-# ---------------------------------------------------------------------------
 
 
 def write_hook_script(tmp_path: Path, body: str) -> Path:
@@ -206,7 +195,6 @@ class TestCommandGenericHook:
         assert res.blocking_error == "no thanks"
 
     async def test_plugin_env_overrides_reach_subprocess(self, tmp_path):
-        # Hook prints PLUGIN_ROOT + PLUGIN_OPTION_FLAG as additional_context.
         body = (
             "cat >/dev/null\n"
             'printf \'{"additional_context":"%s:%s"}\' '
@@ -223,8 +211,6 @@ class TestCommandGenericHook:
         assert res.additional_context == "/plugins/foo:on"
 
     async def test_stdin_payload_has_event_name(self, tmp_path):
-        # Write the incoming stdin payload to a file so we can inspect
-        # it from the test without fighting JSON-in-shell-escaping.
         capture = tmp_path / "payload.json"
         body = f'cat > "{capture}"\necho \'{{"additional_context": "wrote-file"}}\'\n'
         script = write_hook_script(tmp_path, body)
@@ -238,21 +224,6 @@ class TestCommandGenericHook:
         on_disk = json.loads(capture.read_text())
         assert on_disk["hook_event_name"] == "MyEvent"
         assert on_disk["value"] == "payload-value"
-
-
-# ---------------------------------------------------------------------------
-# PromptPreToolUseHook / PromptPostToolUseHook
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
-# AgentPreToolUseHook / AgentPostToolUseHook — patch run_hook_subagent
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
-# LifecycleHookBundle — per-event registry routing
-# ---------------------------------------------------------------------------
 
 
 class TestLifecycleHookBundle:
@@ -293,7 +264,6 @@ class TestLifecycleHookBundle:
         bundle.register_callable(HookEvent.PRE_COMPACT, "a", pre)
         bundle.register_callable(HookEvent.SUBAGENT_START, "b", sub)
 
-        # SUBAGENT_START registry must not fire PreCompact hooks.
         sub_inp = SubagentStartInput(
             thread_id="t",
             agent_id="a1",
@@ -318,14 +288,8 @@ class TestLifecycleHookBundle:
         assert agg.updated_payload == {"text": "HELLO"}
 
 
-# ---------------------------------------------------------------------------
-# hook_settings — generic event routing + plugin env discovery
-# ---------------------------------------------------------------------------
-
-
 class TestHookSettingsGenericRouting:
     async def test_generic_event_command_routes_to_bundle(self, tmp_path, monkeypatch):
-        # Build a settings file with a SubagentStart command hook.
         body = 'cat >/dev/null\necho \'{"additional_context": "bundle-ok"}\'\n'
         script = write_hook_script(tmp_path, body)
 
@@ -343,7 +307,6 @@ class TestHookSettingsGenericRouting:
         settings_path = tmp_path / "settings.json"
         settings_path.write_text(json.dumps(settings))
 
-        # Force the manager to load only this project-level file.
         config_dir = tmp_path / "cfg"
         config_dir.mkdir()
         monkeypatch.setenv("INTELLIGENCE_ENGINE_CONFIG_DIR", str(config_dir))
@@ -399,7 +362,6 @@ class TestHookSettingsGenericRouting:
         (has .message / .stop_reason) so ``StopHookRegistry.execute_all``
         doesn't AttributeError."""
 
-        # Patch the HTTP POST so we don't hit the network.
         called = {}
 
         async def fake_post(url, body, timeout_s):
@@ -414,8 +376,6 @@ class TestHookSettingsGenericRouting:
 
         monkeypatch.setattr(he, "post_json", fake_post)
 
-        # Round-trip through HookSettingsManager so we also verify the
-        # settings-file path builds the correct class.
         settings = {
             "hooks": [
                 {
@@ -456,16 +416,9 @@ class TestHookSettingsGenericRouting:
                 thread_id="t1",
             )
         )
-        # Would raise AttributeError pre-fix because GenericHookResult
-        # lacks .message / .stop_reason.
         assert agg.prevent_continuation is True
         assert agg.messages == ["stopped"]
         assert agg.stop_reasons == ["policy-hook"]
-
-
-# ---------------------------------------------------------------------------
-# thread.py — hook_contexts from CompactionResult injected as system-reminder
-# ---------------------------------------------------------------------------
 
 
 class TestHookContextInjection:
@@ -479,7 +432,6 @@ class TestHookContextInjection:
         from src.engine_core.compaction_orchestrator import CompactionResult
         from src.herald.types import Message
 
-        # Simulate the exact logic in thread.py that consumes the result.
         result = CompactionResult(
             messages=[],
             strategy="summary",
@@ -500,11 +452,6 @@ class TestHookContextInjection:
         assert "<system-reminder>postcompact-summary</system-reminder>" in messages[0].content
 
 
-# ---------------------------------------------------------------------------
-# Compaction orchestrator — PreCompact veto and PostCompact context flow
-# ---------------------------------------------------------------------------
-
-
 class StubEmitter:
     def __init__(self):
         self.events: list[Any] = []
@@ -523,8 +470,6 @@ class StubMemory:
 
 class TestCompactionHooks:
     async def build(self, bundle: LifecycleHookBundle) -> CompactionOrchestrator:
-        # Minimal orchestrator wiring — only used for the dispatch
-        # integration, never invokes the real LLM adapter.
         return CompactionOrchestrator(
             adapter=None,
             emitter=StubEmitter(),
@@ -540,7 +485,6 @@ class TestCompactionHooks:
         from src.engine_core import context_engineering as ce
         from src.engine_core import time_based_microcompact as tbmc
 
-        # High pre, low post so made_progress=True.
         tokens_iter = iter([100_000, 10_000])
         monkeypatch.setattr(
             ce,
@@ -571,8 +515,6 @@ class TestCompactionHooks:
 
         bundle.register_callable(HookEvent.POST_COMPACT, "obs", on_post)
 
-        # Bypass finalize_compaction which has dependencies we don't
-        # want to wire in this unit test.
         orch = CompactionOrchestrator(
             adapter=None,
             emitter=StubEmitter(),
@@ -629,10 +571,4 @@ class TestCompactionHooks:
         assert isinstance(result, CompactionResult)
         assert result.strategy == "skipped_by_hook"
         assert result.was_compacted is False
-
-
-# ---------------------------------------------------------------------------
-# SubAgent start/stop hook dispatch (integration via stubbed adapter)
-# ---------------------------------------------------------------------------
-
 

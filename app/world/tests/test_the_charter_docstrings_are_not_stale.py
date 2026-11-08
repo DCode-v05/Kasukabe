@@ -47,8 +47,6 @@ def _charter_sources() -> dict[str, str]:
     }
 
 
-# ── the mechanism the docstrings describe ────────────────────────────────
-
 def test_the_approval_event_is_recorded_and_not_acted_on() -> None:
     """What the corrected docstrings actually claim.
 
@@ -113,8 +111,6 @@ def test_the_registries_the_charter_says_it_avoids_all_exist() -> None:
     assert (WORLD / "ledger").is_dir()
     assert (WORLD / "agents_api.py").exists()
 
-
-# ── the wording, narrowly ────────────────────────────────────────────────
 
 def test_no_charter_docstring_still_calls_a_built_thing_unbuilt() -> None:
     """Narrow on purpose: this checks one phrase, in one package, and

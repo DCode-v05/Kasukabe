@@ -27,8 +27,6 @@ def edited(tmp_path, mutate):
     return path
 
 
-# -- the shipped rulebook -------------------------------------------------
-
 def test_the_shipped_rulebook_is_valid():
     """If this fails, the town in the repo is running on rules that do not
     hold together - fix the file, not the test."""
@@ -66,8 +64,6 @@ def test_every_document_has_someone_who_decides_it():
         assert doc.get("decided_by"), f"{name} has no decision-maker"
 
 
-# -- dynamic staffing: the point of the whole labour section --------------
-
 def test_a_healthy_town_and_a_sick_town_want_different_numbers_of_doctors():
     """This is the behaviour the user asked for: staffing follows need, it is
     not fixed at genesis."""
@@ -91,8 +87,6 @@ def test_an_unknown_role_or_wage_raises_rather_than_guessing():
         rules.wage("dragon_tamer")
 
 
-# -- market: demand not met by supply --------------------------------------
-
 @pytest.mark.parametrize(
     ("supply", "demand", "expected"),
     [(100, 100, "ok"), (95, 100, "ok"), (85, 100, "watch"), (60, 100, "shortage"), (1, 100, "shortage")],
@@ -110,8 +104,6 @@ def test_price_rises_as_supply_falls_short_and_is_clamped_both_ends():
     assert rules.price_multiplier(0.0001, 100) <= hi
     assert rules.price_multiplier(10_000, 100) >= lo
 
-
-# -- the validator earning its keep ---------------------------------------
 
 def test_a_shortage_threshold_the_wrong_way_round_is_refused(tmp_path):
     """alarm must be the LOWER number. Swapped, every watch reads as a crisis."""

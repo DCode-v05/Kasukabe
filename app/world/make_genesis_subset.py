@@ -62,25 +62,15 @@ from world.life.genesis import recount_ablation_summary
 
 GENESIS = Path(__file__).with_name("genesis.json")
 
-# The services this town cannot run without, most load-bearing first.
-#
-# These are occupations that EXIST IN genesis.json. That is not a given: the
-# engine's cast and the township viewer's cast do not share a vocabulary.
-# genesis.json has twenty occupations and none of them is doctor, nurse, baker,
-# police_officer or school_teacher - those are assigned by
-# game/static/js/township/build_characters.py when it derives the viewer's
-# roster. Listing them here looked right and quietly matched nobody, so the
-# whole phase did nothing. Anything added to this list must appear in the
-# genesis file or it is decoration.
 ESSENTIAL_ROLES = [
-    "pharmacist",             # the only health trade genesis has
-    "farmer",                 # the food chain starts here
-    "government_clerk",       # the seats are filled from these
-    "trader",                 # market row, and the docks
-    "artisan",                # the only maker of goods
+    "pharmacist",
+    "farmer",
+    "government_clerk",
+    "trader",
+    "artisan",
     "forester",
     "miner",
-    "college_instructor",     # the town's only teaching trade
+    "college_instructor",
     "office_administrator",
 ]
 
@@ -116,26 +106,15 @@ def choose(data: dict[str, Any], want: int) -> list[str]:
             m.setdefault("_why", reason)
         return len(members)
 
-    # How far each phase may fill the cast. Businesses and essential services
-    # each get about half, so a small town still has both a shop and a doctor.
     BUSINESS_CEILING = max(2, round(want * 0.45))
     ESSENTIAL_CEILING = max(4, round(want * 0.85))
 
-    # 0. the construction company's owner, before any ceiling can crowd them
-    #    out. world/life/models.py makes `construction_company` a REQUIRED
-    #    field of RichGenesis with a REQUIRED `owner_agent_id: str`, so unlike
-    #    a small business this one cannot be dropped when its owner is left
-    #    behind - there is no valid genesis file without it. At n=10 the owner
-    #    fell outside the business ceiling, repair() popped the company, and
-    #    run_genesis.py refused the file with "construction_company: Field
-    #    required".
     cc0 = data.get("construction_company") or {}
     if cc0.get("owner_agent_id"):
         cc_owner = by_id.get(cc0["owner_agent_id"])
         if cc_owner:
             take_household(cc_owner.get("household_id"), "construction company owner")
 
-    # 1. every business, whole: the owner and the people they employ
     businesses = list(data.get("small_businesses") or [])
     cc = data.get("construction_company")
     if cc:
@@ -152,7 +131,6 @@ def choose(data: dict[str, Any], want: int) -> list[str]:
             if emp:
                 take_household(emp.get("household_id"), "employee", BUSINESS_CEILING)
 
-    # 2. the services the town cannot run without
     for role in ESSENTIAL_ROLES:
         if len(chosen) >= want:
             break
@@ -162,15 +140,12 @@ def choose(data: dict[str, Any], want: int) -> list[str]:
             if take_household(a.get("household_id"), f"essential: {role}", ESSENTIAL_CEILING):
                 break
 
-    # 3. fill the remainder with the largest complete households
     sizes = Counter(a.get("household_id") for a in agents if a.get("household_id"))
     for hid, _n in sizes.most_common():
         if len(chosen) >= want:
             break
         take_household(hid, "household")
 
-    # 4. only if a household simply will not fit: single residents, oldest
-    #    first, so the cast still reaches the requested size.
     if len(chosen) < want:
         for a in sorted(agents, key=lambda x: -float(x.get("age_years") or 0)):
             if len(chosen) >= want:
@@ -218,32 +193,17 @@ def repair(data: dict[str, Any], keep: set[str],
 
     small = [x for x in (keep_business(b) for b in (data.get("small_businesses") or [])) if x]
     live_biz = {b["business_id"] for b in small}
-    # The construction company is never dropped: it is a required field, and
-    # choose() takes its owner's household first so the owner is always here.
     cc = dict(data.get("construction_company") or {})
     if cc:
         cc["hand_agent_ids"] = [e for e in (cc.get("hand_agent_ids") or []) if e in keep]
     if cc and cc.get("business_id"):
         live_biz.add(cc["business_id"])
-    # control businesses have no owner agent, so they always survive
     controls = list(data.get("control_businesses") or [])
     live_biz |= {b["business_id"] for b in controls}
     for a in agents:
         if a.get("business_id") and a["business_id"] not in live_biz:
             a["business_id"] = None
 
-    # world/life/models.py's UsdLedgerSummary is three INTEGERS:
-    #     total_cents, agent_wallets_cents, treasury_cents
-    # agent_wallets_cents is the SUM across the cast, not a per-agent map.
-    # The first version of this function wrote {agent_id: cents}, which is a
-    # perfectly sensible shape that the schema does not have: every test here
-    # passed, and run_genesis.py then refused the file at boot with
-    # "Input should be a valid integer". world/wiring.py divides this by
-    # population, so a dict would have been meaningless even if it had parsed.
-    # An equal starting purse for everyone, when the operator asks for one.
-    # A survival run is only readable if the cast starts level: if half the
-    # town begins with four times the money, "who survives" measures the
-    # genesis draw rather than anything the agents did.
     if wallet_cents is not None:
         if wallet_cents < 0:
             raise ValueError("wallet_cents must not be negative")
@@ -252,22 +212,7 @@ def repair(data: dict[str, Any], keep: set[str],
 
     wallets_total = sum(int(a.get("usd_wallet_cents") or 0) for a in agents)
     old = data.get("usd_ledger") or {}
-    # THE TOTAL IS FIXED. The town holds $1000 of real money whatever the size
-    # of its cast; what changes is the split. Re-deriving total_cents from the
-    # survivors produced a self-consistent $560 ledger that every test here
-    # accepted and the world's own snapshot table rejected:
-    #     CHECK constraint failed:
-    #       (usd_wallets_total_cents + usd_treasury_total_cents
-    #        + usd_burned_total_cents) = 100000
-    # So the money the departed agents were holding goes back to the treasury,
-    # which is where unallocated funds live, rather than vanishing.
     total = int(old.get("total_cents") or 0)
-    # The treasury is the remainder, and it cannot go negative: world/ledger/
-    # money.py fixes TOTAL_USD_CENTS at $1000 and world/'s snapshot table has a
-    # CHECK constraint pinning wallets+treasury+burned to it. So the whole cast
-    # can hold at most $1000 between them - with 50 agents that is $20 each.
-    # Refusing here, with the arithmetic spelled out, beats a CHECK constraint
-    # failure on the first checkpoint of a run that is already spending.
     if wallets_total > total:
         raise ValueError(
             f"starting purses total {wallets_total} cents across {len(agents)} agents, "
@@ -291,10 +236,6 @@ def repair(data: dict[str, Any], keep: set[str],
     })
     if cc:
         out["construction_company"] = cc
-    # `ablation_summary` is derived from the agents like `population` two
-    # lines up, and was the one derived field this function did not redo -
-    # so every subset carried the 314-cast's arms. genesis_3.json claimed
-    # 314 residents. See life/genesis.recount_ablation_summary.
     recount_ablation_summary(out)
     return out
 
@@ -318,9 +259,6 @@ def main(argv: list[str]) -> int:
     rather than reaching into another package's directory to put it there.
     """
     want = int(argv[1]) if len(argv) > 1 else 30
-    # An empty argv[2] means "no purse override", so a caller that
-    # always passes three positional arguments does not have to
-    # invent a wallet size to reach the third.
     wallet_cents = int(argv[2]) if len(argv) > 2 and argv[2].strip() else None
     out = build_subset(want, wallet_cents)
 

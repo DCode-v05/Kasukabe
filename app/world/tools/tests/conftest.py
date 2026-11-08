@@ -91,9 +91,6 @@ def action_cost(tool_name: str, params: dict | None = None, *, proficiency: int 
     )
 
 
-
-# TOOL-27. Re-exported so this package's modules can write
-# `pytestmark = needs_the_map`; the reasoning lives in world/tests/map_assets.py.
 from world.tests.map_assets import (  # noqa: E402
     MAP_ASSETS_PRESENT,
     NO_MAP_REASON,

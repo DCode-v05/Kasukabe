@@ -30,9 +30,6 @@ from world.ledger.money import TREASURY_ACCOUNT_ID
 from world.ledger.tests.ledger_factories import RecordingEventSink, build_genesis_ledger
 
 
-# -- head_tax_sim_per_head: pure bps -> sim conversion -----------------
-
-
 def test_zero_rate_charges_nothing() -> None:
     assert head_tax_sim_per_head(0) == 0
 
@@ -51,9 +48,6 @@ def test_out_of_range_rate_raises(bad_rate: int) -> None:
         head_tax_sim_per_head(bad_rate)
 
 
-# -- charge_daily_head_tax: payment path --------------------------------
-
-
 @pytest.mark.asyncio
 async def test_charges_one_head_and_credits_the_treasury() -> None:
     ledger = await build_genesis_ledger(["adult"], agent_usd_cents=200, sim_per_agent=1_000)
@@ -64,7 +58,7 @@ async def test_charges_one_head_and_credits_the_treasury() -> None:
         debts,
         payer_agent_id="adult",
         head_agent_ids=["adult"],
-        tax_rate_bps=1_000,  # 10% -> 100 sim/head
+        tax_rate_bps=1_000,
         tick=144,
     )
 
@@ -74,7 +68,7 @@ async def test_charges_one_head_and_credits_the_treasury() -> None:
     assert ledger.sim_balance("adult") == 900
     assert ledger.sim_balance(TREASURY_ACCOUNT_ID) == 100
     assert len(result.paid) == 1
-    assert result.paid[0].on_behalf_of is None  # payer taxed for themselves
+    assert result.paid[0].on_behalf_of is None
 
 
 @pytest.mark.asyncio
@@ -100,8 +94,6 @@ async def test_charges_a_household_of_three_with_per_head_attribution() -> None:
     assert ledger.sim_balance(TREASURY_ACCOUNT_ID) == 300
 
     on_behalf_of = {t.on_behalf_of for t in result.paid}
-    # amara pays for herself (on_behalf_of=None, the payer-taxed-for-self
-    # convention) and for each dependent by name.
     assert on_behalf_of == {None, "beni", "chiazo"}
     for transaction in result.paid:
         assert transaction.from_account == "amara"
@@ -128,15 +120,12 @@ async def test_zero_rate_moves_no_money() -> None:
     assert ledger.sim_balance("adult") == 500
 
 
-# -- charge_daily_head_tax: shortfall accrues debt, never a negative balance --
-
-
 @pytest.mark.asyncio
 async def test_shortfall_pays_what_it_can_and_debts_the_rest() -> None:
     ledger = await build_genesis_ledger(
         ["amara", "beni", "chiazo"], agent_usd_cents=200, sim_per_agent=0
     )
-    ledger.accounts["amara"].sim_units = 150  # covers 1 head (100), not 3
+    ledger.accounts["amara"].sim_units = 150
     debts = HeadTaxDebtStore()
     sink = RecordingEventSink()
 
@@ -154,7 +143,7 @@ async def test_shortfall_pays_what_it_can_and_debts_the_rest() -> None:
     assert result.total_paid_sim == 100
     assert result.total_new_debt_sim == 200
     assert ledger.sim_balance("amara") == 50
-    assert ledger.sim_balance("amara") >= 0  # never negative
+    assert ledger.sim_balance("amara") >= 0
 
     debtors = {d.head_agent_id for d in result.new_debts}
     assert debtors == {"beni", "chiazo"}
@@ -201,9 +190,6 @@ async def test_debt_still_accrues_with_an_absent_event_sink() -> None:
     )
 
     assert result.total_new_debt_sim == HEAD_TAX_BASE_SIM
-
-
-# -- HeadTaxDebtStore ----------------------------------------------------
 
 
 @pytest.mark.asyncio
@@ -255,9 +241,6 @@ async def test_snapshot_restore_round_trips_balances_and_events() -> None:
     assert events[0].head_agent_id == "beni"
 
 
-# -- repay_head_tax_debt --------------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_repay_moves_real_sim_and_shrinks_the_debt() -> None:
     ledger = await build_genesis_ledger(["amara"], agent_usd_cents=200, sim_per_agent=500)
@@ -297,8 +280,8 @@ async def test_repay_more_than_owed_raises_and_moves_no_money() -> None:
     with pytest.raises(DebtOverpaymentError):
         await repay_head_tax_debt(ledger, debts, debtor_agent_id="amara", amount_sim=200, tick=288)
 
-    assert ledger.sim_balance("amara") == 500  # untouched
-    assert await debts.outstanding("amara") == 50  # untouched
+    assert ledger.sim_balance("amara") == 500
+    assert await debts.outstanding("amara") == 50
 
 
 @pytest.mark.asyncio
@@ -314,9 +297,6 @@ async def test_repay_when_debtor_cannot_afford_it_raises_and_leaves_debt_untouch
 
     assert ledger.sim_balance("amara") == 10
     assert await debts.outstanding("amara") == 200
-
-
-# -- head_tax_view ---------------------------------------------------------
 
 
 @pytest.mark.asyncio

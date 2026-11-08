@@ -46,12 +46,10 @@ async def test_quota_relays_into_done_payload(monkeypatch):
 
     await server.block_fan_sink(ExecutionSummary(thread_id=tid, status="completed", quota=quota))
 
-    # block_fan_sink records the summary (incl. quota) keyed by thread.
     summary = server.last_summary_by_thread[tid]
     assert summary["quota"] == quota
-    assert summary["quota"] is quota  # pure relay — same dict, not reshaped
+    assert summary["quota"] is quota
 
-    # /execute synthesizes the terminal done block from that summary.
     done = make_done_block("rid_quota", summary, tid)
     assert done.type == "done"
     assert done.payload["quota"] == quota

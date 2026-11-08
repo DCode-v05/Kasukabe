@@ -24,10 +24,6 @@ from world.run_genesis import (
     build_embedded_world_app,
 )
 
-# Every GET a browser on another origin actually makes, plus the two
-# routers the finding names. A route that 404s on this host still proves
-# the point: CORS headers must be present on the response either way,
-# and a 404 with no header is the same dead end as a 200 with none.
 CROSS_ORIGIN_GETS = [
     "/health",
     "/agents",

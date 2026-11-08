@@ -38,9 +38,6 @@ async def _farmer(world: WorldState, agent_id: str = "n06") -> None:
     world.agent_names[agent_id] = "Wren Thorne"
 
 
-# ── committing ────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_continuing_action_makes_no_model_call_between_repetitions(
     world: WorldState, registry
@@ -113,9 +110,6 @@ async def test_a_resident_already_working_cannot_start_a_second_job(
         await registry.execute(world, "n06", "keep_doing", {
             "tool": "cook", "params": {}, "until": {"units": 2},
         })
-
-
-# ── stopping ──────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -220,12 +214,6 @@ async def test_proficiency_rises_under_a_continuing_action(
     for _ in range(3):
         await world.advance_continuing(registry, "n06")
 
-    # Each repetition goes through the SAME dispatch() a hand call uses,
-    # so it lands in the same invocation log, earns the same proficiency
-    # and is charged the same sim. That identity is the mechanism behind
-    # "a mastered trade is a cheap one" - and checking the log is checking
-    # it, where checking the action afterwards only finds it gone,
-    # because three of three units is exactly when it ends.
     after = len([r for r in world.tool_invocations if r.tool_name == "rest"])
     assert after - before == 3, (
         f"three repetitions produced {after - before} recorded calls; they are "
@@ -246,9 +234,6 @@ async def test_keep_doing_is_priced_at_nothing_and_each_repetition_pays(
     assert rule.base_cost == 0 and rule.min_cost == 0
 
 
-# ── owned state: the addendum's rule 6, and the two ways it bites ──────
-
-
 @pytest.mark.asyncio
 async def test_a_commitment_survives_a_checkpoint(world: WorldState, registry) -> None:
     """Addendum §6: "Owned-state list, checkpoint."
@@ -266,7 +251,7 @@ async def test_a_commitment_survives_a_checkpoint(world: WorldState, registry) -
     })
 
     saved = world.snapshot()
-    world.continuing.clear()          # the restart
+    world.continuing.clear()
     world.restore(saved)
 
     action = world.continuing.get("n06")

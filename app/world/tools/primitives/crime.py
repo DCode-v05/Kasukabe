@@ -36,7 +36,6 @@ from world.tools.place_aliases import satisfies_gate
 from world.tools.registry import ActorRequirements, ToolNamespace, ToolOutcome, ToolSpec
 from world.tools.state import WorldState
 
-# DESIGN.md section 6, verbatim.
 STEAL_SUCCESS_PROBABILITY = 0.70
 STEAL_WITNESS_PROBABILITY = 0.30
 
@@ -88,9 +87,6 @@ async def steal_handler(world: WorldState, agent: AgentLifeRecord, params: Steal
         raise ActorRequirementError("steal", [f"{agent.agent_id} already owns {params.storage_id}"])
 
     thief_location = world.location_of(agent.agent_id)
-    # Folded, not compared (TOOL-19). Standing in the sector the map draws
-    # and standing at the tool constant for it are the same ground, and a
-    # theft that refuses on a spelling teaches the thief nothing true.
     if not satisfies_gate(thief_location, storage.location_id):
         raise LocationGateError("steal", storage.location_id, thief_location)
     if satisfies_gate(world.location_of(storage.owner_id), storage.location_id):
@@ -108,16 +104,6 @@ async def steal_handler(world: WorldState, agent: AgentLifeRecord, params: Steal
         a for a in world.locations.agents_at(storage.location_id) if a != agent.agent_id
     )
 
-    # GOV-02. This case used to be filed `against_agent_id=storage.owner_id`
-    # - against the person who was robbed - and `arrest` and `rule` act on
-    # `against_agent_id`. The only person the police could take in on a
-    # theft was the victim, and a fine took the victim's money.
-    #
-    # A fresh theft accuses NOBODY. The town knows it was robbed; it does
-    # not know by whom, and saying otherwise is the difference between a
-    # justice system and a formality. `file_complaint` is how a name gets
-    # onto the case; ground truth sits underneath, unread by any tool, so
-    # a wrong name is measurable rather than impossible.
     case = CrimeCase(
         case_id=f"case-{uuid.uuid4().hex[:12]}",
         kind=CrimeCaseKind.THEFT,
@@ -134,10 +120,6 @@ async def steal_handler(world: WorldState, agent: AgentLifeRecord, params: Steal
     if succeeded:
         world.inventory.move(storage.storage_id, agent.agent_id, params.item, params.quantity)
 
-    # GOV-05: the payload used to carry `thief_agent_id` to everybody who
-    # perceived the event, so police knowledge and ground truth were
-    # identical by construction and there was nothing to investigate. The
-    # victim learns it was robbed; only a witness learns by whom.
     payload = {
         "case_id": case.case_id,
         "victim_agent_id": storage.owner_id,

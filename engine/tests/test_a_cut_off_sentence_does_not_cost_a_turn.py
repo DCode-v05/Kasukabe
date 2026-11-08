@@ -81,9 +81,6 @@ async def boot(tmp_path, agent_id: str = "agent-cut"):
     return await boot_sim_engine(profile, "http://world.test", world_client=world)
 
 
-# ── the wiring test: a real boot, a real tick, counted at the wire ──────
-
-
 @pytest.mark.asyncio
 async def test_a_cut_off_monologue_ends_the_tick_instead_of_eating_the_budget(
     tmp_path, monkeypatch, broker
@@ -92,15 +89,9 @@ async def test_a_cut_off_monologue_ends_the_tick_instead_of_eating_the_budget(
     monkeypatch.setenv("FORK_SUBAGENT", "false")
     engine = await boot(tmp_path)
     try:
-        # The broker is scripted with TWO turns. The point of the test is
-        # that the second is never asked for: the fake broker fails loudly
-        # on an unscripted call, so an under-scripted test would report the
-        # regression as an error rather than as a red assertion.
         broker.queue(MODEL_ID, "sse", cut_off_monologue_sse("I have been thinking about the"))
         broker.queue(MODEL_ID, "sse", text_turn_sse("...and so I conclude."))
 
-        # 2 is `world/call_budget.MIN_CALLS_PER_TICK`, the floor a penniless
-        # resident gets, and the exact budget the finding is written about.
         reply = await engine.send_tick("look around", call_budget=2)
 
         streamed = [b for b in broker.request_bodies if b.get("stream")]
@@ -120,8 +111,6 @@ async def test_a_cut_off_monologue_ends_the_tick_instead_of_eating_the_budget(
             "after 2 steps' having attempted nothing at all "
             "(world/call_budget.py::spent_line)"
         )
-        # The truncated words are still the turn's output - the cap bounds
-        # what a resident may say, it does not throw the sentence away.
         assert "I have been thinking about the" in reply
     finally:
         await engine.shutdown()
@@ -158,9 +147,6 @@ async def test_a_cap_that_interrupts_a_real_action_still_gets_its_continuation(
         )
     finally:
         await engine.shutdown()
-
-
-# ── the wrapper itself ─────────────────────────────────────────────────
 
 
 class _ScriptedAdapter:

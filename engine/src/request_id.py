@@ -23,7 +23,6 @@ from typing import Any
 
 from src.logging_config import request_id_var
 
-# Lowercase per ASGI convention; HTTP header names are case-insensitive.
 REQUEST_ID_HEADER = "x-request-id"
 
 
@@ -38,16 +37,12 @@ class RequestIdMiddleware:
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
 
-        # 12 hex chars — same id shape /execute already uses for its blocks, so
-        # the response header, the log lines, and a turn's block ids all match.
         rid = uuid.uuid4().hex[:12]
         request_id_var.set(rid)
         header = (REQUEST_ID_HEADER.encode("ascii"), rid.encode("ascii"))
 
         async def send_with_request_id(message: dict) -> None:
             if message["type"] == "http.response.start":
-                # message["headers"] is a list of (name, value) byte tuples and
-                # may be absent for a bare response; default to [] then append.
                 message["headers"] = list(message.get("headers", [])) + [header]
             await send(message)
 

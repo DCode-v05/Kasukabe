@@ -29,11 +29,6 @@ import pytest_asyncio
 from world.tools.bootstrap import build_world
 from world.tests.map_assets import needs_the_map
 
-# TOOL-27. This module needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped, and red for environment hides real regressions inside the
-# noise - which is how TOOL-09 stayed invisible for a whole cycle.
 pytestmark = needs_the_map
 
 
@@ -46,9 +41,6 @@ async def _spawn(world, agent_id: str, where: str) -> None:
     from world.tools.tests.conftest import spawn_agent  # type: ignore
 
     await spawn_agent(world, agent_id, where)
-
-
-# ── the tools exist at all ──────────────────────────────────────────────
 
 
 @pytest.mark.parametrize("tool", ["eat", "give", "rest"])
@@ -70,9 +62,6 @@ def test_eat_is_discoverable_alongside_the_food_tools(town) -> None:
 
     assert registry.get("eat").namespace == ToolNamespace.PUBLIC
     assert registry.get("give").namespace == ToolNamespace.PUBLIC
-
-
-# ── eating ──────────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -122,9 +111,6 @@ async def test_you_cannot_eat_timber(town) -> None:
     with pytest.raises(Exception) as caught:
         await registry.execute(world, "a1", "eat", {"item": "timber", "quantity": 1})
     assert "bread" in str(caught.value) or "wheat" in str(caught.value)
-
-
-# ── giving ──────────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -204,9 +190,6 @@ async def test_giving_is_witnessed(town) -> None:
     assert any(e.type == "agent.gave" for e in outcome.events)
 
 
-# ── stopping ────────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_resting_is_something_a_resident_can_actually_do(town) -> None:
     """Marta asked Wren to sit down with her and no such affordance
@@ -265,6 +248,4 @@ async def test_resting_does_not_throw_away_a_walk_by_default(town) -> None:
     )
     assert outcome.result["stopped_walking"] is False
     assert outcome.result["still_walking"] is True
-    # And it is TOLD, or it will assume the walk is gone and re-issue the
-    # move - the churn `move`'s "already walking there" branch exists for.
     assert "still walking to" in outcome.result["note"]

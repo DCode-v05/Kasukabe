@@ -48,8 +48,6 @@ def make_runner(tmp_path: Path, **overrides: object) -> GenesisRunner:
     scenario_path = kwargs.pop("scenario_path", None)
     config = GenesisRunnerConfig(**kwargs)
     if scenario_path:
-        # The same fold `--scenario` and KASUKABE_SCENARIO do: a config that
-        # merely NAMES a scenario has not been shaped by one.
         config = apply_scenario(config, str(scenario_path))
     return GenesisRunner(config)
 
@@ -76,7 +74,6 @@ async def test_the_election_opens_when_the_run_does(tmp_path: Path) -> None:
     elections = await runner.world_state.charter.store.list_elections()
     assert len(elections) == 1
     election = elections[0]
-    # Four game-hours a phase, six ticks to the hour, from the tick the run starts.
     assert (election.candidacy_opens_tick, election.candidacy_closes_tick) == (36, 60)
     assert (election.voting_opens_tick, election.voting_closes_tick) == (84, 108)
     await runner.shutdown()
@@ -182,7 +179,7 @@ async def test_the_run_records_its_own_setup_where_the_report_reads_it(tmp_path:
     runner = make_runner(tmp_path, scenario_path=SCENARIO)
     await runner.boot(resume=False)
 
-    async def spy(event: object) -> None:      # the bus awaits its subscribers
+    async def spy(event: object) -> None:
         seen.append(event)
 
     runner.world_state.event_bus.subscribe("system", spy)

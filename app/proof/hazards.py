@@ -270,7 +270,6 @@ def arguments_of_the_wrong_type(events: list[dict]) -> list[dict]:
     return out
 
 
-#: Every hazard, by the name a report should print.
 ALL: dict[str, Mutator] = {
     "tool json truncated mid-argument": truncate_tool_json(),
     "no contentBlockStart for a tool block": drop_tool_block_start,

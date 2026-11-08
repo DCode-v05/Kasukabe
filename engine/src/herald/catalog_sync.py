@@ -35,42 +35,20 @@ from src.herald.catalog import ModelCost, ModelDef
 logger = logging.getLogger(__name__)
 
 
-# Process state — populated by initialize(), refreshed by the poll.
 runtime_overlay: dict[str, ModelDef] = {}
 periodic_task: asyncio.Task | None = None
 active_settings: Settings | None = None
 sept_client: AsyncSeptember | None = None
-# True once any full_sync has succeeded this process. Drives the accelerated
-# first-sync retry (see periodic_resync_loop) and the late warn-only model
-# re-validation.
 ever_synced: bool = False
 
-# Accelerated retry schedule while the catalog has never synced: an engine
-# that booted degraded (citadel down, no catalog) should not wait out a full
-# resync interval to self-heal. 10s -> 30s -> then every 60s until the first
-# success, after which the normal catalog_resync_interval_s cadence applies.
 FIRST_SYNC_RETRY_SCHEDULE_S: tuple[float, ...] = (10.0, 30.0)
 FIRST_SYNC_RETRY_STEADY_S = 60.0
 
 
-# Default full-resync interval (seconds): the cadence at which the engine
-# re-pulls /v1/models to pick up catalog changes (model added/removed/retired,
-# price edits). Overridable per deploy via CATALOG_RESYNC_INTERVAL_S
-# (Settings.catalog_resync_interval_s); this constant is only the fallback when
-# no settings are active.
 RESYNC_INTERVAL_S = 300
 
-# Per-attempt timeout for the /v1/models pull. Bounded so a stalled
-# citadel never wedges boot.
 SYNC_TIMEOUT_S = 10.0
 
-# A full_sync response shorter than this fraction of the current overlay is
-# treated as suspiciously truncated: we MERGE its rows in but do NOT drop the
-# models it omitted, so a transiently-missing model is not evicted for a whole
-# resync interval. A response at/above this fraction is trusted to also prune
-# genuinely-removed models. 1.0 would mean "never trust a shrink"; 0.5 lets the
-# catalog legitimately halve in one pull while still guarding against a partial
-# citadel response that returns just a handful of rows.
 FULL_RESYNC_SHRINK_FLOOR = 0.5
 
 
@@ -132,13 +110,6 @@ def row_to_modeldef(row: dict[str, Any]) -> ModelDef:
             cache_create_per_1m=float(cache_write or 0),
         )
     else:
-        # A routable model with NO resolvable price. This is the field-name-drift
-        # / unpriced-model trap: every billable token would estimate $0 here,
-        # silently mispricing the model rather than failing. Citadel still bills
-        # correctly (it reads its own DB), but Herald's advisory cost estimate
-        # and any cost-sorted routing would treat this model as free. Surface it
-        # loudly instead of swallowing the zero so an operator can fix the price
-        # (or the field name) at the source.
         logger.warning(
             "catalog_sync: model %r has no resolvable price "
             "(input/output/cache all absent or 0) — it will be cost-estimated "
@@ -167,10 +138,6 @@ async def initialize(settings: Settings) -> bool:
     first-sync retry; there is no static seed). Never raises.
     """
     global active_settings, periodic_task, sept_client, ever_synced
-    # Re-initialize (tests, config reload) may change citadel coords —
-    # drop any client built against the old ones. Best-effort close:
-    # a failed close on a discarded client must not break the
-    # "never raises" contract of initialize().
     if sept_client is not None:
         try:
             await sept_client.aclose()
@@ -178,9 +145,6 @@ async def initialize(settings: Settings) -> bool:
             logger.debug("catalog_sync: closing stale client failed", exc_info=True)
         sept_client = None
     active_settings = settings
-    # Fresh coords -> the "have we ever synced" state starts over; the
-    # accelerated first-sync retry applies until a pull succeeds against
-    # the settings now active.
     ever_synced = False
 
     if not settings.cdt_url or not settings.cdt_key:
@@ -228,18 +192,12 @@ async def full_sync() -> bool:
         return False
     try:
         new_overlay: dict[str, ModelDef] = {}
-        # models.list() returns an auto-paginated AsyncPage; async-iterating it
-        # yields the same model rows that body["data"] produced. The SDK handles
-        # auth, retry, and backoff; row_to_modeldef() adapts the row unchanged.
         page = await sept.citadel.models.list()
         async for m in page:
             md = row_to_modeldef(m)
             new_overlay[md.id] = md
 
         if not new_overlay:
-            # Empty response: never blow the overlay away on a zero-row pull —
-            # that would strand every consumer with an empty catalog until the next
-            # good sync. Keep what we have.
             logger.warning(
                 "catalog_sync: /v1/models returned 0 models — keeping existing "
                 "overlay (%d models) rather than clearing",
@@ -248,9 +206,6 @@ async def full_sync() -> bool:
             return False
 
         prev_count = len(runtime_overlay)
-        # Trust the response to also PRUNE removed models only when it is not
-        # suspiciously short relative to what we already hold. On an empty prior
-        # overlay (boot) any non-empty response is authoritative.
         complete = prev_count == 0 or len(new_overlay) >= prev_count * FULL_RESYNC_SHRINK_FLOOR
         if complete:
             runtime_overlay.clear()
@@ -260,8 +215,6 @@ async def full_sync() -> bool:
                 len(new_overlay),
             )
         else:
-            # Suspiciously short: merge (refresh prices/caps) but do NOT evict
-            # the models this partial response omitted.
             runtime_overlay.update(new_overlay)
             logger.warning(
                 "catalog_sync: pull returned only %d models vs %d held "

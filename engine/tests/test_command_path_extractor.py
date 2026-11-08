@@ -12,11 +12,6 @@ from src.sandbox.command_path_extractor import (
 )
 
 
-# ---------------------------------------------------------------------------
-# filter_positional — POSIX `--` handling is the security-critical path
-# ---------------------------------------------------------------------------
-
-
 class TestFilterPositional:
     def test_empty_args(self):
         assert filter_positional([]) == []
@@ -34,8 +29,6 @@ class TestFilterPositional:
         assert filter_positional(["-rf", "file1", "file2"]) == ["file1", "file2"]
 
     def test_positional_then_flags(self):
-        # Unusual but legal ordering. Without a real parser table we
-        # treat every non-flag token as positional regardless of place.
         assert filter_positional(["file1", "-rf", "file2"]) == ["file1", "file2"]
 
     def test_double_dash_alone(self):
@@ -62,24 +55,16 @@ class TestFilterPositional:
         assert filter_positional(["-rf", "--", "-weird"]) == ["-weird"]
 
     def test_double_dash_preserves_empty_trailing(self):
-        # `--` with no following tokens means no positional args.
         assert filter_positional(["-r", "--"]) == []
 
     def test_double_dash_only_first_occurrence_matters(self):
-        # After the first `--`, subsequent `--` is just a positional.
         assert filter_positional(["--", "--", "foo"]) == ["--", "foo"]
 
     def test_empty_string_arg_dropped(self):
-        # An empty arg (shouldn't normally occur post-shlex) is dropped.
         assert filter_positional(["", "foo"]) == ["foo"]
 
     def test_multiple_mixed(self):
         assert filter_positional(["-r", "a", "-f", "b", "--", "-c", "d"]) == ["a", "b", "-c", "d"]
-
-
-# ---------------------------------------------------------------------------
-# extract_rm_paths / extract_rmdir_paths / extract_unlink_paths
-# ---------------------------------------------------------------------------
 
 
 class TestExtractRemovalPaths:
@@ -112,11 +97,6 @@ class TestExtractRemovalPaths:
         assert extract_removal_paths(["-rf"]) == []
 
 
-# ---------------------------------------------------------------------------
-# PATH_EXTRACTORS — the dispatcher table
-# ---------------------------------------------------------------------------
-
-
 class TestPathExtractorsTable:
     def test_all_removal_commands_registered(self):
         assert PATH_EXTRACTORS["rm"] is extract_removal_paths
@@ -130,11 +110,6 @@ class TestPathExtractorsTable:
     def test_dispatch_by_name(self):
         extractor = PATH_EXTRACTORS["rm"]
         assert extractor(["-rf", "/etc"]) == ["/etc"]
-
-
-# ---------------------------------------------------------------------------
-# resolve_removal_command — canonical alias lookup
-# ---------------------------------------------------------------------------
 
 
 class TestResolveRemovalCommand:

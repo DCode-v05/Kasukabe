@@ -101,7 +101,6 @@ async def test_a_failed_call_is_remembered_as_a_failure_and_outranks_a_success(w
 def test_importance_ranking_is_the_defensible_part():
     assert score_importance("reflection") > score_importance("plan")
     assert score_importance("plan") > score_importance("observation", tool="buy")
-    # something that changed the world outranks something that read it
     assert score_importance("observation", tool="transfer") > score_importance(
         "observation", tool="read_will"
     )
@@ -142,22 +141,11 @@ async def test_a_sink_receives_every_record_as_it_is_written(tmp_path):
         ThinkingDelta(thread_id=TID, text="I will buy more tomorrow."),
     ])
     assert [r["memory_type"] for r in seen] == ["observation", "plan"]
-    # and the file has them too - either half works without the other
     assert len(read_memory_stream(w.log_path)) == 2
 
 
 async def _noop() -> None:
     return None
-
-
-# ---------------------------------------------------------------------------
-# The consumer half: an agent reading its own memories back
-# ---------------------------------------------------------------------------
-# Everything above covers the producer. The producer alone is a log file: the
-# agent could write observations, plans and reflections and had no way to
-# retrieve any of them, because `read_memory_stream` was a Python function no
-# tool exposed. These cover the reader, and the two things that make a
-# registered tool actually callable - the ToolDef and the permission rule.
 
 
 @pytest.mark.asyncio

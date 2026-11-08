@@ -45,9 +45,6 @@ async def _refused(registry, world, actor, tool, params) -> str:
     return str(result.error) if getattr(result, "error", None) else ""
 
 
-# ── the book ──────────────────────────────────────────────────────────
-
-
 def test_the_defaults_are_a_free_market() -> None:
     policy = GovernmentPolicy()
 
@@ -58,9 +55,6 @@ def test_the_defaults_are_a_free_market() -> None:
 def test_a_floor_above_its_cap_is_not_a_policy() -> None:
     with pytest.raises(ValueError):
         GovernmentPolicy(price_caps={"bread": 10}, price_floors={"bread": 20})
-
-
-# ── setting it ────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -99,9 +93,6 @@ async def test_a_control_can_be_lifted(world, registry):
     assert "bread" not in policy.price_caps and "bread" not in policy.price_floors
 
 
-# ── read at dispatch: posting ─────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_price_above_the_cap_cannot_be_posted(world, registry):
     await _a_government(world)
@@ -134,9 +125,6 @@ async def test_a_price_inside_the_band_posts(world, registry):
     await spawn_agent(world, "baker", "market_square")
 
     assert await _refused(registry, world, "baker", "post_price", {"item": "bread", "ask_sim": 12}) == ""
-
-
-# ── read at dispatch: settling ────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -172,9 +160,6 @@ async def test_a_trade_below_the_floor_is_refused(world, registry):
                          {"counterparty_agent_id": "b", "item": "wheat", "quantity": 2, "price_sim": 8})
 
     assert "floor" in why.lower()
-
-
-# ── read at dispatch: founding a business ─────────────────────────────
 
 
 @pytest.mark.asyncio

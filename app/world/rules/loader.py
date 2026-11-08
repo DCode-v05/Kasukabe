@@ -45,9 +45,6 @@ class RuleError(ValueError):
     """A rulebook that cannot be trusted. Raised at load, never at use."""
 
 
-# --- the shape other code is entitled to rely on ---------------------------
-# Each entry: dotted path -> the type it must be. Checked exhaustively at load
-# so a caller never has to defend against a missing or mistyped rule.
 REQUIRED: dict[str, type | tuple[type, ...]] = {
     "schema_version": str,
     "economy.upkeep_per_day_sim": (int, float),
@@ -93,11 +90,8 @@ REQUIRED: dict[str, type | tuple[type, ...]] = {
     "unrest.decay_per_day": (int, float),
 }
 
-# Every emergency must be able to fire AND to stop firing. An emergency with no
-# stand-down is a town permanently in crisis.
 EMERGENCY_REQUIRED = ("trigger", "response", "stand_down")
 
-# A document nobody decides is a document nobody answers.
 DOCUMENT_REQUIRED = ("decided_by",)
 
 
@@ -118,7 +112,6 @@ def _check_required(data: dict[str, Any]) -> list[str]:
         except RuleError as exc:
             problems.append(str(exc))
             continue
-        # bool is an int in Python; a rule declared int must not accept True.
         if want is not bool and isinstance(value, bool):
             problems.append(f"`{path}` is a true/false but should be a number")
         elif not isinstance(value, want):
@@ -182,8 +175,6 @@ def _check_sense(data: dict[str, Any]) -> list[str]:
                 f"labour.staffing_targets.{role} names a surge_source but no `per_surge_unit`, "
                 "so the surge can never be sized"
             )
-    # A role the town may never recruit FROM but must staff to a floor is a
-    # deadlock the moment that floor is breached.
     never = set(data["labour"]["recruit_from"]["never_recruit"])
     order = set(data["labour"]["recruit_from"]["order"])
     if never & order:
@@ -278,7 +269,6 @@ class Rules:
             raise RuleError(f"`{name}` is not a section")
         return value
 
-    # -- the questions the town actually asks -----------------------------
 
     def wage(self, occupation: str) -> float:
         wages = self.get("economy.wages_per_day_sim")
@@ -351,7 +341,7 @@ def load_rules(path: Path | None = None, *, reload: bool = False) -> Rules:
         raise RuleError(f"{target.name} must be a JSON object")
 
     problems = _check_required(data)
-    if not problems:                      # sense checks assume the shape is there
+    if not problems:
         problems = _check_sense(data)
     if problems:
         listed = "\n  - ".join(problems)

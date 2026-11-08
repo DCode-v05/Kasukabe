@@ -36,7 +36,6 @@ pytestmark = pytest.mark.skipif(
 
 PER_TASK_TIMEOUT_S = 180
 
-# Each probe reveals a behaviour the deterministic spec can't show as the agent sees it.
 PROBES = [
     {
         "id": "error_recovery",

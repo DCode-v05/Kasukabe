@@ -27,9 +27,6 @@ from src.infra.september_home import (
 )
 
 
-# ── Resolution ────────────────────────────────────────────────────
-
-
 class TestResolve:
     def test_explicit_existing_directory_is_used(self, tmp_path):
         assert resolve_september_home(str(tmp_path)) == tmp_path.resolve()
@@ -61,9 +58,6 @@ class TestResolve:
         assert resolve_september_home() == (tmp_path / DEFAULT_HOME_DIRNAME).resolve()
 
 
-# ── Fails loudly ──────────────────────────────────────────────────
-
-
 class TestFailsLoudly:
     def test_explicit_missing_path_is_fatal(self, tmp_path):
         """A set-but-missing root is a bad mount or a typo, never a fresh install."""
@@ -86,9 +80,6 @@ class TestFailsLoudly:
         with pytest.raises(FileNotFoundError) as excinfo:
             resolve_september_home(str(missing))
         assert "typo-here" in str(excinfo.value)
-
-
-# ── Layout ────────────────────────────────────────────────────────
 
 
 EXPECTED_SUBDIRS = (
@@ -139,9 +130,6 @@ class TestLayout:
         assert ensure_layout(tmp_path) == tmp_path.resolve()
 
 
-# ── Wired to config ───────────────────────────────────────────────
-
-
 class TestSettingsDeriveFromHome:
     def test_db_path_defaults_under_the_home(self, tmp_path, monkeypatch):
         from src.config import Settings
@@ -175,9 +163,6 @@ class TestSettingsDeriveFromHome:
         assert SEPTEMBER_HOME_ENV in text
 
 
-# ── No stray absolute paths left behind ───────────────────────────
-
-
 class TestNoHardcodedRoots:
     def test_no_source_file_hardcodes_the_old_data_dir(self):
         """/data was the docker volume. Nothing may assume it any more."""
@@ -200,9 +185,6 @@ class TestNoHardcodedRoots:
 
         monkeypatch.setenv(SEPTEMBER_HOME_ENV, str(tmp_path))
         got = Path(sidechain_dir_default())
-        # Under the configured root — not the system temp dir, wherever that is.
-        # (pytest's tmp_path itself lives under /tmp, so a literal prefix check
-        # here would pass for the wrong reason.)
         assert got == tmp_path.resolve() / "sidechains"
 
     def test_engine_key_hash_lands_under_the_home(self, tmp_path, monkeypatch):
@@ -212,9 +194,6 @@ class TestNoHardcodedRoots:
         got = Path(persisted_key_hash_path())
         assert got == tmp_path.resolve() / "credentials" / "engine_key_hash"
         assert not str(got).startswith("/data")
-
-
-# ── Environment isolation for the rest of the suite ───────────────
 
 
 def test_env_var_name_is_stable():

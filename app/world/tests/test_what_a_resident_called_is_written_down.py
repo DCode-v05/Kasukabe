@@ -159,7 +159,7 @@ async def test_a_broken_store_does_not_end_the_tick(runner, monkeypatch) -> None
         raise RuntimeError("the store is gone")
 
     monkeypatch.setattr(run.trace_store, "record_tool_invocations", boom)
-    assert await run.drain_tool_invocations() == 0      # must not raise
+    assert await run.drain_tool_invocations() == 0
 
 
 @pytest.mark.asyncio
@@ -182,9 +182,6 @@ async def test_no_trace_store_is_not_an_error(tmp_path) -> None:
     assert await run.drain_tool_invocations() == 0
 
 
-# ── the wiring, which is the whole finding ─────────────────────────────
-
-
 def test_the_tick_loop_drains() -> None:
     """A recorder nobody calls is what EVAL-25 IS. The mechanism existing
     is not the mechanism running - eight times over in this review."""
@@ -205,21 +202,6 @@ def test_the_comment_no_longer_claims_something_untrue() -> None:
         "the comment still asserts the mirror without recording that it was "
         "false for the life of the project"
     )
-
-
-# ── the ring the cursor was indexing into ─────────────────────────────────
-#
-# The cursor was an index, justified in a comment that said "the list is
-# append-only within a run". `registry.dispatch` trims that list from the
-# FRONT at MAX_TOOL_INVOCATIONS_KEPT, so every record shifts down and the
-# index stops pointing at what it pointed at. Once the ring was full the
-# index equalled the length, `records[index:]` was empty, and the mirror
-# wrote nothing for the rest of the run.
-#
-# Measured on the real numbers: 12,000 calls in, 5,000 written, 7,000 lost.
-# That is the election30 report's "334 -> 0 -> 0" daily output and the 6,639
-# day-1 model calls it filed as idle, because there were no invocations left
-# to join them against.
 
 
 def _trim(records: list, cap: int) -> None:
@@ -267,7 +249,6 @@ async def test_a_ring_that_laps_between_drains_says_what_it_lost(runner) -> None
     ring.append(_invocation(1))
     await run.drain_tool_invocations()
 
-    # No drain for a while, and the ring laps past the record we last wrote.
     for n in range(2, 10):
         _trim(ring, cap)
         ring.append(_invocation(n))

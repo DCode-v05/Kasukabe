@@ -108,9 +108,6 @@ def schema_columns() -> dict[str, dict[str, str]]:
             kind = parts[1].lower()
             if kind not in {"text", "integer", "real", "blob", "numeric"}:
                 continue
-            # Only additive-safe columns. A NOT NULL or a generated column
-            # cannot be ALTERed in without a default and is a real
-            # migration, not a boot-time fixup.
             if "not null" in line.lower() or "generated" in line.lower():
                 continue
             if "primary key" in line.lower():
@@ -148,23 +145,11 @@ def connect_sqlite(sqlite_path: str, *, busy_timeout_ms: int) -> sqlite3.Connect
         conn.execute("PRAGMA journal_mode = WAL")
     return conn
 
-# See module docstring. Keep alphabetized by table for easy diffing against
-# migrations/ when a new jsonb/vector/array column is added there.
 SQLITE_JSON_COLUMNS: dict[str, frozenset[str]] = {
-    # A list of agent ids, written whole and read whole - see the
-    # utterances table in sqlite_schema.sql for why it is a list at all.
     "utterances": frozenset({"addressed_agent_ids"}),
     "buildings": frozenset({"footprint", "rooms", "bill_of_materials"}),
     "eval_metrics": frozenset({"metric_payload"}),
     "events": frozenset({"payload"}),
-    # request_body/response_body: dict[str, Any] on broker/trace.py's
-    # TraceRecord (see supabase/schema_gen.py's llm_calls_ddl()) - built
-    # from schema_gen.json_columns(TraceRecord) would report the same set;
-    # kept as an explicit literal here, like every other table in this
-    # map, so this dict alone is a complete answer to "what does the
-    # schema actually need coerced", not something a reader has to run
-    # schema_gen to discover. test_schema_gen.py cross-checks the two
-    # stay in sync.
     "llm_calls": frozenset({"request_body", "response_body"}),
     "memories": frozenset({"embedding", "related_memory_ids"}),
     "petitions": frozenset({"payload"}),
@@ -174,20 +159,12 @@ SQLITE_JSON_COLUMNS: dict[str, frozenset[str]] = {
 SQLITE_BOOL_COLUMNS: dict[str, frozenset[str]] = {
     "agents": frozenset({"is_minor", "is_dormant", "is_alive"}),
     "businesses": frozenset({"is_control_business"}),
-    # Renamed from "succeeded": TraceRecord's real field is `success` (see
-    # broker/trace.py) - the old name here never matched the dataclass it
-    # was meant to serve.
     "llm_calls": frozenset({"success"}),
     "organizations": frozenset({"is_registered"}),
     "tools_registry": frozenset({"is_licensable", "is_teachable"}),
     "utterances": frozenset({"is_public"}),
 }
 
-# Every filter operator both backends support. postgrest_client.py sends
-# these strings to PostgREST verbatim; here they translate to SQL. Adding
-# an operator to client.py's helpers without a translation here would make
-# it silently postgrest-only, so keep this in sync with that module's
-# helper list.
 OP_TO_SQL: dict[str, str] = {
     "eq": "=",
     "neq": "!=",
@@ -196,7 +173,7 @@ OP_TO_SQL: dict[str, str] = {
     "lt": "<",
     "lte": "<=",
     "like": "LIKE",
-    "ilike": "LIKE",  # SQLite's LIKE is already case-insensitive for ASCII.
+    "ilike": "LIKE",
 }
 
 
@@ -320,30 +297,13 @@ class SqliteClient(SupabaseClient):
         self.config = config
         self.conn = connect_sqlite(config.sqlite_path, busy_timeout_ms=config.busy_timeout_ms)
         self.ensure_schema()
-        # Serializes every insert/select/update against self.conn - see
-        # each method's own comment for why. Not init=False/dataclass
-        # machinery: this class is a plain class, so a normal instance
-        # attribute is enough; every asyncio.to_thread body below runs
-        # under this lock, held for the coroutine's duration (an
-        # asyncio.Lock, not a threading.Lock - correct because the
-        # caller awaiting it is a coroutine, even though the work it
-        # guards runs in a worker thread).
         self.conn_lock = asyncio.Lock()
-        # Storage stand-in: bucket/path pairs become files under this
-        # directory when no S3 bucket is configured (every test, and any
-        # local dev run without KASUKABE_S3_BUCKET set) so a caller
-        # storing that "bucket/path" string in payload_archive_path never
-        # has to know whether it landed on disk or in S3.
         if config.sqlite_path == ":memory:":
             import tempfile
 
             self.local_storage_root = Path(tempfile.gettempdir()) / "kasukabe-local-storage"
         else:
             self.local_storage_root = Path(config.sqlite_path).resolve().parent / "local_storage"
-        # Built lazily (not here) because constructing it is cheap but
-        # pointless when config.s3_bucket is empty, which is every test in
-        # this repo per app/CONVENTIONS.md's "never call a real ... API in
-        # a test" - see upload_archive_sync.
         self.s3: S3Client | None = None
         self.pk_kind_cache: dict[str, str] = {}
 
@@ -373,15 +333,8 @@ class SqliteClient(SupabaseClient):
         destructive repair is `supabase/repair_live_schema.py`'s job, and
         it deliberately refuses to touch a table with rows in it.
         """
-        # Columns FIRST, then the rest of the DDL. sqlite_schema.sql
-        # creates indexes over columns an older table may not have yet,
-        # and `executescript` aborts at the first error - so applying the
-        # script before the ALTERs would abandon every statement after the
-        # first index it could not build.
         self.add_missing_columns()
         self.apply_ddl()
-        # And again, for anything the DDL just created. A no-op on a
-        # database that was already current, which is the usual case.
         self.add_missing_columns()
         self.conn.commit()
 
@@ -430,17 +383,13 @@ class SqliteClient(SupabaseClient):
             except sqlite3.Error:
                 continue
             if not live:
-                continue  # the table is not here at all; the DDL above owns that
+                continue
             for name, decl in columns.items():
                 if name in live:
                     continue
                 try:
                     self.conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {decl}")
                 except sqlite3.Error as exc:
-                    # A column SQLite will not add additively (one with a
-                    # non-constant default, say) is a real migration and
-                    # not something to do silently at boot. Say so and
-                    # leave it: a loud gap beats a quiet one.
                     logger.error(
                         "could not add %s.%s (%s) - rows using it will be "
                         "DROPPED until this is migrated by hand: %s",
@@ -451,7 +400,6 @@ class SqliteClient(SupabaseClient):
                 logger.info("schema: added missing column %s.%s", table, name)
         return added
 
-    # ── primary key generation ────────────────────────────────────────
 
     def id_column_kind(self, table: str) -> str:
         """"uuid" for entity tables (id TEXT PRIMARY KEY, app-generated) or
@@ -477,13 +425,10 @@ class SqliteClient(SupabaseClient):
             return row
         if self.id_column_kind(table) == "uuid":
             return {**row, "id": str(uuid.uuid4())}
-        # autoincrement (or no id column at all): leave unset, SQLite
-        # assigns it on insert.
         row = dict(row)
         row.pop("id", None)
         return row
 
-    # ── SupabaseClient interface ────────────────────────────────────────
 
     async def insert(self, table: str, rows: list[Row]) -> list[Row]:
         if not rows:

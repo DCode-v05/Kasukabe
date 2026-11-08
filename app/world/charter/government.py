@@ -68,11 +68,6 @@ from world.charter.models import (
 )
 from world.charter.store import CharterStore
 
-# ECON-10. Emitted when a payer reports that government salary days have
-# been settled. Declared beside the method that raises it - every other
-# constant in this module's event vocabulary marks a decision a seat
-# holder took, and this one marks a payment somebody else made. The name
-# follows the same "domain.thing.happened" shape as `events.py`.
 EVENT_PAYROLL_PAID = "politics.payroll.paid"
 
 
@@ -88,7 +83,6 @@ class GovernmentActions:
         if not government_state.is_sitting(agent_id):
             raise NotSittingGovernment(agent_id)
 
-    # -- tax and credit-store margin ----------------------------------
 
     async def set_tax_rate(
         self, tax_rate_bps: int, set_by_agent_id: str, location: str, now_tick: int
@@ -162,7 +156,6 @@ class GovernmentActions:
         )
         return new_policy
 
-    # -- price controls and licensing (GOV-4) ----------------------------
 
     async def set_price_control(
         self,
@@ -240,7 +233,6 @@ class GovernmentActions:
         except ValidationError as exc:
             raise CharterValidationError([str(err["msg"]) for err in exc.errors()]) from exc
 
-    # -- jobs -----------------------------------------------------------
 
     async def create_job(
         self,
@@ -314,21 +306,6 @@ class GovernmentActions:
         )
         return job
 
-    # -- payroll (ECON-10) ------------------------------------------------
-    #
-    # `create_job` and `hire_police` stored a `salary_sim` that nothing
-    # ever read as an obligation: a government could staff the whole town
-    # and the money never moved, because no one could ask which posts were
-    # filled, what each was owed, or whether a day had already been paid.
-    # These three methods are that missing question, answered.
-    #
-    # The paying itself is not here and must not be: this module holds no
-    # reference to the money layer (see `models.py`'s module docstring on
-    # the import boundary - charter/ is imported BY the tool layer, so
-    # importing back would be a cycle). The shape is the same one GOV-23's
-    # licence fee settled on: charter/ decides, the caller pays. A payer
-    # reads `payroll_due`, moves the money, and reports back with
-    # `record_payroll_paid` so the same game-day cannot be paid twice.
 
     async def payroll_due(self, now_tick: int) -> list[PayrollLine]:
         """Every filled government post owed salary as of `now_tick`.
@@ -418,9 +395,6 @@ class GovernmentActions:
                     "amount_sim": amount_sim,
                     "paid_through_tick": job.last_paid_tick,
                     "tick": now_tick,
-                    # GOV-20's interrupt list: the resident who was just
-                    # paid should notice, and nobody else should be woken
-                    # by somebody else's wage day.
                     "involved_agent_ids": (
                         [job.assigned_agent_id] if job.assigned_agent_id else []
                     ),
@@ -429,7 +403,6 @@ class GovernmentActions:
         )
         return job
 
-    # -- pension terms (GOV-09) -------------------------------------------
 
     async def pension_due_sim(
         self, last_salary_sim: int, employment_type: str, age_years: float
@@ -464,7 +437,6 @@ class GovernmentActions:
                 return "government"
         return "private"
 
-    # -- permits and builder licenses -----------------------------------
 
     async def issue_license(
         self,
@@ -491,12 +463,6 @@ class GovernmentActions:
                     "license_id": license_.license_id,
                     "license_type": license_type,
                     "holder_agent_id": holder_agent_id,
-                    # GOV-04: carried over from the tool handler's own copy
-                    # of this event, which is being deleted as a duplicate.
-                    # `involved_agent_ids` is GOV-20's interrupt list -
-                    # `core/perception.py:52` wakes exactly these residents,
-                    # so dropping it would either wake nobody or, if some
-                    # later reader defaulted it, wake the whole town.
                     "issued_by_agent_id": issued_by_agent_id,
                     "involved_agent_ids": sorted(
                         {holder_agent_id, issued_by_agent_id}
@@ -555,7 +521,6 @@ class GovernmentActions:
         )
         return license_
 
-    # -- tenders ----------------------------------------------------------
 
     async def post_tender(
         self,

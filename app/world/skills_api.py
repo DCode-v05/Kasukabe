@@ -45,9 +45,6 @@ from world.ledger.action_costs import (
 from world.life.models import Genesis
 from world.tools.state import WorldState
 
-# The cost a discount is quoted against. Any positive number works - the
-# ratio is what the sheet reports - but a round one keeps the arithmetic in
-# the response legible to a person reading it.
 NOVICE_REFERENCE_COST_SIM = 100
 
 
@@ -66,7 +63,7 @@ class SkillEntry(BaseModel):
 
     skill: str
     proficiency: int
-    learned: str                    # "self-taught" | "taught"
+    learned: str
     taught_by_agent_id: str | None
     taught_by_name: str | None
     novice_cost_sim: int
@@ -220,9 +217,6 @@ def family_tree(world: WorldState, names: dict[str, str], household_id: str) -> 
     branches = []
     for skill, holders in by_skill.items():
         holders.sort(key=lambda h: -h.proficiency)
-        # Generations, as far as the household can tell: how many distinct
-        # age brackets hold it. A parent and a child both baking is the
-        # thing section 22 wants watchable.
         ages = {
             _generation_of(world, h.agent_id)
             for h in holders

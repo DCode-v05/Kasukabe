@@ -156,8 +156,6 @@ async def test_a_program_cannot_spend_more_than_its_share_of_the_wallet(
     turn has no turn left to notice, because the next thing it learns is
     that it cannot afford to think.
     """
-    # 20 sim, so the half-share ceiling is 10 and a 1-sim `rest`
-    # repeated twenty times is guaranteed to reach it.
     await spawn_agent(world, "n02", FIELD, starting_sim=20)
     opening = world.ledger.sim_balance("n02")
     await _file(
@@ -179,7 +177,6 @@ async def test_a_program_cannot_spend_more_than_its_share_of_the_wallet(
         "the program emptied the wallet, which is the exact thing the "
         "share ceiling exists to make impossible"
     )
-    # Charged for the act that crossed the line, never for one after it.
     assert outcome.result["sim_spent"] <= ceiling + _one_rest(world, registry)
 
 
@@ -219,7 +216,6 @@ async def test_a_program_that_earns_cannot_raise_its_own_ceiling(world, registry
 
     def balance_that_grows(account_id: str) -> int:
         seen.append(account_id)
-        # First read is honest; every read after it claims a fortune.
         if seen.count("n03") > 1 and account_id == "n03":
             return 1_000_000
         return real_balance(account_id)
@@ -295,10 +291,6 @@ def test_a_ceiling_that_cannot_be_read_stops_the_boot(monkeypatch):
         importlib.reload(program)
         assert program.PROGRAM_MAX_CALLS == 0
     finally:
-        # In a `finally`, because a module left holding a ceiling this
-        # test set would hand it to every test that runs after - which is
-        # the order pollution this suite already has one instance of, and
-        # a self-inflicted one is worse than an inherited one.
         monkeypatch.delenv("KASUKABE_PROGRAM_MAX_CALLS", raising=False)
         importlib.reload(program)
 

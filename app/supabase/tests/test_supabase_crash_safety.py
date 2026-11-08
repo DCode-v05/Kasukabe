@@ -59,18 +59,12 @@ def kill_uncatchably(proc: subprocess.Popen) -> None:
         proc.kill()
 
 
-# Below the helper deliberately: these open SQLite handles, and the writer
-# subprocess above must be able to die with none of them held by this
-# process. Same reason the vanished-store test imports late.
 from supabase.client import eq  # noqa: E402
 from supabase.config import SupabaseConfig  # noqa: E402
 from supabase.sqlite_client import SqliteClient, connect_sqlite  # noqa: E402
 
 WRITER_SCRIPT = Path(__file__).resolve().parent / "crash_safety_writer.py"
 ROWS_PER_BATCH = 10
-# How many batches to let the writer complete before killing it mid-way
-# through the next one. 3 is enough to prove "earlier commits survive",
-# not just "the very first one did".
 TARGET_BATCH = 3
 POLL_INTERVAL_S = 0.01
 STARTUP_TIMEOUT_S = 30.0
@@ -125,13 +119,8 @@ async def test_kill_mid_batch_survives_with_no_corruption_and_no_lost_committed_
     )
 
     try:
-        # Wait until the writer has announced it is starting TARGET_BATCH
-        # - by the writer's protocol, this happens strictly before that
-        # batch's transaction opens, and the writer's own 1s mid-batch
-        # sleep guarantees it cannot have committed yet either.
         wait_for_marker_at_least(started_marker, TARGET_BATCH, proc=proc, timeout_s=STARTUP_TIMEOUT_S)
 
-        # ── the crash ───────────────────────────────────────────────
         kill_uncatchably(proc)
         proc.wait(timeout=10)
     finally:
@@ -139,32 +128,24 @@ async def test_kill_mid_batch_survives_with_no_corruption_and_no_lost_committed_
             proc.kill()
             proc.wait(timeout=10)
 
-    assert proc.returncode != 0  # actually killed, not a clean exit that raced us
+    assert proc.returncode != 0
 
-    # ── marker sanity check: prove the timing assumption held ─────────
-    # If this ever fails, CRASH_WINDOW_S in crash_safety_writer.py is too
     # short for this machine, not a bug in the pragmas under test - but it
-    # should never fail given a full second of margin.
     committed_batches = read_marker(committed_marker)
     assert committed_batches == TARGET_BATCH - 1, (
         f"expected exactly {TARGET_BATCH - 1} committed batches at kill time, got {committed_batches} - "
         "the timing assumption behind this test did not hold on this machine"
     )
 
-    # ── reopen: integrity ──────────────────────────────────────────
     conn = connect_sqlite(str(db_path), busy_timeout_ms=5000)
     try:
         integrity = conn.execute("PRAGMA integrity_check").fetchone()[0]
         assert integrity == "ok"
 
-        # ── no lost committed rows ──────────────────────────────────
         expected_row_count = committed_batches * ROWS_PER_BATCH
         (actual_row_count,) = conn.execute("SELECT count(*) FROM events").fetchone()
         assert actual_row_count == expected_row_count
 
-        # Content check, not just count: every committed batch's rows are
-        # intact and correctly attributed - rules out a partially-written
-        # row surviving as valid-looking but wrong.
         rows = conn.execute("SELECT tick, payload FROM events ORDER BY tick").fetchall()
         expected_ticks = list(range((committed_batches) * ROWS_PER_BATCH))
         assert [r[0] for r in rows] == expected_ticks
@@ -172,16 +153,11 @@ async def test_kill_mid_batch_survives_with_no_corruption_and_no_lost_committed_
             batch_of_row = (tick // ROWS_PER_BATCH) + 1
             assert f'"batch":{batch_of_row}' in payload
 
-        # ── no partial (killed) transaction leaked anything ─────────
-        # Batch TARGET_BATCH was in flight at kill time; atomicity means
-        # either all of it is present or none of it is - it must be none.
         killed_batch_marker = f'"batch":{TARGET_BATCH}'
         assert not any(killed_batch_marker in payload for _, payload in rows)
     finally:
         conn.close()
 
-    # ── database is still fully writable after the crash, not merely
-    # readable ────────────────────────────────────────────────────────
     recovery_client = SqliteClient(SupabaseConfig(sqlite_path=str(db_path)))
     try:
         inserted = await recovery_client.insert(
@@ -233,11 +209,6 @@ async def test_repeated_crash_recovery_cycles_stay_consistent(tmp_path: Path) ->
         try:
             assert conn.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
             (count,) = conn.execute("SELECT count(*) FROM events").fetchone()
-            # Cycle 1 resumes on top of cycle 0's surviving rows (the
-            # writer restarts its own batch counter from 1 each launch,
-            # but the table is not reset between cycles) - only assert
-            # the database is internally consistent and non-empty after
-            # the first cycle committed at least one full batch.
             assert count >= ROWS_PER_BATCH
         finally:
             conn.close()

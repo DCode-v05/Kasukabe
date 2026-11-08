@@ -84,9 +84,6 @@ def make_world() -> object:
     return world
 
 
-# ── The card ─────────────────────────────────────────────────────────
-
-
 def test_a_card_carries_who_you_are_and_what_you_can_do() -> None:
     card = agent_card(make_world(), "n01")
     assert card["name"] == "Bram Holloway"
@@ -120,9 +117,6 @@ def test_a_card_never_carries_money_or_secrets() -> None:
 
 def test_an_unknown_agent_has_no_card() -> None:
     assert agent_card(make_world(), "nobody") is None
-
-
-# ── Discovery: the Bram case ─────────────────────────────────────────
 
 
 def test_asking_for_a_trade_finds_the_person_who_does_it() -> None:
@@ -240,9 +234,6 @@ def test_missing_world_attributes_do_not_break_discovery() -> None:
     bare.agents = {"n01": None}
     assert rank_people(bare, "mining", exclude="n02") == []
     assert agent_card(bare, "n01")["name"] == "Bram"
-
-
-# ── Names, added after watching agents use the tool ──────────────────
 
 
 def test_a_person_can_be_looked_up_by_name() -> None:

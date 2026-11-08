@@ -24,16 +24,6 @@ import pytest
 from world.run_genesis import GenesisRunner
 from world.wiring import TraceStore
 
-# Deliberately excluded, with the reason, so this list is a decision and
-# not an oversight.
-#
-# record_event USED TO SIT HERE. The reason given was real - mirroring every
-# WorldEvent is proportional to tick count and grew an earlier trace store
-# to 21 GB - but the remedy was total abstention, so `events` took zero rows
-# in all 23 runs and every reader of that table reported on emptiness
-# (EVAL-02). It is now wired behind `is_worth_recording`, an allowlist that
-# excludes the per-tick chatter by name. Both failure modes are covered by
-# test_the_events_table_gets_rows.py.
 DELIBERATELY_UNWIRED: set[str] = set()
 
 

@@ -51,11 +51,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Speculative-prefetch gate. Inputs at or under this length, or matching the
-# greeting shapes below, never start the memory prefetch: triage will almost
-# certainly return an empty plan for them, and the embed would already be
-# billed by the time the cancel lands. A short input that IS real work simply
-# falls back to the thread's own serial recall.
 TRIVIAL_INPUT_MAX_CHARS = 11
 GREETING_RE = re.compile(
     r"^(hi|hiya|hello|hey|yo|sup|howdy|thanks|thank you|thx|ty|ok|okay|cool|"
@@ -70,117 +65,62 @@ def is_trivial_input(message: str) -> bool:
     return len(stripped) <= TRIVIAL_INPUT_MAX_CHARS or bool(GREETING_RE.match(stripped))
 
 
-# The thread a turn is running under, set at dispatch in handle_input. The
-# coordinator's await_block_input reads it to attribute a waiting block to the
-# real thread (NOT id(current_task())), so the emitted craft block routes to
-# the right stream and the pending_inputs entry records the owning thread.
 current_thread_id_var: contextvars.ContextVar[str] = contextvars.ContextVar(
     "current_thread_id",
     default="",
 )
 
-# The turn a block belongs to. One input can fan out across several threads and
-# can also produce blocks that belong to no thread at all (the dispatch report,
-# the aggregate done); those cannot be routed to a stream by thread_id. The
-# server sets this per request, and because a task copies the ambient context at
-# creation, every fanned-out segment inherits it - so the sink can attribute any
-# block, threaded or not, to the stream that asked for it.
 current_turn_id_var: contextvars.ContextVar[str] = contextvars.ContextVar(
     "current_turn_id",
     default="",
 )
 
-# Set at turn dispatch to the effective ``craft`` gate for this turn. The thread's
-# system-prompt builder reads it to decide whether to teach the <craft> tag, and
-# the agent loop reads it to decide whether to run the craft parser at all. Off →
-# the model is never told crafts exist → it writes plain prose (no generate-then-
-# scrub). Mirrors current_thread_id_var: same dispatch seam, same context flow.
 craft_gate_var: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "craft_gate",
     default=False,
 )
 
-# Set at dispatch when a turn is a craft EDIT (block_input value carried {edit,
-# current}). Carries {"key": <current craft key>, "version": <current version>}.
-# The craft parser reads it so the engine post-stamps version = current + 1 on the
-# re-authored craft (the engine owns the integer; the model just re-authors the
-# same key). None on a normal turn → authored crafts are version 1.
 craft_edit_var: contextvars.ContextVar[dict | None] = contextvars.ContextVar(
     "craft_edit",
     default=None,
 )
 
-# The per-stream craft_wait gate, carried into the turn so the agent loop can
-# honor "wait halts the turn". When an authored <craft wait="true"> is emitted
-# AND this is set, the turn ends at the craft (durably persisted) rather than
-# running on past it - its post-craft text and tool calls would otherwise fan to
-# an already-closed stream and be dropped while their side effects still ran.
-# Defaults True to match the request default; only consulted when crafts are on.
 craft_wait_var: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "craft_wait",
     default=True,
 )
 
-# Set at turn dispatch to the effective ``citations`` gate. The system-prompt
-# builder reads it to decide whether to teach the ⟦cite:h⟧ marker, and the agent
-# loop reads it to decide whether to register sources / run the citation parser
-# at all. Off → no SourceRegistry, no handle labels, no markers → zero added
-# tokens, the turn behaves exactly as today. Mirrors craft_gate_var.
 citations_gate_var: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "citations_gate",
     default=False,
 )
 
-# The per-turn SourceRegistry, set at dispatch when citations is on (else None).
-# The memory/asset/web feeders register sources into it; the citation parser
-# validates cited handles against it; source blocks fold from it. None → the
-# whole sourcing pipeline is inert (gate off).
 source_registry_var: contextvars.ContextVar = contextvars.ContextVar(
     "source_registry",
     default=None,
 )
 
-# Set at turn dispatch to the effective voice-channel gate (voice OR
-# voice_primary). The system-prompt builder reads it to decide whether to teach
-# the <voice> tag; sub-agents read it to narrate on the parent stream. The
-# voice/media parser itself runs on every turn regardless (voice history is
-# verbatim, so a gate-off turn may imitate the tags; the sink's gate filter is
-# what keeps non-opted-in blocks off each stream). Mirrors craft_gate_var.
 voice_gate_var: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "voice_gate",
     default=False,
 )
 
-# Set at turn dispatch when the request asked for ears-first narration
-# (voice_primary, spec D18): the narration carries the full response and the
-# visible text becomes supporting material. Selects the guide variant only.
 voice_primary_var: contextvars.ContextVar[bool] = contextvars.ContextVar(
     "voice_primary",
     default=False,
 )
 
-# Set at turn dispatch to the media gates: {"image": bool, "audio": bool,
-# "video": bool}. The system-prompt builder teaches only the enabled kinds.
-# None (default) = all off.
 media_gates_var: contextvars.ContextVar[dict | None] = contextvars.ContextVar(
     "media_gates",
     default=None,
 )
 
-# The per-thread MediaUrlRegistry (URL provenance, spec D12), bound at dispatch
-# once the target thread resolves. Carried by contextvar so sub-agent tasks
-# inherit the SAME registry object: their tool-result URLs feed the pool the
-# parent validates media tags against. None = provenance validation fails
-# closed (no observed URLs, nothing can be emitted).
 media_registry_var: contextvars.ContextVar = contextvars.ContextVar(
     "media_registry",
     default=None,
 )
 
 
-# Keys a client may use to carry a multichoice answer. No wire contract pins
-# one, so all three common spellings are accepted; the point is that an
-# unwrapped envelope is never iterated as if it were the selection list.
 SELECTION_KEYS: tuple[str, ...] = ("answers", "selected", "selections", "answer", "response")
 
 
@@ -243,7 +183,6 @@ class Coordinator:
         self.utility = utility
         self.skill_catalog = skill_catalog
         self.data_dir = data_dir
-        # Signal store created lazily - same db the coordinator already has
         self.signal_store = None
         if db is not None:
             try:
@@ -254,17 +193,12 @@ class Coordinator:
                 pass
         self.resume_state_mgr = ResumeStateManager(db)
         self.conversation_store = ConversationStore(db) if db is not None else None
-        self.router: Any = None  # retained for API compatibility; never set
+        self.router: Any = None
         self.thread_index: dict[str, ThreadIndexEntry] = {}
         self.active_threads: dict[str, ExecutionThread] = {}
-        self.threads: dict[str, ExecutionThread] = {}  # persistent threads
+        self.threads: dict[str, ExecutionThread] = {}
         self.background_tasks: set[asyncio.Task] = set()
-        # Per-task timeout: 10 minutes default, overridable via settings
         self.task_timeout_seconds: float = 600.0
-        # v2 paused-turn registry: block_id → (future, fmt, thread_id). A turn
-        # that pauses (ask_user / permission / denial-escalation) registers its
-        # waiting future here under the block_id the client sees; resume_block
-        # resolves it lock-free.
         self.pending_inputs: dict[str, tuple[asyncio.Future, str, str]] = {}
 
     def set_router(self, adapter: Any, alternative: Any = None) -> None:
@@ -276,7 +210,6 @@ class Coordinator:
         """
         return None
 
-    # ── Main entry point ──────────────────────────────────────────
 
     async def handle_input(
         self,
@@ -310,18 +243,6 @@ class Coordinator:
         if super_thinking and (options is None or not options.super_thinking):
             options = options or RequestOptions()
             options.super_thinking = True
-        # Speculative memory prefetch - start episodic / knowledge / social
-        # recall immediately so it runs in parallel with the router LLM hop
-        # and the thread bootstrap. The thread awaits this task inside
-        # execute_turn instead of starting its own recall serially.
-        #
-        # Gated: trivially short or greeting-shaped inputs skip the
-        # speculation entirely. The embed round-trip is nearly always faster
-        # than the triage hop, so by the time an empty plan cancels the
-        # task the embedding has already been billed - for chatter that is
-        # a pure cost floor with no reader. A short input that IS real work
-        # just falls back to the thread's own serial recall (correct, only
-        # without the latency overlap).
         prefetch_memory_task: asyncio.Task | None = None
         prefetch_usage: UsageAccumulator | None = None
         if self.search is not None and not is_trivial_input(message):
@@ -333,29 +254,14 @@ class Coordinator:
         dispatch = await self.build_dispatch(message, thread_id, direct=direct)
         await self.emit_dispatch(dispatch)
 
-        # Segments the pin/unpin layer must resolve (claimed / contested)
-        # are never executed here: the coordinator does not hold a turn
-        # hostage waiting on a human, and the caller words the question in
-        # its own voice. They ride out on the dispatch block.
         plan = dispatch.executable
 
-        # A status question is a read of this index, not work - it spawns
-        # nothing. It is also independent of whatever else the input asked for,
-        # so it is answered alongside the work rather than instead of it: an
-        # input that asks a question AND gives an instruction must get both,
-        # and the answer runs concurrently because it is its own model hop.
         status_segments = [s for s in dispatch.segments if s.verdict == "status"]
         status_task: asyncio.Task | None = None
         if status_segments:
             status_task = asyncio.create_task(self.answer_status(message))
 
         if not plan:
-            # Nothing will run, so nothing will ever consume the speculative
-            # recall. Cancelling saves the local sqlite-vec reads only: the
-            # embed round-trip is faster than the triage hop, so by now the
-            # embedding has usually completed and been billed (the gate above
-            # keeps obvious chatter from ever paying it). Log what was spent
-            # so the cancelled path still shows up in engine-side accounting.
             if prefetch_memory_task is not None:
                 prefetch_memory_task.cancel()
                 if prefetch_usage is not None and prefetch_usage.embedding_tokens:
@@ -366,19 +272,12 @@ class Coordinator:
                     )
             if status_task is not None:
                 return await status_task
-            # Everything was returned for the caller to resolve. The dispatch
-            # block carries the verdicts; there is no turn to run.
             return await self.say(
                 dispatch.reasoning or "Awaiting your decision on where this belongs."
             )
 
         turns = self.coalesce_segments(plan)
 
-        # Bind every thread this turn will touch BEFORE any wire block is
-        # emitted, so the sink can route all of them to the stream that issued
-        # the input. A binding the caller made (an explicit thread_id, a
-        # block_input resume) is never overwritten - the stream is already
-        # registered under it and blocks may already have been fanned there.
         if thread_id_box is not None:
             if not thread_id_box[0]:
                 thread_id_box[0] = turns[0][0]
@@ -405,10 +304,6 @@ class Coordinator:
                 prefetch_memory_task=prefetch_memory_task,
             )
 
-        # Fan out. One asyncio task per turn: contextvars are copied into each
-        # task at creation, so per-turn thread binding and gates stay correct
-        # while the turns run genuinely in parallel (the turn lock is
-        # per-thread, and coalescing guarantees one turn per thread here).
         results = await asyncio.gather(
             *(
                 asyncio.create_task(
@@ -434,8 +329,6 @@ class Coordinator:
             return_exceptions=True,
         )
 
-        # A failed segment must not swallow its siblings' work, and must not
-        # be reported as success. Surface both.
         texts: list[str] = []
         failures = 0
         for (tid, _, _), outcome in zip(turns, results):
@@ -446,9 +339,6 @@ class Coordinator:
             else:
                 texts.append(outcome if isinstance(outcome, str) else str(outcome))
         if status_task is not None:
-            # The question was answered even if every instruction failed, so
-            # there is something true to return; the failures travel with it in
-            # the text, and each segment's own done reports its real outcome.
             texts.insert(0, await status_task)
         elif failures == len(turns):
             raise RuntimeError(f"all {failures} dispatched segments failed")
@@ -475,15 +365,9 @@ class Coordinator:
                 message, verdict="continue", reasoning="explicit thread_id", target=thread_id
             )
         if direct:
-            # The caller paid for latency, not for a triage hop. One segment,
-            # no target: the input runs as a single piece of work exactly as it
-            # arrived, which is what "bypass the router" has to mean when no
-            # thread was named.
             return single_segment(message, reasoning="direct")
         if not self.threads:
             return single_segment(message, reasoning="no threads yet")
-        # ThreadRouter was removed for the Kasukabe build: no triage hop left,
-        # so every input that reaches here opens its own segment.
         return single_segment(message, reasoning="router not configured")
 
 
@@ -541,7 +425,7 @@ class Coordinator:
         """
         turns: list[tuple[str, str, bool]] = []
         by_target: dict[str, int] = {}
-        opened: list[tuple[str, int]] = []  # (normalized extract, turn index)
+        opened: list[tuple[str, int]] = []
 
         for seg in segments:
             if seg.target:
@@ -578,9 +462,6 @@ class Coordinator:
         await self.emitter.emit(
             RoutingDecision(
                 thread_id="",
-                # asdict rather than a hand-written literal: the wire payload
-                # tracks the dataclass, so a new field on DispatchSegment
-                # reaches readers instead of being silently dropped here.
                 segments=[asdict(s) for s in dispatch.segments],
                 reasoning=dispatch.reasoning,
                 active_thread_count=len(self.threads),
@@ -669,11 +550,6 @@ class Coordinator:
         craft: bool = False,
         craft_wait: bool = True,
         citations: bool = False,
-        # The voice/media gates are per-turn contextvars, so they have to be
-        # applied inside the segment task rather than by the caller: fanned-out
-        # segments each get their own context copy at create_task time. They
-        # were being set here already, from names that only existed in the
-        # pre-fan-out method this was extracted from.
         voice: bool = False,
         voice_primary: bool = False,
         image: bool = False,
@@ -682,9 +558,6 @@ class Coordinator:
         prefetch_memory_task: asyncio.Task | None = None,
     ) -> str | ThreadResult:
         """Run one dispatched segment as a turn on its thread."""
-        # Bind the thread BEFORE any wire block is emitted, so the v2 sink
-        # routes this turn's blocks (incl. the ThreadCreated below) correctly
-        # and await_block_input attributes a waiting block to the real thread.
         current_thread_id_var.set(target_thread_id)
         craft_gate_var.set(craft)
         craft_wait_var.set(craft_wait)
@@ -692,7 +565,6 @@ class Coordinator:
         voice_gate_var.set(voice or voice_primary)
         voice_primary_var.set(voice_primary)
         media_gates_var.set({"image": image, "audio": audio, "video": video})
-        # engine_core/sourcing.py is gone: no registry, no handles, no markers.
         source_registry_var.set(None)
 
         if is_new_thread:
@@ -703,19 +575,13 @@ class Coordinator:
                 )
             )
 
-        # Record user input in temporal log
         try:
             await self.memory.write(target_thread_id, EntryType.MESSAGE_USER, message)
         except Exception as e:
             logger.debug("WM write (user input) failed: %s", e)
 
-        # Get or create persistent thread
         thread = await self.get_or_create_thread(target_thread_id)
 
-        # Bind the thread's URL provenance registry (media blocks, spec D12)
-        # and harvest this turn's user-supplied URLs into it. Always on: the
-        # registry must already hold yesterday's URLs when a later turn flips
-        # a media gate on, and harvesting is a cheap regex scan.
         registry = getattr(thread, "media_urls", None)
         media_registry_var.set(registry)
         if registry is not None:
@@ -723,18 +589,12 @@ class Coordinator:
             for item in media or []:
                 registry.add_from_text(str(item.get("content", "") or ""))
 
-        # ── Content Ingestion Gate ─────────────────────────────
         ingestion_ids: list[str] = []
         ingestion_enabled = (options and options.content_ingestion is True) or (
             self.settings and self.settings.content_ingestion_enabled
         )
-        # Carry the claim onto the thread for the life of this turn: the
-        # checkpoint writer needs it, and the index here is the one runtime
-        # answer to whether a thread is claimed (the column persists it; it is
-        # read back at boot and by the reaper's own SQL).
         thread.pinned = self.is_thread_pinned(target_thread_id)
 
-        # Track active thread (for shutdown)
         self.active_threads[target_thread_id] = thread
         start_time = time.monotonic()
 
@@ -767,7 +627,6 @@ class Coordinator:
         finally:
             self.active_threads.pop(target_thread_id, None)
 
-        # Flush successful execution to LC queue (fire-and-forget)
         if self.db is not None:
             self.spawn_background(
                 self.flush_signals(
@@ -776,14 +635,11 @@ class Coordinator:
                 )
             )
 
-        # Update thread-index for triage
         result_str = result if isinstance(result, str) else str(result)
         await self.update_thread_index(target_thread_id, message, result_str)
 
         return result
 
-
-    # ── v2 pause / resume (the engine's single ask-user + answer path) ──
 
     async def await_block_input(self, params):
         """Unified pause callback: emit a waiting block, suspend until resumed.
@@ -842,9 +698,6 @@ class Coordinator:
         )
         try:
             if self.is_thread_pinned(thread_id):
-                # Pinned threads belong to the pin/unpin layer: their questions
-                # stay answerable indefinitely - no expiry. (Process death is
-                # a separate matter; resume_block's no-waiter path covers it.)
                 payload = await future
             else:
                 payload = await asyncio.wait_for(future, timeout=USER_INPUT_TIMEOUT_SECONDS)
@@ -878,9 +731,6 @@ class Coordinator:
             elif text:
                 response = text
             else:
-                # A full state snapshot (a route:engine action on a waiting craft) -
-                # preserve it rather than collapsing to "" so the engine reasons
-                # over exactly what the component sent.
                 response = json.dumps(value, default=str, sort_keys=True)
         elif value is not None:
             response = str(value)
@@ -983,17 +833,8 @@ class Coordinator:
             if not future.done():
                 future.set_result(self.resolve_payload(fmt, value, text))
                 return owner_thread, True
-            # Already resolved (double-submit) - the original turn still owns
-            # the done; report resumed so the caller stays silent.
             return owner_thread, True
-        # No paused turn - a fresh turn on the thread (caller owns the done).
         edit = self.detect_craft_edit(value)
-        # Every gate the non-resume /execute branch forwards. citations and
-        # craft_wait belong here too: the stream's Gates object was built from
-        # the SAME request, so leaving them at the defaults makes the two sides
-        # of one gate disagree - the sink holds a channel open for source blocks
-        # the engine was told not to produce, and the turn halts on a waiting
-        # craft the caller explicitly asked never to park on.
         gate_kwargs = {
             "craft_wait": craft_wait,
             "citations": citations,
@@ -1070,8 +911,6 @@ class Coordinator:
         return bundle
 
 
-    # ── Pinning (pin/unpin-layer thread ownership) ─────────────────
-
     def is_thread_pinned(self, thread_id: str) -> bool:
         """A pinned thread is owned by the pin/unpin layer: exempt from the
         reaper and from waiting-period expiry."""
@@ -1095,10 +934,6 @@ class Coordinator:
             try:
                 await self.conversation_store.set_pinned(thread_id, pinned)
             except Exception:
-                # Persistence is the pin: an in-memory flag that did not reach
-                # SQLite evaporates on restart and the reaper collects a thread
-                # the pin/unpin layer believes it owns. Roll back and let the
-                # caller fail loudly rather than report a pin that isn't one.
                 entry.pinned = previous
                 logger.error("pin persistence failed for %s - rolled back", thread_id)
                 raise
@@ -1124,7 +959,6 @@ class Coordinator:
             entry = ThreadIndexEntry(thread_id=thread_id)
             self.thread_index[thread_id] = entry
 
-        # Update summary from the first user message if empty
         if not entry.summary and message:
             entry.summary = message[:100]
         entry.current_state = (
@@ -1133,13 +967,10 @@ class Coordinator:
         entry.turn_count += 1
         entry.last_activity = datetime.now(timezone.utc).isoformat()
 
-        # Keep last 3 user messages
         entry.recent_turns.append(message[:100])
         if len(entry.recent_turns) > 3:
             entry.recent_turns = entry.recent_turns[-3:]
 
-        # Persist routing fields so they survive restart.  Defensive guard
-        # preserves the in-memory-only mode some tests construct.
         if self.conversation_store is not None:
             await self.conversation_store.save_thread_index(
                 thread_id,
@@ -1191,7 +1022,6 @@ class Coordinator:
         status: str = "completed",
     ) -> None:
         """Fire-and-forget: flush WM execution data to learning_signals + trajectory_store."""
-        # Flush structured execution data (tool calls, user input, etc.) to learning_signals
         if self.signal_store is not None:
             try:
                 items = await self.memory.read(thread_id)
@@ -1199,7 +1029,6 @@ class Coordinator:
             except Exception as e:
                 logger.warning("Signal flush failed for task %s: %s", thread_id, e)
 
-        # Also write full trajectory to trajectory_store (audit/recovery backup)
         try:
             from src.engine_core.trajectory import flush_wm_to_lcq
 
@@ -1214,7 +1043,6 @@ class Coordinator:
         except Exception as e:
             logger.warning("Trajectory store flush failed for task %s: %s", thread_id, e)
 
-    # ── Content store ─────────────────────────────────────────────
 
     async def store_content(
         self,
@@ -1243,7 +1071,6 @@ class Coordinator:
 
         return content_id
 
-    # ── Event streaming ───────────────────────────────────────────
 
     def on(self, callback) -> None:
         """Register event consumer on the coordinator's emitter."""
@@ -1253,7 +1080,6 @@ class Coordinator:
         """Replay buffered events to a late-joining consumer."""
         await self.emitter.replay(callback)
 
-    # ── Lifecycle ─────────────────────────────────────────────────
 
     async def shutdown(self, timeout_seconds: float = 30.0) -> None:
         """Graceful shutdown - cancel active threads, drain background tasks."""
@@ -1270,11 +1096,6 @@ class Coordinator:
             await asyncio.gather(*self.background_tasks, return_exceptions=True)
         self.background_tasks.clear()
 
-        # Final sweep of sub-agent on-disk artifacts. Runs in a worker thread
-        # (listdir + unlink on potentially-large dirs would otherwise stall
-        # the event loop) and is bounded by the same timeout that covers
-        # the thread-drain above, so a huge sidechain dir can't wedge
-        # shutdown forever.
         try:
             from src.engine_core.agent_storage import evict_all_stale
 

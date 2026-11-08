@@ -74,8 +74,6 @@ def _store(tmp_path: Path, *, cap_refusals: int = 26) -> str:
         for k in range(3):
             insert("tool_invocations", invocation_id=f"{agent_id}-{k}", run_id="run-26",
                    agent_id=agent_id, tick=40 + k, tool="harvest")
-    # Farid's only call is from an EARLIER run in the same file. Scoped to
-    # this run's id he did nothing, and the report must say so.
     insert("tool_invocations", invocation_id="old", run_id="run-25",
            agent_id="a0090", tick=10, tool="say")
     insert("skills", agent_id="a0043", task_type="harvest_wheat", proficiency_level=48,
@@ -165,8 +163,6 @@ def test_what_was_invented_learned_and_said_survives(tmp_path, world_is_gone):
     assert "Nothing was authored" not in text
     assert "1 skill(s) written, 1 tool(s) invented" in text
     assert "harvest_maintain" in text
-    # Scoped to their own sections: the report's closing note quotes both
-    # phrases as history, and a whole-document check reads the quotation.
     learning = text.split("## Learning by doing", 1)[1].split("## ", 1)[0]
     conversation = text.split("## The conversation", 1)[1].split("## What the town could not do", 1)[0]
     assert "No agent earned proficiency" not in learning

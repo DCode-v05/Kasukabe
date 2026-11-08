@@ -108,8 +108,6 @@ async def _random_action(runner, rng, places, broken) -> None:
         params = {"item": item, "quantity": 1}
     else:
         w.locations.place(actor, w.location_of(other))
-        # Half the time they are talking, so the success paths are exercised
-        # as well as the refusal a conversation-less sale now gets.
         if rng.random() < 0.5:
             w.open_conversation(place=w.location_of(actor), topic="",
                                 participants=[actor, other], now=w.tick())
@@ -142,8 +140,6 @@ async def _random_action(runner, rng, places, broken) -> None:
     if not ok and (_sim(ledger) != sim0 or _goods(w) != goods0):
         broken.append(f"a refused {tool} still moved something: {params}")
     if ok and tool in ("buy", "sell", "trade"):
-        # Checked independently of `commerce._require_dealing` - a checker
-        # that called the gate it is checking would go blind with it.
         here = w.location_of(actor)
         talking = any(
             actor in record["participants"] and other in record["participants"]

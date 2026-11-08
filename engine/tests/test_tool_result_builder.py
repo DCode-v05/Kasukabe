@@ -19,7 +19,7 @@ class TestBuilderBasics:
         result = b.build()
         assert isinstance(result, ToolResultBlock)
         assert result.tool_use_id == "t1"
-        assert result.content == "hello"  # legacy str shape
+        assert result.content == "hello"
         assert result.is_error is False
 
     def test_is_error_propagates(self):
@@ -29,10 +29,6 @@ class TestBuilderBasics:
         assert result.content == "oops"
 
     def test_empty_base_text_substitutes_marker(self):
-        # Empty content guard: a builder with empty base_result and
-        # no appends must NOT produce an empty tool_result.content,
-        # because some models hit a stop-sequence regex on that
-        # shape (src toolResultStorage.ts inc-4586).
         b = ToolResultBuilder(tool_use_id="t1", base_result="")
         result = b.build()
         assert result.content == "(tool completed with no output)"
@@ -57,8 +53,6 @@ class TestBuilderBasics:
 
 class TestAppendText:
     def test_unlabeled_append_makes_list(self):
-        # Two unlabeled text blocks must produce list content (cannot
-        # be collapsed to a string because they're separate blocks).
         b = ToolResultBuilder(tool_use_id="t1", base_result="base")
         b.append_text("more")
         result = b.build()
@@ -76,9 +70,6 @@ class TestAppendText:
         assert result.content[1] == TextBlock(text="[permission]\nallowed by rule: Bash(*)")
 
     def test_labeled_first_append_still_lists(self):
-        # Even if the base block is unlabeled and there's only one
-        # additional labeled block, we still emit list-content because
-        # the label carries information that a flat join would lose.
         b = ToolResultBuilder(tool_use_id="t1", base_result="base")
         b.append_text("hook says hi", label="hook")
         result = b.build()
@@ -88,8 +79,6 @@ class TestAppendText:
         b = ToolResultBuilder(tool_use_id="t1", base_result="base")
         b.append_text("")
         b.append_text("", label="permission")
-        # Builder should still collapse to plain string — empty appends
-        # didn't add anything.
         result = b.build()
         assert result.content == "base"
 
@@ -140,20 +129,20 @@ class TestTotalChars:
         assert b.total_chars() == 5
 
     def test_text_appends_accumulate(self):
-        b = ToolResultBuilder(tool_use_id="t1", base_result="abc")  # 3
-        b.append_text("defg")  # +4 = 7
-        b.append_text("hi", label="x")  # "[x]\nhi" = 6, total 13
+        b = ToolResultBuilder(tool_use_id="t1", base_result="abc")
+        b.append_text("defg")
+        b.append_text("hi", label="x")
         assert b.total_chars() == 13
 
     def test_image_blocks_contribute_zero(self):
         b = ToolResultBuilder(tool_use_id="t1", base_result="abc")
         b.append_image({"type": "base64", "media_type": "image/png", "data": "x" * 1000})
-        assert b.total_chars() == 3  # image data not counted
+        assert b.total_chars() == 3
 
     def test_persisted_block_counts_summary_only(self):
         b = ToolResultBuilder(tool_use_id="t1", base_result="abc")
         b.append_persisted(path="/x", summary="12345")
-        assert b.total_chars() == 8  # "abc" + "12345"
+        assert b.total_chars() == 8
 
 
 class TestReplaceWithPersisted:
@@ -163,9 +152,6 @@ class TestReplaceWithPersisted:
         b.append_text("even more", label="hook")
         b.replace_with_persisted(path="/tmp/r.txt", summary="head...")
         result = b.build()
-        # After replace_with_persisted: list content with exactly one
-        # PersistedBlock (NOT collapsed to string — PersistedBlock is
-        # not a TextBlock so the legacy-shape branch doesn't apply).
         assert isinstance(result.content, list)
         assert len(result.content) == 1
         assert result.content[0] == PersistedBlock(path="/tmp/r.txt", summary="head...")
@@ -175,7 +161,7 @@ class TestReplaceWithPersisted:
         b.append_text("y" * 500)
         assert b.total_chars() == 1500
         b.replace_with_persisted(path="/tmp/r.txt", summary="hint")
-        assert b.total_chars() == 4  # only "hint"
+        assert b.total_chars() == 4
 
 
 class TestEmptyContentGuard:
@@ -201,15 +187,11 @@ class TestEmptyContentGuard:
             base_result="",
             tool_name="Bash",
         )
-        # append_text("") is silently ignored by the builder, so
-        # these don't add anything to fend off the guard.
         b.append_text("")
         b.append_text("", label="permission")
         assert b.build().content == "(Bash completed with no output)"
 
     def test_image_block_prevents_empty_marker(self):
-        # Image blocks always count as content — even with empty text
-        # the builder is not "empty" if it has an image.
         b = ToolResultBuilder(
             tool_use_id="t1",
             base_result="",
@@ -218,9 +200,8 @@ class TestEmptyContentGuard:
         src = {"type": "base64", "media_type": "image/png", "data": "x"}
         b.append_image(src)
         result = b.build()
-        # List content with the image, no marker substitution.
         assert isinstance(result.content, list)
-        assert len(result.content) == 2  # empty TextBlock + ImageBlock
+        assert len(result.content) == 2
 
     def test_persisted_block_prevents_empty_marker(self):
         b = ToolResultBuilder(
@@ -248,12 +229,10 @@ class TestEmptyContentGuard:
         )
         b.replace_with_persisted(path="/tmp/r.txt", summary="head")
         result = b.build()
-        # Persisted block always counts as content.
         assert isinstance(result.content, list)
         assert "Bash completed" not in str(result.content)
 
     def test_marker_label_falls_back_when_tool_name_empty(self):
-        # No tool_name provided → generic "tool" label.
         b = ToolResultBuilder(tool_use_id="t1", base_result="")
         assert b.build().content == "(tool completed with no output)"
 
@@ -287,10 +266,6 @@ class TestBuildShapeCollapse:
         assert isinstance(b.build().content, list)
 
     def test_one_labeled_block_no_collapse(self):
-        # Builder starts with the unlabeled base. If we append a
-        # labeled block we end up with 2 blocks → list. There's no
-        # way to construct a single labeled block from outside (the
-        # base is always unlabeled), so this test exercises 2 blocks.
         b = ToolResultBuilder(tool_use_id="t1", base_result="base")
         b.append_text("note", label="hook")
         assert isinstance(b.build().content, list)
@@ -303,5 +278,4 @@ class TestBuildShapeCollapse:
     def test_persisted_only_after_replace_no_collapse(self):
         b = ToolResultBuilder(tool_use_id="t1", base_result="huge")
         b.replace_with_persisted(path="/p", summary="s")
-        # One block, but it's a PersistedBlock not a TextBlock → list.
         assert isinstance(b.build().content, list)

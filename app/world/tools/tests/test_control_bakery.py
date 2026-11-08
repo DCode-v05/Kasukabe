@@ -30,20 +30,12 @@ from world.tools.state import WorldState
 
 from .conftest import spawn_agent
 
-# The kitchen, not the square. `cook:flour->bread` is gated to a place
-# literally named "kitchen" (recipes.py's `required_location`), so a
-# bakery sited anywhere else cannot bake at its own premises - a wall the
-# ENGINE-run bakery hits identically, and one of the things the
-# comparison is for. Rule 6 says the control never leaves its premises,
-# so its premises are where its work is.
 SHOP = "kitchen"
 
 
 async def _bakery(world: WorldState, *, employee: bool = False) -> ControlBakery:
     await spawn_agent(world, "ctl_owner", SHOP, household_id="h_control")
     world.agent_names["ctl_owner"] = "The Scripted Baker"
-    # Registered as the world's own actor, as `run_genesis` registers every
-    # control owner - it is a script, and scripts do not hold conversations.
     world.control_actors["ctl_owner"] = world.agents["ctl_owner"]
     await world.ledger.register_business("b_control", "ctl_owner", fee_sim=1, tick=0)
     await world.ledger.mint_sim("b_control", 5_000, tick=0)
@@ -59,9 +51,6 @@ async def _bakery(world: WorldState, *, employee: bool = False) -> ControlBakery
     return ControlBakery(
         business_id="b_control", owner_id="ctl_owner", employee_id=employee_id
     )
-
-
-# ── the six rules ─────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -209,10 +198,6 @@ async def test_it_always_answers_a_directed_question(
         "content": "The Scripted Baker. What do you want for a loaf?",
     })
 
-    # Within OPEN_QUESTION_TTL_TICKS of when it was asked. The first draft
-    # of this test asked at tick 41 about a question spoken at tick 0,
-    # which is 41 ticks later against a 36-tick window - the question had
-    # correctly expired and the control was correctly silent.
     fired = await bakery.act(world, registry, tick=2)
 
     assert "say" in fired
@@ -237,9 +222,6 @@ async def test_it_never_leaves_the_premises(world: WorldState, registry) -> None
         await bakery.act(world, registry, tick=tick)
 
     assert world.location_of("ctl_owner") == SHOP
-
-
-# ── it costs nothing, and it cannot end the run ───────────────────────
 
 
 @pytest.mark.asyncio
@@ -267,7 +249,6 @@ async def test_a_refused_rule_is_recorded_and_never_raises(
     treatment's data looks like. A refusal is a FINDING here - R7 is a
     taxonomy of exactly these."""
     bakery = await _bakery(world)
-    # No such recipe, so `cook` refuses every tick it is tried.
     world.inventory.credit("ctl_owner", "flour", 10)
     import world.control_bakery as module
 
@@ -299,7 +280,4 @@ async def test_the_scorecard_answers_r1_to_r7(world: WorldState, registry) -> No
     assert card["sim_at_stop"] >= 0
     assert card["wages_paid"] == WAGE_SIM
     assert card["usd_spent"] == 0
-    # R4 does not apply: a script sets no intentions, and reporting 0/0 as
-    # "0% fulfilled" would read as a failure rather than as a category
-    # that does not apply.
     assert card["intentions"] is None

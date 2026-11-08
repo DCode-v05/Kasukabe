@@ -151,7 +151,6 @@ from world.life.namepool import (
     WILL_NOT_COMPROMISE_TEMPLATES,
 )
 
-# ── genesis generation parameters (ASSUMPTION: algorithm, not DESIGN.md numbers) ─
 MINOR_FRACTION = 0.15
 ELDERLY_FRACTION = 0.15
 WORKING_AGE_MIN, WORKING_AGE_MAX = 18, 69
@@ -162,11 +161,6 @@ WORKING_COUPLE_FRACTION = 0.6
 MAX_CHILDREN_PER_COUPLE = 3
 CONSTRUCTION_HANDS_COUNT = 4
 
-# What each institution post actually does, in the same voice as
-# OCCUPATION_LABELS below. Without these every one of the 64 staff reads
-# "works around town" in their bio - and the bio is what
-# build_persona_prompt hands the engine, so a doctor would boot not
-# knowing they are a doctor.
 INSTITUTION_OCCUPATION_LABELS: dict[str, str] = {
     "doctor": "treats the sick at the town hospital",
     "nurse": "nurses patients on the hospital ward",
@@ -206,19 +200,6 @@ OCCUPATION_LABELS: dict[str, str] = {
     "pharmacist": "keeps the pharmacy stocked",
 }
 
-# Every occupation label above maps to one of these persona-content
-# categories (namepool.py's *_BY_CATEGORY dicts are keyed by these
-# strings) so formative history, trade competence/blind spot, and daily
-# rhythm all read as genuinely occupation-specific rather than generic.
-# The posts the town's institutions cannot run without. These used to be
-# invented in the BROWSER (game/static/js/township/build_characters.py's
-# build_staff), which meant the hospital's doctors and the school's
-# teachers existed only as JavaScript - no genesis record, no persona, no
-# wallet, no engine behind them. 64 of the 314 residents on the map could
-# never be bound to a real agent, and no cast size could ever include one.
-#
-# Generating them here makes them ordinary residents: same assemble()
-# path, same PersonaDepth, same wallet, same ledger, same tools.
 INSTITUTION_STAFF: tuple[tuple[str, str, int], ...] = (
     ("hospital", "doctor", 3),
     ("hospital", "nurse", 7),
@@ -235,9 +216,6 @@ INSTITUTION_STAFF: tuple[tuple[str, str, int], ...] = (
     ("marketrow", "shopkeeper", 5),
 )
 
-# Persona flavour for the institution occupations. build_persona_core keys
-# competence, daily rhythm and blind spot off these, so an unmapped
-# occupation is a KeyError, not a silently blander agent.
 INSTITUTION_OCCUPATION_CATEGORY: dict[str, str] = {
     "doctor": "pharmacy",
     "nurse": "pharmacy",
@@ -277,11 +255,6 @@ OCCUPATION_TO_CATEGORY: dict[str, str] = {
     MINOR_OCCUPATION_SCHOOL: "minor_school",
 }
 
-# Relationship kinds an adult (working-age or elderly) opinion can carry,
-# and the complementary (role_for_a, role_for_b) pair every edge of that
-# kind produces - the exact shape test_genesis.py's symmetry validator
-# checks against. Minors only ever get "friendship"/"rivalry" edges
-# (MINOR_RELATIONSHIP_KINDS below) - no money, no mentorship, no grudges.
 RELATIONSHIP_ROLE_PAIRS: dict[str, tuple[str, str]] = {
     "debt": ("ower", "owed"),
     "grudge": ("aggrieved", "accused"),
@@ -302,13 +275,6 @@ ADULT_RELATIONSHIP_KINDS: tuple[str, ...] = (
 MINOR_RELATIONSHIP_KINDS: tuple[str, ...] = ("friendship", "rivalry")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# Rich-persona models (deliberately local to this module - see module
-# docstring's "MUTUAL CONSISTENCY" section for why these subclass rather
-# than modify world/life/models.py's GenesisAgent/Genesis).
-# ══════════════════════════════════════════════════════════════════════
-
-
 class NeighbourOpinion(BaseModel):
     """One agent's opinion of one specific named other agent.
 
@@ -325,11 +291,11 @@ class NeighbourOpinion(BaseModel):
 
     target_agent_id: str
     target_name: str
-    kind: str  # debt | grudge | affection | rivalry | mentorship | friendship | colleague
-    role: str  # this agent's position in the relationship (RELATIONSHIP_ROLE_PAIRS)
+    kind: str
+    role: str
     shared_fact: str
     note: str
-    sim_amount: int | None = None  # populated only for kind == "debt"
+    sim_amount: int | None = None
 
 
 class PersonaDepth(BaseModel):
@@ -337,8 +303,8 @@ class PersonaDepth(BaseModel):
     job, and a couple of habits (the exact thing that section says a
     one-line seed produces and calls "worthless for research")."""
 
-    internal_tension: str  # short label, e.g. "generous but proud"
-    tension_description: str  # the full sentence version, used in bio
+    internal_tension: str
+    tension_description: str
     formative_history: str
     values: list[str] = Field(default_factory=list)
     will_not_compromise: str
@@ -378,11 +344,6 @@ class RichGenesis(Genesis):
     field."""
 
     agents: list[RichGenesisAgent]
-
-
-# ══════════════════════════════════════════════════════════════════════
-# small shared helpers
-# ══════════════════════════════════════════════════════════════════════
 
 
 OCCUPATION_TO_CATEGORY.update(INSTITUTION_OCCUPATION_CATEGORY)
@@ -451,9 +412,6 @@ def unique_name(rng: random.Random, sex: Sex, surname: str, used_names: set[str]
         if candidate not in used_names:
             used_names.add(candidate)
             return candidate
-    # Every first name in the pool is already paired with this surname -
-    # vanishingly unlikely at 250 agents against ~48-name pools, but stay
-    # correct rather than raise.
     suffix = 2
     first = pool[0]
     while f"{first} {surname} {suffix}" in used_names:
@@ -575,13 +533,6 @@ def build_control_businesses() -> list[ControlBusiness]:
 def write_genesis_json(genesis: Genesis, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(genesis.model_dump_json(indent=2) + "\n", encoding="utf-8")
-
-
-# ══════════════════════════════════════════════════════════════════════
-# persona-depth builders: one function per DESIGN.md dimension. Each
-# takes the seeded rng and returns already-rendered text, so
-# generate_genesis() below stays a straightforward assembly line.
-# ══════════════════════════════════════════════════════════════════════
 
 
 def clamp_years_ago(age: int) -> int:
@@ -719,11 +670,6 @@ def build_bio(
     )
 
 
-# ══════════════════════════════════════════════════════════════════════
-# relationship graph: the social web that makes day one open mid-story
-# ══════════════════════════════════════════════════════════════════════
-
-
 def make_opinion_pair(
     rng: random.Random,
     agent_a: str,
@@ -780,7 +726,7 @@ def make_opinion_pair(
         note_b = rng.choice(APPRENTICE_NOTE_POOL).format(
             **format_ctx("", sex_b, target_name=name_a)
         )
-    else:  # friendship
+    else:
         bond = rng.choice(FRIENDSHIP_BOND_POOL)
         shared_fact = f"{name_a} and {name_b} {bond}."
         note_a = rng.choice(FRIEND_NOTE_POOL).format(**format_ctx("", sex_a, target_name=name_b))
@@ -826,7 +772,7 @@ def make_colleague_pair(
     shared_fact = f"{name_a} and {name_b} work together at {workplace}."
     note_a = rng.choice(COLLEAGUE_NOTE_POOL).format(**format_ctx("", sex_a, target_name=name_b))
     note_b = rng.choice(COLLEAGUE_NOTE_POOL).format(**format_ctx("", sex_b, target_name=name_a))
-    role = RELATIONSHIP_ROLE_PAIRS["colleague"][0]  # symmetric: "colleague" both sides
+    role = RELATIONSHIP_ROLE_PAIRS["colleague"][0]
     opinion_a = NeighbourOpinion(
         target_agent_id=agent_b,
         target_name=name_b,
@@ -866,7 +812,7 @@ def make_minor_opinion_pair(
         note_b = rng.choice(MINOR_FRIEND_NOTE_POOL).format(
             **format_ctx("", sex_b, target_name=name_a)
         )
-    else:  # rivalry
+    else:
         contest = rng.choice(MINOR_RIVAL_CONTEST_POOL)
         shared_fact = f"{name_a} and {name_b} {contest}."
         note_a = rng.choice(MINOR_RIVAL_NOTE_POOL).format(
@@ -924,11 +870,6 @@ def build_relationship_opinions(
             return True
         if frozenset((agent_a, agent_b)) in used_pairs:
             return True
-        # Same household already carries a structural relationship
-        # (spouse/parent/child); the neighbour-opinion graph is for
-        # ties ACROSS households, per DESIGN.md's "the social graph
-        # starts already tangled" - a redundant opinion within a
-        # household would just restate what household_id already says.
         return household_id_by_agent[agent_a] == household_id_by_agent[agent_b]
 
     def edge(agent_a: str, agent_b: str, kind: str) -> None:
@@ -945,8 +886,6 @@ def build_relationship_opinions(
         )
         add_pair(agent_a, agent_b, opinion_a, opinion_b)
 
-    # ── business coworker edges (always present, DESIGN.md's named
-    # genesis businesses) ──
     for hand_id in construction_hand_ids:
         if not already_linked(construction_owner_id, hand_id):
             opinion_a, opinion_b = make_colleague_pair(
@@ -975,7 +914,6 @@ def build_relationship_opinions(
             )
             add_pair(owner, employee, opinion_a, opinion_b)
 
-    # ── coverage layer: every eligible adult gets at least one edge ──
     adults = [*working_ids, *elderly_ids]
     shuffled_adults = list(adults)
     rng.shuffle(shuffled_adults)
@@ -983,10 +921,6 @@ def build_relationship_opinions(
     i = 0
     while i < len(uncovered):
         a = uncovered[i]
-        # Find a partner: prefer the next uncovered agent not already
-        # linked (same household, say); fall back to scanning the whole
-        # shuffled adult list so no one is left orphaned just because
-        # every other uncovered agent happens to share their household.
         partner = None
         for j in range(i + 1, len(uncovered)):
             if not already_linked(a, uncovered[j]):
@@ -1003,7 +937,6 @@ def build_relationship_opinions(
             edge(a, partner, kind)
         i += 1
 
-    # ── extra texture edges: roughly half the adults get a second tie ──
     extra_candidates = list(adults)
     rng.shuffle(extra_candidates)
     extra_target_count = len(adults) // 2
@@ -1019,7 +952,6 @@ def build_relationship_opinions(
         edge(a, b, kind)
         added += 1
 
-    # ── minors: one light peer edge each where a partner is available ──
     shuffled_minors = list(minor_ids)
     rng.shuffle(shuffled_minors)
     for idx, a in enumerate(shuffled_minors):
@@ -1073,13 +1005,6 @@ def pick_secret(
     return rng.choice(SECRET_POOL).format(**format_ctx("", sex)), None
 
 
-# ══════════════════════════════════════════════════════════════════════
-# main generator
-# ══════════════════════════════════════════════════════════════════════
-
-
-# The town's closed total, in cents. $1000, fixed regardless of how many
-# residents share it - see the usd_ledger construction in generate_genesis.
 GENESIS_TOWN_TOTAL_USD_CENTS = 100_000
 
 
@@ -1101,8 +1026,6 @@ def generate_genesis(seed: int, population: int = GENESIS_POPULATION) -> RichGen
     elderly_ids = [next_id() for _ in range(elderly_n)]
     all_ids = [*minor_ids, *working_ids, *elderly_ids]
 
-    # Exact 50/50 split overall (DESIGN.md section 4), independent of
-    # which age bracket an id landed in.
     half = population // 2
     sex_deck = [Sex.MALE] * half + [Sex.FEMALE] * (population - half)
     rng.shuffle(sex_deck)
@@ -1121,7 +1044,6 @@ def generate_genesis(seed: int, population: int = GENESIS_POPULATION) -> RichGen
         children_by_couple[i] = shuffled_minor_ids[cursor : cursor + count]
         cursor += count
 
-    # ── household + family-link bookkeeping, keyed by agent id ──
     household_id_by_agent: dict[str, str] = {}
     spouse_by_agent: dict[str, str] = {}
     parents_by_agent: dict[str, list[str]] = {aid: [] for aid in all_ids}
@@ -1165,15 +1087,12 @@ def generate_genesis(seed: int, population: int = GENESIS_POPULATION) -> RichGen
         else:
             new_household(group)
 
-    # Every minor must have landed in a couple's household - bracket_sizes
-    # and distribute_children guarantee this, assert it stays true.
     unassigned_minors = [m for m in minor_ids if m not in household_id_by_agent]
     if unassigned_minors:
         raise RuntimeError(
             f"genesis generation left {len(unassigned_minors)} minors without a household"
         )
 
-    # ── business roles, carved out of the working-age pool ──
     available_working = list(working_ids)
     rng.shuffle(available_working)
 
@@ -1243,9 +1162,6 @@ def generate_genesis(seed: int, population: int = GENESIS_POPULATION) -> RichGen
     for agent_id in available_working:
         occupation_by_agent[agent_id] = rng.choice(GENERIC_OCCUPATIONS)
         business_by_agent[agent_id] = None
-        # Age isn't rolled until the working_ids loop below, which
-        # reassigns any "college_student" landing on an over-24 agent
-        # to "day_laborer" once their age is known.
 
     control_businesses = build_control_businesses()
 
@@ -1263,11 +1179,6 @@ def generate_genesis(seed: int, population: int = GENESIS_POPULATION) -> RichGen
             ablation_by_agent[agent_id] = arm
         cursor += count
 
-    # ── base fields + non-relational persona depth, one pass per age
-    # bracket (working-age and elderly first, minors last, so a minor's
-    # bio/persona - built in the pass after this one - can always find
-    # its parents' already-built names; see the original bio pass below
-    # for why that ordering matters) ──
     age_by_agent: dict[str, int] = {}
     name_by_agent: dict[str, str] = {}
     traits_by_agent: dict[str, list[str]] = {}
@@ -1363,10 +1274,6 @@ def generate_genesis(seed: int, population: int = GENESIS_POPULATION) -> RichGen
             agent_id, sex, age, occupation, is_minor=True
         )
 
-    # ── institution staff (see INSTITUTION_STAFF) ────────────────────
-    # Built through the SAME maps and the same assemble() as everyone
-    # else, deliberately: a doctor who is a special case is a doctor whose
-    # persona, wallet or tools drift from the rest of the town.
     staff_ids: list[str] = []
     staff_household_seq = 1
     for _zone, occupation, count in INSTITUTION_STAFF:
@@ -1392,21 +1299,13 @@ def generate_genesis(seed: int, population: int = GENESIS_POPULATION) -> RichGen
             )
             traits_by_agent[agent_id] = rng.sample(PERSONALITY_TRAITS, 2)
             habits_by_agent[agent_id] = rng.sample(HABITS, 2)
-            # FULL arm: the ablation brackets are sized against the
-            # generated population, and staffing the hospital must not
-            # quietly change how many agents are in an experimental arm.
             ablation_by_agent[agent_id] = AblationArm.FULL
             persona_core_by_agent[agent_id] = build_persona_core(
                 agent_id, sex, age, occupation, is_minor=False
             )
 
-    # ── relationship graph: business coworkers + coverage + texture
-    # edges for adults, light peer edges for minors ──
     opinions_by_agent = build_relationship_opinions(
         rng,
-        # Staff are working adults. Leaving them out gave the hospital's
-        # doctors no view of anyone they live beside - and an agent with
-        # no opinions has nothing to reflect on.
         [*working_ids, *staff_ids],
         elderly_ids,
         minor_ids,
@@ -1422,13 +1321,9 @@ def generate_genesis(seed: int, population: int = GENESIS_POPULATION) -> RichGen
         barista_id,
     )
 
-    # ── secrets: a private hope or hidden fact, some naming a real
-    # other agent (never reciprocated - that's what makes it secret) ──
     adult_ids = [*working_ids, *elderly_ids, *staff_ids]
     secret_by_agent: dict[str, str] = {}
     secret_target_by_agent: dict[str, str | None] = {}
-    # Staff included: an adult with no secret is the one resident whose
-    # persona has a hole where everyone else has a private life.
     for agent_id in (*working_ids, *elderly_ids, *staff_ids):
         text, target_id = pick_secret(
             rng, sex_by_id[agent_id], False, adult_ids, name_by_agent, agent_id, household_id_by_agent
@@ -1442,10 +1337,6 @@ def generate_genesis(seed: int, population: int = GENESIS_POPULATION) -> RichGen
         secret_by_agent[agent_id] = text
         secret_target_by_agent[agent_id] = target_id
 
-    # ── final assembly: build every RichGenesisAgent now that bio,
-    # opinions, and secrets are all ready. Working-age and elderly built
-    # first, minors last, matching the original ordering downstream code
-    # (households, businesses) already assumes. ──
     genesis_agents: list[RichGenesisAgent] = []
 
     def assemble(agent_id: str, is_minor: bool) -> RichGenesisAgent:
@@ -1532,20 +1423,6 @@ def generate_genesis(seed: int, population: int = GENESIS_POPULATION) -> RichGen
     for agent_id in staff_ids:
         genesis_agents.append(assemble(agent_id, is_minor=False))
 
-    # The town holds a FIXED $1000. DESIGN.md's invariant is not "wallets
-    # plus a constant treasury" - it is a closed total that Ledger.move()
-    # re-checks on every transfer, and that the trace store enforces as a
-    # hard CHECK (usd_wallets + usd_treasury + usd_burned = 100000).
-    #
-    # Treasury is therefore the REMAINDER, not a constant. The old form
-    # (treasury + population * wallet) happened to equal 100000 at exactly
-    # population 250 and at no other size, so any other cast silently
-    # minted money: 314 agents produced a 112800-cent town, and every
-    # checkpoint mirror failed that CHECK constraint for the whole run.
-    # At 250 this is byte-identical to the old behaviour.
-    # len(genesis_agents), not `population`: the institution staff are real
-    # residents with real purses, and billing the town for a headcount it
-    # does not have is exactly the drift the invariant exists to catch.
     wallets_cents = len(genesis_agents) * GENESIS_AGENT_WALLET_USD_CENTS
     treasury_cents = GENESIS_TOWN_TOTAL_USD_CENTS - wallets_cents
     if treasury_cents < 0:
@@ -1563,11 +1440,6 @@ def generate_genesis(seed: int, population: int = GENESIS_POPULATION) -> RichGen
     return RichGenesis(
         seed=seed,
         generated_at=datetime.now(UTC).isoformat(),
-        # The agents that EXIST, not the number requested. world/wiring.py
-        # derives each purse as agent_wallets_cents // population, so a
-        # population that under-counts the institution staff hands every
-        # resident too much money and breaks the $1000 invariant at boot
-        # (measured: 251 cents each, a 116014-cent town).
         population=len(genesis_agents),
         usd_ledger=usd_ledger,
         agents=genesis_agents,
@@ -1575,10 +1447,6 @@ def generate_genesis(seed: int, population: int = GENESIS_POPULATION) -> RichGen
         construction_company=construction_company,
         small_businesses=[grocery_store, cafe, pharmacy],
         control_businesses=control_businesses,
-        # Recomputed from the assembled agents, not from ablation_counts
-        # (population): the institution staff all run FULL, so a summary
-        # built from the requested population reports a 250-agent split for
-        # a 314-agent town - and the ablation arms are the research design.
         ablation_summary=AblationSummary(
             full=sum(1 for a in genesis_agents if a.ablation_arm is AblationArm.FULL),
             no_reflection=sum(

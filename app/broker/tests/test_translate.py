@@ -31,9 +31,6 @@ PNG_BYTES = b"\x89PNG\r\n\x1a\nrest-of-a-fake-png"
 PNG_BASE64 = base64.b64encode(PNG_BYTES).decode()
 
 
-# ── Request translation ──────────────────────────────────────────────
-
-
 def test_string_content_message_becomes_single_text_block() -> None:
     out = messages_to_bedrock([{"role": "user", "content": "hello"}])
     assert out == [{"role": "user", "content": [{"text": "hello"}]}]
@@ -272,9 +269,6 @@ def test_build_converse_request_top_k_goes_to_additional_fields() -> None:
     assert request["additionalModelRequestFields"] == {"top_k": 40}
 
 
-# ── Non-streaming response translation ──────────────────────────────
-
-
 def test_converse_response_to_anthropic_text() -> None:
     response = {
         "output": {"message": {"role": "assistant", "content": [{"text": "hi there"}]}},
@@ -342,9 +336,6 @@ def test_exact_usage_defaults_to_zero_when_missing() -> None:
     assert exact_usage_from_converse_response({}) == (0, 0)
 
 
-# ── Streaming response translation ──────────────────────────────────
-
-
 async def bedrock_events(events: list[dict]):
     for e in events:
         yield e
@@ -379,11 +370,11 @@ async def test_stream_translation_full_text_sequence() -> None:
         "content_block_delta",
         "content_block_delta",
         "content_block_stop",
-        "message_delta",  # from messageStop
-        "message_delta",  # from metadata
+        "message_delta",
+        "message_delta",
         "message_stop",
     ]
-    assert events[0]["message"]["usage"]["input_tokens"] == 99  # estimate, not exact
+    assert events[0]["message"]["usage"]["input_tokens"] == 99
     assert events[2]["delta"] == {"type": "text_delta", "text": "hel"}
     assert events[3]["delta"] == {"type": "text_delta", "text": "lo"}
     assert events[5]["delta"]["stop_reason"] == "end_turn"
@@ -436,9 +427,6 @@ async def test_stream_translation_without_on_usage_callback_does_not_raise() -> 
 def test_sse_line_shape() -> None:
     line = sse_line({"type": "message_stop"})
     assert line == 'event: message_stop\ndata: {"type": "message_stop"}\n\n'
-
-
-# ── toolConfig on a continuation turn ─────────────────────────────────────
 
 
 def test_tool_config_is_sent_when_the_transcript_carries_tool_blocks():
@@ -494,14 +482,6 @@ def test_the_repair_only_names_tools_the_model_actually_called():
     assert names == ["mine", "say"], "deduplicated, order preserved"
     assert tools_referenced_in([]) == []
 
-
-# ── the model's reasoning, carried through instead of dropped ───────────
-#
-# This branch used to return None on the grounds that nothing requested a
-# reasoning config, so the block would never arrive. That is circular: the
-# engine's session log subscribes to ThinkingDelta and every session in every
-# run recorded an empty "reasoning" field - indistinguishable from a model
-# that did not think and a block that was thrown away here.
 
 def test_a_reasoning_block_becomes_a_thinking_block():
     from broker.translate import content_block_from_bedrock

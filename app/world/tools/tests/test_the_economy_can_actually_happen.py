@@ -52,7 +52,7 @@ async def test_money_becomes_a_meal(world, registry):
 
     await registry.execute(world, "n01", "post_price", {
         "business_id": "b_shop", "item": "bread", "ask_sim": 10})
-    in_conversation(world, "n02", "n01")   # a sale is agreed in conversation
+    in_conversation(world, "n02", "n01")
     await registry.execute(world, "n02", "buy", {
         "seller_id": "b_shop", "item": "bread", "quantity": 1})
     eaten = await registry.execute(world, "n02", "eat", {"item": "bread"})
@@ -113,22 +113,9 @@ async def test_knowledge_changes_hands_for_money(world, registry):
     assert taught.result["skill"] == "mill_round"
     assert "mill_round" in world.skills.get("n02", {}), "the student learned nothing"
     assert licensed.result["fee_paid"] == 5
-    # The student's side is the deterministic one: it makes no calls, so it
-    # pays the tuition and the licence fee and nothing else.
     assert world.ledger.sim_balance("n02") == student_opening - 10, (
         "the money for the lesson and the licence did not move"
     )
-    # AND THE FINDING THIS TEST EXISTS TO RECORD. Measured 2026-09-14: the
-    # teacher ends this sequence 5 sim POORER. It received 10 in fees and
-    # paid 15 in action costs for four calls (`skillify`, `teach_skill`,
-    # `toolify`, `license_tool`). Knowledge is worth money here only above
-    # a price floor nobody is told - `quote_action_cost` is the only way a
-    # resident could find it, and the fee fields default to 0.
-    #
-    # Not asserted as a desired behaviour, because it is a consequence of
-    # the price table rather than a rule; asserted as an inequality so that
-    # a change to either side shows up as a failure here and gets a
-    # decision instead of going unnoticed (ECON-7).
     assert world.ledger.sim_balance("n01") < teacher_opening, (
         "teaching at 5 sim is no longer loss-making - the price table moved, "
         "and ECON-7's floor moved with it"
@@ -165,8 +152,6 @@ async def test_a_theft_accuses_nobody_until_somebody_names_a_name(world, registr
     await spawn_agent(world, "n02", FIELD)
     from world.tools.models import Storage
 
-    # A resident's own store, left where its owner is not standing: that is
-    # what "unattended" means to `steal` (primitives/crime.py).
     world.storages["st_n02"] = Storage(
         storage_id="st_n02", owner_id="n02", location_id=FIELD)
     world.inventory.credit("st_n02", "bread", 3)
@@ -229,8 +214,6 @@ async def test_a_completed_day_takes_its_cut(tmp_path):
     owed_per_head = head_tax_sim_per_head(policy.tax_rate_bps)
     assert owed_per_head > 0, "a town at 0 bps cannot put anybody in arrears"
 
-    # One household emptied on purpose, so the day finds somebody who
-    # cannot pay. Everyone else keeps what genesis gave them.
     households = {
         agent.household_id: [
             a.agent_id for a in state.agents.values()
@@ -259,16 +242,13 @@ async def test_a_completed_day_takes_its_cut(tmp_path):
     paid_before = {who: ledger.sim_balance(who) for who in solvent}
     treasury_before = ledger.sim_balance("government:treasury")
 
-    # The day boundary, in the runner's own order. Upkeep first.
     await runner.run_daily_upkeep(stamp, runner.population_dials)
     await runner.charge_the_day_tax(stamp)
 
-    # ── 1. Living cost somebody something ────────────────────────────
     assert any(
         ledger.sim_balance(who) < paid_before[who] for who in solvent
     ), "a completed game-day took nothing from anybody who could pay"
 
-    # ── 2. The tax reached every household, and moved real sim ───────
     record = runner.day_jobs_ran[stamp.game_day]
     assert record["households"] > 0
     assert record["head_tax"] == record["households"], (
@@ -278,7 +258,6 @@ async def test_a_completed_day_takes_its_cut(tmp_path):
     assert record["head_tax_sim"] > 0
     assert ledger.sim_balance("government:treasury") > treasury_before
 
-    # ── 3. A household that could not pay is IN ARREARS, not overdrawn ─
     debtors = {
         who: owed["head_tax"]
         for who, owed in state.arrears.items()
@@ -297,9 +276,7 @@ async def test_a_completed_day_takes_its_cut(tmp_path):
             "recorded debt, never a silent overdraft"
         )
 
-    # ── 4. And the gate that halts a skipped day is satisfied ────────
     runner.assert_the_day_was_charged(stamp)
     assert runner.halt_reason is None, runner.halt_reason
 
-    # The rate is the charter's, not a number this test invented.
     assert owed_per_head == HEAD_TAX_BASE_SIM * policy.tax_rate_bps // 10_000

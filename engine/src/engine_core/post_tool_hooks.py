@@ -60,11 +60,6 @@ from typing import Any, Awaitable, Callable, Protocol
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Input context (stable — already consumed by thread.py)
-# ---------------------------------------------------------------------------
-
-
 @dataclass(frozen=True)
 class PostToolHookContext:
     """Snapshot of execution state passed to a post-tool hook.
@@ -85,11 +80,6 @@ class PostToolHookContext:
     permission_feedback: str = ""
     cancelled: bool = False
     hook_event_name: str = "PostToolUse"
-
-
-# ---------------------------------------------------------------------------
-# Result types
-# ---------------------------------------------------------------------------
 
 
 @dataclass
@@ -120,13 +110,8 @@ class AggregatedPostToolResult:
 
     additional_contexts: list[str] = field(default_factory=list)
     prevent_continuation: bool = False
-    updated_tool_output: str | None = None  # last non-None wins
+    updated_tool_output: str | None = None
     hook_outcomes: list[dict] = field(default_factory=list)
-
-
-# ---------------------------------------------------------------------------
-# Protocols
-# ---------------------------------------------------------------------------
 
 
 class PostToolUseHook(Protocol):
@@ -139,11 +124,6 @@ class PostToolUseHook(Protocol):
     """
 
     async def execute(self, ctx: PostToolHookContext) -> PostToolUseHookResult: ...
-
-
-# ---------------------------------------------------------------------------
-# Registry
-# ---------------------------------------------------------------------------
 
 
 @dataclass
@@ -250,11 +230,6 @@ class PostToolUseHookRegistry:
         return agg
 
 
-# ---------------------------------------------------------------------------
-# Hook implementations
-# ---------------------------------------------------------------------------
-
-
 class CallablePostToolUseHook:
     """Wraps an async Python callable as a ``PostToolUseHook``.
 
@@ -349,11 +324,6 @@ class CommandPostToolUseHook:
             run.stderr_text[:200],
         )
         return PostToolUseHookResult()
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 
 def result_from_dict(data: Any) -> PostToolUseHookResult:

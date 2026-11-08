@@ -139,7 +139,6 @@ async def test_raise_error_is_one_shot() -> None:
     with pytest.raises(RuntimeError):
         await gateway.converse({})
 
-    # Second call succeeds normally - the injected error was consumed.
     response = await gateway.converse({})
     assert response["stopReason"] == "end_turn"
 

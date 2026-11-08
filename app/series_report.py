@@ -35,20 +35,6 @@ from loop_report import (  # noqa: E402
 
 SERIES = pathlib.Path(__file__).parent.parent / "docs" / "runs" / "series"
 
-# EVAL-22. Every run the series consists of, in order, so `series_report.py`
-# with no arguments describes THE SERIES rather than a slice of its first
-# half.
-#
-# The default used to be `short1 run2 run3 run4 run5 run6` - six of the ten
-# diagnostic runs, chosen when six was all there were and never updated as
-# run7..run10 and then final1..final6 landed. Anyone running this to see
-# "the series" got a table missing four diagnostic runs and the entire
-# fixed-build cohort, with nothing on the page saying so.
-#
-# final5 and final6 are in the list deliberately. final5 is disputed and
-# final6 persisted nothing (SERIES.md section 5); both belong in the input
-# so the report SAYS they are missing or anomalous instead of quietly
-# producing a four-run table labelled as six.
 DIAGNOSTIC_RUNS = ["short1", "run2", "run3", "run4", "run5", "run6",
                    "run7", "run8", "run9", "run10"]
 FIXED_BUILD_RUNS = ["final1", "final2", "final3", "final4", "final5", "final6"]
@@ -71,11 +57,6 @@ def one(name: str) -> dict | None:
     total = conn.execute("select count(*) from agents").fetchone()[0]
     ticks = conn.execute("select min(tick), max(tick) from utterances").fetchone()
 
-    # Per-TURN action rate, from the engines' own session logs. G6 counts
-    # model CALLS and one turn is several, so the two answer different
-    # questions and both are worth having - measured on short1 they
-    # disagreed by five points, in the direction opposite to the one I
-    # guessed.
     turns = acted_turns = 0
     for path in glob.glob(str(SERIES / name / "sessions" / "*.jsonl")):
         with open(path, encoding="utf-8", errors="replace") as handle:
@@ -118,14 +99,6 @@ def one(name: str) -> dict | None:
 
 def main(names: list[str]) -> int:
     runs = [r for r in (one(n) for n in names) if r]
-    # EVAL-22. Say what was asked for and not found.
-    #
-    # A run with no store in `app/data/` used to be dropped without a word,
-    # so the totals line below would read "4 runs, 1,534 calls" after being
-    # asked for sixteen and a reader had no way to tell the difference
-    # between "twelve runs are missing" and "the series is four runs long".
-    # Those stores are gitignored and the final cohort's are long gone, so
-    # this is the normal case on any fresh checkout, not an edge one.
     missing = [n for n in names if n not in {r["name"] for r in runs}]
     if missing:
         print(

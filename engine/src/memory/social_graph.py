@@ -33,7 +33,6 @@ def row_to_dict(row) -> dict[str, Any]:
             d["contexts"] = json.loads(d["contexts"])
         except (json.JSONDecodeError, TypeError):
             d["contexts"] = []
-    # SQLite stores booleans as 0/1
     if "is_primary" in d:
         d["is_primary"] = bool(d["is_primary"])
     return d
@@ -66,7 +65,6 @@ class SocialGraph:
         return result
 
     async def find_or_create_person(self, name: str) -> dict[str, Any]:
-        # Fast exact-name match first (cheap SQL, always runs)
         existing = await self.db.fetchrow(
             "SELECT id FROM social_graph_nodes WHERE LOWER(name) = LOWER(?)",
             (name,),
@@ -76,7 +74,6 @@ class SocialGraph:
             if person is not None:
                 return person
 
-        # Fuzzy search if graph has enough nodes to warrant it
         count = await self.db.fetchval(
             "SELECT COUNT(*) FROM social_graph_nodes",
         )
@@ -159,7 +156,6 @@ class SocialGraph:
 
         scored: list[tuple[float, dict[str, Any]]] = []
 
-        # Vector search on nodes
         if query_embedding and self.db.vec_available:
             sem_nodes = await self.db.fetch(
                 """
@@ -175,7 +171,6 @@ class SocialGraph:
         else:
             sem_nodes = []
 
-        # Keyword fallback nodes
         if not query_embedding or not self.db.vec_available:
             kw_nodes = await self.db.fetch(
                 "SELECT id, name, is_primary, created_at, updated_at FROM social_graph_nodes",
@@ -189,7 +184,6 @@ class SocialGraph:
                 """,
             )
 
-        # Collect node IDs for attribute lookup
         all_node_ids = list({r["id"] for r in sem_nodes} | {r["id"] for r in kw_nodes})
         attr_map: dict[str, dict[str, str]] = {}
         if all_node_ids:
@@ -204,7 +198,6 @@ class SocialGraph:
                     attr_map[nid] = {}
                 attr_map[nid][ar["attribute_key"]] = ar["attribute_value"]
 
-        # Score semantic nodes (50/50)
         for node in sem_nodes:
             nid = node["id"]
             node_attrs = attr_map.get(nid, {})
@@ -221,7 +214,6 @@ class SocialGraph:
                 result["score"] = score
                 scored.append((score, result))
 
-        # Score keyword-only nodes
         seen_ids = {s[1]["id"] for s in scored}
         for node in kw_nodes:
             nid = node["id"]
@@ -237,7 +229,6 @@ class SocialGraph:
                 result["score"] = kw
                 scored.append((kw, result))
 
-        # Score edges (Python-side, few rows)
         edges = await self.db.fetch(
             """
             SELECT id, person_a_id, person_b_id,
@@ -247,7 +238,6 @@ class SocialGraph:
             """,
         )
 
-        # Get edge embeddings for hybrid scoring
         edge_embeddings: dict[str, list[float]] = {}
         if query_embedding and self.db.vec_available and edges:
             edge_ids = [e["id"] for e in edges]
@@ -323,7 +313,6 @@ class SocialGraph:
             )
 
             if embedding:
-                # Upsert into vec table
                 existing = await self.db.fetchrow(
                     """
                     SELECT a.id FROM social_graph_node_attributes a
@@ -340,7 +329,6 @@ class SocialGraph:
                     (real_id, serialize_f32(embedding)),
                 )
 
-        # Rebuild node embedding from name + all attributes
         all_attrs = await self.db.fetch(
             "SELECT attribute_key, attribute_value FROM social_graph_node_attributes WHERE node_id = ?",
             (person_id,),
@@ -363,7 +351,6 @@ class SocialGraph:
             (now_str, person_id),
         )
 
-        # Update FTS
         await self.db.execute("DELETE FROM social_graph_nodes_fts WHERE id = ?", (person_id,))
         await self.db.execute(
             "INSERT INTO social_graph_nodes_fts (id, name) VALUES (?, ?)",
@@ -484,7 +471,6 @@ class SocialGraph:
                 "UPDATE social_graph_nodes SET name = ?, updated_at = ? WHERE id = ?",
                 (fields["name"], now_str, person_id),
             )
-            # Update FTS
             await self.db.execute("DELETE FROM social_graph_nodes_fts WHERE id = ?", (person_id,))
             await self.db.execute(
                 "INSERT INTO social_graph_nodes_fts (id, name) VALUES (?, ?)",

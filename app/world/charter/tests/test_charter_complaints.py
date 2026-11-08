@@ -26,9 +26,6 @@ async def test_file_complaint_against_government_official() -> None:
 
 @pytest.mark.asyncio
 async def test_complaint_filing_is_open_to_any_agent_no_gating() -> None:
-    # No location argument, no sitting-government requirement: filing a
-    # complaint against the government cannot itself be gated by the
-    # government (module docstring's rationale).
     store = CharterStore()
     ledger = ComplaintLedger(store)
     entry = await ledger.file_complaint("random-agent", "minister-1", "government", "d", now_tick=0)
@@ -49,9 +46,6 @@ async def test_list_all_preserves_filing_order() -> None:
 
 
 def test_ledger_has_no_edit_or_delete_api() -> None:
-    # The immutability guarantee is the absence of these methods, not a
-    # runtime check: there is nothing to call to mutate or remove an
-    # existing entry, on either the engine or the store underneath it.
     for forbidden in ("update_complaint", "edit_complaint", "delete_complaint", "remove_complaint"):
         assert not hasattr(ComplaintLedger, forbidden)
         assert not hasattr(CharterStore, forbidden)

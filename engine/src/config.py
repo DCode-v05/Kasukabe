@@ -36,13 +36,8 @@ from dataclasses import MISSING, dataclass, field, fields
 from pathlib import Path
 from typing import Any, Callable
 
-# Checker signature: (env-or-field name, parsed value) -> error message or None.
 Checker = Callable[[str, Any], "str | None"]
 
-# One canonical sandbox idle TTL default. Also imported by
-# src/sandbox/provider.py (its library-level DEFAULT_IDLE_TTL_S) and used as
-# this module's field default, so the value exists exactly once. 12 hours,
-# matching industry sandbox caches (Codex caches <= 12h).
 SANDBOX_IDLE_TTL_DEFAULT_S = 43200
 
 
@@ -61,9 +56,6 @@ class ConfigError(ValueError):
         super().__init__(
             f"invalid engine configuration ({len(self.errors)} error(s)):\n  - {joined}"
         )
-
-
-# ── Parsers (type-driven; every message names the env var) ──────────
 
 
 def parse_bool(name: str, value: str) -> bool:
@@ -102,9 +94,6 @@ def parse_float(name: str, value: str) -> float:
 
 def parse_csv(name: str, value: str) -> list[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
-
-
-# ── Checkers (composable per-field semantic rules) ──────────────────
 
 
 def all_checks(*checks: Checker) -> Checker:
@@ -209,9 +198,6 @@ def check_absolute_paths(name: str, value: Any) -> str | None:
     return None
 
 
-# ── Field declaration helper ────────────────────────────────────────
-
-
 def setting(
     default: Any = MISSING,
     *,
@@ -230,200 +216,76 @@ def setting(
     return field(default=default, metadata=meta)
 
 
-# Fields that deliberately have no env var. A meta-test asserts this list is
-# exact so a new field cannot silently become unreachable from the
-# environment.
 ENVLESS_FIELDS = frozenset({"deny_rules", "permission_store_user_path"})
-
-# ══════════════════════════════════════════════════════════════════════
-# Liveness TTL principle - hardcode the ratios, not vibes.
-#
-# A liveness TTL is always a multiple of the heartbeat that feeds it:
-#   - fast heartbeats (seconds): TTL = 3x the heartbeat
-#     (20s heartbeat -> 60s TTL: one missed beat is jitter, two is a
-#     warning, three is dead)
-#   - slow polls (minutes+): TTL = 24x the poll
-#     (10min poll -> 4h TTL: cheap polls deserve wide tolerance so a
-#     transient outage does not reap healthy state)
-# If you add a liveness TTL to citadel/engine bridging (channel liveness,
-# session reaping, catalog staleness), derive it from one of these two
-# ratios and say which one in a comment. Mirrored in
-# architecture/sections/70_security_deployment.md.
-# ══════════════════════════════════════════════════════════════════════
 
 
 @dataclass
 class Settings:
-    # ── Citadel gateway ─────────────────────────────────────────────
-    # Every LLM call routes through one URL + one token. Engine never holds
-    # Anthropic/OpenAI/Gemini keys directly.
     cdt_url: str = setting("", env="CDT_URL", check=all_checks(require_nonempty, check_url))
-    # Required; the value is never echoed in error messages (secret).
     cdt_key: str = setting("", env="CDT_KEY", check=require_nonempty)
-    # Engine pod identity. Set by the orchestrator (bap-engine, future
-    # product-engines) at provision time. Engine emits it in log records
-    # and as the X-Engine-Id header on outbound citadel calls so traces
-    # are correlatable across the full stack. Empty when running standalone
-    # (e.g. local dev without an orchestrator).
     engine_id: str = setting("", env="ENGINE_ID")
 
-    # ── Models ──────────────────────────────────────────────────────
-    # HERALD OWNS THE DEFAULTS (src/herald/defaults.py). Empty string means
-    # "use the launch default". Non-empty values are overrides; every
-    # RESOLVED id is validated against the citadel-synced catalog right
-    # after the first sync (src/herald/model_validation.py), so no rule
-    # here.
     llm_model: str = setting("", env="LLM_MODEL")
     max_tokens: int = setting(4096, env="MAX_TOKENS", check=check_positive_number)
     planner_model: str = setting("", env="PLANNER_MODEL")
     light_model: str = setting("", env="LIGHT_MODEL")
-    # Triage runs on every input, so it is priced per input for the life of
-    # the product: it must be cheap, fast, and reliable at structured
-    # output, and it never writes anything the user reads. Two are
-    # configured - the second is used when the first is unreachable, and
-    # they are deliberately from different providers so one provider's
-    # outage cannot stop triage. The default pair (and the benchmark that
-    # ordered it) lives in the herald defaults block.
     dispatch_model: str = setting("", env="DISPATCH_MODEL")
     dispatch_model_alternative: str = setting("", env="DISPATCH_MODEL_ALTERNATIVE")
     fallback_model: str = setting("", env="FALLBACK_MODEL")
     persistent_retry: bool = setting(False, env="PERSISTENT_RETRY")
 
-    # ── Storage & platform ──────────────────────────────────────────
-    # The one root the engine owns. Everything below defaults inside it, so a
-    # deployment sets one path instead of a dozen. See infra/september_home.py
-    # for resolution rules (a set-but-missing root is fatal, by design).
     september_home: str = setting("", env="SEPTEMBER_HOME")
-    # SQLite per-user memory database (the brain). Empty means <home>/brain.sqlite.
     sqlite_db_path: str = setting("", env="SQLITE_DB_PATH")
-    # Platform catalog directory (mounted volume, read-only). Empty means
-    # the built-in resolution order; existence is bootstrap's concern.
     catalog_dir: str = setting("", env="CATALOG_DIR")
     migrations_dir: str = setting("", env="MIGRATIONS_DIR")
-    # Asset Directory encryption key (Fernet, base64-encoded 32 bytes)
     ad_encryption_key: str = setting("", env="AD_ENCRYPTION_KEY", check=check_fernet_key)
     cors_origins: list[str] = setting(env="CORS_ORIGINS", factory=list, check=check_origins)
     oauth_redirect_base_url: str = setting("", env="OAUTH_REDIRECT_BASE_URL", check=check_url)
 
-    # ── Channel subsystem (live-data plane) ─────────────────────────
-    # minimum poll interval - protects asset quota
     channel_poll_default_s: float = setting(
         2.0, env="CHANNEL_POLL_DEFAULT_S", check=check_positive_number
     )
-    # linger after last stream drops before GC
     channel_grace_s: float = setting(30.0, env="CHANNEL_GRACE_S", check=check_nonnegative_number)
-    # cap on concurrently live channels
     channel_max: int = setting(256, env="CHANNEL_MAX", check=check_positive_number)
 
-    # ── Catalog sync (herald) ───────────────────────────────────────
-    # How the engine keeps its model catalog fresh from citadel's
-    # /v1/models. Poll-only: full re-pull every interval picks up catalog
-    # changes (model added/removed/retired, price edits). While the catalog
-    # has never synced, catalog_sync retries on an accelerated schedule
-    # instead of waiting out this interval.
     catalog_resync_interval_s: int = setting(
         300, env="CATALOG_RESYNC_INTERVAL_S", check=check_positive_number
     )
-    # Cache TTL for the global (cross-user) cacheable system-prompt prefix
-    # emitted by ConsciousnessManager.build_prompt_blocks. Anthropic charges
-    # 2x base for a 1h cache write vs 1.25x for 5m, so a long-lived or
-    # multi-turn session amortizes the 1h write while a short one-off
-    # context over-pays. Default "1h" preserves prior behavior; set "5m"
-    # for ephemeral deploys.
     global_cache_ttl: str = setting("1h", env="GLOBAL_CACHE_TTL", check=check_enum("5m", "1h"))
 
-    # ── Learning Centre ─────────────────────────────────────────────
-    # hours between automated batch runs
     lc_batch_interval_hours: float = setting(
         6.0, env="LC_BATCH_INTERVAL_HOURS", check=check_positive_number
     )
-    # Batch model default lives in the herald defaults block; the provider
-    # label in boot records is derived from the catalog entry.
     lc_model: str = setting("", env="LC_MODEL")
 
-    # ── Embeddings ──────────────────────────────────────────────────
-    # Routed through citadel (POST {CDT_URL}/v1/embeddings); citadel holds
-    # the credential. Model + dim defaults live in the herald defaults
-    # block; 0 means "use the herald default dim".
     embedding_model: str = setting("", env="EMBEDDING_MODEL")
     embedding_dim: int = setting(0, env="EMBEDDING_DIM", check=check_nonnegative_number)
 
-    # ── Permission pipeline ─────────────────────────────────────────
-    # when True, AD tools run inside bwrap
     asset_directory_sandboxed: bool = setting(True, env="ASSET_DIRECTORY_SANDBOXED")
-    # [{tool, pattern?, reason?}] - code/test-only, no env var
     deny_rules: list[dict[str, str]] = setting(factory=list)
-    # path validation: restrict file ops to these dirs
     allowed_roots: list[str] = setting(
         env="ALLOWED_ROOTS", factory=list, check=check_absolute_paths
     )
-    # Persistent operator permission grants. Empty means
-    # <home>/config/permissions.json, so grants survive a restart wherever the
-    # root is mounted. There is deliberately no second, cwd-relative tier: a
-    # file the sandboxed agent could create must never be an authority source.
     permission_store_user_path: str = setting("", check=require_nonempty)
-    # Subprocess env scrub tier. See src/utility_directory/subprocess_env.py
-    # for the threat model and per-tier scrub lists.
     subprocess_scrub_mode: str = setting(
         "default", env="SUBPROCESS_SCRUB_MODE", check=check_enum("off", "default", "strict")
     )
 
-    # ── Feature gates (parse_bool IS the validation) ────────────────
-    # TOKEN_BUDGET gate - when False, the token budget continuation loop in
-    # agent_loop is completely inert (behavior matches pre-feature main).
     token_budget_enabled: bool = setting(False, env="TOKEN_BUDGET_ENABLED")
-    # STOP_HOOKS gate - when False, the stop-hook execution point at turn
-    # boundaries in agent_loop is skipped entirely (zero overhead). On by
-    # default because zero registered hooks is already a no-op path.
     stop_hooks_enabled: bool = setting(True, env="STOP_HOOKS_ENABLED")
     pre_tool_hooks_enabled: bool = setting(True, env="PRE_TOOL_HOOKS_ENABLED")
     post_tool_hooks_enabled: bool = setting(True, env="POST_TOOL_HOOKS_ENABLED")
-    # When False, hooks are NOT auto-loaded from settings files (user,
-    # project, local, plugin). Programmatically registered hooks (session,
-    # built-in) still work normally. The older inverted env var
-    # INTELLIGENCE_ENGINE_DISABLE_HOOK_SETTINGS is still honoured; either
-    # lever alone is enough to disable loading.
     hooks_settings_load_enabled: bool = setting(True, env="HOOKS_SETTINGS_LOAD_ENABLED")
-    # When True, the agent loop catches media-specific API errors
-    # (corrupt/oversized images, too-many-page documents), strips the
-    # problematic blocks, and retries with cleaned messages. Separate retry
-    # budget from the overflow retry loop.
     media_error_recovery_enabled: bool = setting(False, env="MEDIA_ERROR_RECOVERY_ENABLED")
-    # When True, base64-encoded images are validated (size, empty buffer)
-    # before sending to the API.
     media_presend_validation_enabled: bool = setting(False, env="MEDIA_PRESEND_VALIDATION_ENABLED")
-    # When True, large media sent with execute requests is chunked and
-    # stored in ingestion_chunks for tool-based retrieval instead of being
-    # injected into context.
     content_ingestion_enabled: bool = setting(False, env="CONTENT_INGESTION_ENABLED")
-    # When True, oversized images are resized/compressed via the
-    # multi-strategy pipeline (Pillow) before the API call, instead of
-    # being stripped entirely.
     media_image_resize_enabled: bool = setting(False, env="MEDIA_IMAGE_RESIZE_ENABLED")
-    # When True, bootstrap installs a SIGINT handler that fans interrupts
-    # out to every active turn executor via InterruptSource. Keep False in
-    # server deployments - uvicorn owns SIGINT for graceful shutdown.
-    # Enable in CLI/TUI deployments that run the engine on the main thread.
     enable_sigint_interrupt: bool = setting(False, env="ENABLE_SIGINT_INTERRUPT")
     query_chain_tracking_enabled: bool = setting(False, env="QUERY_CHAIN_TRACKING_ENABLED")
-    # When False, context overflow errors from the API surface immediately
-    # without attempting recovery. Useful for constrained deploys,
-    # reliability testing, and debugging.
     reactive_compact_enabled: bool = setting(True, env="REACTIVE_COMPACT_ENABLED")
-    # When True, the agent loop runs a lightweight CacheHitMonitor that
-    # fires CacheHitRatioAlert events on low cache ratio or prefix
-    # instability. Cache stats logging (always on) is unaffected.
     cache_hit_monitor_enabled: bool = setting(True, env="CACHE_HIT_MONITOR_ENABLED")
-    # When True, the herald factory builds a deterministic canned LLM
-    # instead of the citadel-routed Provider, so a full /execute turn emits
-    # a fixed short block sequence with no network and no citadel call.
-    # Used only by the SDK conformance suite. Off in production: the LLM
-    # path is byte-identical when this flag is False.
     conformance_mode: bool = setting(False, env="CONFORMANCE_MODE")
 
-    # ── Session activity (ActivityManager) ──────────────────────────
-    # Drive the state machine: active -> idle -> away -> disconnected.
-    # Cross-field rule: idle < away < disconnect (validated below).
     activity_idle_timeout_s: int = setting(
         300, env="ACTIVITY_IDLE_TIMEOUT_S", check=check_positive_number
     )
@@ -433,36 +295,18 @@ class Settings:
     activity_disconnect_timeout_s: int = setting(
         3600, env="ACTIVITY_DISCONNECT_TIMEOUT_S", check=check_positive_number
     )
-    # Reap the per-user sandbox session after this much inactivity,
-    # discarding the ephemeral workspace (the task state is durable
-    # elsewhere). A fresh sandbox is re-provisioned on the next use.
     sandbox_idle_ttl_s: int = setting(
         SANDBOX_IDLE_TTL_DEFAULT_S, env="SANDBOX_IDLE_TTL_S", check=check_positive_number
     )
 
-    # ── September registry ──────────────────────────────────────────
-    # The dormant "septemberai" source tier. Public metadata endpoint for
-    # September's own first-party hosted MCP servers, fetched at read time
-    # (never seeded into the DB). Empty disables the tier entirely.
-    # Example: "https://registry.september.wtf".
     september_registry_url: str = setting("", env="SEPTEMBER_REGISTRY_URL", check=check_url)
-    # Client ID Metadata Document (SEP-991) URL - the engine's own hosted
-    # OAuth client identity. When set AND a discovered authorization server
-    # advertises client_id_metadata_document_supported, discovery uses this
-    # URL as the client_id (public client + PKCE) instead of Dynamic Client
-    # Registration. Empty disables CIMD (DCR / pre-registered paths apply).
     september_client_metadata_url: str = setting(
         "", env="SEPTEMBER_CLIENT_METADATA_URL", check=check_url
     )
-    # Retention window (days) for the append-only asset logs (execution_log,
-    # connection_events). Rows older than this are swept opportunistically
-    # on write (throttled) and by the periodic maintenance loop. 0 disables
-    # the sweep entirely (unbounded growth).
     asset_log_retention_days: int = setting(
         30, env="ASSET_LOG_RETENTION_DAYS", check=check_nonnegative_number
     )
 
-    # ── Loading ─────────────────────────────────────────────────────
 
     @classmethod
     def load(cls, env_path: Path | None = None) -> "Settings":
@@ -530,7 +374,6 @@ class Settings:
             raise ConfigError(errors)
         return settings
 
-    # ── Derived paths ───────────────────────────────────────────────
 
     def __post_init__(self) -> None:
         """Fill path fields left empty from SEPTEMBER_HOME.
@@ -550,7 +393,6 @@ class Settings:
         if not self.permission_store_user_path:
             self.permission_store_user_path = str(paths["config"] / "permissions.json")
 
-    # ── Validation ──────────────────────────────────────────────────
 
     def validate(self) -> list[str]:
         """Full semantic validation. Returns ALL errors (empty = valid)."""
@@ -565,7 +407,6 @@ class Settings:
             if msg is not None:
                 errors.append(msg)
 
-        # Cross-field rules.
         if not (
             self.activity_idle_timeout_s
             < self.activity_away_timeout_s
@@ -585,10 +426,6 @@ class Settings:
                 f"herald default model)"
             )
         if self.embedding_dim > 0 and not self.embedding_model:
-            # The inverse trap: a dim override with the default model would
-            # make embeddings.py silently truncate/pad every real vector to
-            # the wrong length (the default model emits a fixed dimension).
-            # A dim only means something paired with the model it describes.
             errors.append(
                 f"EMBEDDING_DIM={self.embedding_dim} is set but EMBEDDING_MODEL "
                 f"is not - a dimension override only applies to a model override; "

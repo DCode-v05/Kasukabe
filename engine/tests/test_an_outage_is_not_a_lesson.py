@@ -35,10 +35,6 @@ class _Store:
         self.written: list[dict] = []
 
     async def write(self, *args, **kwargs):
-        # Positional AND keyword: `record_correction` passes the signal
-        # positionally, and a fake that refuses it fails silently -
-        # `record_correction` catches and logs, by design, so the test
-        # would have gone green for the wrong reason.
         self.written.append({"args": args, "kwargs": kwargs})
         return True
 

@@ -67,28 +67,11 @@ from src.utility_directory.tool_runtime import ToolDef, ToolRegistry
 
 logger = logging.getLogger(__name__)
 
-# TRADE-05. How many times a call is posted before the seam gives up, and
-# how long it waits between tries.
-#
-# Three attempts and a 0.25s step: the failures in run `deni-a6f9eb4-5h`
-# were bursts under fifty engines posting at once, which clear in
-# milliseconds. Long enough to ride one out, short enough that three
-# failures still fit inside a tick's dispatch window rather than eating
-# the turn they were meant to save.
 WORLD_CALL_ATTEMPTS = 3
 WORLD_CALL_BACKOFF_S = 0.25
 
 WORLD_TOOL_NAME_PREFIX = "world:"
 
-# Granted into the pinned thread's session_rules by install_permissions()
-# below. World tools have no PERMISSION_MATRIX entry that auto-allows a
-# WRITE/DESTRUCTIVE action (see src/sandbox/permissions.py: an unmatched
-# (source, action) pair fails CLOSED - "requires_permission = True" - which
-# with no human operator behind ask_user_callback would hang every world
-# tool call on the 72h wait). The world server is DESIGN.md section 2's
-# actual authority on whether a call is allowed (location, funds, permits);
-# the engine's own HITL permission system has no useful opinion here and
-# must get out of the way instead of guessing.
 WORLD_TOOL_ALLOW_RULE = PermissionRule(
     tool=f"{WORLD_TOOL_NAME_PREFIX}*",
     pattern="",
@@ -140,46 +123,15 @@ class WorldClient:
         self.agent_id = agent_id
         self.owns_client = client is None
         self.client = client or httpx.AsyncClient(timeout=timeout)
-        # WIRE-02. What this engine's calls to the world actually did.
-        #
-        # Run `deni-a6f9eb4-5h` lost 97 calls to transport - 8% of every
-        # tool call the town made - and NOTHING in the running system
-        # knew. The world cannot count them (it is the thing that was
-        # unreachable), the runner had no counter, no endpoint reported
-        # them, and they were findable only by grepping session logs
-        # after the run was over. A failure mode with no instrument is a
-        # failure mode nobody fixes.
-        #
-        # `recovered` is the interesting one: it is the number TRADE-05
-        # is worth, and it separates "the network is fine" from "the
-        # network is bad and the retry is carrying us".
         self.calls_attempted = 0
         self.calls_refused = 0
         self.transport_failures = 0
         self.transport_recovered = 0
-        # Of the failures, the ones where nobody can say whether the act
-        # happened: the world accepted the request and did not answer in
-        # time. Counted apart from `transport_failures` because the two
-        # need different fixes - a connect failure means the world was
-        # unreachable, this means the world was too SLOW - and because a
-        # run whose economy figures are off by a few double-applied acts
-        # should be able to say so instead of being quietly wrong.
         self.transport_unknown = 0
-        # ROADMAP T4, the world as corrector. Set by pinned_boot once the
-        # engine's learning-centre store exists; None until then, and None
-        # in every test that does not care, because a correction is
-        # bookkeeping and must never be the reason a turn fails.
         self.signal_store: Any | None = None
         self.thread_id: str = ""
         self.corrections_recorded = 0
-        # How often a repeated refusal named `search_memory`. Counted so
-        # a run can show whether the hint fires at all - the failure this
-        # whole change exists to end was a mechanism nobody could see.
         self.hints_offered = 0
-        # ENG-19. What the last /tools/registry answer was, so the next one
-        # can be conditional. `registry_etag` is the world's own validator
-        # when it sends one; `registry_body_digest` is this side's fallback
-        # for a world that does not (see fetch_tool_registry).
         self.registry_etag: str = ""
         self.registry_body_digest: str = ""
         self.registry_unchanged = 0
@@ -226,9 +178,6 @@ class WorldClient:
             self.registry_unchanged += 1
             return None
         resp.raise_for_status()
-        # Remembered even when this call was unconditional, so the FIRST
-        # refresh after boot is already able to be answered with a 304 -
-        # boot has just built these exact ToolDefs.
         self.registry_etag = resp.headers.get("etag", "") or ""
         digest = hashlib.sha256(resp.content).hexdigest()
         if only_if_changed and digest and digest == self.registry_body_digest:
@@ -262,8 +211,6 @@ class WorldClient:
                 return 0
             return int(resp.json().get("version", 0))
         except (httpx.HTTPError, ValueError, TypeError):
-            # A staleness check is not worth failing a tick over: the engine
-            # keeps the tools it already has and tries again next tick.
             return 0
 
     async def call_tool(self, tool_name: str, tool_input: dict[str, Any]) -> str:
@@ -322,17 +269,10 @@ class WorldClient:
                     json={"tool": tool_name, "input": tool_input},
                 )
                 if attempt:
-                    # Got there on a retry: this call would have been one
-                    # of the 97 before TRADE-05.
                     self.transport_recovered += 1
                 break
             except httpx.HTTPError as exc:
                 last_error = exc
-                # A read timeout is not a call that failed to leave. The
-                # world took it and did not answer in time, so it may be
-                # applied already: re-posting it is how one harvest becomes
-                # three, and telling this resident "nothing was done" is a
-                # claim nothing here can support.
                 arrived = isinstance(exc, httpx.ReadTimeout)
                 if not arrived and attempt + 1 < WORLD_CALL_ATTEMPTS:
                     await asyncio.sleep(WORLD_CALL_BACKOFF_S * (attempt + 1))
@@ -347,10 +287,6 @@ class WorldClient:
                     "unknown (read timeout)" if arrived else "never arrived",
                 )
                 if arrived:
-                    # The honest sentence. A resident told this can ask the
-                    # world what is true - `look_around`, check an inventory
-                    # - which is the one useful move available. Told "nothing
-                    # was done", it would instead repeat the act.
                     return (
                         f"Error: the world took your {tool_name} call but did "
                         f"not answer in time ({exc}). It MAY have been done "
@@ -358,9 +294,6 @@ class WorldClient:
                         "can tell you which. Check the world before repeating "
                         "it, or the act may happen twice."
                     )
-                # Says it was tried, so a resident reading this knows the
-                # difference between "the world refused me" and "the world
-                # could not be reached" - which it could not tell before.
                 return (
                     f"Error: could not reach the world to call {tool_name} "
                     f"({WORLD_CALL_ATTEMPTS} attempts, {exc}). Nothing was "
@@ -379,23 +312,6 @@ class WorldClient:
                 message = resp.text
             self.calls_refused += 1
             refusal = f"Error: {message}"
-            # ENG-18. A 5xx is the world BREAKING, not the world refusing.
-            #
-            # Every status at or above 400 was written to the resident's
-            # learning store as a correction, so a world server that fell
-            # over taught the resident that "the world refused `harvest`" -
-            # and the learning pipeline consolidated that during sleep into
-            # a durable belief about what it is not allowed to do. An
-            # outage became a lesson.
-            #
-            # A refusal is a 4xx WITH a reason: the world declining a
-            # specific act and saying why. A 4xx with no `error` body is
-            # not a refusal either - it is a malformed answer, and there is
-            # nothing in it for the resident to learn from.
-            #
-            # The resident still SEES the error this turn; only the durable
-            # record is withheld. Teaching nothing is the right outcome
-            # when there is nothing true to teach.
             is_a_refusal = resp.status_code < 500 and stated_reason is not None
             if not is_a_refusal:
                 logger.info(
@@ -404,13 +320,6 @@ class WorldClient:
                     tool_name, resp.status_code,
                 )
                 return refusal
-            # Asked BEFORE the write below, so a hit is prior history and
-            # not the row we are about to add. See
-            # `memory_query.hint_after_refusal` for why a repeated refusal
-            # is the one moment worth naming `search_memory` at: the
-            # sentence explaining the FIRST refusal is sitting in
-            # `learning_signals`, which is the one store the turn's
-            # automatic recall does not read.
             hint = await hint_after_refusal(self.signal_store, tool_name)
 
             if await record_correction(
@@ -486,9 +395,6 @@ def build_tool_def(spec: WorldToolSpec, world: WorldClient) -> ToolDef:
         input_schema=spec.input_schema,
         handler=handler,
         source=ToolSource.NETWORK,
-        # World tools mutate world state by definition (DESIGN.md section 2:
-        # "World state mutates ONLY through tool calls") - never treat one as
-        # read-only or safe to run concurrently with itself by default.
         is_concurrency_safe=lambda _: False,
         is_read_only=lambda _: False,
     )
@@ -497,8 +403,6 @@ def build_tool_def(spec: WorldToolSpec, world: WorldClient) -> ToolDef:
 async def build_world_tool_registry(world: WorldClient) -> ToolRegistry:
     """Fetch the world's current tool registry and build one ToolRegistry."""
     registry = ToolRegistry()
-    # Unconditional: there is nothing to compare against yet, and a 304 at
-    # boot would leave the agent with no tools at all.
     for spec in await world.fetch_tool_registry() or []:
         registry.register(build_tool_def(spec, world))
     return registry
@@ -534,39 +438,13 @@ async def refresh_world_tool_registry(
         return known_version
     specs = await world.fetch_tool_registry(only_if_changed=True)
     if specs is None:
-        # Same registry, same location, same seat: there is nothing to add
-        # and nothing to re-describe. `version` rather than `known_version`
-        # because the world's counter may legitimately have moved for a
-        # tool this agent cannot see.
         return version
     for spec in specs:
-        # Registry keys carry WORLD_TOOL_NAME_PREFIX (build_tool_def), so the
-        # bare world name must be prefixed before asking whether it is already
-        # here - comparing the raw name would never match and would rebuild
-        # every ToolDef on every change.
         key = f"{WORLD_TOOL_NAME_PREFIX}{spec.name}"
         if key not in registry.tools:
             registry.register(build_tool_def(spec, world))
         elif force:
-            # B3: the same tool, re-described. When schemas are served by
-            # location, a tool's row changes as the resident walks - full
-            # at the mill, one line from the field - and the version
-            # counter cannot see that, because the WORLD's registry did not
-            # change. Replacing the def in place is what makes the saving
-            # real rather than a boot-time snapshot that goes stale the
-            # first time anybody moves.
             registry.tools[key] = build_tool_def(spec, world)
-    # And a world tool the world no longer offers leaves. This only ever
-    # added and re-described, so anything offered once stayed in front of
-    # the model for good - a government verb after the seat was lost, and
-    # `buy` after a conversation ended (it is offered only while the
-    # resident is in one, the operator's rule of 2026-09-21). The world
-    # refused the call either way; the model still spent one finding out.
-    #
-    # Only WORLD tools, by prefix: the engine's own (session log, memory
-    # stream) live on the same registry and are not the world's to remove.
-    # And only on a real list - a 304 returns above, before this, so "no
-    # change" is never read as "offers nothing".
     offered = {f"{WORLD_TOOL_NAME_PREFIX}{spec.name}" for spec in specs}
     for key in [k for k in registry.tools if k.startswith(WORLD_TOOL_NAME_PREFIX)]:
         if key not in offered:

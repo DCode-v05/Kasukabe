@@ -37,7 +37,6 @@ async def test_falling_asleep_runs_the_pipeline_exactly_once():
     assert result_first == "result-1"
     assert pipeline.run_count == 1
 
-    # Still asleep on later ticks in the same window - must not run again.
     for _ in range(5):
         result = await gate.on_tick(is_sleeping=True)
         assert result is None
@@ -51,9 +50,9 @@ async def test_a_new_sleep_window_runs_a_new_batch():
 
     await gate.on_tick(is_sleeping=True)
     await gate.on_tick(is_sleeping=True)
-    await gate.on_tick(is_sleeping=False)  # wakes up
     await gate.on_tick(is_sleeping=False)
-    result = await gate.on_tick(is_sleeping=True)  # falls asleep again
+    await gate.on_tick(is_sleeping=False)
+    result = await gate.on_tick(is_sleeping=True)
 
     assert pipeline.run_count == 2
     assert result == "result-2"
@@ -68,19 +67,6 @@ async def test_trigger_extra_runs_regardless_of_window_state():
     assert result == "result-1"
     assert gate.last_result == "result-1"
     assert gate.runs_triggered == 1
-
-
-# ── the no_learning control arm (evaluation spec section 5.2) ─────────
-#
-# `genesis.py` has assigned every resident an arm since it was written -
-# 190 full, the rest split three ways - and NOTHING HONOURED IT. A
-# `no_learning` resident ran the learning gate exactly like everybody
-# else, so the arm was a label on a resident that behaved identically and
-# C1 was being reported against a control that did not differ from the
-# treatment in any way.
-#
-# The spec's own words: "a learning claim without a control arm is a
-# correlation."
 
 
 @pytest.mark.asyncio

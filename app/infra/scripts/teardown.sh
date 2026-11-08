@@ -1,21 +1,4 @@
 #!/usr/bin/env bash
-# Kasukabe host-bringup, teardown (RUNBOOK.md section 12).
-#
-# ONE-COMMAND teardown, run from the OPERATOR'S LOCAL MACHINE:
-#   INSTANCE_ID=... ALLOC_ID=... SG_ID=... ./teardown.sh
-#
-# Default behavior (no flags): terminates the instance and releases the
-# Elastic IP. Leaves the EBS root volume (DeleteOnTermination=false, see
-# 02-launch-instance.sh) and the S3 bucket + IAM role/instance profile +
-# security group ALONE, so the run's data survives and re-launching for a
-# second session only needs 02-launch-instance.sh again, not the whole
-# stack from scratch.
-#
-# Pass --nuke-all to ALSO delete the EBS volume, S3 bucket contents, IAM
-# role/instance profile/policy, and security group - only do this once
-# you have confirmed (RUNBOOK.md section 12 has the exact commands) that
-# every S3 prefix has the final Litestream replica and Parquet exports
-# you need, since --nuke-all is NOT reversible.
 set -euo pipefail
 
 : "${INSTANCE_ID:?export INSTANCE_ID}"

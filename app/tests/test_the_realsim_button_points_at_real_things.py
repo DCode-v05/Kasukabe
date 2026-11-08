@@ -65,9 +65,6 @@ def test_an_override_still_wins() -> None:
     assert 'os.environ.get("BROKER_BASE_URL", DEFAULT_BROKER_URL)' in source
 
 
-# ── stopping a run on the platform this is developed on ────────────────
-
-
 def test_terminate_survives_a_host_with_no_process_groups() -> None:
     """Windows has no `os.killpg`. The old handler caught
     ProcessLookupError and PermissionError, and a missing attribute is
@@ -100,7 +97,7 @@ def test_terminate_survives_a_host_with_no_process_groups() -> None:
     proc = _Proc()
     handle.process = proc
 
-    controller._terminate(handle)   # must not raise on any platform
+    controller._terminate(handle)
     assert proc.terminated, (
         "UI-15: the run was not stopped - on a host with no process groups "
         "the kill path fell through and left the engines running"

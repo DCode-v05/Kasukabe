@@ -38,9 +38,6 @@ from pathlib import Path
 from world.run_genesis import GenesisRunner, terminal_reason_from_spend
 
 
-# ── The decision itself ──────────────────────────────────────────────
-
-
 def test_a_halted_broker_is_terminal() -> None:
     reason = terminal_reason_from_spend(
         {"state": "halted", "spent_usd": 5.02, "cap_usd": 5.0, "fraction_used": 1.004}
@@ -92,9 +89,6 @@ def test_an_unknown_state_is_not_treated_as_terminal() -> None:
 
 def test_the_check_is_case_insensitive_about_the_state() -> None:
     assert terminal_reason_from_spend({"state": "HALTED", "spent_usd": 1, "cap_usd": 1}) is not None
-
-
-# ── Gate 1: the decision is reached by the run loop ──────────────────
 
 
 def run_loop_source() -> str:

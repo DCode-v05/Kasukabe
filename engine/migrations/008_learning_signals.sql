@@ -1,6 +1,3 @@
--- Learning signals: inline-captured observations from the main model.
--- Replaces trajectory-based LLM extraction with zero-cost signal capture.
-
 CREATE TABLE IF NOT EXISTS learning_signals (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     type         TEXT NOT NULL,

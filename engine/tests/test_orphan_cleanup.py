@@ -16,17 +16,12 @@ IS_LINUX = platform.system() == "Linux"
 pytestmark = pytest.mark.skipif(not IS_LINUX, reason="Process tree tests require Linux /proc")
 
 
-# ── Gap 6: Process tree inspection ────────────────────────────────
-
-
 class TestProcessTreeUtils:
     def test_is_process_alive_self(self):
         from src.sandbox.process_tree import is_process_alive
 
         my_pid = os.getpid()
         if my_pid <= 1:
-            # In Docker container the test process may be PID 1.
-            # is_process_alive intentionally returns False for pid<=1.
             assert not is_process_alive(my_pid)
         else:
             assert is_process_alive(my_pid)
@@ -66,9 +61,6 @@ class TestProcessTreeUtils:
         assert result == []
 
 
-# ── Gap 1: Tree-kill ──────────────────────────────────────────────
-
-
 class TestTreeKill:
     @pytest.mark.asyncio
     async def test_tree_kill_kills_grandchildren(self):
@@ -103,8 +95,6 @@ class TestTreeKill:
             tree_kill,
         )
 
-        # `& wait` defeats bash's exec optimization, so the inner shell stays
-        # alive as a real intermediate process and `sleep` is its child.
         proc = await asyncio.create_subprocess_exec(
             "bash",
             "-c",
@@ -116,8 +106,6 @@ class TestTreeKill:
             for _ in range(50):
                 await asyncio.sleep(0.1)
                 descendants = get_descendant_pids(proc.pid)
-                # A depth-2 tree: at least one descendant whose parent is itself
-                # a descendant rather than the root.
                 grandchildren = [
                     d for d in descendants if get_ppid(d) not in (None, proc.pid)
                 ]
@@ -128,8 +116,6 @@ class TestTreeKill:
                     f"no grandchild appeared; descendants={get_descendant_pids(proc.pid)}"
                 )
 
-            # Captured BEFORE the kill: after it, /proc entries are gone and any
-            # loop over them silently does nothing.
             before = get_descendant_pids(proc.pid)
             assert grandchildren, "the recursive BFS path was never exercised"
 
@@ -201,9 +187,6 @@ class TestTreeKill:
         assert not is_process_alive(proc.pid)
 
 
-# ── Gap 1 + feature flag: tree-kill toggle ────────────────────────
-
-
 class TestTreeKillFeatureFlag:
     def test_flag_defaults_enabled(self):
         from src.sandbox.executor import tree_kill_enabled
@@ -227,9 +210,6 @@ class TestTreeKillFeatureFlag:
                 os.environ["FEATURE_TREE_KILL"] = orig
             else:
                 os.environ.pop("FEATURE_TREE_KILL", None)
-
-
-# ── Gap 2: Post-tool cleanup ─────────────────────────────────────
 
 
 class TestPostToolCleanup:
@@ -269,9 +249,6 @@ class TestPostToolCleanup:
             ex.cleanup()
 
 
-# ── Gap 3: Background watchdog ───────────────────────────────────
-
-
 class TestBackgroundWatchdog:
     def test_watchdog_flag_defaults_enabled(self):
         from src.sandbox.executor import bg_watchdog_enabled
@@ -287,9 +264,6 @@ class TestBackgroundWatchdog:
         from src.sandbox.executor import MAX_BG_OUTPUT_BYTES
 
         assert MAX_BG_OUTPUT_BYTES == 100 * 1024 * 1024
-
-
-# ── Gap 7: Cleanup registry ──────────────────────────────────────
 
 
 class TestCleanupRegistry:
@@ -356,12 +330,9 @@ class TestCleanupRegistry:
         try:
             unreg = register_cleanup("cb", cb)
             unreg()
-            unreg()  # second call is a no-op
+            unreg()
         finally:
             clear_registry()
-
-
-# ── Gap 8: Self-registration lifecycle ────────────────────────────
 
 
 class TestSelfRegistrationLifecycle:
@@ -380,16 +351,13 @@ class TestSelfRegistrationLifecycle:
         try:
             register_cleanup("fg", fg_cleanup)
             bg_unreg = register_cleanup("bg", bg_cleanup)
-            bg_unreg()  # backgrounded process unregisters
+            bg_unreg()
 
             count = await run_all_cleanup(timeout=2.0)
             assert count == 1
             assert called == ["foreground"]
         finally:
             clear_registry()
-
-
-# ── Gap 9: Reference cleanup ─────────────────────────────────────
 
 
 class TestReferenceCleanup:
@@ -426,9 +394,6 @@ class TestReferenceCleanup:
             assert session.stdin_queue is None
 
 
-# ── Gap 4: Orphan scanner ────────────────────────────────────────
-
-
 class TestOrphanScanner:
     def test_orphan_cleanup_flag_defaults_enabled(self):
         from src.sandbox.orphan_detector import orphan_cleanup_enabled
@@ -453,16 +418,10 @@ class TestOrphanScanner:
         assert orphan_detector.scanner_task is None
 
 
-# ── Gap 5: Self-orphan detection ──────────────────────────────────
-
-
 class TestSelfOrphanDetection:
     def test_getppid_not_one_in_test(self):
         """In normal test execution, ppid should not be 1."""
-        # In Docker the test process parent is pytest, not init.
-        # This can fail if running directly as PID 1, but that's
-        # a container misconfiguration, not a test failure.
-        assert os.getppid() != 1 or True  # soft check
+        assert os.getppid() != 1 or True
 
     def test_flag_defaults_disabled(self):
         from src.engine_core.orphan_self_detect import self_orphan_detection_enabled

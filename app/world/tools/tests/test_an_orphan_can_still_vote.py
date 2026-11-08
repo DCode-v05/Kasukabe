@@ -60,8 +60,6 @@ async def test_a_newborn_is_a_resident_before_it_has_a_household(world) -> None:
 
     facts = eligibility_facts_for(world, world.agents["newborn"])
     assert facts.is_resident is True
-    # Age still gates the vote - residency and suffrage are different
-    # questions, and this fix must not blur them.
     assert facts.age_years == 0.0
 
 

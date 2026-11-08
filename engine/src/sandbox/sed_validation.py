@@ -46,33 +46,14 @@ SAFE_PRINT_EXPR_RE = re.compile(r"^(?:\d+|\d+,\d+)?p$")
 
 SAFE_SUB_FLAGS_RE = re.compile(r"^[gpimIM]*[1-9]?[gpimIM]*$")
 
-# An expression of the form s<delim>pattern<delim>replacement<delim>flags, where
-# only the forward slash delimiter is accepted. Escaped forward slashes inside
-# the pattern and replacement are allowed.
 SAFE_SUB_EXPR_RE = re.compile(r"^s/((?:\\.|[^/\\])*)/((?:\\.|[^/\\])*)/([gpimIM0-9]*)$")
 
 QUIET_FLAG_ALIASES: frozenset[str] = frozenset({"-n", "--quiet", "--silent"})
 
-# Characters that are dangerous when combined with `-e` or `-w` inside a
-# single short-flag token. Matches src `sedValidation.ts:398`:
-#   -e[wWe]  ->  -ew, -eW, -ee
-#   -w[eE]   ->  -we, -wE
-# These combinations either smuggle a dangerous flag through the `-e`
-# expression parser (e.g. `-ew` would consume `w` as the expression value)
-# or chain dangerous commands. We reject before splitting so the parser
-# never has to reason about them.
 DANGEROUS_E_NEIGHBORS: frozenset[str] = frozenset({"e", "w", "W"})
 DANGEROUS_W_NEIGHBORS: frozenset[str] = frozenset({"e", "E"})
 
 
-# ---------------------------------------------------------------------------
-# Denylist — run BEFORE allowlist as defense in depth.
-# ---------------------------------------------------------------------------
-
-# Extract the flags portion of a substitution expression written with ANY
-# single-character delimiter. Matches: s<D>pattern<D>replacement<D>flags$
-# where <D> is a single non-backslash, non-newline character. Captures the
-# trailing flags so we can look for dangerous characters (w, W, e, E).
 DANGEROUS_SUB_FLAGS_RE = re.compile(
     r"^s([^\\\n]).*?\1.*?\1(.*?)$",
     re.DOTALL,
@@ -82,31 +63,21 @@ DANGEROUS_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"[^\x01-\x7F]"), "non-ASCII character in sed expression"),
     (re.compile(r"[{}]"), "curly braces are too complex to analyse safely"),
     (re.compile(r"\n"), "newline in sed expression"),
-    # Comment character `#` not preceded by `s` (which would be a substitution delimiter).
     (re.compile(r"(?<!s)#"), "comment marker in sed expression"),
-    # Leading negation of an address, or /pattern/! negation after a delimited address.
     (re.compile(r"^\s*!"), "leading address negation"),
     (re.compile(r"/!"), "address negation after pattern"),
-    # Tilde step addresses: 1~2, ,~2, $~2
     (re.compile(r"\d~\d"), "tilde step address"),
     (re.compile(r",~\d"), "tilde step address after comma"),
     (re.compile(r"\$~\d"), "tilde step address after $"),
-    # Bare-comma prefix shorthand
     (re.compile(r"^\s*,"), "bare comma address prefix"),
-    # GNU offset addresses: ,+N / ,-N
     (re.compile(r",\s*[+-]\d"), "GNU offset address"),
-    # Backslash delimiter for s command: s\...
     (re.compile(r"^s\\"), "backslash delimiter for substitution"),
-    # Alternate delimiters disguised as escapes: \| \# \% \@
     (re.compile(r"\\[|#%@]"), "alternate delimiter escape"),
-    # Escaped forward slashes followed by w/W — bypass attempt for write command.
     (re.compile(r"\\/.*[wW]"), "escaped slash followed by w/W"),
-    # Write commands at the top of an expression, with optional address.
     (re.compile(r"^\s*[wW]\s*\S+"), "top-level w/W write command"),
     (re.compile(r"^\s*\d+\s*[wW]\s*\S+"), "numeric-address w/W write command"),
     (re.compile(r"^\s*\$\s*[wW]\s*\S+"), "$-address w/W write command"),
     (re.compile(r"/[^/]*/\s*[wW]\s*\S+"), "pattern-address w/W write command"),
-    # Execute commands at the top of an expression, with optional address.
     (re.compile(r"^\s*e(\s|$)"), "top-level e execute command"),
     (re.compile(r"^\s*\d+\s*e(\s|$)"), "numeric-address e execute command"),
     (re.compile(r"^\s*\$\s*e(\s|$)"), "$-address e execute command"),
@@ -127,29 +98,14 @@ def has_dangerous_pattern(expressions: tuple[str, ...]) -> tuple[bool, str]:
         for pattern, reason in DANGEROUS_PATTERNS:
             if pattern.search(expr):
                 return True, reason
-        # Substitution-flag check: extract the trailing flags portion of any
-        # `s<D>pat<D>rep<D>flags` expression (any delimiter) and reject if it
-        # contains w, W, e, E. This catches `s/x/y/w file` even when the `s`
-        # prefix would otherwise let the expression slide past the top-level
-        # write-command check above.
         m = DANGEROUS_SUB_FLAGS_RE.match(expr)
         if m is not None:
             trailing = m.group(2) or ""
             if any(ch in trailing for ch in "wWeE"):
                 return True, "dangerous substitution flag (w/W/e/E)"
-        # `y` transliterate with any w/W/e/E anywhere in the expression.
-        # Matches src `sedValidation.ts:619-626`: if any `y<char>` sequence
-        # exists and ANY w/W/e/E is anywhere in the command, reject. This is
-        # deliberately paranoid — y commands are rare and mixing them with
-        # write/execute characters is suspicious regardless of position.
         if re.search(r"y[^\\\n]", expr) and re.search(r"[wWeE]", expr):
             return True, "y transliterate combined with w/W/e/E"
     return False, ""
-
-
-# ---------------------------------------------------------------------------
-# Parser
-# ---------------------------------------------------------------------------
 
 
 def split_combined_short_flag(token: str) -> list[str]:
@@ -164,8 +120,6 @@ def split_combined_short_flag(token: str) -> list[str]:
         return [token]
     if len(token) <= 2:
         return [token]
-    # `-i.bak` is a GNU extension meaning in-place with a backup extension.
-    # Treat the whole token as a single flag.
     if token.startswith("-i") and "." in token:
         return [token]
     return [f"-{ch}" for ch in token[1:]]
@@ -230,8 +184,6 @@ def parse_sed_args(args: list[str]) -> SedParseResult:
 
         if tok.startswith("-") and tok != "-" and len(tok) >= 2:
             letters = tok[1:]
-            # Strip `.ext` from `-i.bak` so the `.` doesn't pollute the
-            # dangerous-letter scan below.
             letters_for_check = letters.split(".", 1)[0] if letters.startswith("i") else letters
             if "e" in letters_for_check:
                 if any(
@@ -245,8 +197,6 @@ def parse_sed_args(args: list[str]) -> SedParseResult:
             ):
                 return fail(f"dangerous flag combination: {tok}")
             split = split_combined_short_flag(tok)
-            # A combined form like `-ne` means `-n` + `-e`; the expression
-            # for the `-e` is still the NEXT positional token.
             produced_e = False
             for sub in split:
                 if sub == "-e":
@@ -265,8 +215,6 @@ def parse_sed_args(args: list[str]) -> SedParseResult:
             i += 1
             continue
 
-        # First positional (when no -e seen yet) is the expression;
-        # everything after is a file argument.
         if not has_dash_e and not expressions:
             expressions.append(tok)
             has_dash_e = True
@@ -285,20 +233,13 @@ def parse_sed_args(args: list[str]) -> SedParseResult:
     )
 
 
-# ---------------------------------------------------------------------------
-# Allowlist
-# ---------------------------------------------------------------------------
-
-
 def is_safe_print(parse: SedParseResult) -> bool:
     """Safe-print allowlist: `-n` silent mode, expressions like `p`, `1,5p`.
 
     File arguments are allowed — print is read-only.
     """
-    # Require -n / --quiet / --silent
     if not any(f in QUIET_FLAG_ALIASES for f in parse.flags):
         return False
-    # All flags must be in the SAFE_PRINT_FLAGS set.
     for f in parse.flags:
         if f not in SAFE_PRINT_FLAGS:
             return False
@@ -307,9 +248,6 @@ def is_safe_print(parse: SedParseResult) -> bool:
     if not parse.expressions:
         return False
     for expr in parse.expressions:
-        # Semicolon-separated sub-expressions: each must match the safe-print
-        # regex independently. Empty segments (from a trailing `;`) are
-        # rejected so we don't accept `1p;` as valid.
         parts = expr.split(";")
         if not parts:
             return False
@@ -329,20 +267,14 @@ def is_safe_substitution(parse: SedParseResult, allow_file_writes: bool) -> bool
         the replacement are rejected because src treats `;` as a command
         separator and we refuse to reason about `s/foo/bar/g;<something>`.
     """
-    # Match src: Pattern 2 allows exactly one expression.
     if len(parse.expressions) != 1:
         return False
-    # File-writes gating: if writes aren't allowed, reject file args and -i.
     if not allow_file_writes:
         if parse.has_inplace:
             return False
         if parse.files:
             return False
     expr = parse.expressions[0]
-    # Reject any semicolon. Even literal `;` inside the replacement is
-    # unsafe because src refuses to parse `s/foo/bar/g` mixed with anything
-    # else, and a literal `;` is indistinguishable at this layer from a
-    # command separator trying to chain a dangerous command.
     if ";" in expr:
         return False
     m = SAFE_SUB_EXPR_RE.match(expr)
@@ -351,17 +283,10 @@ def is_safe_substitution(parse: SedParseResult, allow_file_writes: bool) -> bool
     flags_part = m.group(3)
     if flags_part and not SAFE_SUB_FLAGS_RE.match(flags_part):
         return False
-    # Belt-and-braces: every flag character must individually be in the
-    # safe-flag set. Catches anything the regex above would let slide.
     for ch in flags_part:
         if ch not in SAFE_SUB_FLAGS:
             return False
     return True
-
-
-# ---------------------------------------------------------------------------
-# Public entry point
-# ---------------------------------------------------------------------------
 
 
 def check_sed_constraints(

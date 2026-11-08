@@ -34,7 +34,6 @@ INDEX = ATLAS / "index.html"
 MANIFEST = ATLAS / "atlas.json"
 SECTIONS_DIR = ATLAS / "sections"
 
-# The one line the generator owns. Everything else in index.html is hand-maintained shell.
 SECTIONS_LINE = re.compile(r"^const SECTIONS = \[.*\];$", re.M)
 
 
@@ -80,7 +79,6 @@ def render(sections: list[dict[str, str]]) -> str:
             "The shell was restructured; update SECTIONS_LINE in this script to match."
         )
     payload = json.dumps(sections, ensure_ascii=False)
-    # re.sub would interpret backslashes in the chapter text as escape sequences.
     return SECTIONS_LINE.sub(lambda _: f"const SECTIONS = {payload};", html, count=1)
 
 

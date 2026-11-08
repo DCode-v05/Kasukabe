@@ -119,7 +119,6 @@ class TestFileExtraction:
             tool_result("file_read", "code again", success=True),
         ]
         result = format_context_summary(items, max_items=10)
-        # Files Touched section should list the path only once
         files_section = (
             result.split("# Files Touched")[1].split("\n#")[0]
             if "# Files Touched" in result
@@ -187,7 +186,6 @@ class TestSystemEvents:
 
 class TestTruncation:
     def test_per_section_truncation(self):
-        # Each line is ~310 chars after truncation; need 30 entries to exceed 8000 char cap
         items = [entry(EntryType.MESSAGE_USER, f"request {'z' * 1500} #{i}") for i in range(30)]
         result = format_context_summary(items, max_items=30)
         assert "truncated" in result.lower()
@@ -200,7 +198,6 @@ class TestTruncation:
     def test_max_items_respected(self):
         items = [entry(EntryType.MESSAGE_USER, f"msg {i}") for i in range(20)]
         result = format_context_summary(items, max_items=5)
-        # Only last 5 items (15-19) should be in the output
         assert "msg 10" not in result
         assert "msg 19" in result
 

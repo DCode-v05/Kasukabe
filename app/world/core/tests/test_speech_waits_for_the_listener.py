@@ -51,7 +51,6 @@ async def test_a_remark_survives_a_gap_far_longer_than_the_window() -> None:
     """The measured case: spoken at tick 233, heard at tick 266 - a
     33-tick gap against a 4-tick window."""
     system, bus, _ = _system(window=4)
-    # Perrin has thought before, so the system knows where to resume from.
     system.build_perception("perrin", tick=232)
     await bus.publish(_said(233, "ainsley", "perrin", "pharmacy"))
 
@@ -108,9 +107,7 @@ async def test_re_asking_lapses_but_the_first_delivery_never_does() -> None:
     await bus.publish(_said(2, "ainsley", "perrin", "pharmacy"))
 
     very_late = 2 + UNANSWERED_LOOKBACK_TICKS * 3
-    # First sight, long after the window and the lookback both closed.
     assert len(system.build_perception("perrin", tick=very_late).heard_events) == 1
-    # Seen and ignored; now it lapses rather than repeating forever.
     assert system.build_perception("perrin", tick=very_late + 5).heard_events == []
 
 
@@ -199,7 +196,6 @@ async def test_a_remark_reaches_you_even_after_you_walk_away() -> None:
 
     assert len(perception.heard_events) == 1
     assert perception.location_id == "college"
-
 
 
 @pytest.mark.asyncio

@@ -143,18 +143,6 @@ async def test_every_resident_can_be_spoken_about_once_seeded(store: TraceStore)
     assert count == len(ids), f"{len(ids) - count} utterance(s) refused by the store"
 
 
-# ══════════════════════════════════════════════════════════════════════
-# the second half: a rejected write has to be counted
-# ══════════════════════════════════════════════════════════════════════
-#
-# Seeding in kin order closes the one cause found in run 16. It cannot
-# close the class: any constraint, a disk that fills, a schema that moves
-# under a running world. The broker learned this in July and its writers
-# now halt dispatch after three consecutive failures. The world-side
-# recorder logged 125 rejections at WARNING and kept going, which is the
-# state the broker was in before that fix.
-
-
 @pytest.mark.asyncio
 async def test_a_rejected_write_is_counted_not_merely_logged(store: TraceStore) -> None:
     """An utterance naming somebody who was never seeded is exactly what
@@ -215,7 +203,7 @@ async def test_speech_from_an_unseeded_resident_counts_as_a_loss(store: TraceSto
             type="agent.utterance.spoken",
             tick=37,
             payload={
-                "speaker_agent_id": "n02",  # never seeded
+                "speaker_agent_id": "n02",
                 "listener_agent_id": None,
                 "conversation_id": "c1",
                 "location_id": "market_square",
@@ -225,28 +213,6 @@ async def test_speech_from_an_unseeded_resident_counts_as_a_loss(store: TraceSto
         )
     )
     assert store.stats()["rows_dropped"] == before + 1
-
-
-# ══════════════════════════════════════════════════════════════════════
-# run 20: speech lost over a missing thread id
-# ══════════════════════════════════════════════════════════════════════
-#
-# The drop counter added above earned its place on its first live run.
-# Four of run 20's 153 utterances never reached the table:
-#
-#     world recorder dropped a agent.utterance.spoken: NOT NULL
-#     constraint failed: utterances.conversation_id
-#
-# `utterances.conversation_id` is NOT NULL and four remarks arrived
-# without one. Before the counter they would have vanished in silence,
-# exactly as Ainsley Holloway's whole existence did in run 16.
-#
-# A missing thread id is not a reason to lose the words. The remark
-# happened - somebody said it, in a room, and other residents heard it -
-# and a record that drops it is wrong in a way that a record filing it
-# under a made-up thread is not. So the writer mints one, deterministically
-# so the same remark cannot land twice under two ids, and counts it, because
-# a fallback nobody can see is how a defect becomes the normal case.
 
 
 @pytest.mark.asyncio
@@ -264,7 +230,6 @@ async def test_a_remark_with_no_thread_id_is_still_recorded(store: TraceStore) -
             payload={
                 "speaker_agent_id": first["agent_id"],
                 "listener_agent_id": None,
-                # no conversation_id at all
                 "location_id": "carpentry",
                 "content": "Thirty-six sim for all three.",
                 "is_public": True,

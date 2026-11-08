@@ -153,12 +153,9 @@ async def test_list_complaints_returns_a_copy() -> None:
     await store.append_complaint("a1", "gov", "government", "first", 0)
 
     ledger = await store.list_complaints()
-    ledger.append(ledger[0])  # mutate the returned list itself
+    ledger.append(ledger[0])
     refetched = await store.list_complaints()
     assert len(refetched) == 1
-
-
-# ── snapshot()/restore() (STATUS.md risk #4: checkpoint round-trip) ─────
 
 
 class TestCharterStoreFieldRegistryMatchesInit:
@@ -251,7 +248,7 @@ class TestCharterStoreSnapshotRestore:
         )
         await store.append_complaint("agent-4", "pm-1", "government", "unfair", 0)
 
-        snapshot = json.loads(json.dumps(store.snapshot()))  # real JSON round-trip
+        snapshot = json.loads(json.dumps(store.snapshot()))
 
         restored = CharterStore()
         restored.restore(snapshot)
@@ -272,8 +269,6 @@ class TestCharterStoreSnapshotRestore:
         assert {o.name for o in restored.organizations.values()} == {"Freepeople"}
         assert [c.description for c in restored.complaint_ledger] == ["unfair"]
 
-        # Every model instance is real (not a leftover dict) - callers
-        # like elections.py read `.phase`/`.candidates` as attributes.
         assert isinstance(restored.charter_history[0], Charter)
         assert isinstance(restored.elections[election.election_id], Election)
         assert isinstance(restored.complaint_ledger[0], ComplaintEntry)

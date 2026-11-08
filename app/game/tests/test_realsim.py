@@ -24,9 +24,6 @@ from game.realsim import (
 from game.server import create_app
 
 
-# ── the purse ceiling ────────────────────────────────────────────────
-
-
 def test_the_default_cast_is_fifty() -> None:
     assert DEFAULT_AGENTS == 50
 
@@ -57,9 +54,6 @@ def test_negative_money_is_refused() -> None:
     assert validate(50, -1) is not None
 
 
-# ── the controller ───────────────────────────────────────────────────
-
-
 @pytest.mark.anyio
 async def test_a_bad_request_never_spawns_anything() -> None:
     controller = RealSimController()
@@ -76,9 +70,6 @@ async def test_stopping_when_nothing_runs_is_not_an_error() -> None:
 
 def test_status_reports_not_running_before_anything_starts() -> None:
     assert RealSimController().status()["running"] is False
-
-
-# ── the endpoints ────────────────────────────────────────────────────
 
 
 def test_defaults_endpoint_gives_the_dialog_its_ceiling() -> None:
@@ -110,10 +101,6 @@ def test_the_map_reads_the_run_world_when_one_is_bound() -> None:
     """The button starts a world on 8100; the map has to follow it. It used
     not to: a healthy 50-agent run showed as `cognition: mock, reported: 12`
     because the binding was fixed at process start."""
-    # Baseline pinned to the mock town so the SWITCH is observable. The
-    # default is a real world server now, which would report "world"
-    # both before and after a run binds - true, but it would make this
-    # test pass without testing anything.
     from game.config import GameSettings
 
     app = create_app(settings=GameSettings(mock_mode=True))
@@ -136,13 +123,6 @@ def test_the_map_reads_the_run_world_when_one_is_bound() -> None:
         body = client.get("/api/engine").json()["world"]
         assert body["source"] == "world" and body["cognition"] == "engine"
         assert body["tick"] == 7
-
-
-# ── the survival stop condition ──────────────────────────────────────
-#
-# A survival experiment has to END. Nothing else here ends it: the runner has
-# no opinion about population, and a budget cap stops the spending without
-# answering the question.
 
 
 class FakeSnapshotWorld:
@@ -249,16 +229,11 @@ async def test_zero_survivors_is_still_an_ending(monkeypatch) -> None:
 
     handle.process = LiveProcess()
     controller.run = handle
-    # 10 -> 4 -> 0: never equal to 1, straight past it.
     controller.world_client = FakeSnapshotWorld([10, 4, 0])
 
     terminated: list[bool] = []
     monkeypatch.setattr(controller, "_terminate", lambda h: terminated.append(True))
 
-    # Bounded. A watcher that never notices would otherwise LOOP FOREVER
-    # rather than fail, and a hanging test tells a reader nothing - the
-    # first version of this fix hung for exactly that reason when the
-    # threshold was flipped back to `==`.
     import asyncio
 
     try:
@@ -283,14 +258,6 @@ def test_until_survivors_reaches_the_controller() -> None:
         body = client.get("/api/realsim/defaults").json()
     assert body["until_survivors"] == 1, "run to the last one standing by default"
 
-
-# ── a cast the build-time roster has never heard of ─────────────────────
-#
-# agents.js holds the 314 residents of world/genesis.json and is the source
-# the map and every panel read. A run against any OTHER cast - genesis_10's
-# ten neighbours, ids n01..n10 - intersects it in nothing, so the filter
-# produced an empty array and the viewer drew an empty town while ten
-# engines were demonstrably alive.
 
 def test_roster_ids_are_read_from_the_file():
     from game.server import _roster_ids

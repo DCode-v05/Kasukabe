@@ -55,11 +55,6 @@ from src.engine_core.stop_hooks import (
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# HTTP PreToolUse hook
-# ---------------------------------------------------------------------------
-
-
 class HttpPreToolUseHook:
     """POSTs ``PreToolUseHookInput`` as JSON to a webhook URL.
 
@@ -84,11 +79,6 @@ class HttpPreToolUseHook:
         return pre_result_from_dict(data)
 
 
-# ---------------------------------------------------------------------------
-# HTTP PostToolUse hook
-# ---------------------------------------------------------------------------
-
-
 class HttpPostToolUseHook:
     """POSTs ``PostToolHookContext`` as JSON to a webhook URL.
 
@@ -110,11 +100,6 @@ class HttpPostToolUseHook:
             logger.debug("HttpPostToolUseHook failed for %s: %s", self.url, exc)
             return PostToolUseHookResult()
         return post_result_from_dict(data)
-
-
-# ---------------------------------------------------------------------------
-# HTTP Stop hook
-# ---------------------------------------------------------------------------
 
 
 class HttpStopHook:
@@ -141,11 +126,6 @@ class HttpStopHook:
             logger.debug("HttpStopHook failed for %s: %s", self.url, exc)
             return StopHookResult()
         return stop_result_from_dict(data)
-
-
-# ---------------------------------------------------------------------------
-# Internal HTTP helper
-# ---------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -261,22 +241,21 @@ async def post_json(url: str, body: bytes, timeout_s: float) -> Any:
     Raises on network errors, timeouts, non-2xx responses, or JSON parse
     failures so callers can handle uniformly as fail-open.
     """
-    # Use curl if available — widely present, handles TLS, follows redirects.
     try:
         proc = await asyncio.create_subprocess_exec(
             "curl",
             "-s",
-            "-S",  # show errors on stderr
+            "-S",
             "-X",
             "POST",
             "-H",
             "Content-Type: application/json",
             "--data-binary",
-            "@-",  # read body from stdin
+            "@-",
             "--max-time",
             str(int(timeout_s)),
             "-w",
-            "\n%{http_code}",  # append status code on its own line
+            "\n%{http_code}",
             url,
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
@@ -307,7 +286,6 @@ async def post_json(url: str, body: bytes, timeout_s: float) -> Any:
 
     stdout_text = (stdout_bytes or b"").decode("utf-8", errors="replace").strip()
 
-    # curl appends the HTTP status code on the last line via -w "%{http_code}"
     lines = stdout_text.rsplit("\n", 1)
     if len(lines) == 2:
         body_text, status_str = lines

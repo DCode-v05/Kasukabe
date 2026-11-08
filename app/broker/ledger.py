@@ -65,15 +65,6 @@ class PayerBalance:
     payer_agent_id: str
     balance_cents: int
     is_minor: bool
-    # INFRA-02. The world's clock, carried on the one response the broker
-    # already asks for before every call. The broker has no clock of its
-    # own; without this every `llm_calls` row is written with tick NULL,
-    # `game_day` (derived from tick) is NULL too, C1 cannot be computed and
-    # the Parquet export partitions on an empty column.
-    #
-    # Optional because a world that has not been updated still answers
-    # without it, and a missing tick must degrade to today's behaviour
-    # rather than refusing the call.
     tick: "int | None" = None
 
 
@@ -135,9 +126,6 @@ class HttpLedgerClient:
         timeout_s: float = 10.0,
         client: "httpx.AsyncClient | None" = None,
     ) -> None:
-        # `client` injection exists for tests (broker/tests/test_ledger.py
-        # passes an httpx.MockTransport-backed client so the wire contract
-        # above is exercised with zero real network calls).
         self.client = client or httpx.AsyncClient(base_url=world_base_url, timeout=timeout_s)
 
     async def close(self) -> None:
@@ -146,9 +134,6 @@ class HttpLedgerClient:
     async def get_payer_balance(
         self, agent_id: str, *, purpose: str = "", amount_cents: int = 0
     ) -> PayerBalance:
-        # What the call is for and what it may cost, so the world can say
-        # who pays - a broke resident's learning falls to the treasury. The
-        # broker never learns what a treasury is.
         params = {"purpose": purpose, "amount_cents": amount_cents} if purpose else None
         resp = await self.client.get(f"/ledger/payer/{agent_id}", params=params)
         if resp.status_code == 404:
@@ -214,24 +199,6 @@ class InMemoryLedgerClient:
     accounts: dict[str, InMemoryAgentAccount] = field(default_factory=dict)
     locks: dict[str, asyncio.Lock] = field(default_factory=dict)
 
-    # OPT-IN. None keeps the strict behaviour every test relies on: an
-    # agent nobody seeded is unknown, and stays unknown (see
-    # broker/tests/test_ledger.py, which asserts UnknownAgentError).
-    #
-    # Set to a balance and the client provisions a wallet the first time it
-    # sees an agent instead. That exists for ONE case: MOCK_MODE=true local
-    # bring-up, where real engines call the broker with real genesis agent
-    # ids that this in-memory fake has never heard of. Without it every
-    # inference call 404s, the engine turns that into a 500 from its own
-    # /tick, and a whole run produces no agent activity at all - which is
-    # exactly what a 10-agent embedded run did.
-    #
-    # KNOWN LIMITATION, and the reason this is not the default: a ledger
-    # that mints a wallet on demand cannot run out. Mock-mode runs
-    # therefore cannot demonstrate insolvency, and insolvency is the
-    # mechanism the whole survival question turns on. Any result about who
-    # runs out of money must come from a real run against
-    # HttpLedgerClient, which this field does not touch.
     autoseed_balance_cents: int | None = None
 
     def seed(
@@ -293,12 +260,6 @@ class InMemoryLedgerClient:
         payer_id = self.payer_id_for(agent_id)
         async with self.lock_for(payer_id):
             payer_account = self.accounts[payer_id]
-            # Mirrors world/ledger/core.py's apply_movement: a strict
-            # non-negative balance floor, enforced BEFORE mutating
-            # anything (world/ledger/errors.py's InsufficientFundsError
-            # is raised the same way - the failed debit leaves no partial
-            # trace, matching the real ledger's own move()/apply_movement
-            # behavior).
             if payer_account.balance_cents < amount_cents:
                 raise InsufficientFundsError(
                     f"payer {payer_id!r} has {payer_account.balance_cents} cents, "
@@ -319,9 +280,6 @@ def _require_usable_ledger_response(resp: httpx.Response, what: str) -> None:
     """
     if resp.is_success:
         return
-    # INFRA-25: a halted ledger is a refusal, not an outage. The embedded
-    # world answers 409 for exactly this and every status was being
-    # flattened into one 502 that reads as "the world is down".
     if resp.status_code == 409:
         raise LedgerHaltedError(
             f"world's ledger has halted and refused {what}",

@@ -121,26 +121,9 @@ class TraceRecord:
     error_type: "str | None"
     error_message: "str | None"
     created_at: float
-    # CORE-30: whether `purpose` was asserted by the caller or worked out
-    # here. Additive with a default for the same reason `tick` is. None
-    # means "this build did not record it", which is not the same as
-    # "the caller said nothing" - that is `shape`.
     purpose_source: "str | None" = None
-    # See module docstring: honestly Optional, never fabricated. Defaults
-    # to None so every existing keyword-argument construction site (every
-    # call in broker/service.py) keeps working unmodified - this field is
-    # additive, not a breaking change to the dataclass's constructor.
     tick: "int | None" = None
-    # Which link broke, on a failure. None on success, where the question does
-    # not arise. Additive with a default for the same reason `tick` is - every
-    # existing construction site keeps working unmodified.
     failed_at: "str | None" = None
-    # What the turn this call belonged to was FOR - evaluation spec
-    # section 4. C1 (median tokens per turn, per task, per resident, day
-    # five against day one) has nothing to group by without it, so the
-    # whole compounding section is unmeasurable rather than unmeasured.
-    # Deterministic, from the tools the turn called (world/task_label.py):
-    # a label a judge assigned would make C1 a measurement of the judge.
     task_label: "str | None" = None
 
 
@@ -155,7 +138,6 @@ class BrokerEvent:
     model: str
     payload: dict[str, Any]
     created_at: float
-    # See TraceRecord.tick's comment just above - identical reasoning.
     tick: "int | None" = None
 
 
@@ -194,17 +176,6 @@ class InMemorySink(Generic[T]):
         return [row for batch in self.batches for row in batch]
 
 
-# INFRA-24. `SupabaseRestSink` was deleted here on 2026-09-05.
-#
-# It was a batched POST to a Supabase PostgREST endpoint, for an
-# architecture this project left: DESIGN.md section 9 makes the trace
-# store SQLite, `build_service` builds `SqliteTraceSink` on both paths,
-# and `supabase/migrations/` is dormant (INFRA-22). Nothing outside its
-# own tests had referenced it, so those tests passed forever and said
-# nothing about anything that runs. `git show` it if the hosted path
-# ever comes back.
-
-
 class TraceStoreVanishedError(RuntimeError):
     """The SQLite file this sink was opened against is gone or has been
     replaced. Deliberately not a BrokerError: nothing about a request is
@@ -233,26 +204,7 @@ class SqliteTraceSink(Generic[T]):
         self.client = client
         self.table = table
         self.to_row = to_row
-        # INFRA-08. Where the WHOLE body goes when the row can only hold
-        # part of it.
-        #
-        # `capped_body` truncates at 64 KB. The median request in this
-        # project is 76 KB and the largest measured 154 KB, so most calls
-        # are stored partial, and the system prompt - persona plus law,
-        # about 150 KB - is the first thing cut. DESIGN section 9 calls
-        # this store "a complete causal record"; it was not one, and the
-        # thing that would make it one already existed:
-        # `supabase/archiver.py`'s `PayloadArchiver.archive_payload`,
-        # written for exactly this, gzip to S3 with a sha256, fully
-        # tested, and called by NOTHING in broker/.
-        #
-        # Optional, because a run with no archive configured must still
-        # write its trace - a missing archive is a smaller loss than a
-        # missing row.
         self.archiver = archiver
-        # The file this sink was pointed at, identified by inode rather
-        # than by name - see check_store_still_exists() for why a name is
-        # not enough.
         path = getattr(getattr(client, "config", None), "sqlite_path", None)
         self.store_path: str | None = None if path in (None, ":memory:") else str(path)
         self.store_identity: tuple[int, int] | None = self.file_identity()
@@ -346,7 +298,7 @@ class SqliteTraceSink(Generic[T]):
                 continue
             stored = row.get(field)
             if stored is not None and sized(stored) >= sized(full):
-                continue          # nothing was cut; the row has it all
+                continue
             key = (
                 f"{getattr(record, 'agent_id', 'unknown')}/"
                 f"{getattr(record, 'id', 'unknown')}.{field}.json.gz"
@@ -358,16 +310,6 @@ class SqliteTraceSink(Generic[T]):
                 logger.exception("broker.trace: could not archive %s for %s", field, key)
 
 
-# TASK spec: "Count failures ... and halt dispatch when writes fail
-# persistently." Three in a row, not one: a single transient blip (a
-# momentary SQLITE_BUSY, a passing S3 hiccup) recovers on its own the
-# next successful flush (see flush() below resetting consecutive_failures
-# to 0) and must not stop the sim - "persistently" is the operative word.
-# Three consecutive losses at the default batch_size=20/flush_interval_s=2
-# means at most ~60 rows silently lost (worst case, all three max-size
-# batches) before dispatch halts, versus the ~4400-decision, ~$25 total
-# loss this fix responds to - a real, bounded ceiling instead of an
-# unbounded one.
 DEFAULT_HALT_AFTER_CONSECUTIVE_FAILURES = 3
 
 
@@ -450,14 +392,6 @@ class BatchWriter(Generic[T]):
         try:
             await self.sink.write_batch(batch)
         except Exception as exc:
-            # DESIGN.md: trace writes must never block or fail inference.
-            # A dropped batch is a real (bounded) loss - logged loudly so
-            # an operator notices a sink that's down, but never re-raised
-            # into a request path that has already returned its response.
-            # Counted, not just logged (TASK spec) - three of these in a
-            # row (see DEFAULT_HALT_AFTER_CONSECUTIVE_FAILURES) flips
-            # is_halted, which broker/app.py's request handler checks
-            # before dispatching anything new.
             self.batches_failed += 1
             self.rows_dropped += len(batch)
             self.consecutive_failures += 1
@@ -489,49 +423,17 @@ class BatchWriter(Generic[T]):
             try:
                 await self.background_task
             except asyncio.CancelledError:
-                pass  # expected: this is exactly what cancel() asked for
+                pass
             except Exception:
-                # Anything else is a real bug in run_periodic_flush, not a
-                # normal shutdown outcome - log it instead of swallowing
-                # it, matching flush()'s own "never silently lose a sink
-                # failure" stance above.
                 logger.exception("broker.trace: background flush task raised on shutdown")
             self.background_task = None
 
 
-# How much of one request body the trace store keeps.
-#
-# Measured, not guessed: a 30-agent, six-hour run wrote a 5.9 GB trace on a
-# laptop with 1.2 GB free. The average request body was 630 KB and the
-# largest was 36.5 MB - one prompt carrying 118,179 replayed working-memory
-# records. See docs/TEST_RUN.md for why the prompts are that size; the cause
-# is upstream of this file and is not this cap's job to fix.
-#
-# What the cap protects is the machine. A trace that fills the disk takes the
-# run down with it AND loses the record it existed to keep, which is the
-# worst of both.
-#
-# THIS COMMENT USED TO CLAIM "64 KB holds every honest prompt this system
-# produces with room to spare, so under a healthy run this changes nothing
-# at all." Measured on data/loop5.db, a healthy run: the median request is
-# 76 KB and the largest is 154 KB, and 342 of 566 successful calls - 60% -
-# were capped. It fires on the ordinary case, which is why `capped_body`
-# below had to stop leaving behind a prefix nothing could parse.
-#
-# KASUKABE_TRACE_BODY_LIMIT=0 disables the cap for a deliberate deep-trace
-# run on a machine with the disk to afford it.
 TRACE_BODY_LIMIT = int(os.environ.get("KASUKABE_TRACE_BODY_LIMIT", str(64 * 1024)))
 
 
-# How many of the newest messages to keep when a body has to be cut. The
-# tail is the turn: what the resident was doing when this call was made.
-# The old cap kept the HEAD, which on a long conversation is a resident's
-# first morning at game-day 0 and nothing about the present.
 CAPPED_MESSAGES_KEPT = 6
 
-# How much of one oversized string field to keep. A system prompt of 150
-# KB is real - one was measured - and a reader wants to know who the agent
-# thought it was, which is in the first few thousand characters.
 CAPPED_FIELD_CHARS = 8_000
 
 
@@ -587,9 +489,6 @@ def capped_body(
         if key == "messages":
             continue
         if key == "tools" and isinstance(value, list):
-            # Fifty schemas are most of the bytes and almost none of the
-            # meaning: WHICH tools were offered is a real question, and
-            # the schemas are identical on every call in a run.
             kept["tools"] = [
                 {"name": tool.get("name")} if isinstance(tool, dict) else tool
                 for tool in value
@@ -606,9 +505,6 @@ def capped_body(
             else tail
         )
 
-    # Still too big: one field is doing it, and a string field is the only
-    # kind that can. Cut the largest of them and say by how much, rather
-    # than falling back to a prefix nothing can parse.
     while sized(kept) > ceiling:
         biggest = max(
             (
@@ -642,9 +538,6 @@ def trace_record_to_row(record: TraceRecord) -> dict[str, Any]:
         "purpose_source": record.purpose_source,
         "request_body": capped_body(record.request_body),
         "response_body": capped_body(record.response_body),
-        # INFRA-08: always present, so a reader can tell "not archived"
-        # (None) from "this build did not have the column". The sink fills
-        # them in when the cap actually bit - see archive_if_truncated.
         "request_archive_key": None,
         "response_archive_key": None,
         "stop_reason": record.stop_reason,

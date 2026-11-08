@@ -60,7 +60,6 @@ async def test_the_exact_sequence_that_settled_nothing_now_settles(world, regist
     })
     assert world.inventory.quantity("seller", "bread") == 0, "the shelf has it now"
 
-    # The phrasing every resident in the run used.
     posted = await registry.execute(world, "seller", "post_price", {
         "item": "bread", "ask_sim": 30, "business_id": shop,
     })
@@ -72,16 +71,13 @@ async def test_the_exact_sequence_that_settled_nothing_now_settles(world, regist
     assert posted.result["holder_kind"] == "business"
 
     before = world.ledger.sim_balance("buyer")
-    in_conversation(world, "buyer", "seller")   # a sale is agreed in conversation
+    in_conversation(world, "buyer", "seller")
     bought = await registry.execute(world, "buyer", "buy", {
         "seller_id": shop, "item": "bread", "quantity": 1,
     })
 
     assert bought.result["unit_price_sim"] == 30
     assert world.inventory.quantity("buyer", "bread") == 1
-    # At least the price. `buy` also charges its own action cost, and
-    # pinning the exact total here would make this test about the fee
-    # schedule rather than about whether the town can sell a loaf.
     assert world.ledger.sim_balance("buyer") <= before - 30
     assert world.inventory.quantity(shop, "bread") == 7, "the shelf did not part with it"
 
@@ -140,9 +136,6 @@ async def test_the_residents_own_words_for_a_transfer_work(world, registry):
     assert world.ledger.sim_balance("taker") == before + 40
 
 
-# ── TRADE-03: a listing nobody can buy from says so, at post time ─────
-
-
 @pytest.mark.asyncio
 async def test_stocking_a_shelf_then_pricing_it_now_prices_the_shelf(world, registry):
     """`TRADE-07`. n13's morning, in the form that survived TRADE-01.
@@ -173,8 +166,7 @@ async def test_stocking_a_shelf_then_pricing_it_now_prices_the_shelf(world, regi
         "the ask went on the person while the bread sat on the shelf - the "
         "deadlock that settled nothing in run deni-a6f9eb4-5h"
     )
-    # And it completes, which is the only claim that matters.
-    in_conversation(world, "buyer", "seller")   # a sale is agreed in conversation
+    in_conversation(world, "buyer", "seller")
     bought = await registry.execute(world, "buyer", "buy", {
         "seller_id": SHOP, "item": "bread", "quantity": 1,
     })
@@ -240,8 +232,6 @@ async def test_two_shops_in_one_place_is_left_to_the_resident(world, registry):
     assert posted.result["holder"] == "seller", (
         "the world guessed which of two tills gets paid"
     )
-    # And TRADE-03's note still fires, because the resident holds none -
-    # so the ambiguity is surfaced rather than silently resolved.
     note = posted.result.get("note") or ""
     assert "nobody can buy" in note
     assert "on_behalf_of_business" in note or "take_from_shelf" in note, (

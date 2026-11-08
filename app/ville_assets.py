@@ -29,7 +29,6 @@ from pathlib import Path
 
 import pytest
 
-# app/ville_assets.py -> parents[1] is the kasukabe/ repo root.
 VILLE_DIR = (
     Path(__file__).resolve().parents[1]
     / "smallville"
@@ -40,7 +39,6 @@ VILLE_DIR = (
     / "the_ville"
 )
 
-# Written by require_ville_assets, read by conftest.pytest_terminal_summary.
 SKIPPED_FOR_ASSETS: set[str] = set()
 
 

@@ -34,11 +34,6 @@ from broker.errors import UpstreamError, UpstreamOverloadedError
 
 OPENAI_BASE_URL = "https://api.openai.com/v1"
 
-#: OpenAI's finish_reason -> the Bedrock stopReason the rest of the broker
-#: already knows how to translate (`translate.STOP_REASON_BEDROCK_TO_ANTHROPIC`).
-#: `content_filter` maps to Bedrock's own filtered outcome rather than to
-#: end_turn, so a refusal stays a refusal all the way to the engine - the
-#: distinction `a_turn_that_tried_to_act` exists to preserve.
 FINISH_REASON = {
     "stop": "end_turn",
     "tool_calls": "tool_use",
@@ -71,8 +66,6 @@ def converse_request_to_openai(request: dict[str, Any], model: str) -> dict[str,
         role = turn.get("role", "user")
         blocks = turn.get("content") or []
 
-        # A tool RESULT is its own message in OpenAI and a content block in
-        # Converse, so one Converse turn can become several messages.
         results = [b["toolResult"] for b in blocks if "toolResult" in b]
         for result in results:
             body = result.get("content") or []
@@ -106,8 +99,6 @@ def converse_request_to_openai(request: dict[str, Any], model: str) -> dict[str,
     body: dict[str, Any] = {"model": model, "messages": messages}
 
     inference = request.get("inferenceConfig") or {}
-    # `max_completion_tokens`, not `max_tokens`: the newer models reject the
-    # old name outright rather than ignoring it.
     if (cap := inference.get("maxTokens")) is not None:
         body["max_completion_tokens"] = cap
     if (temp := inference.get("temperature")) is not None:
@@ -117,24 +108,6 @@ def converse_request_to_openai(request: dict[str, Any], model: str) -> dict[str,
 
     tools = (request.get("toolConfig") or {}).get("tools") or []
     if tools:
-        # `gpt-6-luna` is a reasoning model, and the live API refuses the
-        # combination this town depends on:
-        #
-        #   "Function tools with reasoning_effort are not supported for
-        #    gpt-6-luna in /v1/chat/completions. To use function tools, use
-        #    /v1/responses or set reasoning_effort to 'none'."
-        #
-        # Every action a resident takes is a tool call, so "no tools" is not
-        # an option and the choice is /v1/responses or this. This, because
-        # /v1/responses is a different request AND response shape - a second
-        # translation to write and keep correct - for a capability the town
-        # does not want anyway: reasoning tokens bill as output, and output
-        # is the expensive half ($0.50/M against $0.10/M input). A town that
-        # spends 98.7% of its money on input would be paying the dear rate
-        # for deliberation nobody reads.
-        #
-        # Sent only alongside tools, because that is the only case the API
-        # rejects; a toolless call keeps whatever default the model has.
         body["reasoning_effort"] = "none"
         body["tools"] = [
             {
@@ -163,9 +136,6 @@ def openai_response_to_converse(payload: dict[str, Any]) -> dict[str, Any]:
         try:
             args = json.loads(fn.get("arguments") or "{}")
         except (TypeError, ValueError):
-            # A model that streams malformed JSON has said something; an
-            # empty dict loses it silently, so the raw text is carried where
-            # a reader can see it rather than dropped.
             args = {"_unparsed_arguments": fn.get("arguments", "")}
         blocks.append({
             "toolUse": {
@@ -239,9 +209,6 @@ class OpenAIGateway:
                 f"{self.base_url}/chat/completions", json=body, headers=self._headers()
             )
         except httpx.HTTPError as exc:
-            # Transport, not an answer - the same class Bedrock's gateway
-            # reports as overloaded so the pool re-routes rather than failing
-            # the turn.
             raise UpstreamOverloadedError(f"openai transport: {exc}") from exc
         if resp.status_code >= 400:
             self._raise_for(resp.status_code, resp.text)
@@ -264,7 +231,7 @@ class OpenAIGateway:
         body["stream_options"] = {"include_usage": True}
 
         client = await self._http()
-        opened: dict[int, int] = {}      # openai tool index -> converse block index
+        opened: dict[int, int] = {}
         text_open = False
         next_block = 0
         stop_reason = "end_turn"
@@ -333,8 +300,6 @@ class OpenAIGateway:
         for block in opened.values():
             yield {"contentBlockStop": {"contentBlockIndex": block}}
         yield {"messageStop": {"stopReason": stop_reason}}
-        # Last, and always: `tokens.py` reads exact usage off this event, and
-        # a stream that ends without one is billed on an estimate.
         yield {"metadata": {"usage": {
             "inputTokens": usage.get("prompt_tokens", 0),
             "outputTokens": usage.get("completion_tokens", 0),

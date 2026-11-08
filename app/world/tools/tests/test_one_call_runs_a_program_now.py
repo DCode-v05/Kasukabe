@@ -124,8 +124,6 @@ async def test_a_program_that_could_never_finish_is_refused_before_any_act(world
             {"tool_name": "rest", "repeat": repeat},
         ])
 
-    # The floor check's own reason, not "no tool registered": a refusal
-    # for a tool that does not exist would satisfy a bare raises().
     assert f"at most {program.PROGRAM_MAX_CALLS}" in str(refused.value), str(refused.value)
     assert not [r for r in world.tool_invocations if r.tool_name == "rest"]
     assert world.ledger.sim_balance("n05") == opening

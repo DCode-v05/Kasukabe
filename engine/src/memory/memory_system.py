@@ -44,7 +44,6 @@ class MemorySystem:
         self.sg = social_graph
         self.soul = soul
 
-    # -- Working Memory --
 
     async def search_working_memory(self, query: str) -> list:
         """Search across working memory items."""
@@ -98,7 +97,6 @@ class MemorySystem:
 
         await self.wm.write("corrections", EntryType.SYSTEM_EVENT, text)
 
-    # -- Episodic Memory --
 
     async def search_episodes(
         self,
@@ -133,7 +131,6 @@ class MemorySystem:
             return 0
         return await self.episodic.archive_old_episodes()
 
-    # -- Knowledge Store --
 
     async def search_knowledge(
         self,
@@ -216,7 +213,6 @@ class MemorySystem:
         items = await self.wm.read(thread_id)
         return [item for item in items if item.type == mem_type]
 
-    # -- Maintenance --
 
     async def run_maintenance_batch(self) -> dict[str, int]:
         """Run all maintenance operations.
@@ -233,7 +229,6 @@ class MemorySystem:
             "corrections_cleared": corrections_cleared,
         }
 
-    # -- Social Graph --
 
     async def create_social_person(
         self,
@@ -318,7 +313,6 @@ class MemorySystem:
             perspective_data,
         )
 
-    # -- Soul --
 
     async def get_core_soul(self) -> dict[str, Any] | None:
         """Get the immutable Core Soul document (cached)."""

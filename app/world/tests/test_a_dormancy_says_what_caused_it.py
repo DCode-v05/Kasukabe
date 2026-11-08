@@ -44,7 +44,7 @@ def test_the_cause_is_a_sentence_a_reader_understands() -> None:
     for key, cause in DORMANCY_CAUSES.items():
         assert len(cause) > 12 and cause == cause.strip()
         if key == "unstated":
-            continue        # a fact about the code, not about the town
+            continue
         assert "$" in cause or "thinking" in cause
 
 

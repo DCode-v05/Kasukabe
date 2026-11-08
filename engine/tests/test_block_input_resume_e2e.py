@@ -30,8 +30,6 @@ def make_state(emitter):
     from src.config import Settings
 
     state = EngineState(settings=Settings(), emitter=emitter)
-    # Mirror server.lifespan(): wire the one global event→block fan sink.
-    # ASGITransport bypasses lifespan, so do it explicitly.
     emitter.on(server.block_fan_sink)
     return state
 
@@ -73,9 +71,6 @@ async def test_block_input_resume_streams_continuation_and_done(monkeypatch):
 
     tid = "thr_resume"
 
-    # The ORIGINAL turn: park on a waiting block, then — once answered — emit a
-    # continuation and its OWN terminal done, exactly as the original request's
-    # run_and_finish (emit_terminal=True) does. A bare task in this loop.
     async def original_turn():
         current_thread_id_var.set(tid)
         await coord.await_block_input(
@@ -88,9 +83,6 @@ async def test_block_input_resume_streams_continuation_and_done(monkeypatch):
         await emitter.emit(TextDelta(thread_id=tid, text="continuation-after-resume"))
         server.fan_block(make_done_block("rid_orig", {"status": "completed"}, tid))
 
-    # Stream 1: the ORIGINAL request's stream. The awaiting prompt + its
-    # AWAIT_SENTINEL route HERE (two different requests in production), never to
-    # the block_input answer stream — so the answer stream stays clean.
     q1: asyncio.Queue = asyncio.Queue()
     server.active_streams[object()] = server.StreamReg(
         queue=q1,
@@ -100,8 +92,6 @@ async def test_block_input_resume_streams_continuation_and_done(monkeypatch):
 
     task_a = asyncio.create_task(original_turn())
     try:
-        # Pump until the turn is FULLY parked: the AWAIT_SENTINEL has reached
-        # stream 1 (proves the prompt was emitted and the turn is on its future).
         drained1 = []
         for _ in range(200):
             await asyncio.sleep(0)
@@ -132,11 +122,8 @@ async def test_block_input_resume_streams_continuation_and_done(monkeypatch):
 
         blocks = parse_blocks(body)
         types = [b["type"] for b in blocks]
-        # The resumed turn's continuation reached THIS stream (not just /replay).
         text = next(b for b in blocks if b["type"] == "text")
         assert text["payload"]["text"] == "continuation-after-resume"
-        # ...and the stream closed on the resumed turn's own terminal done — and
-        # there is exactly one done (this request stayed silent, no duplicate).
         assert types[-1] == "done"
         assert blocks[-1]["thread_id"] == tid
         assert types.count("done") == 1
@@ -170,10 +157,8 @@ async def test_block_input_no_waiter_runs_fresh_turn_and_emits_done(monkeypatch)
         options=None,
         thread_id_box=None,
         craft=False,
-        **gates,  # output-gate kwargs resume_block forwards (voice, image, ...)
+        **gates,
     ):
-        # The stream's box is pre-bound to req.thread_id for block_input, so
-        # blocks emitted on tid route to it. Emit content, return the thread.
         await emitter.emit(TextDelta(thread_id=tid, text="fresh-turn-output"))
         return tid
 
@@ -185,7 +170,6 @@ async def test_block_input_no_waiter_runs_fresh_turn_and_emits_done(monkeypatch)
             "POST",
             "/execute",
             json={
-                # A block_id with no registered waiter → fresh-turn fallback.
                 "input": {"kind": "block_input", "block_id": "craft:thr_fresh:gone", "text": "hi"},
                 "thread_id": tid,
                 "tool": True,

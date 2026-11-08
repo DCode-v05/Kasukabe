@@ -65,7 +65,6 @@ async def test_tie_prompts_once_and_caches():
     t.await_user_input = fake_prompt
     cands = [cand("a", 2, created="2026-01-01"), cand("b", 2, created="2026-01-02")]
     assert await t.resolve_ad_connection("gmail", cands) == "b"
-    # Second call: remembered, no second prompt.
     assert await t.resolve_ad_connection("gmail", cands) == "b"
     assert len(calls) == 1
 
@@ -76,7 +75,7 @@ async def test_more_than_four_ties_fallback_recent():
     t.await_user_input = fail_if_called
     cands = [cand(f"c{i}", 2, created=f"2026-01-0{i}") for i in range(1, 6)]
     chosen = await t.resolve_ad_connection("gmail", cands)
-    assert chosen == "c5"  # most-recently-created at top rank
+    assert chosen == "c5"
 
 
 @pytest.mark.asyncio

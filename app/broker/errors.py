@@ -23,24 +23,10 @@ class BrokerError(Exception):
 
     status_code: int = 500
     anthropic_error_type: str = "api_error"
-    # Which link in the chain actually broke. A class attribute for the same
-    # reason status_code is one: every subclass gets a correct answer for free
-    # and no raise site has to remember.
-    #
-    # This exists because a `502 UpstreamError` in the last run really meant
-    # "the broker could not reach world's ledger" - a DOWNSTREAM failure
-    # labelled upstream, which cost a day of looking at Bedrock. The HTTP
-    # status is what the caller is told; `failed_at` is what actually
-    # happened, and the two are not the same question.
     failed_at: str = "broker-internal"
 
     def __init__(self, message: str, *, detail: "dict[str, object] | None" = None) -> None:
         self.message = message
-        # Whatever the raise site knows and the message had to flatten: the
-        # Bedrock error envelope, the ledger's response, the offending model
-        # id. Recorded as the trace row's response_body on failure, so a
-        # failure is diagnosable from the database rather than only from
-        # whichever log line happened to survive.
         self.detail = detail
         super().__init__(message)
 
@@ -57,7 +43,7 @@ class AuthenticationError(BrokerError):
     the signature (when AUTH_SHARED_SECRET is set) did not verify."""
 
     status_code = 401
-    failed_at = "broker-internal"  # the broker's own auth gate
+    failed_at = "broker-internal"
     anthropic_error_type = "authentication_error"
 
 
@@ -70,7 +56,7 @@ class ModelNotAllowedError(BrokerError):
     """
 
     status_code = 403
-    failed_at = "broker-internal"  # the broker's own allowlist
+    failed_at = "broker-internal"
     anthropic_error_type = "permission_error"
 
 
@@ -80,7 +66,7 @@ class InvalidRequestError(BrokerError):
     to carry to Bedrock converse."""
 
     status_code = 400
-    failed_at = "broker-internal"  # the broker's own validation
+    failed_at = "broker-internal"
     anthropic_error_type = "invalid_request_error"
 
 
@@ -93,7 +79,7 @@ class InsufficientFundsError(BrokerError):
     not a partial-request truncation."""
 
     status_code = 402
-    failed_at = "ledger"  # world's ledger said no
+    failed_at = "ledger"
     anthropic_error_type = "insufficient_funds_error"
 
 
@@ -101,7 +87,7 @@ class UnknownAgentError(BrokerError):
     """The auth header names an agent id the ledger has never heard of."""
 
     status_code = 404
-    failed_at = "ledger"  # world's ledger has never heard of them
+    failed_at = "ledger"
     anthropic_error_type = "not_found_error"
 
 
@@ -113,11 +99,6 @@ class UpstreamOverloadedError(BrokerError):
     broker does not retry on its behalf."""
 
     status_code = 529
-    # "upstream", not "bedrock". This string is the hop name in the trace and
-    # the run report prints it verbatim - so a run served entirely by
-    # gpt-6-luna through OpenAI reported its one failure as "`bedrock` x 1",
-    # naming a provider it never called. The hop is the link that broke, and
-    # which provider was behind it is what the `model` column is for.
     failed_at = "upstream"
     anthropic_error_type = "overloaded_error"
 
@@ -128,7 +109,7 @@ class UpstreamError(BrokerError):
     of view."""
 
     status_code = 502
-    failed_at = "upstream"  # see UpstreamOverloadedError
+    failed_at = "upstream"
     anthropic_error_type = "api_error"
 
 
@@ -188,5 +169,5 @@ class SpendCapExceededError(BrokerError):
     herald already knows how to back off on a rate-limit-shaped error."""
 
     status_code = 429
-    failed_at = "broker-internal"  # the operator's own cap
+    failed_at = "broker-internal"
     anthropic_error_type = "rate_limit_error"

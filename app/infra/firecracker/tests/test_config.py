@@ -37,7 +37,7 @@ def test_build_from_env_aggregates_every_problem_not_just_the_first() -> None:
         FirecrackerSettings.build_from_env(
             {
                 "FC_DEFAULT_VCPU_COUNT": "not-a-number",
-                "FC_VSOCK_CID_BASE": "1",  # reserved, must be >= 3
+                "FC_VSOCK_CID_BASE": "1",
                 "FC_BOOT_TIMEOUT_S": "also-not-a-number",
             }
         )

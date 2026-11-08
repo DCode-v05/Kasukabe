@@ -82,12 +82,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-# ── Agent-facing shapes ──────────────────────────────────────────────────
-# Field names deliberately mirror supabase/migrations/20260730120100_agents.sql
-# (slug, display_name, usd_wallet_cents, sim_balance, occupation, ...) so a
-# real world/ HTTP handler can build these by selecting straight off the
-# `agents` row plus a location lookup, no field renaming in between.
-
 
 class Wallets(BaseModel):
     """DESIGN.md section 3's dual currency, read-only here - game/ never
@@ -130,31 +124,11 @@ class AgentSummary(BaseModel):
     current_utterance: str | None = None
     is_alive: bool = True
     is_dormant: bool = False
-    # Part E. Passed through from world/'s AgentRow untyped: this layer has
-    # no opinion about a workflow's shape, and re-declaring the step model
-    # here would be a second definition to keep in sync with the one that
-    # actually validates it (world/agents_api.py). The viewer reads these.
     skills: list[dict[str, Any]] = Field(default_factory=list)
     following: dict[str, Any] | None = None
-    # The world's own answer to "who is this". The viewer carries a built-in
-    # 314-resident roster keyed by the same agent ids, but a run against a
-    # SUBSET genesis (genesis_14.json and friends) renumbers the town - so
-    # a0001 is Magnus Wickham in the world and Cleo Holt in the roster. When
-    # a resident is engine-bound, these win: an identity is not a thing the
-    # viewer may model beside skills that are real.
     age_years: float | None = None
     occupation: str | None = None
     sex: str | None = None
-    # UI-04. The world serves `sim_balance` and `usd_wallet_cents` on the
-    # SAME `/agents` row as the position above (world/agents_api.py's
-    # AgentRow), and this layer dropped both - so the township viewer ranked
-    # the town's wealth off a wage table it invented at build time while the
-    # real balance sat unused on the poll it was already making.
-    #
-    # Optional because a world server predating the fields omits them, and
-    # None has to stay distinguishable from zero: a resident the world says
-    # holds nothing and a resident the world did not answer for are not the
-    # same fact, and only the second may fall back to the model.
     wallets: Wallets | None = None
 
 
@@ -222,9 +196,6 @@ class Snapshot(BaseModel):
     tick: int
     map_tiled_json: dict[str, Any]
     agents: list[AgentSummary]
-
-
-# ── Live event shapes ────────────────────────────────────────────────────
 
 
 class WireEvent(BaseModel):

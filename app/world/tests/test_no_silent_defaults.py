@@ -38,9 +38,6 @@ import pytest
 
 from world.life.models import AgentLifeRecord, DormancyState, HealthState, Household
 
-# model -> the field names reporting code reads off it, by any route
-# (declared pydantic field, computed property, or both). Each entry is a
-# field whose silent absence would change a number somebody reads.
 REPORTED_FIELDS: dict[type, tuple[str, ...]] = {
     AgentLifeRecord: (
         "agent_id",
@@ -51,30 +48,15 @@ REPORTED_FIELDS: dict[type, tuple[str, ...]] = {
         "household_id",
         "spouse_id",
         "death_cause",
-        # A computed property, not a stored field. Read via getattr in
-        # agents_api, main and run_genesis alike, and just as capable of
-        # silently defaulting to False if it were ever removed - which would
-        # report a town with no children.
         "is_minor",
     ),
-    # The exact pair the original defect confused. `dormant` is NOT a field
-    # and must never become one: code reading it got False forever.
     DormancyState: ("is_dormant", "dormant_since_hours"),
     HealthState: ("current_ailment",),
     Household: ("household_id", "member_ids"),
 }
 
-# Field names that reporting code must never read, because a real field of
-# a confusingly similar name exists and the near-miss is the whole bug.
 FORBIDDEN_NEAR_MISSES: dict[type, tuple[str, ...]] = {
     DormancyState: ("dormant",),
-    # `name` is NOT on AgentLifeRecord and must never be added silently.
-    # bootstrap._display_name read `getattr(agent, "name", None)` off one for
-    # the whole life of the project, answered its default every single time,
-    # and stored every speaker's ID as their name in every utterance ever
-    # recorded. It surfaced only when the open-questions section trusted the
-    # stored value and rendered "n01 (n01) asked you...". Names live in
-    # world.agent_names; see bootstrap.display_name.
     AgentLifeRecord: ("name",),
 }
 
@@ -111,10 +93,6 @@ def test_the_near_miss_field_name_does_not_exist(model: type, field: str) -> Non
     assert field not in declared
 
 
-# Variable names that hold an AgentLifeRecord in this codebase. The near-miss
-# ban is scoped to these: `name` and `dormant` are legitimate on other types,
-# and a ban that could not tell the difference would flag five correct lines
-# to catch one wrong one.
 AGENT_RECORD_RECEIVERS = frozenset({"agent", "record", "life_record", "dormancy", "r"})
 
 
@@ -142,12 +120,6 @@ def getattr_sites() -> list[tuple[str, int, str, str]]:
                         node.lineno,
                         str(node.args[1].value),
                         ast.unparse(node.args[2]),
-                        # The receiver, so a ban can be scoped to the type
-                        # that actually lacks the field. `name` is real on
-                        # GenesisAgent, Business and a map sector, and absent
-                        # only from AgentLifeRecord - a check that cannot
-                        # tell them apart bans five correct lines to catch
-                        # one wrong one, and gets deleted within a week.
                         ast.unparse(node.args[0]),
                     )
                 )
@@ -167,10 +139,6 @@ def test_no_reporting_code_reads_a_forbidden_near_miss() -> None:
         for path, line, field, default, receiver in getattr_sites()
         if field in banned
         and receiver.split(".")[-1].split("(")[0] in AGENT_RECORD_RECEIVERS
-        # agents_api reads is_dormant FIRST and falls back to the old name
-        # for records written by an older build. That is a deliberate
-        # compatibility shim, not the defect, so it is allowed to mention
-        # the name as long as the real field is tried first.
         and "is_dormant" not in pathlib.Path(path).read_text(encoding="utf-8").splitlines()[line - 1]
     ]
     assert not offenders, "silent default on a known near-miss field:\n  " + "\n  ".join(offenders)

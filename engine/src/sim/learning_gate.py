@@ -45,34 +45,8 @@ class SimLearningGate:
     ran_this_window: bool = False
     runs_triggered: int = 0
     last_result: "LCPipelineResult | None" = field(default=None, repr=False)
-    # How many WAKING ticks may pass before a batch runs anyway. 0 keeps
-    # the original discipline exactly: sleep-onset only.
-    #
-    # WHY THIS EXISTS. Every run this project has made begins at dawn
-    # (tick 36, 06:00) and the spend cap ends it before dusk. The
-    # wake->asleep edge has therefore never occurred, `learning_ran` is
-    # zero in every session log ever checked, and three run reports read
-    # that as "the residents did not learn". They did not get the chance:
-    # the gate was correct and the trigger it waits for never came.
-    #
-    # A waking interval is the same idea as the learning-cadence spec's
-    # 30-minute snapshot, in the only clock this sim has. It does not
-    # replace the night - falling asleep still consolidates whatever
-    # happened since the last batch - it stops a run that lives one
-    # morning from learning nothing at all from that morning.
     awake_interval_ticks: int = 0
     ticks_since_batch: int = 0
-    # Evaluation spec section 5.2's within-town control arm.
-    #
-    # False for a `no_learning` resident, and then NOTHING here runs: not
-    # the sleep-onset edge, not the waking interval, not the end-of-run
-    # drain. A control arm that consolidated "a bit less" would not be a
-    # control for anything.
-    #
-    # `genesis.py` has assigned every resident an arm since it was written
-    # and nothing honoured it, so C1 was being reported against a control
-    # that behaved identically to the treatment. The spec's own words: "a
-    # learning claim without a control arm is a correlation."
     learns: bool = True
     suppressed: int = 0
 
@@ -87,9 +61,6 @@ class SimLearningGate:
         never does that on its own.
         """
         if not self.learns:
-            # Counted, not silent. A run has to be able to show that the
-            # arm did something, and "no batches ran" is indistinguishable
-            # from "the gate was never reached" unless somebody counts.
             self.suppressed += 1
             self.was_sleeping = is_sleeping
             return None

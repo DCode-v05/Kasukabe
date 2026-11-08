@@ -23,12 +23,6 @@ from typing import Mapping
 from src.config import Settings
 from src.sim.model_profile import ALLOWED_MODEL_IDS, MODEL_ID
 
-# Tools a pinned sim thread must never be able to call. spawn_sub_agent and
-# spawn_thread are the two names src/engine_core/thread.py's own
-# PARENT_STATE_TOOLS frozenset flags as enabling "recursive fan-out";
-# collect/resume only operate on an already-spawned agent, so denying the
-# spawn itself makes them moot, but they are listed too as defense in depth
-# and because they cost nothing to deny.
 FORK_DENIED_TOOLS: tuple[str, ...] = (
     "spawn_sub_agent",
     "spawn_thread",
@@ -73,13 +67,7 @@ class SimProfile:
     agent_id: str
     broker_base_url: str
     broker_api_key: str = "kasukabe-sim-broker"
-    # Root directory under which this agent's SEPTEMBER_HOME
-    # (<home_root>/<agent_id>) lives. Each agent gets its own root: engines
-    # run one microVM each (DESIGN.md section 4) and must never share a
-    # SQLite file.
     home_root: str = "/tmp/kasukabe-agents"
-    # Extra deny rules beyond FORK_DENIED_TOOLS (e.g. a world-specific
-    # lockout). Merged after the fork-block rules.
     extra_deny_rules: list[dict[str, str]] = field(default_factory=list)
 
     @property
@@ -91,66 +79,9 @@ class SimProfile:
         return pinned_thread_id(self.agent_id)
 
 
-# How many tokens any single model response may run to.
-#
-# MEASURED, iteration 5 of the autonomous loop, and again in run 19. The
-# engine default is 4096, roughly 16,000 characters - enough for a short
-# story, and residents were writing one. Corwin Thorne averaged 18,547
-# characters a turn across thirteen turns and acted on two of them, while a
-# live offer of 175 sim for five units of timber sat unanswered in his
-# perception. Across that run 90 of 115 ticks produced no action at all.
-#
-# Run 19 says the same in money: 387 calls ended without a tool call, at
-# $1.95 - 48% of everything the town spent - and ten more were cut off
-# mid-sentence at the 4096 ceiling, paid for and unusable.
-#
-# The budget is PER MODEL CALL, not per tick, so this bounds how long one
-# response may be without limiting how many times the agent loop may
-# iterate: a turn that genuinely needs eleven tool calls still gets eleven
-# model calls to make them. The floor is set well above a few tool calls'
-# worth of tokens so that bounding a monologue never truncates real work.
-#
-# WHY THIS AND NOT A PROMPT. The prompt levers are already in - law rule 6
-# says narrated words reach nobody, and every perception closes with
-# "nothing you have written above has happened yet". What neither can do is
-# make an agent FEEL the cost of a 4,000-token monologue, and DESIGN.md's
-# economics say it should: thinking is billed per token against the agent's
-# own wallet. This is that economics made structural rather than advisory.
-# Halved again, doc 01 fix 6. 1536 is roughly 6,000 characters and run 23
-# still returned 152 one-turn prose sessions out of 349. The second cost is
-# ENG-21's: a monologue that reaches the cap triggers a MAX_TOKENS
-# continuation, which is a second billed call, which exhausts a two-call
-# budget - so the resident is told it "ran out of energy for thinking after
-# 2 steps" having attempted nothing at all.
-#
-# The doc says "around 600". 768 is where this file's own floor sits, with
-# a measured reason behind it (a world tool call serialises to a couple of
-# hundred tokens; bounding a monologue must not truncate real work). Where
-# the doc's round number and the measured floor disagree the floor wins,
-# and closing the last 168 tokens is the operator's call, not this edit's.
 SIM_MAX_RESPONSE_TOKENS = 768
 
 
-# How many WAKING ticks may pass before the learning batch runs anyway.
-#
-# `SimLearningGate` has carried an `awake_interval_ticks` field since the
-# learning-cadence work, defaulting to 0 - sleep-onset only - and NOTHING
-# EVER SET IT. pinned_boot.py constructed the gate with the default, so the
-# waking interval was dead code and `learning_ran` stayed zero for exactly
-# the reason it always had: every run this project has made begins at dawn
-# and the spend cap ends it before dusk, so the wake->asleep edge the gate
-# waits for has never once occurred. Three run reports read that as "the
-# residents did not learn". A field is not a fix until a call site passes it.
-#
-# 18 ticks is three game-hours, so a six-hour morning consolidates twice.
-# That is the learning-cadence spec's 30-minute snapshot expressed in the
-# only clock this sim has: fast enough that memory does not drift across a
-# run, slow enough that fifty engines are not each running a batch every
-# tick. It does NOT replace the night - falling asleep still consolidates
-# whatever happened since the last batch.
-#
-# KASUKABE_LEARN_AWAKE_TICKS=0 restores sleep-onset-only exactly, which is
-# the control arm for any claim that the interval changed what was learned.
 DEFAULT_LEARN_AWAKE_INTERVAL_TICKS = 18
 
 
@@ -186,8 +117,6 @@ def learn_awake_interval_ticks(env: "Mapping[str, str] | None" = None) -> int:
     try:
         return max(0, int(raw))
     except ValueError:
-        # A typo must not silently turn learning off - that is the failure
-        # this whole constant exists to end.
         return DEFAULT_LEARN_AWAKE_INTERVAL_TICKS
 
 
@@ -230,12 +159,7 @@ def sim_env(profile: SimProfile) -> dict[str, str]:
         "DISPATCH_MODEL_ALTERNATIVE": MODEL_ID,
         "FALLBACK_MODEL": "",
         "LC_MODEL": MODEL_ID,
-        # How long any ONE model response may be. See
-        # SIM_MAX_RESPONSE_TOKENS for the measurement behind the number.
         "MAX_TOKENS": str(SIM_MAX_RESPONSE_TOKENS),
-        # A sim host has no per-user settings files to trust; loading them
-        # would make the sim's tool behavior depend on host filesystem state
-        # instead of only on this profile.
         "HOOKS_SETTINGS_LOAD_ENABLED": "false",
     }
 
@@ -286,17 +210,6 @@ def raw_process_env(profile: SimProfile) -> dict[str, str]:
     the environment too, belt and suspenders.
     """
     return {
-        # ENG-02. The engine's compaction preflight is
-        #     post + sys + tools + RESERVE_FLOOR >= context_window
-        # and RESERVE_FLOOR is an absolute 25,000. At any window below
-        # ~45K that is true with zero messages, so every model call in
-        # every run took the EMERGENCY path: tool results gutted, the
-        # day-0 06:20 perception pinned into the prefix forever,
-        # assistant-genre "[Post-compact tool reminder]" text in a
-        # villager's prompt, and a cold prompt cache every single call.
-        #
-        # History is bounded in the seam now (sim/bounded_history.py), so
-        # the engine must stop rewriting the prefix underneath it.
         "DISABLE_AUTO_COMPACT": "1",
         "FORK_SUBAGENT": "false",
         "FEATURE_TOOL_USE_SUMMARY": "false",

@@ -34,9 +34,6 @@ from __future__ import annotations
 from world.tools.state import CONVENE_HINT_MIN_PRESENT, WorldState
 
 
-# ── One mechanism, not two ───────────────────────────────────────────
-
-
 def test_the_duplicate_registry_is_gone() -> None:
     """`group_sessions` was the second store of the same fact. If it comes
     back, two records of one conversation come back with it."""
@@ -84,8 +81,6 @@ def test_convening_writes_into_the_one_conversation_store() -> None:
     from world.tools.primitives import institutions
 
     assert "start_conversation" in SCHEDULE_TABLE
-    # Priced identically, because it spends the same thing: everyone's
-    # attention, not only the convener's.
     assert SCHEDULE_TABLE["convene"].base_cost == SCHEDULE_TABLE["start_conversation"].base_cost
 
     source = inspect.getsource(institutions.convene_handler)
@@ -93,9 +88,6 @@ def test_convening_writes_into_the_one_conversation_store() -> None:
         "convene is writing somewhere other than the one conversation store"
     )
     assert "group_session" not in source
-
-
-# ── The news reaches the perception, not only look_around ────────────
 
 
 def world_with_conversation(**over) -> WorldState:
@@ -131,9 +123,6 @@ def test_no_conversation_renders_to_nothing_at_all() -> None:
     from world.retrieval_depth import format_conversation
 
     assert format_conversation(None) == ""
-
-
-# ── The hint names the verb that still exists ────────────────────────
 
 
 def test_the_hint_names_start_conversation() -> None:

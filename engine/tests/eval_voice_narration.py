@@ -50,7 +50,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 PER_TASK_TIMEOUT_S = 240
-RUBRIC_PASS_SCORE = 3.0  # of 5, averaged over the judged axes
+RUBRIC_PASS_SCORE = 3.0
 
 SCENARIOS = [
     {
@@ -60,7 +60,6 @@ SCENARIOS = [
             "startup, and end with your recommendation."
         ),
         "voice_primary": False,
-        # Complementary narration: a fraction of the visible text, not a copy.
         "budget_band": (0.02, 0.8),
     },
     {
@@ -70,7 +69,6 @@ SCENARIOS = [
             "Keep it practical."
         ),
         "voice_primary": True,
-        # Ears-first: narration carries the response (spec D18).
         "budget_band": (0.3, 100.0),
     },
     {
@@ -80,14 +78,10 @@ SCENARIOS = [
         ),
         "voice_primary": False,
         "budget_band": (0.0, 100.0),
-        # No tool ran, no URL exists in this thread: the provenance registry
-        # must block any invented URL (spec D12). Narration should still handle
-        # the miss gracefully.
         "expect_no_media": True,
     },
 ]
 
-# Spec D19 ear rules, checked mechanically on the narration text.
 URL_RE = re.compile(r"https?://|www\.")
 MARKUP_RE = re.compile(r"[<>{}]|```|\*\*|⟦|⟧")
 FORBIDDEN_PUNCT_RE = re.compile(r"[()/\\;*_#~^|\[\]]|\.\.\.\.")
@@ -265,7 +259,6 @@ async def test_voice_narration_rubric():
     print(f"  scenarios passed: {passed}/{len(results)}")
     print("=" * 78 + "\n")
 
-    # Provenance is a hard invariant, narration quality a threshold.
     assert not any(
         "provenance breach" in c for r in results for c in r["checks"]
     ), "an unproven media URL crossed the wire"

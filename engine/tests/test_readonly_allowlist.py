@@ -14,11 +14,6 @@ from src.sandbox.permissions import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Tokenizer
-# ---------------------------------------------------------------------------
-
-
 class TestTokenize:
     def test_simple(self):
         assert tokenize("git status") == ["git", "status"]
@@ -46,11 +41,6 @@ class TestTokenize:
 
     def test_multiple_spaces(self):
         assert tokenize("ls   -la   /tmp") == ["ls", "-la", "/tmp"]
-
-
-# ---------------------------------------------------------------------------
-# Flag validation
-# ---------------------------------------------------------------------------
 
 
 class TestValidateFlags:
@@ -113,11 +103,6 @@ class TestValidateFlags:
     def test_missing_arg_rejected(self):
         cfg = CommandConfig(safe_flags={"--format": "string"})
         assert validate_flags(["--format"], 0, cfg) is False
-
-
-# ---------------------------------------------------------------------------
-# Git commands
-# ---------------------------------------------------------------------------
 
 
 class TestGitCommands:
@@ -248,11 +233,6 @@ class TestGitCommands:
         assert is_command_read_only("git checkout -b new") is False
 
 
-# ---------------------------------------------------------------------------
-# Search tools
-# ---------------------------------------------------------------------------
-
-
 class TestSearchTools:
     def test_grep_basic(self):
         assert is_command_read_only("grep -rn pattern dir/") is True
@@ -285,11 +265,6 @@ class TestSearchTools:
         assert is_command_read_only("ag -i pattern") is True
 
 
-# ---------------------------------------------------------------------------
-# File inspection
-# ---------------------------------------------------------------------------
-
-
 class TestFileInspection:
     def test_cat(self):
         assert is_command_read_only("cat file.txt") is True
@@ -320,11 +295,6 @@ class TestFileInspection:
 
     def test_ls(self):
         assert is_command_read_only("ls -la /tmp") is True
-
-
-# ---------------------------------------------------------------------------
-# Process / system
-# ---------------------------------------------------------------------------
 
 
 class TestProcessSystem:
@@ -365,11 +335,6 @@ class TestProcessSystem:
         assert is_command_read_only("echo hello") is True
 
 
-# ---------------------------------------------------------------------------
-# Dev version checks
-# ---------------------------------------------------------------------------
-
-
 class TestDevVersionChecks:
     def test_python_version(self):
         assert is_command_read_only("python --version") is True
@@ -393,11 +358,6 @@ class TestDevVersionChecks:
         assert is_command_read_only("npm --version") is True
 
 
-# ---------------------------------------------------------------------------
-# Checksums
-# ---------------------------------------------------------------------------
-
-
 class TestChecksums:
     def test_sha256sum(self):
         assert is_command_read_only("sha256sum file.txt") is True
@@ -407,11 +367,6 @@ class TestChecksums:
 
     def test_md5sum(self):
         assert is_command_read_only("md5sum file.txt") is True
-
-
-# ---------------------------------------------------------------------------
-# Other safe
-# ---------------------------------------------------------------------------
 
 
 class TestOtherSafe:
@@ -443,11 +398,6 @@ class TestOtherSafe:
         assert is_command_read_only("tput reset") is False
 
 
-# ---------------------------------------------------------------------------
-# Compound commands
-# ---------------------------------------------------------------------------
-
-
 class TestCompoundCommands:
     def test_all_safe(self):
         assert is_command_read_only("git status && git log --oneline -5") is True
@@ -463,11 +413,6 @@ class TestCompoundCommands:
 
     def test_semicolon_unsafe(self):
         assert is_command_read_only("ls -la ; git push origin main") is False
-
-
-# ---------------------------------------------------------------------------
-# Security edge cases
-# ---------------------------------------------------------------------------
 
 
 class TestSecurityEdgeCases:
@@ -497,11 +442,6 @@ class TestSecurityEdgeCases:
 
     def test_git_config_env_rejected(self):
         assert is_command_read_only("git --config-env=foo status") is False
-
-
-# ---------------------------------------------------------------------------
-# Integration with permissions.py READ_ONLY branch
-# ---------------------------------------------------------------------------
 
 
 class TestReadOnlyIntegration:

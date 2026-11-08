@@ -27,11 +27,6 @@ from src.utils.activity_manager import (
 from src.engine_core.events import ActivityStateChanged, EventEmitter
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
 def make_clock(start: float = 0.0):
     """Returns a mutable fake clock for injecting controlled time."""
     t = [start]
@@ -58,15 +53,10 @@ def make_manager(
         idle_timeout_s=idle_s,
         away_timeout_s=away_s,
         disconnect_timeout_s=disconnect_s,
-        poll_interval_s=9999.0,  # disable background task for unit tests
+        poll_interval_s=9999.0,
         get_now=get_now,
     )
     return am, advance
-
-
-# ---------------------------------------------------------------------------
-# State machine: transitions via check_transitions
-# ---------------------------------------------------------------------------
 
 
 def test_initial_state_is_active():
@@ -93,7 +83,7 @@ def test_idle_to_away_at_threshold():
     advance(300.0)
     am.check_transitions()
     assert am.state == ActivityState.IDLE
-    advance(1500.0)  # total = 1800s
+    advance(1500.0)
     am.check_transitions()
     assert am.state == ActivityState.AWAY
 
@@ -101,7 +91,6 @@ def test_idle_to_away_at_threshold():
 def test_away_to_disconnected_at_threshold():
     am, advance = make_manager(idle_s=300.0, away_s=1800.0, disconnect_s=3600.0)
     advance(3600.0)
-    # check_transitions advances one level per call: active→idle→away→disconnected
     am.check_transitions()
     assert am.state == ActivityState.IDLE
     am.check_transitions()
@@ -115,18 +104,11 @@ def test_no_skip_states_on_single_advance():
     on the first poll, then AWAY is reached only after another poll at the right
     time — each check_transitions call only steps one level."""
     am, advance = make_manager(idle_s=300.0, away_s=1800.0)
-    advance(1800.0)  # past both idle AND away threshold
+    advance(1800.0)
     am.check_transitions()
-    # First poll: active → idle (we check active first)
     assert am.state == ActivityState.IDLE
     am.check_transitions()
-    # Second poll: idle → away (idle_s still elapsed)
     assert am.state == ActivityState.AWAY
-
-
-# ---------------------------------------------------------------------------
-# record_user_activity
-# ---------------------------------------------------------------------------
 
 
 def test_record_user_activity_resets_to_active_from_idle():
@@ -136,7 +118,7 @@ def test_record_user_activity_resets_to_active_from_idle():
     assert am.state == ActivityState.IDLE
 
     result = am.record_user_activity()
-    assert result is None  # idle → active does not return a summary
+    assert result is None
     assert am.state == ActivityState.ACTIVE
 
 
@@ -144,7 +126,7 @@ def test_record_user_activity_returns_summary_from_away():
     am, advance = make_manager(idle_s=300.0, away_s=1800.0)
     advance(1800.0)
     am.check_transitions()
-    am.check_transitions()  # idle → away
+    am.check_transitions()
     assert am.state == ActivityState.AWAY
 
     result = am.record_user_activity()
@@ -176,11 +158,6 @@ def test_record_user_activity_active_no_summary():
     assert am.state == ActivityState.ACTIVE
 
 
-# ---------------------------------------------------------------------------
-# record_tool_call and record_error
-# ---------------------------------------------------------------------------
-
-
 def test_tool_calls_accumulate():
     am, _ = make_manager()
     am.record_tool_call("bash")
@@ -209,10 +186,8 @@ def test_stats_reset_on_reconnect_from_away():
 
     summary = am.record_user_activity()
     assert summary is not None
-    # summary carries the stats from the away period
     assert summary.stats.tool_calls == 1
     assert summary.stats.errors == 1
-    # after reconnect, stats are reset
     fresh = am.snapshot_stats()
     assert fresh.tool_calls == 0
     assert fresh.errors == 0
@@ -229,14 +204,9 @@ def test_record_tool_call_start_end_accumulates_duration():
 
 def test_record_tool_call_end_unknown_op_is_noop():
     am, _ = make_manager()
-    am.record_tool_call_end("not-started")  # must not raise
+    am.record_tool_call_end("not-started")
     stats = am.snapshot_stats()
     assert stats.engine_active_seconds == 0.0
-
-
-# ---------------------------------------------------------------------------
-# record_shutdown
-# ---------------------------------------------------------------------------
 
 
 def test_record_shutdown_transitions_to_disconnected():
@@ -245,21 +215,11 @@ def test_record_shutdown_transitions_to_disconnected():
     assert am.state == ActivityState.DISCONNECTED
 
 
-# ---------------------------------------------------------------------------
-# idle_seconds
-# ---------------------------------------------------------------------------
-
-
 def test_idle_seconds_measures_since_last_activity():
     am, advance = make_manager()
     am.record_user_activity()
     advance(123.0)
     assert am.idle_seconds() == pytest.approx(123.0, abs=0.1)
-
-
-# ---------------------------------------------------------------------------
-# Event emission
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
@@ -275,7 +235,6 @@ async def test_activity_state_changed_event_emitted_on_idle():
 
     am, advance = make_manager(idle_s=300.0, emitter=emitter)
     advance(300.0)
-    # Trigger transition via the async poll path so events fire on the running loop
     await am.emit_transition(ActivityState.ACTIVE, ActivityState.IDLE, am.get_now())
 
     assert len(collected) == 1
@@ -296,8 +255,6 @@ async def test_activity_state_changed_event_emitted_on_reconnect():
     emitter.on(sink)
     am, advance = make_manager(idle_s=300.0, away_s=1800.0, emitter=emitter)
 
-    # Emit transitions directly (sync check_transitions can't schedule tasks
-    # from inside a running loop via get_running_loop on the same thread)
     await am.emit_transition(ActivityState.ACTIVE, ActivityState.IDLE, am.get_now())
     await am.emit_transition(ActivityState.IDLE, ActivityState.AWAY, am.get_now())
     await am.emit_transition(ActivityState.AWAY, ActivityState.ACTIVE, am.get_now())
@@ -306,11 +263,6 @@ async def test_activity_state_changed_event_emitted_on_reconnect():
     assert ("active", "idle") in states
     assert ("idle", "away") in states
     assert ("away", "active") in states
-
-
-# ---------------------------------------------------------------------------
-# Singleton behaviour
-# ---------------------------------------------------------------------------
 
 
 def test_get_instance_returns_singleton():
@@ -335,11 +287,6 @@ def test_reset_instance_clears_singleton():
     assert ActivityManager.instance is None
 
 
-# ---------------------------------------------------------------------------
-# Configurable thresholds
-# ---------------------------------------------------------------------------
-
-
 def test_custom_idle_threshold():
     am, advance = make_manager(idle_s=60.0)
     advance(59.0)
@@ -353,14 +300,9 @@ def test_custom_idle_threshold():
 def test_custom_away_threshold():
     am, advance = make_manager(idle_s=60.0, away_s=120.0)
     advance(120.0)
-    am.check_transitions()  # → idle
-    am.check_transitions()  # → away
+    am.check_transitions()
+    am.check_transitions()
     assert am.state == ActivityState.AWAY
-
-
-# ---------------------------------------------------------------------------
-# Background task start/stop
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
@@ -380,13 +322,8 @@ async def test_double_start_is_idempotent():
     await am.start()
     first_task = am.bg_task
     await am.start()
-    assert am.bg_task is first_task  # same task, not replaced
+    assert am.bg_task is first_task
     await am.stop()
-
-
-# ---------------------------------------------------------------------------
-# get_reconnect_summary
-# ---------------------------------------------------------------------------
 
 
 def test_get_reconnect_summary_reflects_current_state():
@@ -400,11 +337,6 @@ def test_get_reconnect_summary_reflects_current_state():
     assert summary.previous_state == ActivityState.AWAY
     assert summary.stats.tool_calls == 1
     assert summary.idle_seconds >= 1800.0
-
-
-# ---------------------------------------------------------------------------
-# Integration: ActivityStateChanged in Event union
-# ---------------------------------------------------------------------------
 
 
 def test_activity_state_changed_is_valid_event():
@@ -421,14 +353,8 @@ def test_activity_state_changed_is_valid_event():
     assert ev.engine_active_seconds == 0.0
 
 
-# ---------------------------------------------------------------------------
-# Dual time buckets (user_active_seconds, engine_active_seconds)
-# ---------------------------------------------------------------------------
-
-
 def test_user_active_seconds_accumulates_bursty_input():
     am, advance = make_manager()
-    # three bursty inputs within the USER_ACTIVITY_WINDOW_S (5s)
     am.record_user_activity()
     advance(2.0)
     am.record_user_activity()
@@ -441,12 +367,11 @@ def test_user_active_seconds_accumulates_bursty_input():
 def test_user_active_seconds_skips_gaps_beyond_window():
     am, advance = make_manager()
     am.record_user_activity()
-    advance(10.0)  # gap > USER_ACTIVITY_WINDOW_S → not counted
+    advance(10.0)
     am.record_user_activity()
     advance(2.0)
     am.record_user_activity()
     stats = am.snapshot_stats()
-    # Only the 2.0s gap counts
     assert stats.user_active_seconds == pytest.approx(2.0, abs=0.1)
 
 
@@ -468,25 +393,18 @@ def test_dual_buckets_reset_on_reconnect_from_away():
     advance(1.0)
     am.record_user_activity()
     am.record_tool_call_start("op")
-    advance(2.0)  # → idle → away threshold
+    advance(2.0)
     am.check_transitions()
     am.check_transitions()
     am.record_tool_call_end("op")
     assert am.state == ActivityState.AWAY
     summary = am.record_user_activity()
     assert summary is not None
-    # summary carries the pre-reconnect buckets
     assert summary.stats.user_active_seconds > 0
     assert summary.stats.engine_active_seconds > 0
-    # but post-reconnect the buckets are reset
     fresh = am.snapshot_stats()
     assert fresh.user_active_seconds == 0.0
     assert fresh.engine_active_seconds == 0.0
-
-
-# ---------------------------------------------------------------------------
-# Deterministic recap
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
@@ -511,26 +429,22 @@ async def test_reconnect_transition_event_carries_real_counters():
     am.record_error()
     am.record_tool_call_start("op")
     advance(2.5)
-    am.record_tool_call_end("op")  # engine_active_s = 2.5
-    am.check_transitions()  # → idle
-    am.check_transitions()  # → away
+    am.record_tool_call_end("op")
+    am.check_transitions()
+    am.check_transitions()
     await asyncio.sleep(0.05)
-    captured.clear()  # ignore the active→idle and idle→away events
+    captured.clear()
     assert am.state == ActivityState.AWAY
 
     summary = am.record_user_activity()
     assert summary is not None
-    await asyncio.sleep(0.05)  # let emit_transition task run
+    await asyncio.sleep(0.05)
 
     reconnect = next(e for e in captured if e.new_state == "active")
-    # counters must be pre-reset, matching the summary.
-    # 2 plain record_tool_call + 1 record_tool_call_start (which also
-    # counts) = 3 tool calls.
     assert reconnect.tool_calls == 3, f"got {reconnect.tool_calls}"
     assert reconnect.errors == 1, f"got {reconnect.errors}"
     assert reconnect.engine_active_seconds == pytest.approx(2.5, abs=0.1)
     assert reconnect.user_active_seconds == pytest.approx(2.5, abs=0.1)
-    # And the summary returned to the caller agrees
     assert reconnect.tool_calls == summary.stats.tool_calls
     assert reconnect.errors == summary.stats.errors
     assert reconnect.engine_active_seconds == summary.stats.engine_active_seconds

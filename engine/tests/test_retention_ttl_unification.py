@@ -20,4 +20,4 @@ def test_retention_constants_are_one_value():
 def test_retention_window_is_72h():
     from src.engine_core.conversation_store import CONVERSATION_TTL_SECONDS
 
-    assert CONVERSATION_TTL_SECONDS == 259200  # 72 hours
+    assert CONVERSATION_TTL_SECONDS == 259200

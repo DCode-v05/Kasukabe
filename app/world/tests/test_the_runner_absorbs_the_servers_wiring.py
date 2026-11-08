@@ -58,8 +58,6 @@ async def test_crime_events_reach_the_bus_not_a_void(tmp_path):
     exactly the way the charter's did (CORE-02)."""
     runner = _runner(tmp_path)
     await runner.boot()
-    # The engine hands the sink to each desk rather than keeping it, so
-    # check the desks - which is where an event would actually be lost.
     for desk_name in ("theft", "fights", "desk", "investigation", "warrants",
                       "arrests", "outcomes"):
         desk = getattr(runner.crime, desk_name)

@@ -46,7 +46,6 @@ def test_prices_reports_the_first_post_and_the_spread() -> None:
     assert "41" in text, "the tick of the first posted price is E1 itself"
     assert "bread" in text and "30" in text and "24" in text
     assert "b_bakery" in text or "Bakery" in text
-    # E2 needs both sides when a shop quotes both: a spread is the finding.
     assert "18" in text
 
 

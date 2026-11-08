@@ -40,9 +40,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Maximum number of tool calls that may execute in parallel within a single
-# concurrent batch.  Mirrors getMaxToolUseConcurrency() from the TypeScript
-# reference (services/tools/toolOrchestration.ts).  Override via env var.
 MAX_TOOL_USE_CONCURRENCY: int = int(
     os.environ.get("CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY", "") or "10"
 )
@@ -50,12 +47,6 @@ MAX_TOOL_USE_CONCURRENCY: int = int(
 DESCRIPTION_KEYS = ("command", "file_path", "path", "pattern", "query", "url")
 DESC_MAX_LEN = 40
 
-# Full-sentence instruction shown to the model when a tool call is
-# cancelled because the user explicitly rejected it.  Ported verbatim
-# from the TypeScript reference (src/utils/messages.ts:REJECT_MESSAGE).
-# The wording is prompt-engineered to reliably stop retry loops — a
-# terse label like "User rejected tool use" does not carry enough
-# signal to change the model's behavior.
 REJECT_MESSAGE = (
     "The user doesn't want to proceed with this tool use. The tool use "
     "was rejected (eg. if it was a file edit, the new_string was NOT "
@@ -157,8 +148,6 @@ class StreamingToolExecutor:
         self.emitter = emitter
         self.thread_id = thread_id
         self.on_interruptible_change = on_interruptible_change
-        # Cap concurrent tool executions within a batch.  Mirrors the
-        # getMaxToolUseConcurrency() cap from the TypeScript reference.
         self.semaphore = asyncio.Semaphore(max(1, max_concurrency))
         self.tracked: list[TrackedTool] = []
         self.completion_event = asyncio.Event()
@@ -166,8 +155,6 @@ class StreamingToolExecutor:
         self.discarded = False
         self.yield_index = 0
 
-        # Sibling abort: child of parent. Fires when a command-execution tool
-        # errors to kill sibling subprocesses. Does NOT abort the parent turn.
         self.sibling_cancel = (
             create_child_token(parent_cancellation) if parent_cancellation else CancellationToken()
         )
@@ -175,14 +162,9 @@ class StreamingToolExecutor:
         self.errored_tool_description = ""
         self.executing_safe_count = 0
         self.executing_unsafe_count = 0
-        # Per-behavior counters let update_interruptible_state decide in
-        # O(1) whether the executing set is all-CANCEL, rather than
-        # re-scanning self.tracked on every tool transition.
         self.executing_cancel_count = 0
         self.executing_block_count = 0
 
-        # ALL-or-nothing interruptible flag.  None = uninitialized, so the
-        # first real computation always fires the callback/event.
         self.last_interruptible: bool | None = None
 
     def add_tool(self, tool_call: ToolCall) -> None:
@@ -190,9 +172,6 @@ class StreamingToolExecutor:
         if self.discarded:
             return
 
-        # Unknown tool: immediate error.  Marked concurrency-safe because
-        # an unknown tool has no side effects and must not prevent
-        # subsequent real tools from starting.
         if not self.tool_exists_fn(tool_call.name):
             tracked = TrackedTool(
                 index=len(self.tracked),
@@ -216,22 +195,11 @@ class StreamingToolExecutor:
         is_safe = self.concurrency_check_fn(tool_call)
         interrupt = self.interrupt_behavior_fn(tool_call)
 
-        # Merge parent (turn) + sibling (bash-abort) into one handle per
-        # tool.  CombinedCancellationToken also accepts a timeout_ms
-        # source; this call site passes none, so tools have no per-tool
-        # timeout and only parent/sibling cancellation applies.  Owned
-        # tokens are disposed in executor cleanup() so their listeners
-        # are neutralized.
         token = CombinedCancellationToken(
             parent=self.parent_cancellation,
             sibling=self.sibling_cancel,
         )
 
-        # Bubble non-sibling, non-timeout cancellations to parent turn
-        # token.  Permission rejections abort the per-tool token directly;
-        # the parent turn must also end.  Matches TypeScript reference
-        # toolAbortController bubble-up (StreamingToolExecutor.ts:304-318,
-        # regression fix #21056).
         if self.parent_cancellation is not None:
             parent = self.parent_cancellation
 
@@ -307,8 +275,6 @@ class StreamingToolExecutor:
                 logger.exception("on_interruptible_change callback failed")
 
         if self.emitter is not None:
-            # Late import avoids a circular dep (events.py imports nothing
-            # from this module today, but keeps the door closed).
             from src.engine_core.events import InterruptibleStateChanged
 
             try:
@@ -322,7 +288,6 @@ class StreamingToolExecutor:
                     )
                 )
             except RuntimeError:
-                # No running loop — best-effort; the callback already fired.
                 pass
 
     def maybe_fire_sibling_abort(self, tracked: TrackedTool) -> None:
@@ -352,22 +317,12 @@ class StreamingToolExecutor:
                 )
                 return
 
-            # Semaphore caps how many tool calls execute in parallel within a
-            # concurrent batch (default 10, matches TypeScript reference).
             async with self.semaphore:
                 tracked.result = await self.execute_fn(
                     tracked.tool_call,
                     tracked.cancellation_token,
                 )
 
-            # Mid-flight cancellation: token fired WHILE execute_fn was
-            # running.  Whatever execute_fn returned (natural cooperative
-            # bail, partial result, or even a clean success that raced
-            # with the cancel) is replaced with the synthetic-error
-            # message matching the abort reason, so the model sees the
-            # full instructional REJECT_MESSAGE instead of a terse
-            # "Cancelled: ..." string.  Matches the TypeScript reference's
-            # getAbortReason() wrapping at result-construction time.
             if (
                 tracked.cancellation_token.cancelled
                 and tracked.cancellation_token.abort_reason is not None
@@ -385,10 +340,6 @@ class StreamingToolExecutor:
             if tracked.result and tracked.result.is_error:
                 self.maybe_fire_sibling_abort(tracked)
 
-            # Context modifiers: serial tools may modify execution context
-            # for subsequent tools (e.g. working directory change).  Only
-            # applied for non-concurrent tools — ordering within a parallel
-            # batch is undefined so modifiers would race.
             if (
                 self.context_modifier_fn is not None
                 and not tracked.is_concurrency_safe
@@ -444,13 +395,9 @@ class StreamingToolExecutor:
                 pass
             self.completion_event.set()
             self.progress_event.set()
-            # Recompute interruptible state now that this tool is no longer
-            # executing — e.g. last BLOCK tool just finished, remaining
-            # executing tools may be all CANCEL now.
             self.update_interruptible_state()
             self.process_queue()
 
-    # ── Result harvesting ────────────────────────────────────────────
 
     def get_completed_results(self) -> Generator[ToolResultBlock, None, None]:
         """Non-blocking: yield completed results in order. Stops at first incomplete.
@@ -571,7 +518,6 @@ class StreamingToolExecutor:
                 tracked.context_modifiers.clear()
         return out
 
-    # ── State queries ────────────────────────────────────────────────
 
     @property
     def tool_count(self) -> int:

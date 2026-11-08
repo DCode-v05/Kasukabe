@@ -89,13 +89,9 @@ def keep_the_turn_on_a_half_written_call(adapter: Any) -> Any:
 class _HalfWrittenToolCallAdapter:
     def __init__(self, inner: Any) -> None:
         self._inner = inner
-        # How many turns this resident kept that the provider's unguarded
-        # parse would have killed. Read by tests; worth a run-report line.
         self.tool_calls_half_written = 0
 
     def __getattr__(self, item: str) -> Any:
-        # Only reached for attributes this class does not define, so the
-        # wrapper adds `stream_with_tools` and hides nothing.
         return getattr(self._inner, item)
 
     async def stream_with_tools(self, *args: Any, **kwargs: Any) -> AsyncIterator[StreamEvent]:

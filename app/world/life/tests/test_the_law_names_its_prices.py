@@ -36,8 +36,6 @@ from __future__ import annotations
 
 import pytest
 
-# The law states energy, not dollars (world/ledger/money.py). Every figure is
-# still derived from the constant that charges it; only the unit changed.
 from world.ledger.money import energy_units, format_energy
 
 from world.ledger.action_costs import ActionCostCategory, ActionCostRule, DEFAULT_RULE, SCHEDULE_TABLE
@@ -186,9 +184,4 @@ def test_a_re_rate_moves_the_law_rather_than_leaving_it_stale(
     ):
         assert moved in text, f"{moved} did not follow its constant: it was transcribed"
 
-    # And the real upkeep bill is gone, so nothing is quoting both at
-    # once. Only upkeep is checked for absence: the revival fee and the
-    # exchange rate are the same number by construction
-    # (REVIVAL_COST_SIM is SIM_PER_USD, see constants.py), so the real
-    # figure legitimately survives in the un-patched exchange rule.
     assert format_sim(UPKEEP_TOTAL_SIM_PER_DAY) not in text

@@ -101,128 +101,30 @@ from world.tools.models import (
     Will,
 )
 
-# Field names snapshot()/restore() cover: every piece of mutable state
-# this module owns outright (see module docstring, point 2). Kept as an
-# explicit tuple, not "every dataclass field", so adding a field that is
-# a *reference* to something external (another Ledger, say) does not
-# silently start getting deep-copied - a future field must be added here
-# deliberately.
-# One game-hour at TICKS_PER_DAY = 144. A workflow the agent has not touched
-# for this long is treated as abandoned rather than paused: procedures that do
-# not survive contact with the world are a finding, not a bug to paper over.
 SKILL_ABANDONED_AFTER_TICKS = 12
 
-# Ring caps for the two records that grow with every action rather than with
-# the town. A 30-agent run makes tens of thousands of tool calls in a few
-# hours, and an uncapped list of them is the thing that ends a long run: the
-# process grows until the machine swaps, which on 8 GB is fatal.
-#
-# The full history is not lost - `tool_invocations` is mirrored into the trace
-# store, and refusals are grouped by the observatory as they arrive. These
-# lists are the live tail the running world needs, not the archive.
-#
-# EVAL-25: that first sentence was FALSE when it was written. There was no
-# `tool_invocations` table and no recorder - the mirror it describes did
-# not exist, so this ring was the only copy and it died with the process.
-# Everything downstream (task labels, refusal recovery, cost-per-action
-# against proficiency, verb reach, "41 of 76 never called") was recovered
-# by scraping `session_log.jsonl` instead: a log, for facts the world
-# already had.
-#
-# It is true now. `GenesisRunner.drain_tool_invocations` runs every tick
-# and `TraceStore.record_tool_invocations` writes the rows - which is also
-# why the drain runs per tick rather than per day: at 5,000 records a busy
-# run fills this ring faster than a daily drain would empty it.
 MAX_TOOL_INVOCATIONS_KEPT = 5000
 MAX_TOOL_REFUSALS_KEPT = 2000
 
-# How many of a resident's turn-start ticks to keep. Only the tail is
-# ever read, and an uncapped list per resident is a leak the length of
-# the run - the same reason the two caps above exist.
 MAX_TURN_TICKS_KEPT = 12
 
-# How long a question addressed to somebody stays their business.
-#
-# The hearing window is at most 18 ticks and 4 at the default depth, while
-# the scheduler wakes an agent every 3. So a directed question was visible
-# for roughly ONE turn, and a resident who spent that turn walking never saw
-# it again: 56 of 81 exchanges in one run ended after a single remark, and
-# only 2 of 11 directed questions were answered by the person asked.
-#
-# 36 ticks is six game-hours - long enough that a resident gets several
-# turns to notice and answer, short enough that nobody is still being
-# asked about yesterday's barrel. Bounded on purpose (Build Spec v2
-# section 6): a question that never expires becomes a permanent tax on
-# every prompt.
 OPEN_QUESTION_TTL_TICKS = 36
 
-# At most this many open questions in one prompt. A resident shown a
-# backlog reads a list rather than a question, and Bram asked the room for
-# a copper buyer five times in a single tick.
 MAX_OPEN_QUESTIONS_SHOWN = 3
 
-# How many people have to be standing here before convening is worth
-# suggesting. Three: two people talking are already having a conversation,
-# and the third is what turns it into a discussion somebody might want to
-# frame. Below that the hint would fire on every ordinary exchange.
-# How many turns in a row a resident must reach nobody before the world
-# says so.
-#
-# Two, so a single quiet turn is never mentioned. Standing and thinking is
-# a legitimate thing for a person to do, and a report that fired on the
-# first one would fire on nearly everybody - measured on run short1, 45 of
-# 71 turns produced no tool call - and a resident would rightly learn to
-# skip it.
-#
-# What it is aimed at is the RUN. n06 wrote three consecutive scenes with
-# actions [], including a direct question to Marta while she was standing
-# next to him, and nothing in any of the three prompts told him the last
-# one had reached nobody.
 SILENT_TURN_REPORT_MIN = 2
 
 CONVENE_HINT_MIN_PRESENT = 3
 
-# How far back the hint looks for evidence that talk is actually happening
-# here. One game-hour: a room that was loud an hour ago is a quiet room now,
-# and proximity without talk is not a discussion waiting to happen.
 CONVENE_HINT_WINDOW_TICKS = 6
 
-# How many recent invocations the authoring hint looks back over.
 AUTHORING_HINT_SCAN = 400
 
-# WHICH tools count as a job worth writing down. Work and dealing; not
-# walking, not looking, not talking.
-#
-# This is the correction that matters, and it came from reading the runs
-# rather than from taste. The threshold used to be eight repeats of ANY
-# tool, and eight WAS reached - eight agent-and-tool pairs crossed it in
-# data/loop5.db and eight in loop4. Every single one of them was `move` or
-# `look_around`. So the hint did fire, and what it said was "you have
-# walked eight times, write a procedure down", which is noise, and a
-# resident was right to ignore it. Run 19 then reported "nothing was
-# authored" and put it down to nobody crossing the line.
-#
-# A skill is a work routine. LABOUR is harvest, mine, fell_timber, craft,
-# cook, build_structure; TRADE is buy, sell, trade, transfer, store_item,
-# withdraw_item. Those are the sequences that repeat with a shape.
 AUTHORING_HINT_CATEGORIES = frozenset(
     {ActionCostCategory.LABOUR, ActionCostCategory.TRADE}
 )
 
-# Three, and it is a bar the town can actually reach. The old eight was
-# set against "a game-day's worth of one job", but run 19 ended at tick 59
-# with the most any resident had COMPLETED of one skill being two - so for
-# real work, as opposed to walking, eight was not a high bar but an
-# unreachable one. Three is a routine: it is the point at which a resident
-# has done the same job enough times to know its shape and not so many
-# that the run is over first.
-#
-# Still env-overridable, and still named rather than quietly defaulted,
-# because moving it changes what is being measured.
 AUTHORING_HINT_REPEATS = int(os.environ.get("KASUKABE_AUTHORING_HINT_REPEATS", "3"))
-# How many times a PAIR of consecutive work actions must repeat before the
-# same hint fires on the sequence instead of the single tool. Two, because a
-# pair is already two actions' worth of evidence - see authoring_hint.
 AUTHORING_HINT_PAIR_REPEATS = int(
     os.environ.get("KASUKABE_AUTHORING_HINT_PAIR_REPEATS", "2")
 )
@@ -280,34 +182,11 @@ def authoring_hint_text(
     precondition `teach_skill` has been waiting on through five runs of
     never being called.
     """
-    # MEASURED, 2026-09-12, through the L1 harness at five samples each
-    # (`world/evals/scenarios/*/positive_*_with_the_hint.json`):
-    #
-    #   * with this hint shown, `skillify` reached 4 of 5 - its first
-    #     non-zero reach since run 22 measured it at 0%;
-    #   * `toolify` and `do_in_order` reached 0 of 5 with the hint and 0 of
-    #     5 without it;
-    #   * naming the three in the order of commitment instead (run now,
-    #     keep a tool, write a procedure) moved skillify to 3 of 5 and
-    #     moved the other two not at all.
-    #
-    # Three of five against four of five is noise at this sample size, so
-    # the wording is the one the higher number was measured against and
-    # the question is open rather than answered: the eval spec fixes 20
-    # samples, and 20 is what would decide it. What the pair DOES say is
-    # that the hint is what moves skillify and that nothing yet moves the
-    # other two, which is a fact about the nudge, not about the order.
-    #
-    # Still no word on WHICH to use - that is the resident's, and the
-    # standing rule's.
     parts = [
         f"You have done {what} {times} times lately and have written nothing "
         "down about it."
     ]
     if decisions is not None and call_ceiling:
-        # The measured half. One call with no `program_id` was one model
-        # call that bought one act - see `ToolInvocationRecord.program_id`,
-        # which exists so this subtraction is possible at all.
         parts.append(
             f"Those came to {decisions} separate calls, one decision each, "
             f"against the {call_ceiling} a turn can buy."
@@ -322,10 +201,6 @@ def authoring_hint_text(
     )
     if already_written is not None:
         skill_name, holder = already_written
-        # Who holds it, not who authored it: `teach_skill` refuses a
-        # teacher whose proficiency is 0, so naming an author who never
-        # walked their own procedure would name somebody the verb would
-        # then turn away.
         parts.append(
             f"{holder} already holds a procedure over these same actions, "
             f"called {skill_name!r}. A procedure somebody else holds reaches "
@@ -335,9 +210,6 @@ def authoring_hint_text(
     return " ".join(parts)
 
 
-# Which checkpointed fields hold pydantic models, and in what shape.
-# `snapshot()` deepcopies (so in-process resume keeps the objects) but a
-# checkpoint written to disk is JSON, and comes back as plain dicts.
 def _typed_state_fields() -> "dict[str, tuple[str, Any]]":
     """field name -> (shape, model). Built lazily to avoid import cycles."""
     from world.tools.models import (
@@ -360,14 +232,9 @@ def _typed_state_fields() -> "dict[str, tuple[str, Any]]":
         "price_board": ("map_of_map", PricePost),
         "wage_promises": ("map", WagePromise),
         "intentions": ("map", Intention),
-        # ENG-24
         "goals": ("map", Goal),
         "needs": ("map_of_map", Need),
         "beliefs": ("map", Belief),
-        # Run 28b: in OWNED_STATE_FIELDS and written to every checkpoint, and
-        # missing here - so Wren's harvest-until-twelve came back from disk
-        # as a dict and every one of her turns after the resume died on
-        # `action.satisfied`. Defined in this module, below.
         "continuing": ("map", ContinuingAction),
     }
 
@@ -384,8 +251,6 @@ def _rehydrated(name: str, value: Any) -> Any:
             try:
                 return model(**raw)
             except Exception:  # noqa: BLE001 - a field this build does not
-                # know is a schema change, not a reason to lose the run.
-                # Left as the dict it was, which is what happened before.
                 return raw
         return raw
 
@@ -427,43 +292,20 @@ OWNED_STATE_FIELDS: tuple[str, ...] = (
     "skill_definitions",
     "skill_progress",
     "turn_ticks",
-    # Tool spec B1 / addendum section 6, whose state row says "Owned-state
-    # list, checkpoint" in as many words. See the fields' own comment for
-    # why the `utterances` analogy that kept them out does not hold.
     "continuing",
     "wake_reasons",
-    # A3. Nothing is for sale until somebody posts a price, so this dict
-    # IS the market. Genesis leaves it empty on purpose: the tick of the
-    # town's first posted price is evaluation figure E1, and seeding it
-    # would answer the question the run is asking.
     "price_board",
-    # A5 and C2: what one person owes another. Owned state and
-    # checkpointed, because a resumed run that forgot every wage promise
-    # would clear the town's debts by restarting it.
     "wage_promises",
     "loans",
     "arrears",
-    # B2. A resident that loses what it set out to do on a checkpoint
-    # resume goes back to re-deciding the same thing every tick, which is
-    # the churn the verb exists to end.
     "intentions",
-    # ENG-24: a resumed town that forgot what everyone was trying to do
-    # would go back to deciding it again every morning.
     "goals",
     "needs",
     "beliefs",
-    # LIFE-01: a resumed town that forgot everyone's stage would
-    # announce every change again on the first tick and supersede the
-    # whole town's goals over nothing.
     "life_stages",
-    # C1. Who holds what. Diffusion is measured off exactly these two
-    # (C4: "a tool held by three residents"), so a resume that lost them
-    # would put every taught copy back in the inventor's hands.
     "tool_licences",
     "tool_owners",
     "tool_copies",
-    # Part D. A resume that forgot who was in the cells would release the
-    # whole jail without anybody deciding to.
     "police",
     "confined",
 )
@@ -475,13 +317,6 @@ def tile_key(x: int, y: int) -> str:
     return f"{x},{y}"
 
 
-# Tool spec B1's LABOUR set, verbatim from its params row. `say` is
-# deliberately absent: a resident that could keep_doing `say` would talk to
-# an empty room until dusk.
-# GROW-18: "work_site" joins them. DESIGN section 2 asks construction to
-# occupy the crew for time proportional to size, and a builder who has to
-# re-decide to keep building every single tick is paying a model call per
-# tick to do one job. It is the same case harvest and craft are.
 CONTINUABLE_TOOLS = frozenset(
     {"harvest", "mine", "fell_timber", "craft", "cook", "rest", "work_site"}
 )
@@ -518,11 +353,7 @@ class ContinuingAction:
     owner: str = ""
 
 
-# How long a room's conversation stays open with nothing said in it. Lives
-# here rather than in social.py because the registry below is what enforces
-# it; social.py re-exports the name so every existing importer is unchanged.
 CONVERSATION_WINDOW_TICKS = 12
-
 
 
 def conversation_outcome(record: dict) -> dict:
@@ -553,87 +384,18 @@ class WorldState:
     locations: LocationIndex
     current_tick: int = 0
     rng: random.Random = field(default_factory=random.Random)
-    # Task "walking": None until bootstrap.build_world() can load a real
-    # WorldMap to path against (see that module's docstring) - a sibling
-    # system, like ledger/charter/event_bus/locations above, not owned
-    # state (see point 1 above for why).
     movement: MovementSystem | None = None
-    # The price list, so `quote_action_cost` has somewhere real to read from
-    # at call time (cost_disclosure.py's "Wiring this in"). A sibling system
-    # like ledger/charter above, not owned state: it is a constant table, and
-    # snapshotting it per tool call would deep-copy 44 frozen rules for
-    # nothing.
     action_costs: Any = None
-    # ECON-14: the head-tax debt store, so a resident can PAY what the
-    # town says it owes.
-    #
-    # Both composition roots (`run_genesis.py:3758`, `wiring.py`) built a
-    # `HeadTaxDebtStore` on the runner, where no tool handler could reach
-    # it - handlers get `world`. So `repay_head_tax_debt` sat complete and
-    # tested with no caller, `transfer` refused the treasury (it requires
-    # `to_agent_id in world.agents` and the treasury is not an agent), and
-    # `check_debts` told residents to pay with a tool that would refuse.
-    # The debt was real, permanent and unpayable.
-    #
-    # A sibling reference like `movement`/`ledger` above, not owned state:
-    # the runner still owns snapshot/restore of the same object.
     head_tax_debts: Any = None
-    # ECON-06/ECON-16: hunger, where a tool handler can read it.
-    #
-    # `hunger_by_agent` lived only on the runner, so nothing inside
-    # `world/tools/` could see whether a resident had eaten - which is why
-    # `effective_work_capacity` and `WORK_CAPACITY_BY_AILMENT` sat inert
-    # and a terminal patient harvested at full rate until the day it died.
-    # Keyed by agent_id, exactly as `upkeep.py`'s integration note asks.
     hunger_by_agent: Any = None
-    # Part D: the one component that writes INTO the experiment - it tells
-    # agents what the town keeps failing to do. A sibling system rather than
-    # owned state, and not snapshotted: its audit log must survive a rolled
-    # back tool call, because a notice that was delivered was delivered.
     gap_feedback: Any = None
-    # Set by the last bump_skill_repetition call: did that repetition actually
-    # move the proficiency, or was it one of the many that do not? Read by
-    # dispatch() to decide whether the practice is worth a trace row. A plain
-    # flag rather than a richer return, because the method's return value
-    # (the new level) is already load-bearing for callers that do not care.
     last_practice_moved_the_level: bool = False
 
-    # -- owned state (see OWNED_STATE_FIELDS) -----------------------------
     agents: dict[str, AgentLifeRecord] = field(default_factory=dict)
-    # EVAL-15. The owners of the scripted control businesses, who may act
-    # through the registry and are NOT residents.
-    #
-    # `build_controls` used to hand a control bakery its own business id as
-    # the owner, so the scripted baker acted as `cb01` - which is not an
-    # agent - and `dispatch` refused every call. Run 26: 151 refused
-    # `post_price`, and the control the whole R1-R7 comparison stands on
-    # never did anything. Its tests passed because they spawned a real
-    # agent to own it, which production never did.
-    #
-    # Kept out of `agents` on purpose. Everything that counts, bills, houses,
-    # elects or wakes RESIDENTS iterates `agents`; a scripted owner in there
-    # would be a citizen who votes, owes upkeep and goes dormant with no
-    # engine behind it. Only the registry's actor lookup reads this, via
-    # `require_agent`. Not an owned-state field: nothing changes it after
-    # boot, and `build_controls` rebuilds it on resume.
     control_actors: dict[str, AgentLifeRecord] = field(default_factory=dict)
     households: dict[str, Household] = field(default_factory=dict)
     inventory: Inventory = field(default_factory=Inventory)
-    # The registry of everything callable, set by bootstrap.build_world
-    # after the registry is complete. A REFERENCE, like `ledger` and
-    # `charter` above, so it is not snapshotted: a rolled-back tool call
-    # must not un-register a tool that another agent invented.
-    #
-    # Optional because a test may build a WorldState directly with no
-    # registry at all; `authoring_context` answers an empty vocabulary in
-    # that case rather than raising, since it is what a REFUSAL carries and
-    # a bookkeeping failure inside an error path replaces a useful message
-    # with a stack trace.
     tool_registry: Any = None
-    # When each resident last took a turn. Owned state, and snapshotted:
-    # a rolled-back tool call must not make a turn un-happen, because
-    # the turn did happen - it is the ACTION that was undone, which is
-    # precisely what this records the absence of.
     turn_ticks: dict[str, list[int]] = field(default_factory=dict)
     businesses: dict[str, Business] = field(default_factory=dict)
     resource_zones: dict[str, ResourceZone] = field(default_factory=dict)
@@ -641,272 +403,46 @@ class WorldState:
     plots: dict[str, Plot] = field(default_factory=dict)
     buildings: dict[str, Building] = field(default_factory=dict)
     skills: dict[str, dict[str, int]] = field(default_factory=dict)
-    # B6 (The 250 section 22): who a skill came FROM. `skills` records the
-    # level and nothing else, so "self-taught vs. taught by whom" - half of
-    # what section 22 asks a character sheet to show - was unanswerable from
-    # world state. Keyed agent_id -> skill -> teacher_agent_id; an absent
-    # entry means self-taught, which is the common case and therefore the
-    # one that should cost no storage.
     skill_sources: dict[str, dict[str, str]] = field(default_factory=dict)
-    # Part A: how many times each agent has SUCCESSFULLY completed a tool that
-    # some skill discounts. `skills` holds the resulting 0-100 proficiency;
-    # this holds the count it was derived from, because proficiency alone is
-    # lossy - two agents at 100 are indistinguishable, and a rounded level
-    # cannot be incremented without knowing the reps behind it. Keyed
-    # agent_id -> skill -> reps. Snapshotted with the rest of owned state, so
-    # a handler that raises partway through never banks a repetition.
     skill_reps: dict[str, dict[str, int]] = field(default_factory=dict)
-    # Part B: every workflow the town has authored, keyed by skill name.
-    # Town-wide rather than per-agent because a skill is a document that can be
-    # taught: `skills[agent][name]` says who holds it and how well, this says
-    # what it actually IS. One definition, many holders.
-    # Refused intentions. NOT in OWNED_STATE_FIELDS, deliberately: a refusal
-    # only exists because the call failed, and execute() restores owned state
-    # on exactly that path - so a snapshotted refusal log would erase itself
-    # the instant it had something to say. The same trap the action charge
-    # fell into (see registry.dispatch), and the same fix: write it after the
-    # rollback, not inside the transaction it is a record of.
     tool_refusals: list[ToolRefusalRecord] = field(default_factory=list)
-    # TOOL-06. Every action charge made inside the current `execute()`,
-    # as (tool_name, actor_id, amount).
-    #
-    # A composite tool runs its steps through `dispatch`, which charges
-    # each one, inside a single `execute`, which snapshots and restores
-    # tools-owned state. Only the step that RAISED was refunded, so a
-    # five-step tool failing at step 3 had paid for steps 1 and 2 while
-    # the world said they never happened - the exact case registry.py's
-    # own comment says must not occur.
-    #
-    # Kept out of OWNED_STATE_FIELDS for the same reason `tool_refusals`
-    # is: the refund happens after the restore, and a list that the
-    # restore rolled back would be empty precisely when it had something
-    # to say.
     charges_this_call: list[tuple[str, str, int]] = field(default_factory=list)
-    # PROG-01. Which program the call now being dispatched is a step of,
-    # as (program_id, step_index), innermost last.
-    #
-    # Pushed by `world/tools/program.py` around each step it runs and
-    # popped after, so `registry.dispatch` can stamp the invocation record
-    # without knowing anything about programs. Read at the moment the
-    # record is appended and nowhere else.
-    #
-    # Kept OUT of OWNED_STATE_FIELDS deliberately, and for the opposite
-    # reason to `tool_refusals`: this is not a record, it is a cursor into
-    # a call that is still running. A snapshot/restore in the middle of a
-    # program would put back a stack entry for a step the restore has just
-    # unmade, and the next step would file itself under a program that no
-    # longer has that history. `execute()` clears it, exactly as it clears
-    # `charges_this_call`, so a call that raised somewhere unexpected
-    # cannot leave a frame behind for the next one to inherit.
     program_stack: list[tuple[str, int]] = field(default_factory=list)
-    # TOOL-31. ONE ceiling for a whole nest of programs, not one per
-    # level. An invented tool may now be a step of another invented tool,
-    # and each `run_program` used to read its own forty-dispatch and
-    # half-the-wallet ceiling from scratch - so a tool that called a tool
-    # that called a tool had eight times the budget of the call the
-    # resident actually made, which is the one thing those ceilings exist
-    # to prevent. The outermost run creates this; every nested one
-    # inherits it (see program.ProgramBudget).
-    #
-    # Transient, like `program_stack` above and for the same reason: it
-    # is a cursor into a call that is still running, not a record. It is
-    # kept out of OWNED_STATE_FIELDS and cleared by `execute()` going in,
-    # so a call that raised somewhere unexpected leaves no ceiling behind
-    # for the next resident to inherit.
     program_budget: Any | None = None
-    # What the town has said out loud, most recent last. NOT owned state and
-    # NOT snapshotted, for the same reason as tool_refusals above: this is a
-    # record of what happened, and rolling it back with a failed tool call
-    # would erase speech that really did occur. Capped, because a long run
-    # produces tens of thousands of utterances and the viewer only ever shows
-    # the tail.
     utterances: list[dict] = field(default_factory=list)
-    # The town's conversations, by id. A conversation is a first-class
-    # record here rather than something inferred afterwards from the
-    # utterance tail, because three things were impossible while it was
-    # an inference (docs/specs/group-conversation-spec.md):
-    #
-    #   * a resident standing in the room and addressed by name was in no
-    #     conversation, having no roster to be on;
-    #   * two pairs talking in one room were one thread, and each answer
-    #     landed under the other's question;
-    #   * nobody could convene anything - a resident who wanted the
-    #     household round a table could only speak and hope.
-    #
-    # Same ownership as `utterances` above and for the same reason: a
-    # rolled-back tool call must not erase a conversation that really
-    # happened.
     conversations: dict[str, dict] = field(default_factory=dict)
-    # Tool spec B1: who is under a continuing action, and why they last
-    # woke. A resident in here is skipped by the scheduler, which is where
-    # the cost of a day actually falls - a farmer's afternoon becomes
-    # twenty repetitions and one model call instead of twenty of each.
-    #
-    # OWNED STATE, both of them, per the tool-text addendum's rule 6 and
-    # keep_doing's own state row ("Owned-state list, checkpoint"). They
-    # shipped outside it, reasoning by analogy to `utterances` - a
-    # rolled-back call must not un-say something that was heard - and the
-    # analogy does not hold in either direction:
-    #
-    #   * A commitment is not an utterance. Nobody heard it. If the call
-    #     that made it is rolled back and refunded, a resident left in this
-    #     dict is skipped by the scheduler for a commitment the world says
-    #     never happened - silently, until dusk.
-    #   * The checkpoint reads exactly this tuple (see snapshot()), so
-    #     leaving `continuing` out meant a resumed run dropped every
-    #     continuing action on the floor and every committed resident
-    #     quietly stopped working.
-    #   * `wake_if_working` runs inside `say`'s handler (social.py), so a
-    #     `say` that fails after it would wake a worker, and name who spoke
-    #     to them, for a remark that never left anyone's mouth.
-    #
-    # `advance_continuing` calls `stop_continuing` OUTSIDE the inner
-    # `registry.execute`, so a refused repetition still ends the action and
-    # keeps its reason - the one case the original comment was protecting
-    # is not affected by this at all.
     continuing: dict[str, "ContinuingAction"] = field(default_factory=dict)
     wake_reasons: dict[str, str] = field(default_factory=dict)
-    # A3: holder_id -> item -> PricePost. The holder is a business id or an
-    # agent id, the same key space `Inventory` already uses, because a
-    # farmer standing in the market with three cabbages is doing what a
-    # shop does at a smaller scale.
     price_board: dict[str, dict[str, PricePost]] = field(default_factory=dict)
-    # A5: "{business_id}|{employee_id}" -> WagePromise. A flat string key
-    # rather than a tuple because the checkpoint round-trips through JSON,
-    # and a tuple key comes back as a string anyway - better to say so.
     wage_promises: dict[str, WagePromise] = field(default_factory=dict)
-    # C2: "{lender_id}|{borrower_id}" -> LoanRecord, for transfers the
-    # lender tagged `reason="loan"`.
     loans: dict[str, LoanRecord] = field(default_factory=dict)
-    # A7: agent_id -> {"head_tax": n, "upkeep": n}, written by the runner's
-    # day-boundary jobs. The tax engine owns the arithmetic; this object
-    # only carries the answer so `check_debts` and perception can read it.
     arrears: dict[str, dict[str, int]] = field(default_factory=dict)
-    # B2: agent_id -> Intention. At most one at a time, deliberately - a
-    # list of intentions is a plan, and a resident that keeps a plan in
-    # perception reads a document rather than a purpose.
     intentions: dict[str, Intention] = field(default_factory=dict)
-    # ENG-24. Goals, needs and beliefs - the substrate the review found
-    # missing. `Intention` is one sentence with no horizon, priority,
-    # progress or way to be superseded, so "agents that develop their own
-    # goals" had nothing to develop.
     goals: dict[str, Goal] = field(default_factory=dict)
     needs: dict[str, dict[str, Need]] = field(default_factory=dict)
     beliefs: dict[str, Belief] = field(default_factory=dict)
-    # LIFE-01. What stage of life each resident was last seen in.
-    #
-    # Kept so a CHANGE can be noticed. Without it the world can say what
-    # somebody is but never that they have become it, and a goal that
-    # belonged to a life they have left survives forever.
     life_stages: dict[str, Any] = field(default_factory=dict)
-    # ENG-24, §5.3's acceptance: "a buy+eat marks it done and the outcome
-    # line renders once". Popped, never read, for the same reason
-    # `last_intention_outcome` is: it is a message about something that
-    # happened, and a message that keeps arriving stops being read.
     last_goal_outcome: dict[str, list[tuple[Goal, str]]] = field(default_factory=dict)
-    # Set by bootstrap so `set_intention` can refuse a `done_when_tool`
-    # that names no tool. The registry is not world state and this object
-    # must not hold a reference to it (see the module docstring), so it
-    # holds the NAMES, which are just strings.
     registry_tool_names: frozenset[str] = field(default_factory=frozenset)
-    # agent_id -> (the intention, why it ended). Read once by the next
-    # perception and cleared, so a resident is told what became of what it
-    # set out to do. NOT owned state, for the same reason as
-    # `wake_reasons` is not a record of a decision but a message about one
-    # that already happened - see that field.
     last_intention_outcome: dict[str, tuple[Intention, str]] = field(default_factory=dict)
-    # C1: "{tool_name}|{licensee_id}" -> ToolLicence. Flat string keys for
-    # the same reason `wage_promises` uses them: the checkpoint round-trips
-    # through JSON and a tuple key comes back a string anyway.
     tool_licences: dict[str, ToolLicence] = field(default_factory=dict)
-    # tool_name -> current owner. Absent means "still the creator", so a
-    # tool nobody has sold needs no row.
     tool_owners: dict[str, str] = field(default_factory=dict)
-    # tool_name -> the agents taught their own copy. Unrevocable by design:
-    # that is the whole difference between teaching and licensing.
     tool_copies: dict[str, set[str]] = field(default_factory=dict)
-    # Part D. Who may arrest, and who is being held.
-    #
-    # Empty at genesis, both of them: DESIGN.md gives the town a
-    # government but no police force, and a run in which somebody is
-    # appointed is a run in which somebody decided to. `confined` maps
-    # agent_id -> {case_id, since_tick, until_tick, by}; `until_tick` is
-    # None until a seat rules on it, which is the difference between being
-    # held and being sentenced.
     police: set[str] = field(default_factory=set)
     confined: dict[str, dict[str, Any]] = field(default_factory=dict)
-    # agent_id -> display name, seeded once at boot from the genesis cast.
-    #
-    # AgentLifeRecord deliberately carries no name (its own docstring: "no
-    # wallet balances, no location, no memory"), so nothing inside the world
-    # could turn "Greta" into a0087. `say` needs exactly that: agents address
-    # each other by name in the content and leave listener_agent_id unset -
-    # 8 of 15 remarks in a live run named somebody and 1 set the parameter -
-    # and without this map the world had no way to tell who was meant.
-    #
-    # NOT owned state: it is set at boot and never changes, so a rolled-back
-    # tool call has nothing to restore, and a checkpoint that omitted it
-    # would leave the town anonymous after a resume.
     agent_names: dict[str, str] = field(default_factory=dict)
-    # agent_id -> trade, and agent_id -> where that trade is worked. Seeded
-    # once at boot from genesis, alongside agent_names and for the same
-    # reason: AgentLifeRecord carries no occupation (its own docstring: "no
-    # wallet balances, no location, no memory"), so nothing inside the world
-    # could answer "who is the trader" without them.
-    #
-    # This is the data half of world/tools/cards.py. Bram Holloway asked the
-    # room five times in one tick who bought copper, while a trader stood two
-    # buildings away: the town knew and had no way to say so.
-    #
-    # NOT owned state, exactly as agent_names is not: set at boot, never
-    # mutated by a tool call, so a rolled-back call has nothing to restore
-    # and a checkpoint that omitted them would leave the town unable to find
-    # anybody after a resume.
     occupations: dict[str, str] = field(default_factory=dict)
     workplaces: dict[str, str] = field(default_factory=dict)
     skill_definitions: dict[str, SkillDefinition] = field(default_factory=dict)
-    # Who is partway through which workflow, keyed "agent_id::skill_name" - an
-    # agent can have more than one open, because a skill step may itself be a
-    # skill (see skillify's nesting cap).
     skill_progress: dict[str, SkillProgress] = field(default_factory=dict)
     prayer_requests: list[PrayerRequest] = field(default_factory=list)
     crime_cases: list[CrimeCase] = field(default_factory=list)
     custom_tools: dict[str, CustomToolDefinition] = field(default_factory=dict)
     subpoenas: dict[str, Subpoena] = field(default_factory=dict)
-    # DESIGN.md section 2's "complete causal record": every tool call that
-    # reached and completed a handler, appended by ToolRegistry.execute()
-    # regardless of the tool's namespace - see ToolInvocationRecord's
-    # docstring for why this is the log a court subpoena reveals.
     tool_invocations: list[ToolInvocationRecord] = field(default_factory=list)
-    # Task "walking": see module docstring point 2 above for the full
-    # rationale (why a plain tuple, not a TileCoord, and who reads/writes
-    # it). Keyed by agent_id, empty until the first real walked step.
     agent_tiles: dict[str, tuple[int, int]] = field(default_factory=dict)
-    # The 250 section 31: one owner record per 1x1 unit of land, keyed
-    # "x,y". A string key rather than a (x, y) tuple deliberately - the
-    # same checkpoint round-trip that makes `agent_tiles` a plain tuple
-    # turns dict keys into JSON object keys, which must be strings; a
-    # tuple key would come back as the string "(142, 87)" and never match
-    # a lookup again. `tile_key()` is the one place that formatting lives.
     tile_owners: dict[str, TileOwnership] = field(default_factory=dict)
-    # GROW-23: acts of manual work since this resident last wore out a
-    # tool. See world/tools/wear.py for why a counter and not a durability
-    # field on the item.
     tool_wear: dict[str, int] = field(default_factory=dict)
-    # GROW-20. The strips the town has won, as (x0, y0, x1, y1) half-open
-    # rects in map coordinates.
-    #
-    # `TileOwnership.from_expansion` has existed since section 31.2 asked
-    # `auction_land` to scope itself to "newly petitioned/expanded land",
-    # and nothing ever set it - because the fact lives on the MAP (which
-    # tiles a petition added) and the flag lives on a TILE record that is
-    # materialised lazily, one at a time, long after the expansion. There
-    # was nowhere for the answer to be written down.
-    #
-    # This is that place: `approve_land_petition` records the rect
-    # `expand_land` already returns (GROW-26), and `require_tile`'s
-    # government default consults it. Owned state, so it is checkpointed
-    # and a resumed town still knows which of its land is new.
     expanded_rects: list[tuple[int, int, int, int]] = field(default_factory=list)
 
     def came_from_expansion(self, x: int, y: int) -> bool:
@@ -915,40 +451,10 @@ class WorldState:
             x0 <= x < x1 and y0 <= y < y1
             for (x0, y0, x1, y1) in self.expanded_rects
         )
-    # UI-32: alerts the console has already been shown, so they outlive the
-    # event they were derived from.
-    #
-    # `/admin/alerts` recomputed the whole feed from `event_bus.recent()`
-    # on every 8-second poll, and that ring is 2,000 entries - now
-    # `agents * 200` since CORE-09. A regime change at tick 5 simply
-    # vanished from the operator's console once 2,000 later events pushed
-    # it out, with nothing anywhere saying it had ever been raised. An
-    # alert that disappears is worse than one never raised: the operator
-    # has no way to tell "nothing happened" from "it scrolled off".
-    #
-    # Owned state, so it is checkpointed and a resumed town still knows
-    # what it warned about - same reasoning as `expanded_rects` above.
-    # Bounded by MAX_RAISED_ALERTS so a long run cannot grow it without
-    # limit; the console asks for 50 and the newest are kept.
     raised_alerts: list[dict] = field(default_factory=list)
 
-    # UI-05: the operator's baby-blessing queue, owned by the world.
-    #
-    # It lived on `AdminExtras` (the console's own object) and on the
-    # retired standalone `WorldServer`, and on the embedded host - the one
-    # every run uses - nothing could write to it: `submit_birth_request`
-    # had no HTTP route and no tool. The queue, the console panel, the
-    # grant/deny routes and the population governor were all built and
-    # tested against a queue that was empty in every run ever made.
-    #
-    # Here because a request for a child is world state, not console
-    # state: it survives a checkpoint, and the `ask_for_a_child` tool can
-    # reach it. `run_genesis` hands this same dict to `AdminExtras`, so
-    # the console reads exactly what the town wrote.
     birth_requests: dict[str, "BirthRequest"] = field(default_factory=dict)
 
-    # Section 31.3: an owner's own wishes, keyed by agent_id. Absent an
-    # entry here the automatic default applies unchanged.
     wills: dict[str, Will] = field(default_factory=dict)
 
     def tick(self) -> int:
@@ -998,7 +504,6 @@ class WorldState:
         """
         return self.tile_owners.get(tile_key(x, y))
 
-    # ── conversations ─────────────────────────────────────────────────
 
     def open_conversation(
         self, *, place: str | None, topic: str, participants: list[str], now: int
@@ -1019,9 +524,6 @@ class WorldState:
             "last_tick": now,
             "turns": 0,
             "open": True,
-            # A2A: what the session resolved into. Every deal agreed inside
-            # it, appended as it settles (commerce._settled_in_conversation),
-            # and a summary written when it closes.
             "deals": [],
         }
         return conversation_id
@@ -1112,21 +614,6 @@ class WorldState:
         ]
         if not mine:
             return None
-        # A CONVENED conversation beats an ambient one, and the newest
-        # convened conversation beats an older one.
-        #
-        # The discriminator is the topic, not the clock. `start_conversation`
-        # requires one; the implicit thread `_thread_for` opens when a room
-        # starts talking has `topic=""`. So "somebody deliberately called
-        # this and put you on it" is recorded in the data already, and a
-        # convened table is a stronger claim on your next remark than the
-        # conversation the room happened to be carrying when you walked in.
-        #
-        # An earlier draft ranked on `opened_tick` alone. Both
-        # conversations in the reproduction opened on tick 0 - convening
-        # and speaking inside one tick is ordinary - so the tie fell back
-        # to `open_conversations_at`'s last-spoken order and picked the
-        # implicit thread, which is the final4 defect exactly.
         def claim(record: dict[str, Any]) -> tuple[int, int]:
             return (1 if (record.get("topic") or "").strip() else 0, record["opened_tick"])
 
@@ -1194,7 +681,6 @@ class WorldState:
             "opened_tick": record["opened_tick"],
         }
 
-    # ── who holds an invented tool (tool spec C1) ─────────────────────
 
     def tool_owner(self, tool_name: str) -> str:
         """Whoever holds it now: the creator until somebody sells it."""
@@ -1234,7 +720,7 @@ class WorldState:
         count.
         """
         if tool_name not in self.custom_tools:
-            return True  # not an invented tool; this rule is not about it
+            return True
         if agent_id == self.tool_owner(tool_name):
             return True
         if agent_id in (self.tool_copies.get(tool_name) or set()):
@@ -1265,7 +751,6 @@ class WorldState:
                 moved.append(tool_name)
         return moved
 
-    # ── intentions (tool spec B2) ─────────────────────────────────────
 
     def game_clock_label(self) -> str:
         """"08:30", for the intention line. The clock a resident reads."""
@@ -1308,7 +793,6 @@ class WorldState:
             self.drop_intention(agent_id, reason)
         return lapsed
 
-    # ── wages and debts (tool spec A5, C2) ────────────────────────────
 
     def wage_promises_for(self, agent_id: str) -> "list[WagePromise]":
         """Every promise this resident is on either side of."""
@@ -1410,8 +894,6 @@ class WorldState:
                     "sim": loan.outstanding_sim, "since_tick": loan.since_tick,
                 })
 
-        # Head tax and upkeep arrears live in the ledger's own tax store,
-        # which this object holds a reference to rather than owning.
         for row in self.tax_arrears_for(agent_id):
             owed_by_you.append(row)
 
@@ -1438,7 +920,6 @@ class WorldState:
                 })
         return rows
 
-    # ── the price board (tool spec A3) ────────────────────────────────
 
     def posted(self, holder_id: str, item: str) -> "PricePost | None":
         return (self.price_board.get(holder_id) or {}).get(item)
@@ -1503,7 +984,6 @@ class WorldState:
         ]
         return min(ticks) if ticks else None
 
-    # ── continuing actions (tool spec B1) ─────────────────────────────
 
     def is_working(self, agent_id: str) -> bool:
         """Is this resident under a continuing action right now?
@@ -1566,15 +1046,11 @@ class WorldState:
         if action is None:
             return None
 
-        # Rule 1, before working: a condition already met must not buy one
-        # more repetition the resident did not ask for.
         done = action.satisfied(self)
         if done:
             self.stop_continuing(agent_id, f"You stopped {action.tool}: {done}.")
             return done
 
-        # B1's location row: the gate is checked again at each repetition,
-        # and being moved ends the action.
         if self.location_of(agent_id) != action.location_id:
             self.stop_continuing(
                 agent_id,
@@ -1585,9 +1061,6 @@ class WorldState:
         try:
             await registry.execute(self, agent_id, action.tool, dict(action.params))
         except Exception as exc:  # noqa: BLE001
-            # Rule 2. A refusal is the world saying the plan no longer
-            # works; retrying it until dusk would burn the resident's sim
-            # on the same mistake many times over.
             self.stop_continuing(
                 agent_id,
                 f"You stopped {action.tool} after {action.repetitions}: {exc}",
@@ -1612,11 +1085,6 @@ class WorldState:
     def location_of(self, agent_id: str) -> str | None:
         return self.locations.location_of(agent_id)
 
-    # `inventory` is a dataclass containing a single dict (`balances`), so
-    # it is included in the deep-copied snapshot by value like every other
-    # owned field below; it does not need its own entry in
-    # OWNED_STATE_FIELDS. Left out of that tuple deliberately: see
-    # snapshot()'s explicit handling of it.
 
     @property
     def skill_tools(self) -> dict[str, list[str]]:
@@ -1633,14 +1101,6 @@ class WorldState:
             name: d for name, d in self.skill_definitions.items() if self.is_followable(d)
         }
 
-        # A `skill` step contributes the tools the skill it names performs.
-        # Run 29: Silas Vance's `saw_through_timber_stack` ran
-        # `saw_planks_from_timber` and discounted nothing, so a resident
-        # taught the composite paid full price for every plank it cut by
-        # walking it. Only FOLLOWABLE sub-skills count - a standing order
-        # the council has not enacted discounts nothing on its own, and must
-        # not start to by being named inside an ordinary skill - and a
-        # skill already on the path is not re-entered, so no loop can form.
         def leaves(definition: SkillDefinition, path: frozenset[str]) -> list[str]:
             out: list[str] = []
             for step in definition.steps:
@@ -1670,7 +1130,6 @@ class WorldState:
         try:
             charter = self.charter.store.current_charter()
         except (AttributeError, IndexError):
-            # A world built without genesis (unit tests): no book, no orders.
             return False
         return definition.name in tuple(charter.standing_orders)
 
@@ -1699,9 +1158,6 @@ class WorldState:
         completed: list[str] = []
         for key, progress in list(self.skill_progress.items()):
             if progress.agent_id == agent_id and tick - progress.last_advance_tick > SKILL_ABANDONED_AFTER_TICKS:
-                # Abandoned. Deleted rather than marked, because the fact worth
-                # keeping - which skills get dropped, and at which step - is
-                # recorded in the trace, not carried in live state.
                 del self.skill_progress[key]
 
         for name in list(self.skills.get(agent_id, {})):
@@ -1719,10 +1175,6 @@ class WorldState:
 
             following = self._next_actionable(definition, index + 1)
             if following >= len(definition.steps):
-                # Walked end to end. THIS is what earns an authored skill its
-                # repetition - not the individual tool calls along the way, so
-                # a skill nobody actually follows is worth nothing no matter
-                # how many tools it names.
                 self.skill_progress.pop(key, None)
                 self.bump_skill_repetition(agent_id, name)
                 completed.append(name)
@@ -1756,8 +1208,6 @@ class WorldState:
         for name, proficiency in self.skills.get(agent_id, {}).items():
             definition = self.skill_definitions.get(name)
             if definition is None or not self.is_followable(definition):
-                # A built-in trade (farming, masonry) has a level but no
-                # written procedure - there is nothing to show as steps.
                 continue
             progress = self.skill_progress.get(f"{agent_id}::{name}")
             rows.append(
@@ -1797,7 +1247,6 @@ class WorldState:
         bookkeeping failure inside an error path would replace a useful
         message with a stack trace.
         """
-        # Imported here: the registry imports this module.
         from world.tools.registry import location_label
 
         from world.ledger.action_costs import DEFAULT_SCHEDULE, ActionActor, proficiency_for
@@ -1805,12 +1254,6 @@ class WorldState:
         vocabulary: list[dict[str, Any]] = []
         registry = getattr(self, "tool_registry", None)
         for name, spec in sorted(getattr(registry, "tools", {}).items()):
-            # DESIGN.md section 2: "Non-members cannot see a confidential
-            # tool exists." A helpful listing attached to a REFUSAL would
-            # be a worse leak than the one the visibility rule prevents,
-            # because it arrives unasked and nobody had to probe for it.
-            # This is why the whole method is async: the government and
-            # organization checks read the charter store.
             if not await registry.is_visible(spec, self, agent_id):
                 continue
             proficiency = proficiency_for(self, agent_id, name)
@@ -1819,21 +1262,11 @@ class WorldState:
                     "name": name,
                     "description": spec.description,
                     "params": sorted(spec.params_model.model_fields.keys()),
-                    # Priced for THIS resident, discount included. An author
-                    # choosing between two ways to do one job has to see
-                    # which is cheaper for it, not a list price it then has
-                    # to adjust in its head. The minimum, because a tool
-                    # that charges per unit costs more for a bigger job -
-                    # `quote_action_cost` prices one exact call.
                     "sim_cost_minimum": DEFAULT_SCHEDULE.cost_for(
                         name, {}, ActionActor(agent_id, skill_proficiency=proficiency)
                     ),
                     "your_proficiency": proficiency,
                     "requires_seat": spec.actor_requirements.require_government_seat,
-                    # Plain data. This list rides on every refusal from
-                    # do_in_order, skillify and toolify, and a raw gate
-                    # FUNCTION in it turned each of those refusals into
-                    # "Internal Server Error" (50-resident run).
                     "at_location": location_label(spec.location_gate),
                 }
             )
@@ -1849,13 +1282,6 @@ class WorldState:
                 "sim": self.ledger.sim_balance(agent_id) if agent_id in self.agents else 0,
                 "usd_cents": self.ledger.usd_balance(agent_id) if agent_id in self.agents else 0,
                 "skills": dict(self.skills.get(agent_id, {})),
-                # The counts the proficiency was derived from, and the same
-                # evidence `authoring_hint` speaks from. The hint says "you
-                # keep doing this"; without these the author cannot see how
-                # many times, for what else, or how close anything is - so
-                # the invitation and the evidence for it arrived in one
-                # payload with only the invitation legible. Absent rather
-                # than zero-filled: fifty-five zeroes is noise to read past.
                 "repetitions": {
                     tool: count
                     for tool, count in sorted(self.skill_reps.get(agent_id, {}).items())
@@ -1864,8 +1290,6 @@ class WorldState:
                 "holding": holding,
             },
             "already_written": {
-                # So an author does not file a second copy of something it
-                # already has, and can see what it would be revising.
                 "skills": sorted(
                     name
                     for name, definition in self.skill_definitions.items()
@@ -1877,18 +1301,7 @@ class WorldState:
                     for name, definition in self.custom_tools.items()
                     if getattr(definition, "creator_agent_id", None) == agent_id
                 ),
-                # What those procedures actually SAY. A name is enough to
-                # avoid filing a duplicate and not enough to improve one,
-                # and improving is the point of writing it down: a skill
-                # that can only be revised blind is a snapshot of the first
-                # time an agent got something to work.
                 "skill_steps": {
-                    # Direct attribute access, not getattr-with-a-default:
-                    # SkillStep is a typed model whose fields are known, and
-                    # a three-argument getattr here would quietly answer
-                    # None if one were ever renamed - which is the exact
-                    # failure test_no_silent_defaults exists to prevent, and
-                    # which it caught in this very block.
                     name: [
                         {
                             "order": step.order,
@@ -1941,40 +1354,18 @@ class WorldState:
             for name in held
             for tool in self.skill_tools.get(name, [])
         }
-        # Only the tail: this runs per agent per tick, and what matters is what
-        # the agent has been doing lately, not what it did on day one.
         counts: dict[str, int] = {}
         for record in self.tool_invocations[-AUTHORING_HINT_SCAN:]:
             if record.actor_id != agent_id or record.tool_name in covered:
                 continue
             rule = SCHEDULE_TABLE.get(record.tool_name)
             if rule is None or rule.category not in AUTHORING_HINT_CATEGORIES:
-                # Walking and looking are not a procedure. See
-                # AUTHORING_HINT_CATEGORIES: every pair that crossed the old
-                # threshold in two consecutive runs was `move` or
-                # `look_around`.
                 continue
             counts[record.tool_name] = counts.get(record.tool_name, 0) + 1
         if not counts:
             return None
         tool, repeats = max(counts.items(), key=lambda kv: kv[1])
         if repeats < AUTHORING_HINT_REPEATS:
-            # Nothing done three times. But a procedure is a SEQUENCE, and
-            # this rule only ever looked for one tool used again and again.
-            #
-            # Run 19: the town's highest repetition count for any single
-            # tool was two, so the hint could not fire at all in a 59-tick
-            # run, and "nothing was authored" described the length of the
-            # run rather than the residents. Corwin Thorne walked to the
-            # forest, felled timber and walked back, twice over - a job
-            # done end to end and repeated, which is precisely what
-            # `skillify` exists to write down, and invisible to a counter
-            # that only knew how to count one name at a time.
-            #
-            # A PAIR of consecutive work actions, done twice. Two rather
-            # than three because a pair is already two actions' worth of
-            # evidence, and the same exclusions apply - a pair of `move`
-            # and `look_around` is still walking about, not a trade.
             pair = self._repeated_work_pair(agent_id, covered)
             if pair is None:
                 return None
@@ -2043,7 +1434,7 @@ class WorldState:
             if not tools.issubset(set(self.skill_tools.get(name, []))):
                 continue
             if self.skills.get(agent_id, {}).get(name, 0) > 0:
-                continue  # already yours; there is nothing to be taught
+                continue
             if definition.namespace == "business":
                 business = self.businesses.get(definition.owner_id or "")
                 staff = (
@@ -2078,7 +1469,7 @@ class WorldState:
         """
         ticks = self.turn_ticks.setdefault(agent_id, [])
         if ticks and ticks[-1] == tick:
-            return  # the same turn, seen twice
+            return
         ticks.append(tick)
         if len(ticks) > MAX_TURN_TICKS_KEPT:
             del ticks[: len(ticks) - MAX_TURN_TICKS_KEPT]
@@ -2098,7 +1489,7 @@ class WorldState:
         """
         ticks = self.turn_ticks.get(agent_id) or []
         if len(ticks) < 2:
-            return None  # no previous turn to have been silent
+            return None
 
         silent = 0
         for start, end in zip(reversed(ticks[:-1]), reversed(ticks[1:])):
@@ -2155,8 +1546,6 @@ class WorldState:
         if len(present) + 1 < CONVENE_HINT_MIN_PRESENT:
             return None
         if self.open_conversations_at(here, self.current_tick):
-            # A conversation is already framed here. Nagging somebody to
-            # open one is how a hint stops being information.
             return None
 
         recent_speakers = {
@@ -2168,8 +1557,6 @@ class WorldState:
             and row.get("location_id") == here
         }
         if not recent_speakers - {agent_id, None}:
-            # People standing together in silence are not a discussion
-            # waiting to happen.
             return None
 
         return (
@@ -2209,19 +1596,12 @@ class WorldState:
                 continue
             speaker = row.get("speaker_agent_id")
             listener = row.get("listener_agent_id")
-            # Everyone this remark spoke to, not only the id in the
-            # parameter. Ezra Okonjo answered Father Anselm and Tova
-            # Okonjo in one utterance addressed to Anselm; before
-            # addressed_agent_ids existed, Tova stayed on the books as
-            # unanswered and asked again three ticks later.
             spoke_to = [
                 other
                 for other in [listener, *(row.get("addressed_agent_ids") or [])]
                 if isinstance(other, str)
             ]
             if speaker == agent_id and spoke_to:
-                # This agent answering somebody closes anything that
-                # person had asked before now.
                 answered_speakers.update(spoke_to)
                 continue
             if agent_id not in spoke_to or not isinstance(speaker, str):
@@ -2238,7 +1618,6 @@ class WorldState:
             row
             for speaker, row in asked.items()
             if speaker not in answered_speakers
-            # An answer only counts if it came AFTER the question.
             or not any(
                 isinstance(r, dict)
                 and r.get("speaker_agent_id") == agent_id
@@ -2256,22 +1635,6 @@ class WorldState:
                 for r in rows
             )
         ]
-        # TOOL-17. A question whose asker has walked away stops being a
-        # question you can answer.
-        #
-        # `say` reaches only somebody in the same place - the perception
-        # says so in as many words - so once the asker has left, the
-        # prompt was carrying an obligation the resident had no way to
-        # discharge, for the full 36-tick TTL. The reports call this
-        # "unanswered questions persist 30+ ticks after the asker left".
-        # Worse than clutter: it is the one line in the prompt that
-        # another resident is supposedly waiting on, and it outranks the
-        # town roster - so a stale one displaces a live one.
-        #
-        # Dropped from the PROMPT only. The utterance stays in
-        # `self.utterances` and in the trace, so "asked and never
-        # answered" remains countable; what changes is that a resident
-        # is not asked to answer into an empty room.
         here = self._where_or_none(agent_id)
         if here is not None:
             still_open = [
@@ -2293,10 +1656,6 @@ class WorldState:
         """
         if not isinstance(speaker_id, str):
             return True
-        # No `speaker_id in self.agents` check: `_where_or_none` already
-        # answers None for anybody this world cannot place, and reading
-        # `self.agents` would raise on the partially-built WorldState
-        # several tests construct to exercise this bookkeeping alone.
         there = self._where_or_none(speaker_id)
         if there is None:
             return True
@@ -2355,8 +1714,6 @@ class WorldState:
                     return True
             return False
 
-        # Most recent question per person asked: five copies of one want is
-        # not five wants, the same reasoning as open_questions.
         asked: dict[str, dict[str, Any]] = {}
         for row in rows:
             if not isinstance(row, dict) or row.get("speaker_agent_id") != agent_id:
@@ -2414,7 +1771,6 @@ class WorldState:
         pairs: dict[tuple[str, str], int] = {}
         for first, second in zip(mine, mine[1:]):
             if first == second:
-                # Already the single-tool rule's business.
                 continue
             pairs[(first, second)] = pairs.get((first, second), 0) + 1
         if not pairs:

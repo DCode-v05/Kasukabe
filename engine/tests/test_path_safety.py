@@ -12,11 +12,6 @@ from src.sandbox.path_safety import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Guardrails
-# ---------------------------------------------------------------------------
-
-
 class TestCheckPathSafetyGuardrails:
     def test_empty_returns_none(self):
         assert check_path_safety("") is None
@@ -38,11 +33,6 @@ class TestCheckPathSafetyGuardrails:
         assert "null byte" in result.reason
 
 
-# ---------------------------------------------------------------------------
-# Windows evasion patterns — always classifier_approvable=False
-# ---------------------------------------------------------------------------
-
-
 class TestWindowsEvasion:
     def test_ntfs_ads_dollar_data(self):
         result = check_path_safety("C:\\Users\\me\\notes.txt:$DATA")
@@ -57,7 +47,6 @@ class TestWindowsEvasion:
         assert result.classifier_approvable is False
 
     def test_ntfs_ads_drive_letter_not_flagged_alone(self):
-        # "C:" alone is a drive, not an ADS — must not false-positive
         result = check_path_safety("C:\\Users\\me\\safe.txt")
         assert result is None
 
@@ -104,17 +93,13 @@ class TestWindowsEvasion:
         result = check_path_safety("/home/user/.bashrc ")
         assert result is not None
         assert result.classifier_approvable is False
-        assert "trailing dot" in result.reason  # same check name
+        assert "trailing dot" in result.reason
 
     def test_dot_and_dotdot_components_not_flagged(self):
-        # `.` and `..` are legitimate POSIX directory markers — must NOT
-        # trip the trailing-dot evasion rule.
         assert check_path_safety("/tmp/./safe.txt") is None
         assert check_path_safety("/tmp/sub/../safe.txt") is None
 
     def test_three_or_more_dot_component_flagged(self):
-        # `...` is not a POSIX marker — anything beyond `.`/`..` falls through
-        # to the trailing-dot rule and is treated as evasion.
         result = check_path_safety("/tmp/.../safe.txt")
         assert result is not None
         assert result.classifier_approvable is False
@@ -124,11 +109,6 @@ class TestWindowsEvasion:
         result = check_path_safety("\\\\?\\C:\\safe.txt")
         assert result is not None
         assert result.reason.startswith("path-evasion: ")
-
-
-# ---------------------------------------------------------------------------
-# Dangerous files — classifier_approvable=True
-# ---------------------------------------------------------------------------
 
 
 class TestDangerousFiles:
@@ -157,7 +137,6 @@ class TestDangerousFiles:
         assert check_path_safety("/tmp/safe.txt") is None
 
     def test_similar_but_safe_name(self):
-        # ".bashrc2" is not the same as ".bashrc" — must not false-positive
         assert check_path_safety("/tmp/.bashrc2") is None
 
     def test_mcp_json_blocked_everywhere(self):
@@ -169,11 +148,6 @@ class TestDangerousFiles:
         result = check_path_safety("/home/test/.bashrc")
         assert result is not None
         assert result.reason.startswith("dangerous-target: ")
-
-
-# ---------------------------------------------------------------------------
-# Dangerous directories — classifier_approvable=True
-# ---------------------------------------------------------------------------
 
 
 class TestDangerousDirs:
@@ -206,15 +180,7 @@ class TestDangerousDirs:
         assert check_path_safety("/tmp/project/src/main.py") is None
 
     def test_similar_dir_not_flagged(self):
-        # ".github" contains ".git" as prefix but is a different directory.
-        # Case-insensitive whole-component match requires exact ".git", not
-        # ".github" — this must not false-positive.
         assert check_path_safety("/project/.github/workflows/ci.yml") is None
-
-
-# ---------------------------------------------------------------------------
-# Dual-path (symlink) validation
-# ---------------------------------------------------------------------------
 
 
 class TestDualPathValidation:
@@ -250,17 +216,11 @@ class TestDualPathValidation:
         target.write_text("# dangerous real file")
         link = tmp_path / "innocent.txt"
         os.symlink(str(target), str(link))
-        # Original is safe-looking, but the resolved path ends in .bashrc.
         result = check_path_safety(str(link))
         assert result is not None
         assert result.is_dangerous is True
         assert result.classifier_approvable is True
         assert ".bashrc" in result.reason
-
-
-# ---------------------------------------------------------------------------
-# classifier_approvable contract
-# ---------------------------------------------------------------------------
 
 
 class TestClassifierApprovableContract:
@@ -285,11 +245,6 @@ class TestClassifierApprovableContract:
         assert result.classifier_approvable is False
 
 
-# ---------------------------------------------------------------------------
-# Safe-path regression sanity
-# ---------------------------------------------------------------------------
-
-
 class TestSafePaths:
     @pytest.mark.parametrize(
         "path",
@@ -304,11 +259,6 @@ class TestSafePaths:
     )
     def test_safe_paths_return_none(self, path):
         assert check_path_safety(path) is None
-
-
-# ---------------------------------------------------------------------------
-# DOS reserved device names — classifier_approvable=False
-# ---------------------------------------------------------------------------
 
 
 class TestDOSDeviceNames:
@@ -369,26 +319,21 @@ class TestDOSDeviceNames:
         assert result.classifier_approvable is False
 
     def test_safe_prefix_not_flagged(self):
-        # "CONSOLE" starts with "CON" but the stem is "CONSOLE", not "CON"
         assert check_path_safety("/tmp/CONSOLE.txt") is None
 
     def test_safe_contains_not_flagged(self):
-        # "icon.png" — stem is "icon" not a reserved name
         assert check_path_safety("/tmp/icon.png") is None
 
     def test_com_without_digit_not_flagged(self):
-        # "COM" alone without digit is not reserved
         assert check_path_safety("/tmp/COM.txt") is None
 
     def test_lpt_without_digit_not_flagged(self):
         assert check_path_safety("/tmp/LPT.txt") is None
 
     def test_com0_not_flagged(self):
-        # COM0 is not a valid DOS device (only 1-9)
         assert check_path_safety("/tmp/COM0.txt") is None
 
     def test_dotfile_prefixed_con_blocked(self):
-        # Windows ignores leading dots for device name resolution
         result = check_path_safety("/tmp/.CON")
         assert result is not None
         assert result.classifier_approvable is False
@@ -403,11 +348,6 @@ class TestDOSDeviceNames:
         result = check_path_safety("C:\\Users\\.COM1")
         assert result is not None
         assert result.classifier_approvable is False
-
-
-# ---------------------------------------------------------------------------
-# Drive-relative paths — classifier_approvable=False
-# ---------------------------------------------------------------------------
 
 
 class TestDriveRelativePaths:
@@ -429,21 +369,13 @@ class TestDriveRelativePaths:
         assert result.classifier_approvable is False
 
     def test_absolute_windows_not_flagged(self):
-        # "C:\file.txt" has a separator after colon — this is normal
         assert check_path_safety("C:\\file.txt") is None
 
     def test_absolute_windows_forward_slash_not_flagged(self):
         assert check_path_safety("C:/file.txt") is None
 
     def test_drive_letter_alone_not_flagged(self):
-        # "C:" alone is a drive component, not drive-relative
-        # It passes through the component loop where WIN_DRIVE_RE skips it
         assert check_path_safety("C:\\Users\\me\\safe.txt") is None
-
-
-# ---------------------------------------------------------------------------
-# Enhanced UNC detection — mixed separators and WebDAV
-# ---------------------------------------------------------------------------
 
 
 class TestEnhancedUNC:
@@ -464,7 +396,6 @@ class TestEnhancedUNC:
         assert result.classifier_approvable is False
 
     def test_webdav_ssl_port(self):
-        # Starts with \\ so basic UNC check fires first — still blocked
         result = check_path_safety("\\\\server@SSL@8443\\path\\file")
         assert result is not None
         assert result.classifier_approvable is False
@@ -482,7 +413,6 @@ class TestEnhancedUNC:
         assert result.classifier_approvable is False
 
     def test_webdav_ssl_without_unc_prefix(self):
-        # WebDAV pattern embedded in a non-UNC path — still caught
         result = check_path_safety("C:\\server@SSL@8443\\path")
         assert result is not None
         assert result.classifier_approvable is False
@@ -495,7 +425,6 @@ class TestEnhancedUNC:
         assert "WebDAV" in result.reason
 
     def test_webdav_mixed_case_ssl(self):
-        # Mixed-case @Ssl must be caught (case-insensitive)
         result = check_path_safety("C:\\server@Ssl@8443\\path")
         assert result is not None
         assert result.classifier_approvable is False
@@ -507,14 +436,12 @@ class TestEnhancedUNC:
         assert result.classifier_approvable is False
 
     def test_davwwwroot_unc(self):
-        # Starts with \\ so basic UNC check fires first — still blocked
         result = check_path_safety("\\\\server\\DavWWWRoot\\path\\file")
         assert result is not None
         assert result.classifier_approvable is False
         assert "UNC" in result.reason
 
     def test_davwwwroot_case_insensitive(self):
-        # Also starts with \\ — basic UNC fires first
         result = check_path_safety("\\\\server\\davwwwroot\\path")
         assert result is not None
         assert result.classifier_approvable is False
@@ -525,16 +452,10 @@ class TestEnhancedUNC:
         assert result.classifier_approvable is False
 
     def test_single_slash_not_flagged(self):
-        # Single leading slash is normal POSIX absolute path
         assert check_path_safety("/tmp/file.txt") is None
 
     def test_single_backslash_not_flagged(self):
         assert check_path_safety("\\tmp\\file.txt") is None
-
-
-# ---------------------------------------------------------------------------
-# POSIX device file blocking
-# ---------------------------------------------------------------------------
 
 
 class TestDeviceFileBlocking:
@@ -579,11 +500,9 @@ class TestDeviceFileBlocking:
         assert result.classifier_approvable is False
 
     def test_proc_fd_3_not_blocked(self):
-        # fd/3 and above are not stdio — not blocked
         assert check_path_safety("/proc/1/fd/3") is None
 
     def test_dev_null_not_blocked(self):
-        # /dev/null is safe and commonly used — must not be blocked
         assert check_path_safety("/dev/null") is None
 
     def test_dev_sda_not_blocked(self):
@@ -593,7 +512,6 @@ class TestDeviceFileBlocking:
         assert check_path_safety("/dev/pts/0") is None
 
     def test_normalized_path_still_caught(self):
-        # Paths with redundant components should still match after normpath
         result = check_path_safety("/dev/./zero")
         assert result is not None
         assert result.classifier_approvable is False
@@ -604,7 +522,6 @@ class TestDeviceFileBlocking:
         assert result.classifier_approvable is False
 
     def test_double_slash_prefix_caught(self):
-        # POSIX normpath preserves // at start — our code must collapse it
         result = check_path_safety("//dev/zero")
         assert result is not None
         assert result.classifier_approvable is False
@@ -615,15 +532,8 @@ class TestDeviceFileBlocking:
         assert result.classifier_approvable is False
 
 
-# ---------------------------------------------------------------------------
-# Unicode normalization (NFKC)
-# ---------------------------------------------------------------------------
-
-
 class TestUnicodeNormalization:
     def test_fullwidth_bashrc(self):
-        # Fullwidth period + lowercase letters: ．ｂａｓｈｒｃ
-        # NFKC normalizes fullwidth chars to ASCII equivalents
         fullwidth = "\uff0e\uff42\uff41\uff53\uff48\uff52\uff43"
         result = check_path_safety(f"/home/user/{fullwidth}")
         assert result is not None
@@ -631,33 +541,22 @@ class TestUnicodeNormalization:
         assert ".bashrc" in result.reason
 
     def test_fullwidth_git_dir(self):
-        # Fullwidth ．ｇｉｔ
         fullwidth_git = "\uff0e\uff47\uff49\uff54"
         result = check_path_safety(f"/project/{fullwidth_git}/config")
         assert result is not None
         assert result.is_dangerous is True
 
     def test_normal_ascii_unaffected(self):
-        # Plain ASCII should still work identically
         assert check_path_safety("/tmp/safe.txt") is None
 
     def test_legitimate_unicode_path_unaffected(self):
-        # Unicode filenames that don't normalize to dangerous names should pass
         assert check_path_safety("/tmp/données.txt") is None
         assert check_path_safety("/tmp/日本語.txt") is None
 
     def test_fullwidth_colon_no_false_positive_ads(self):
-        # Fullwidth colon U+FF1A normalizes to ASCII ":" under NFKC.
-        # Evasion checks (ADS) must run on raw components, not NFKC-normalized,
-        # so a legitimate POSIX filename with fullwidth colon is NOT flagged.
         fullwidth_colon = "\uff1a"
         result = check_path_safety(f"/tmp/foo{fullwidth_colon}bar.txt")
         assert result is None
-
-
-# ---------------------------------------------------------------------------
-# Feature flag: FEATURE_WINDOWS_PATH_EVASION
-# ---------------------------------------------------------------------------
 
 
 class TestFeatureFlag:
@@ -688,17 +587,12 @@ class TestFeatureFlag:
             assert result is not None
 
     def test_drive_relative_not_blocked_when_disabled(self):
-        # When flag is off, drive-relative check is skipped, but "C:file.txt"
-        # is a single component with ":" so the existing ADS check still fires.
-        # This is defense-in-depth — the path is blocked by a different check.
         with patch.dict(os.environ, {"FEATURE_WINDOWS_PATH_EVASION": "false"}):
             result = check_path_safety("C:file.txt")
             assert result is not None
             assert "NTFS alternate data stream" in result.reason
 
     def test_existing_checks_unaffected_when_disabled(self):
-        # Pre-existing checks (NTFS ADS, 8.3, long-path, UNC, trailing dots)
-        # must remain active even when the feature flag is off.
         with patch.dict(os.environ, {"FEATURE_WINDOWS_PATH_EVASION": "false"}):
             assert check_path_safety("\\\\?\\C:\\foo").is_dangerous is True
             assert check_path_safety("\\\\server\\share").is_dangerous is True
@@ -708,8 +602,6 @@ class TestFeatureFlag:
             assert check_path_safety("/tmp/x\x00.txt").is_dangerous is True
 
     def test_unicode_normalization_disabled_when_flag_off(self):
-        # Fullwidth .bashrc should NOT be caught when flag is off
-        # because NFKC normalization is gated on the flag
         fullwidth = "\uff0e\uff42\uff41\uff53\uff48\uff52\uff43"
         with patch.dict(os.environ, {"FEATURE_WINDOWS_PATH_EVASION": "false"}):
             result = check_path_safety(f"/home/user/{fullwidth}")
@@ -717,10 +609,6 @@ class TestFeatureFlag:
 
     def test_enhanced_unc_disabled_when_flag_off(self):
         with patch.dict(os.environ, {"FEATURE_WINDOWS_PATH_EVASION": "false"}):
-            # Mixed separator — not caught by existing checks
             result = check_path_safety("///server/share")
-            # Falls through to existing // check which IS always on
-            # Let's test a case that only the enhanced check catches
             result = check_path_safety("\\\\server@SSL\\share")
-            # This starts with \\ so existing check catches it
-            assert result is not None  # existing UNC check fires
+            assert result is not None

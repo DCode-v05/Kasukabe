@@ -90,8 +90,6 @@ def test_the_handlers_that_still_emit_have_no_engine_behind_them() -> None:
         assert event_type not in _charter_event_types()
 
 
-# ── the fields that would have been lost ────────────────────────────────
-
 def test_a_charter_event_names_the_agent_generically() -> None:
     """Readers scope on `agent_id`; the charter payloads name the role."""
     row = build_event(

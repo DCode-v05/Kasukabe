@@ -1,11 +1,3 @@
-// Small, dependency-free rendering helpers shared by every tab module in
-// js/views/. No framework, no template engine (DESIGN.md section 8's
-// viewers are "vanilla JS, dark theme, no build system") - just tagged
-// string building with consistent HTML-escaping so every render function
-// that interpolates a name, a headline, or free-text content (an
-// utterance, a rationale, a description) is safe against an agent-chosen
-// string that happens to contain "<" or "&".
-
 export function escapeHtml(value) {
   if (value === null || value === undefined) return "";
   return String(value)
@@ -32,8 +24,6 @@ export function setEmpty(container, message = "Nothing here yet.") {
   container.innerHTML = `<div class="list-empty">${escapeHtml(message)}</div>`;
 }
 
-/** agent_id + optional resolved name -> "Name (a0123)" / "a0123" if the
- * name never resolved (e.g. an agent born after genesis, or a bad id). */
 export function agentLabel(ref) {
   if (!ref) return "—";
   if (ref.name) return `${escapeHtml(ref.name)} <span class="card-meta mono">(${escapeHtml(ref.agent_id)})</span>`;
@@ -80,8 +70,6 @@ export function statusBadge(status) {
   return `<span class="badge ${cls}">${escapeHtml(status.replaceAll("_", " "))}</span>`;
 }
 
-/** Renders a unified diff's text with +/- lines colored, from
- * governance_api.py's CharterDiff.unified_text_diff. */
 export function renderDiffText(text) {
   if (!text) return "";
   return text
@@ -97,8 +85,6 @@ export function renderDiffText(text) {
     .join("");
 }
 
-/** Debounces a filter-input handler so a search box doesn't refetch on
- * every keystroke. */
 export function debounce(fn, waitMs) {
   let timer = null;
   return (...args) => {

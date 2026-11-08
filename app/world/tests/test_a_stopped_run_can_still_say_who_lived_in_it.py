@@ -32,9 +32,6 @@ APP = Path(__file__).resolve().parents[2]
 SCHEMA = APP / "supabase" / "sqlite_schema.sql"
 
 
-# ── the reading itself ────────────────────────────────────────────────
-
-
 @pytest_asyncio.fixture
 async def booted(tmp_path, monkeypatch):
     monkeypatch.setenv("TRACE_SQLITE_PATH", str(tmp_path / "trace.db"))
@@ -46,9 +43,6 @@ async def booted(tmp_path, monkeypatch):
     ))
     await runner.boot()
     await runner.attach_persistence()
-    # The very app a run serves, with this runner's callables bound into
-    # it - but no port. A fixture that bound one disturbed the timing of
-    # three unrelated tests elsewhere in the suite.
     runner.build_world_app()
     return runner, tmp_path
 
@@ -93,7 +87,7 @@ async def test_a_failed_reading_does_not_stop_the_shutdown(booted, monkeypatch) 
         raise RuntimeError("no")
 
     monkeypatch.setattr(rg, "capture_final_reading", boom)
-    await runner.shutdown()          # must not raise
+    await runner.shutdown()
 
 
 def test_the_manifest_says_where_the_run_put_its_files(tmp_path) -> None:
@@ -110,9 +104,6 @@ def test_the_manifest_says_where_the_run_put_its_files(tmp_path) -> None:
     assert manifest["checkpoint_dir"] == str(tmp_path / "cp")
 
 
-# ── what the report does with it ──────────────────────────────────────
-
-
 def _a_stopped_run(tmp_path, *, reading: dict | None) -> tuple[str, str]:
     """A trace from a finished run, and a checkpoint dir beside it."""
     db = tmp_path / "trace.db"
@@ -123,8 +114,6 @@ def _a_stopped_run(tmp_path, *, reading: dict | None) -> tuple[str, str]:
         conn.execute(
             "insert into agents (id, slug, display_name, sex, birth_tick, created_tick) "
             "values (?, ?, ?, ?, 0, 0)", (agent_id, slug, name, sex))
-    # One skill, written by n01 and taught to n02 - the 50-agent run's
-    # `Quick Harvest`, which its report called "held by 1".
     body = json.dumps({"name": "Quick Harvest", "steps": [{"kind": "tool", "ref": "harvest"}]})
     conn.execute(
         "insert into skills (agent_id, task_type, proficiency_level, repetitions_observed, "

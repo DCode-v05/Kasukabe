@@ -51,9 +51,6 @@ def asked_recorder():
     return ask, seen
 
 
-# --- bypass mode ------------------------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_bypass_mode_does_not_defeat_an_ask_rule():
     """The headline defect: the guardrail was inert in the mode headless runs use."""
@@ -97,9 +94,6 @@ async def test_bypass_still_auto_allows_when_no_ask_rule_matches():
         permission_mode=PermissionMode.BYPASS,
     )
     assert result.allowed is True
-
-
-# --- ALLOW vs ASK -----------------------------------------------------------
 
 
 @pytest.mark.asyncio
@@ -164,9 +158,6 @@ async def test_a_plain_allow_rule_still_allows_without_prompting():
     assert seen == []
 
 
-# --- DENY still outranks everything ----------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_deny_still_beats_ask_and_allow():
     """Reordering ASK above ALLOW must not disturb DENY's precedence."""
@@ -189,9 +180,6 @@ async def test_deny_still_beats_ask_and_allow():
     )
     assert result.allowed is False
     assert seen == [], "a denied call must never reach the approval channel"
-
-
-# --- sandbox safe-command allowlist ----------------------------------------
 
 
 @pytest.mark.asyncio
@@ -227,9 +215,6 @@ async def test_sandbox_auto_allow_still_works_without_an_ask_rule():
     )
     assert result.allowed is True
     assert seen == []
-
-
-# --- sed validator passthrough ---------------------------------------------
 
 
 @pytest.mark.asyncio

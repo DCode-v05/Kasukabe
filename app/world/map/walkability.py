@@ -11,12 +11,6 @@ from __future__ import annotations
 
 Point = tuple[int, int]
 
-# 4-connected only, by design. The Ville tileset's rooms are built from
-# orthogonal walls (see the collision-maze ASCII dump this module's tests
-# assert against); an 8-connected agent could path diagonally through a
-# wall corner where two walls meet at a point but no open diagonal gap
-# actually exists between them. allow_diagonal exists on pathfinding.find_path
-# for callers who accept that tradeoff, but it is off by default.
 FOUR_DIRECTIONS: tuple[Point, ...] = ((1, 0), (-1, 0), (0, 1), (0, -1))
 DIAGONAL_DIRECTIONS: tuple[Point, ...] = ((1, 1), (1, -1), (-1, 1), (-1, -1))
 

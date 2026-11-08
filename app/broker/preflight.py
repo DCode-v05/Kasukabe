@@ -71,8 +71,6 @@ def check_identity(region: str) -> tuple[bool, str]:
         ident = boto3.client("sts", region_name=region).get_caller_identity()
     except Exception as exc:  # noqa: BLE001 - every failure here is a report line
         return False, f"{type(exc).__name__}: {str(exc)[:160]}"
-    # The account number is not a secret (it is in every ARN below) but the
-    # full ARN can carry a user name, so only the account and the role tail.
     arn = str(ident.get("Arn", ""))
     return True, f"account {ident.get('Account')}  ({arn.rsplit('/', 1)[-1] or arn})"
 
@@ -90,13 +88,6 @@ def check_profiles(settings: BrokerSettings) -> list[tuple[str, bool, str]]:
     for lane in expected_lane_keys():
         arn = settings.bedrock_inference_profiles.get(lane)
         if not arn:
-            # NOT a failure in this tree. broker/lanes.py's build_lane_pool
-            # builds only the lanes that HAVE a profile and logs the rest,
-            # so a missing one costs capacity, not correctness - an account
-            # whose profiles live in one region runs two real lanes instead
-            # of six traps. The genuine error is a MODEL with no lane at
-            # all, which build_lane_pool raises on, and which the summary
-            # below reports.
             rows.append((lane, True,
                          "bare model id (no profile mapping configured)"
                          if not settings.bedrock_inference_profiles
@@ -161,8 +152,6 @@ def main(argv: list[str]) -> int:
     print(f"  lanes   : {len(MODEL_ALLOWLIST) * len(BEDROCK_LANE_REGIONS)}"
           f"  ({settings.rpm_per_lane} RPM each)")
 
-    # Real mode is what needs credentials. Saying so beats a confusing
-    # NoCredentialsError from a run that was never going to call Bedrock.
     if settings.mock_mode:
         print(f"\n{SKIP} MOCK_MODE=true - this broker will not call Bedrock at all.")
         print("         Nothing below is required for a mock run.")
@@ -201,10 +190,6 @@ def main(argv: list[str]) -> int:
         print(f"\n{SKIP} control profile configured; re-run with --invoke to call it")
 
     print("=" * 62)
-    # The invariant this tree actually enforces (broker/lanes.py): every
-    # model in MODEL_ALLOWLIST must have at least one lane with a profile.
-    # Missing SOME lanes is a supported deployment shape; a model with none
-    # is unservable and build_lane_pool refuses to boot on it.
     configured = settings.bedrock_inference_profiles
     servable = {
         model

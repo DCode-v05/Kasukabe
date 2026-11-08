@@ -40,8 +40,6 @@ def advance_age(
     if not crossed_into_adulthood:
         return updated, []
 
-    # Adults don't carry a minor's sponsor - the parent-debit mechanic
-    # (DESIGN.md section 4) is for minors only.
     updated = updated.model_copy(update={"sponsor_parent_id": None})
     event = LifeEvent(
         type="agent.aged_to_adult", agent_id=agent.agent_id, payload={"age_years": new_age}

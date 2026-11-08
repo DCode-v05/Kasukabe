@@ -67,7 +67,6 @@ async def test_policy_triggers_sweep_on_idle():
     policy.install()
 
     await emitter.emit(evt("active", "idle"))
-    # Policy fires trigger_sweep as fire-and-forget — give the loop a tick
     await asyncio.sleep(0.05)
 
     assert sched.sweep_calls == 1
@@ -108,7 +107,7 @@ async def test_policy_pauses_on_disconnected():
 async def test_policy_resumes_on_reconnect():
     emitter = EventEmitter()
     sched = FakeLCScheduler()
-    sched.paused = True  # simulate having been paused
+    sched.paused = True
     policy = ActivityPolicy(emitter, lc_scheduler=sched)
     policy.install()
 
@@ -126,7 +125,6 @@ async def test_policy_noop_for_active_to_active_spurious():
     policy = ActivityPolicy(emitter, lc_scheduler=sched)
     policy.install()
 
-    # active → active should never happen in practice, but must not crash
     await emitter.emit(evt("active", "active"))
     await asyncio.sleep(0.05)
 
@@ -164,7 +162,6 @@ async def test_policy_ignores_non_activity_events():
     policy = ActivityPolicy(emitter, lc_scheduler=sched, raven_track=raven.track)
     policy.install()
 
-    # fire an unrelated event
     await emitter.emit(TextDelta(thread_id="t", text="hi"))
     await asyncio.sleep(0.05)
 
@@ -184,7 +181,6 @@ async def test_install_is_idempotent():
 
     await emitter.emit(evt("active", "idle"))
     await asyncio.sleep(0.05)
-    # subscribe exactly once — sweep should fire once not thrice
     assert sched.sweep_calls == 1
 
 
@@ -215,10 +211,8 @@ async def test_policy_survives_subsystem_crash():
     policy = ActivityPolicy(emitter, lc_scheduler=sched)
     policy.install()
 
-    # Should not raise out of emit()
     await emitter.emit(evt("active", "idle"))
     await emitter.emit(evt("idle", "away"))
     await asyncio.sleep(0.05)
 
-    # Pause still ran on "away" even though sweep crashed
     assert sched.pause_calls == 1

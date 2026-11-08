@@ -41,9 +41,6 @@ async def register_org(world, registry, founder_id: str, org_id_out: dict):
     org_id_out["org_id"] = result.result["org_id"]
 
 
-# -- define_business_tool -----------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_define_business_tool_is_live_immediately_no_approval_step(world, registry) -> None:
     await register_business(world, registry, "owner")
@@ -62,9 +59,6 @@ async def test_define_business_tool_is_live_immediately_no_approval_step(world, 
     )
 
     assert result.result == {"tool_name": "secret_recipe"}
-    # No patent office, no PENDING state, no fee - DESIGN.md: "no patent
-    # office needed" - contrast define_tool's own test, which asserts the
-    # opposite (registry.get(name) is None until approve_patent runs).
     assert world.custom_tools["secret_recipe"].approved is True
     assert registry.get("secret_recipe") is not None
 
@@ -117,7 +111,6 @@ async def test_business_trade_secret_tool_existence_leak(world, registry) -> Non
     with pytest.raises(ToolNotFoundError):
         await registry.execute(world, "outsider", "secret_recipe3", {"dest": "park"})
 
-    # Owner can call it.
     result = await registry.execute(world, "owner", "secret_recipe3", {"dest": "cafe"})
     assert result.result["steps_executed"] == 1
 
@@ -164,9 +157,6 @@ async def test_business_trade_secret_tool_transfers_with_business_sale(world, re
     assert result.result["steps_executed"] == 1
 
 
-# -- define_organization_tool --------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_define_organization_tool_only_founder_can_call(world, registry) -> None:
     org_id_out: dict = {}
@@ -196,21 +186,16 @@ async def test_organization_tool_existence_leak_and_member_gating(world, registr
     await spawn_agent(world, "outsider", "park")
     await spawn_agent(world, "initiate", "park")
 
-    # Non-member: identical not-found error as an unknown tool name.
     with pytest.raises(ToolNotFoundError):
         await registry.execute(world, "outsider", "secret_rite", {"dest": "park"})
 
-    # Founder (already a member) can call it.
     result = await registry.execute(world, "founder", "secret_rite", {"dest": "cafe"})
     assert result.result["steps_executed"] == 1
 
-    # A new member gains access the instant they're added, live-checked -
-    # no re-registration or re-approval needed.
     await world.charter.organizations.add_member(org_id, "initiate", world.tick())
     result = await registry.execute(world, "initiate", "secret_rite", {"dest": "park"})
     assert result.result["steps_executed"] == 1
 
-    # Removed member loses access immediately.
     await world.charter.organizations.remove_member(org_id, "initiate", world.tick())
     with pytest.raises(ToolNotFoundError):
         await registry.execute(world, "initiate", "secret_rite", {"dest": "cafe"})

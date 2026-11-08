@@ -20,20 +20,10 @@ from pathlib import Path
 TICKS_PER_DAY = 144
 TICKS_PER_HOUR = TICKS_PER_DAY // 24
 
-#: Dollars per resident-day, measured on real runs rather than assumed:
-#: election8 $2.28, civic12 $2.49, election30 $1.72, trial-day2-20 $0.96.
-#: The default is deliberately near the TOP of that range - a plan that
-#: overshoots stops early at the cap, a plan that undershoots runs out of
-#: money before the vote, which is the expensive way to be wrong.
 DEFAULT_RATE_USD = 2.30
 
-#: Wall-clock minutes per tick, measured at 20 residents with six cameras.
-#: A tick waits for its slowest resident, so this barely moves with cast size.
 MINUTES_PER_TICK = 1.5
 
-#: Population -> cast file. Where a population has several, the one with the
-#: most complete high street wins: a town with a bakery AND a mill can run the
-#: wheat -> flour -> bread chain, and one without leaves flour piling up.
 CASTS: dict[int, str] = {
     3: "world/genesis_3.json",
     6: "world/genesis_6.json",
@@ -70,22 +60,9 @@ def plan(agents: int, budget: float, rate: float, start_day: int,
     affordable_days = budget / (residents * rate)
     ticks = int(affordable_days * TICKS_PER_DAY)
 
-    start = start_day * TICKS_PER_DAY + 36  # dawn, the hour a town wakes
+    start = start_day * TICKS_PER_DAY + 36
 
-    # An election needs candidacy + campaign + voting before it can be
-    # counted, and then some of the day left to see what the winners do.
-    # Windows are sized to fit what the budget bought rather than fixed, and
-    # never below an hour - a window shorter than that closes before a
-    # resident whose turn is elsewhere can act in it.
-    # CLAMPED at both ends, and each end is a different failure.
-    #
-    # Too short and the window closes before a resident whose turn fell
-    # elsewhere can act in it: a 6-tick candidacy window is an election most
-    # of the town never sees. Too long and the vote eats the whole run - on
-    # $80 the unclamped arithmetic produced 13-hour windows, so the town
-    # spent its entire life campaigning and the winners governed for nothing.
-    # A bigger budget should buy AFTERMATH, not a longer ballot.
-    usable = max(ticks - 12, 0)  # keep ~2 game-hours after the count
+    usable = max(ticks - 12, 0)
     window_h = min(4.0, max(1.5, (usable // 3) / TICKS_PER_HOUR))
     counted_at = start + int(window_h * TICKS_PER_HOUR) * 3 if election else start
 

@@ -12,8 +12,6 @@ from src.engine_core.schema import RequestOptions, LoopExitReason
 from src.herald.catalog import estimate_cost
 
 
-# estimate_cost resolves through the citadel-synced catalog (no static
-# seed); the shared conftest fixture stands in for a completed sync.
 @pytest.fixture(autouse=True)
 def catalog(synced_catalog):
     return synced_catalog
@@ -78,7 +76,7 @@ class TestBudgetDecisionLogic:
     def test_ok_at_99_percent(self):
         cost = estimate_cost("claude-sonnet-4-6", 100000, 50000)
         assert cost is not None
-        budget = cost * 1.01  # cost is ~99% of budget — still ok, not exceeded
+        budget = cost * 1.01
         assert self.check_budget(cost, budget) == "ok"
 
     def test_skip_when_cost_none(self):
@@ -118,8 +116,6 @@ class TestBudgetVisibility:
         assert "$3.77 remaining" in msg
 
     def test_visibility_skipped_on_turn_zero(self):
-        # Budget injection only happens when state.turns > 0
-        # (no cost data on the first turn)
         turns = 0
         max_budget = 5.0
         should_inject = max_budget > 0 and turns > 0
@@ -147,8 +143,6 @@ class TestCostEstimationForBudget:
         assert cached_cost < full_cost
 
     def test_all_synced_models_have_cost(self, monkeypatch):
-        # The catalog is citadel-synced (no static seed): install a canned
-        # overlay the way a sync would and assert every priced row estimates.
         from src.herald import catalog_sync
         from src.herald.catalog import ModelCost, ModelDef
 
@@ -171,5 +165,4 @@ class TestCostEstimationForBudget:
             cost = estimate_cost(model_id, 1000, 500)
             assert cost is not None, f"Model {model_id} returned None cost"
             assert cost > 0, f"Model {model_id} returned zero cost"
-        # Unknown id (or pre-sync empty catalog): estimate is None, never 0.
         assert estimate_cost("model-never-synced", 1000, 500) is None

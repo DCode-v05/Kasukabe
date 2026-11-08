@@ -79,9 +79,6 @@ async def test_they_are_billed_as_one_person_not_as_a_family(runner) -> None:
     charged = solo_before - runner.ledger.get_account(solo).sim_units
 
     assert charged > 0
-    # One person's upkeep, not several. The exact figure is upkeep.py's
-    # business; what this pins is the order of magnitude - a family-sized
-    # bill would be a multiple of it.
     from world.life.upkeep import UPKEEP_TOTAL_SIM_PER_DAY
 
     assert charged <= UPKEEP_TOTAL_SIM_PER_DAY * 2, (
@@ -102,8 +99,6 @@ async def test_households_are_still_billed_together(runner) -> None:
     assert households, "this genesis seeds no households"
 
     await runner.run_daily_upkeep(timestamp_for(144), runner.population_dials)
-    # Nothing to assert about balances here - the point is that the
-    # grouping still HAS households in it.
     import inspect
 
     source = inspect.getsource(runner.run_daily_upkeep)

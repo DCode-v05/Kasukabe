@@ -1,13 +1,4 @@
 <!doctype html>
-<!--
-  Kasukabe World View - DESIGN.md section 8's Viewers: governance, voting,
-  scenarios, conversations. Read-only window over the live world server
-  plus the SQLite trace store; nothing on this page can mutate the world
-  (mutation is the President/God console, a separate page - see
-  game/console/static/index.html). Framework-free: js/views/*.js as
-  native ES modules, no build step, matching game/static/index.html's own
-  approach (see that page's own comment for the same rationale).
--->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -43,7 +34,6 @@
     <button class="tab-btn" data-tab="conversations">💬 Conversations</button>
   </nav>
 
-  <!-- ================= GOVERNANCE TAB ================= -->
   <section class="tab-panel active" id="tab-governance">
     <div id="gov-summary" class="list-loading">Loading…</div>
 
@@ -72,7 +62,6 @@
     </article>
   </section>
 
-  <!-- ================= VOTING TAB ================= -->
   <section class="tab-panel" id="tab-voting">
     <article class="panel panel-wide">
       <h2>Elections</h2>
@@ -81,7 +70,6 @@
     </article>
   </section>
 
-  <!-- ================= SCENARIOS TAB ================= -->
   <section class="tab-panel" id="tab-scenarios">
     <article class="panel panel-wide">
       <h2>Scenario feed</h2>
@@ -96,7 +84,6 @@
     </article>
   </section>
 
-  <!-- ================= CONVERSATIONS TAB ================= -->
   <section class="tab-panel" id="tab-conversations">
     <article class="panel panel-wide">
       <h2>Conversations</h2>

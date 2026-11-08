@@ -44,7 +44,7 @@ class TextDelta:
 
     thread_id: str
     text: str
-    citations: tuple = ()  # {start,end,sources:[source-id]} spans; empty unless the citations gate is on
+    citations: tuple = ()
 
 
 @dataclass
@@ -74,7 +74,7 @@ class ThreadLifecycle:
     """Thread started, completed, or failed."""
 
     thread_id: str
-    status: str  # "started", "completed", "failed"
+    status: str
     model_id: str = ""
 
 
@@ -87,8 +87,8 @@ class ToolExecution:
 
     thread_id: str
     tool_name: str
-    source: str  # "platform", "skill", "asset", "engine"
-    phase: str  # "call" or "result"
+    source: str
+    phase: str
     params: dict = field(default_factory=dict)
     result: str = ""
     duration: int = 0
@@ -135,11 +135,11 @@ class CraftRequest:
     question: str
     gap_type: GapType | None = None
     asset_hint: str = ""
-    format: str = "confirm"  # "choice" | "multichoice" | "confirm"
-    options: list[dict] = field(default_factory=list)  # [{"label": str, "value": str}]
+    format: str = "confirm"
+    options: list[dict] = field(default_factory=list)
     suggested_rule: str = ""
     block_id: str = ""
-    wait: bool = True  # ask_user/permission halt the turn (awaiting); read by fan_block
+    wait: bool = True
 
     @property
     def is_permission(self) -> bool:
@@ -166,16 +166,13 @@ class CraftAuthored:
     thread_id: str
     block_id: str
     key: str
-    surface: str  # "inline" | "panel"
-    format: str  # "html" | "markdown" | "code" | "svg" | "mermaid" | "react"
+    surface: str
+    format: str
     wait: bool = False
     title: str = ""
-    language: str | None = None  # set only when format == "code"
+    language: str | None = None
     content: str = ""
     version: int = 1
-    # Live fields — present only for a live craft, authored in a <craft-data>
-    # JSON island and parsed out of the body. subscribe = ChannelSpecs the product
-    # polls; actions = named emits the component may fire + where each routes.
     subscribe: list[dict] = field(default_factory=list)
     actions: dict = field(default_factory=dict)
     final: bool = False
@@ -210,7 +207,7 @@ class SubAgentDone:
     cache_hit_rate: float = 0.0
     fork_label: str = ""
     exit_reason: str = (
-        "completed"  # completed | cancelled | budget_exhausted | turns_exhausted | error
+        "completed"
     )
 
 
@@ -233,9 +230,6 @@ class SubAgentForkMetrics:
     cache_creation_input_tokens: int
     cache_hit_rate: float
     cost_usd: float = 0.0
-    # Estimated dollars saved vs an uncached run, computed from
-    # cache_read_input_tokens × the model's input price. Best-effort: when the
-    # model is not in the herald catalog the field is left at 0.0.
     cost_saved_usd: float = 0.0
     chain_id: str = ""
     depth: int = 0
@@ -289,8 +283,6 @@ class SubAgentProgress:
     output_tokens: int
     cache_read_tokens: int
     cost_usd: float
-    # Ring of recent tool invocations — at most PROGRESS_RECENT_LIMIT entries,
-    # each formatted as "tool_name(input_preview)".
     recent_activities: list[str] = field(default_factory=list)
     chain_id: str = ""
     depth: int = 0
@@ -409,7 +401,7 @@ class AssetActionEvent:
     params_preview: str = ""
     result_preview: str = ""
     duration_ms: int = 0
-    status: str = ""  # "ok" | "error"
+    status: str = ""
 
 
 @dataclass
@@ -530,9 +522,6 @@ class VideoAuthored(MediaAuthored):
     """A model-authored video set - folds to a ``video`` block."""
 
 
-# Media kind -> its event class. One table for every emit path (thread and
-# sub-agent) so adding a kind is a single edit rather than a grep. The inverse
-# direction lives in blocks.FOLD.
 MEDIA_EVENTS: dict[str, type[MediaAuthored]] = {
     "image": ImageAuthored,
     "audio": AudioAuthored,
@@ -551,7 +540,7 @@ class StrugglingDetected:
 
     thread_id: str
     reason: str
-    action_taken: str  # "auto_plan" or "auto_replan"
+    action_taken: str
     turn_count: int
     consecutive_errors: int
     turns_without_text: int
@@ -618,7 +607,7 @@ class StopHookExecuted:
 
     thread_id: str
     turn_number: int
-    trigger: str  # "after_end_turn" | "after_tool_use"
+    trigger: str
     prevented: bool
     blocked: bool
     retry_active: bool
@@ -634,7 +623,7 @@ class CompactionEvent:
     messages_after: int
     tokens_before: int
     tokens_after: int
-    method: str  # "normal", "summary", "emergency", "overflow"
+    method: str
     chain_id: str = ""
     turn_id_before: str = ""
     turn_id_after: str = ""
@@ -671,7 +660,7 @@ class MicrocompactEvent:
     """
 
     thread_id: str
-    mode: str  # "time_based" or "forced"
+    mode: str
     gap_minutes: int
     gap_threshold_minutes: float
     tools_cleared: int
@@ -691,9 +680,9 @@ class CompactionPtlRetryEvent:
     """
 
     thread_id: str
-    attempt: int  # 1-indexed attempt number
+    attempt: int
     max_retries: int
-    trigger: str  # "pre_check" or "api_overflow"
+    trigger: str
     token_gap: int | None
     messages_before: int
     messages_after: int
@@ -708,7 +697,7 @@ class CompactionPtlFailedEvent:
     """
 
     thread_id: str
-    reason: str  # "retries_exhausted" | "no_droppable_rounds" | "context_exceeded"
+    reason: str
     attempts: int
     final_message_count: int
 
@@ -812,7 +801,7 @@ class ThreadCreated:
     """A new persistent thread was created."""
 
     thread_id: str
-    reason: str  # "first_message", "new_task", "router_decision"
+    reason: str
 
 
 @dataclass
@@ -909,7 +898,7 @@ class FileRestorationFailedEvent:
     """A file failed to restore after compaction."""
 
     path: str
-    reason: str  # "file_not_found", "permission_denied", "read_error"
+    reason: str
     thread_id: str = ""
 
 
@@ -928,7 +917,7 @@ class ActivityStateChanged:
     ``engine_active_seconds``  — seconds the engine was executing tools (sum of durations).
     """
 
-    old_state: str  # "active" | "idle" | "away" | "disconnected"
+    old_state: str
     new_state: str
     idle_seconds: float
     tool_calls: int = 0
@@ -947,7 +936,7 @@ class ReconnectSummaryEvent:
     a language model was available, a 1-3 sentence LLM-generated recap.
     """
 
-    previous_state: str  # "idle" | "away" | "disconnected"
+    previous_state: str
     idle_seconds: float
     tool_calls: int
     errors: int
@@ -1014,8 +1003,8 @@ class CompactionCircuitBreakerReset:
     """
 
     thread_id: str
-    transition: str  # "reset_success" | "reset_decay" | "reset_shrink" | "manual_reset"
-    consecutive_failures: int  # value *after* reset (usually 0)
+    transition: str
+    consecutive_failures: int
     reason: str = ""
 
 

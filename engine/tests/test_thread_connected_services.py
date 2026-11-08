@@ -82,7 +82,6 @@ async def test_active_connections_render_structured_block():
     assert "ad:gmail.list_messages" in text
     assert "ad:gmail.send_message" in text
     assert "ad:slack.post_message" in text
-    # Structured-only contract: no prose, no imperative LLM corrections.
     forbidden = [
         "do not tell",
         "authorization is required",

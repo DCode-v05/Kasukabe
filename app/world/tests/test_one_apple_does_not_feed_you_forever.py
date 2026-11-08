@@ -42,19 +42,14 @@ async def test_a_meal_on_monday_does_not_feed_you_on_tuesday(tmp_path) -> None:
     agent_id = next(iter(runner.world_state.agents))
     dials = PopulationDials()
 
-    # Make sure nobody can pay, so the ONLY thing that could mark this
-    # resident fed is the meal. A paid bill feeds you too, and would hide
-    # exactly the defect under test.
     for account in list(runner.world_state.agents):
         runner.ledger.get_account(account).sim_units = 0
 
-    # Monday: it eats.
     runner.fed_today.add(agent_id)
     await runner.run_daily_upkeep(timestamp_for(TICKS_PER_DAY), dials)
     after_monday = runner.hunger_by_agent.get(agent_id, HungerState())
     assert after_monday.days_since_meal == 0, "the Monday meal did not register"
 
-    # Tuesday: it eats nothing.
     await runner.run_daily_upkeep(timestamp_for(TICKS_PER_DAY * 2), dials)
     after_tuesday = runner.hunger_by_agent.get(agent_id, HungerState())
 

@@ -128,9 +128,6 @@ class FakeEngine:
         return f"reply to: {perception_text}"
 
 
-# ── the parser ───────────────────────────────────────────────────────
-
-
 def test_a_fenced_answer_is_not_thrown_away():
     """Models fence JSON about half the time; the thought still counts."""
     fenced = '```json\n[{"action": "new", "text": "Open a bakery"}]\n```'
@@ -147,9 +144,6 @@ def test_prose_around_the_array_is_tolerated():
     assert _parse_revisions(said) == [{"action": "keep", "goal_id": "g1"}]
 
 
-# ── once a night ─────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_resident_reflects_once_a_night_not_once_a_tick():
     engine = FakeEngine()
@@ -160,15 +154,12 @@ async def test_a_resident_reflects_once_a_night_not_once_a_tick():
     assert first.ran and first.created == 1
     assert engine.lc_adapter.calls == 1
 
-    # A resident sleeps for many consecutive ticks. Every one of them
-    # calls this; only the first is allowed to cost anything.
     for _ in range(8):
         again = await reflection.reflect(game_day=3)
         assert not again.ran
         assert again.skipped_because == "already reflected on this day"
     assert engine.lc_adapter.calls == 1, "the night was paid for more than once"
 
-    # The next night is a new night.
     await reflection.reflect(game_day=4)
     assert engine.lc_adapter.calls == 2
 
@@ -195,9 +186,6 @@ async def test_a_quiet_night_costs_nothing():
     assert not result.ran
     assert result.skipped_because == "nothing to reflect on"
     assert engine.lc_adapter.calls == 0, "an empty night still called the model"
-
-
-# ── it writes through the world's own tools ──────────────────────────
 
 
 @pytest.mark.asyncio
@@ -279,9 +267,6 @@ async def test_a_malformed_revision_is_skipped_and_named():
     assert engine.world.called == ["recall_goals"]
 
 
-# ── it never takes the tick down ─────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_an_unreachable_world_is_a_quiet_night_not_a_crash():
     class Broken(FakeWorld):
@@ -304,9 +289,6 @@ async def test_a_failed_model_call_is_a_quiet_night_not_a_crash():
     result = await GoalReflection(engine).reflect(game_day=2)
 
     assert not result.ran and result.errors
-
-
-# ── and it happens on the sleeping tick, through /tick ───────────────
 
 
 def test_a_sleeping_tick_reflects_and_says_what_it_changed():
@@ -347,7 +329,6 @@ def test_the_night_falls_back_to_the_worlds_own_clock():
     engine.lc_adapter.text = '[{"action": "keep", "goal_id": "g1"}]'
     client = TestClient(build_sim_agent_app(engine))  # type: ignore[arg-type]
 
-    # 144 ticks to a game-day: 300 and 320 are the same night, 460 is not.
     client.post("/tick", json={"tick": 300, "is_sleeping": True, "perception": ""})
     client.post("/tick", json={"tick": 320, "is_sleeping": True, "perception": ""})
     assert engine.lc_adapter.calls == 1

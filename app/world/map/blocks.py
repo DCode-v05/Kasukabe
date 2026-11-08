@@ -88,9 +88,6 @@ def load_special_blocks(ville_dir: Path) -> SpecialBlockTables:
         tables.add_arena(block_id, wname, sname, aname)
 
     for row in read_csv_rows(special_dir / "game_object_blocks.csv"):
-        # Column 2 is "<all>" for every row in the upstream data (the
-        # object kind is not arena-specific - see GameObjectKind's
-        # docstring) - not modeled as a field, only the name is kept.
         block_id, wname, oname = int(row[0]), row[1], row[3]
         tables.add_game_object(block_id, wname, oname)
 

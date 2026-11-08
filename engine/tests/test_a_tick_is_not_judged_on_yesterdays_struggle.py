@@ -55,9 +55,6 @@ from src.memory.working_memory import EntryType
 
 STRUGGLE_PREFIX = '{"_struggle":'
 
-# What a pinned resident's counters actually looked like by mid-morning:
-# eight turns since it last said anything out loud, and the same `say`
-# signature three times across three different ticks.
 A_MORNINGS_ACCUMULATION = {
     "consecutive_errors": 0,
     "turns_since_checkpoint": 4,
@@ -131,9 +128,6 @@ def is_zeroed(struggle: dict) -> bool:
     return StrugglingState.from_dict(struggle) == StrugglingState()
 
 
-# ── the wiring test ──────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_fresh_tick_is_not_told_it_is_struggling(tmp_path, monkeypatch):
     """THE WIRING TEST. A poisoned entry from an earlier tick, a real
@@ -198,15 +192,11 @@ async def test_the_same_counters_still_catch_a_resident_spinning_now(
 
         for _ in range(4):
             broker.queue(MODEL_ID, "sse", text_turn_sse("Morning, Halcyon."))
-        # Planted INSIDE the tick, after send_tick has written its zero:
-        # a hook on the emitter fires while the turn is being set up.
         await engine.send_tick("It is 09:10 on day 0.")
         await plant(engine, A_MORNINGS_ACCUMULATION)
 
         for _ in range(4):
             broker.queue(MODEL_ID, "sse", text_turn_sse("Still here."))
-        # Drive the thread directly, bypassing send_tick's zeroing, which
-        # is exactly the state an accumulation within one tick reaches.
         await engine.coordinator.handle_input(
             "You are still at the well.", thread_id=engine.thread_id
         )
@@ -218,9 +208,6 @@ async def test_the_same_counters_still_catch_a_resident_spinning_now(
         assert struggles[0].turns_without_text >= STRUGGLE_TURNS_NO_TEXT
     finally:
         await engine.shutdown()
-
-
-# ── what is written, and how often ───────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -260,7 +247,6 @@ async def test_one_zero_per_tick_and_not_one_per_model_turn(tmp_path, monkeypatc
 
     engine, broker = await booted(tmp_path, monkeypatch)
     try:
-        # One tick, two agent-loop turns: a tool call, then an answer.
         broker.queue(MODEL_ID, "sse", tool_use_turn_sse("recall_session_log", {"turns": 2}))
         for _ in range(4):
             broker.queue(MODEL_ID, "sse", text_turn_sse("Right, I remember."))

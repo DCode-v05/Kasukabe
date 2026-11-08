@@ -136,11 +136,6 @@ class FirecrackerApiClient:
     async def create_snapshot(
         self, snapshot_path: str, mem_file_path: str, snapshot_type: str = "Full"
     ) -> None:
-        # Firecracker requires the microVM to be Paused before this call
-        # succeeds; vm_manager.py always pause()s immediately before
-        # calling this rather than relying on the API to enforce it, so a
-        # caller mistake surfaces as this file's own assertion, not a
-        # Firecracker 400 buried in a trace.
         await self._request(
             "PUT",
             "/snapshot/create",
@@ -154,11 +149,6 @@ class FirecrackerApiClient:
     async def load_snapshot(
         self, snapshot_path: str, mem_file_path: str, resume_vm: bool = True
     ) -> None:
-        # load_snapshot is only valid on a freshly started firecracker
-        # process that has not yet been given a boot-source (Firecracker
-        # rejects it otherwise) - vm_manager.restore() always launches a
-        # brand new process/socket per restore rather than reusing one
-        # that ever booted from a kernel image directly.
         await self._request(
             "PUT",
             "/snapshot/load",

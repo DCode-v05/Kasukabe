@@ -31,59 +31,28 @@ class ConfigError(Exception):
 
 @dataclass(frozen=True)
 class FirecrackerSettings:
-    # Where the real `firecracker` binary lives on the metal host. Unused
-    # by the fake backend (process.py's FakeFirecrackerProcess never
-    # execs anything), checked for existence only when the real backend
-    # is actually selected (vm_manager.py's build_supervisor()).
     firecracker_binary: Path = Path("/usr/local/bin/firecracker")
 
-    # jailer is Firecracker's recommended production sandboxing wrapper
-    # (chroot + cgroups + seccomp around each microVM process). Off by
-    # default because it needs root and a configured cgroup hierarchy
-    # that only exists on the metal host; RUNBOOK.md documents turning it
-    # on for the genesis run itself.
     use_jailer: bool = False
     jailer_binary: Path = Path("/usr/local/bin/jailer")
 
     kernel_image: Path = Path("/var/lib/kasukabe/kernel/vmlinux")
     rootfs_image: Path = Path("/var/lib/kasukabe/rootfs/engine-rootfs.ext4")
 
-    # Per-unit runtime artifacts (API socket, vsock UDS, drive copy-on-write
-    # overlay if used) live under run_dir/<unit_id>/. Cleared on
-    # shutdown_all(); NOT cleared on a single stop() so a crashed unit's
-    # console log / socket survive for postmortem until the next start().
     run_dir: Path = Path("/var/run/kasukabe/firecracker")
 
-    # Host-side networking (network/tap_setup.sh). Guest IPs are handed
-    # out sequentially starting at .2 (.1 is the host/bridge address,
-    # matching tap_setup.sh); 250 agents fit comfortably in a /24 but a
-    # /20 leaves room for the population dial DESIGN.md section 5 allows
-    # growing past the 250-300 starting band.
     network_cidr: str = "10.200.0.0/20"
     bridge_name: str = "fcbr0"
     bridge_host_ip: str = "10.200.0.1"
     tap_prefix: str = "fctap"
 
-    # vsock CIDs 0-2 are reserved by the vsock spec (0=hypervisor,
-    # 1=loopback/reserved, 2=host); guest CIDs for units start at 3.
     vsock_cid_base: int = 3
     vsock_guest_port: int = 52000
 
-    # Snapshot destination. "AgentEnv style" (this track's task
-    # description) per the Space runtime decision this repo already made
-    # elsewhere: snapshot is a resumable cache keyed by unit + tick, never
-    # the system of record - the SQLite/Litestream trace store (DESIGN.md
-    # section 9) is the source of truth for what happened, this is only
-    # for "how do I get a microVM's memory back to where it was."
     s3_bucket: str = "kasukabe-microvm-snapshots"
     s3_prefix: str = "kasukabe/vm-snapshots"
     aws_region: str = "ap-south-1"
 
-    # Firecracker allows fractional vCPU only via cgroup cpu.max after the
-    # fact; vcpu_count itself is an integer, so UnitSpec.cpu (a float
-    # budget shared with the process backend) rounds up to whole vCPUs
-    # here and the remainder is enforced by a cgroup quota, not by asking
-    # Firecracker for a fractional core it cannot allocate.
     default_vcpu_count: int = 1
     boot_timeout_s: float = 8.0
     api_request_timeout_s: float = 5.0

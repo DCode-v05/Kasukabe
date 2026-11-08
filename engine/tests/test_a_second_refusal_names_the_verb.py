@@ -52,9 +52,6 @@ class ExplodingSignalStore:
         raise RuntimeError("fts5: malformed MATCH expression")
 
 
-# ── the three properties ──────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_the_first_refusal_says_nothing_extra():
     """Silence is the common case, and it is the whole difference between
@@ -124,9 +121,6 @@ async def test_the_tool_name_is_escaped_before_it_reaches_fts():
     assert store.queries == ['"take_from_shelf"']
 
 
-# ── the seam: the hint reaches the resident, attached to the refusal ──
-
-
 @pytest.mark.asyncio
 async def test_the_refusal_text_still_arrives_whole(monkeypatch):
     """The refusal is what the resident acts on; the hint is appended to
@@ -142,6 +136,4 @@ async def test_the_refusal_text_still_arrives_whole(monkeypatch):
 
     assert combined.startswith(refusal)
     assert combined.count("\n") == 1
-    # And the seam imports the function it is supposed to call, rather
-    # than a copy of the logic.
     assert world_tools.hint_after_refusal is hint_after_refusal

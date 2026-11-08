@@ -49,7 +49,7 @@ async def test_record_below_batch_size_does_not_auto_flush() -> None:
 
     writer.record("a")
     writer.record("b")
-    await asyncio.sleep(0)  # let any scheduled background task get a turn
+    await asyncio.sleep(0)
 
     assert sink.batches == []
     assert writer.buffer == ["a", "b"]
@@ -62,8 +62,8 @@ async def test_record_reaching_batch_size_triggers_an_async_flush() -> None:
     writer = BatchWriter(sink=sink, batch_size=2, flush_interval_s=1000.0)
 
     writer.record("a")
-    writer.record("b")  # buffer now at batch_size -> schedules a flush
-    await asyncio.sleep(0)  # let the scheduled flush() task actually run
+    writer.record("b")
+    await asyncio.sleep(0)
 
     assert sink.rows == ["a", "b"]
     assert writer.buffer == []
@@ -96,9 +96,9 @@ async def test_periodic_flush_fires_on_its_own_without_hitting_batch_size() -> N
     sink = InMemorySink()
     writer = BatchWriter(sink=sink, batch_size=1000, flush_interval_s=0.001, sleep=fast_sleep)
 
-    writer.record("a")  # starts the background periodic-flush task
-    await asyncio.sleep(0)  # let the background task reach `await self.sleep(...)`
-    tick.set()  # release the fake sleep -> triggers one periodic flush
+    writer.record("a")
+    await asyncio.sleep(0)
+    tick.set()
     await asyncio.sleep(0)
     await asyncio.sleep(0)
 
@@ -112,7 +112,7 @@ async def test_sink_exception_is_swallowed_not_raised() -> None:
     writer = BatchWriter(sink=sink, batch_size=100, flush_interval_s=1000.0)
 
     writer.record("a")
-    await writer.flush()  # must not raise despite the sink always raising
+    await writer.flush()
 
     assert sink.attempts == 1
     await writer.close()
@@ -129,7 +129,7 @@ async def test_close_flushes_remaining_buffer_and_stops_accepting() -> None:
     assert sink.rows == ["a"]
     assert writer.closed is True
 
-    writer.record("b")  # dropped: writer is closed
+    writer.record("b")
     assert writer.buffer == []
 
 
@@ -138,14 +138,7 @@ async def test_close_is_safe_to_call_twice() -> None:
     writer = BatchWriter(sink=InMemorySink(), batch_size=10, flush_interval_s=1000.0)
     writer.record("a")
     await writer.close()
-    await writer.close()  # must not raise
-
-
-# INFRA-24: the SupabaseRestSink tests were removed with the class
-# on 2026-09-05. They exercised a sink no code path builds, so they
-# passed forever and covered nothing that runs.
-# ── failure tracking / is_halted (TASK spec: "count failures ... halt
-# dispatch when writes fail persistently") ──────────────────────────────
+    await writer.close()
 
 
 @pytest.mark.asyncio
@@ -211,14 +204,12 @@ async def test_a_successful_flush_resets_consecutive_failures_and_unhalts() -> N
     await writer.flush()
     assert writer.is_halted is True
 
-    sink.fail = False  # the sink recovers
+    sink.fail = False
     writer.record("c")
     await writer.flush()
 
     assert writer.consecutive_failures == 0
     assert writer.is_halted is False
-    # The historical totals are not erased by recovering - only the
-    # consecutive-failure streak that gates dispatch resets.
     assert writer.stats()["batches_failed"] == 2
     assert writer.stats()["batches_attempted"] == 3
     await writer.close()
@@ -235,10 +226,6 @@ async def test_a_successful_flush_never_counted_as_a_failure() -> None:
     assert writer.stats()["batches_failed"] == 0
     assert writer.is_halted is False
     await writer.close()
-
-
-# ── tick field: additive, backward compatible with every existing
-# keyword-argument construction site (broker/service.py) ────────────────
 
 
 def test_trace_record_tick_defaults_to_none_and_is_additive() -> None:
@@ -283,14 +270,6 @@ def test_broker_event_tick_defaults_to_none_and_is_additive() -> None:
     assert row["tick"] is None
 
 
-# ── the body cap ────────────────────────────────────────────────────────
-#
-# A 30-agent, six-hour run wrote a 5.9 GB trace onto a laptop with 1.2 GB
-# free. The average request body was 630 KB; the largest was 36.5 MB. The
-# cause of prompts that size is upstream of broker/ (see docs/TEST_RUN.md);
-# what these tests pin is that the trace store can no longer take the
-# machine down with it, and that it says so when it truncates.
-
 def test_a_normal_body_is_stored_untouched():
     """The cap must be invisible under a healthy run - a stored prompt that
     is silently not the prompt would poison every trace read after it."""
@@ -310,14 +289,7 @@ def test_a_pathological_body_is_truncated_and_says_so():
 
     assert stored["_truncated"] is True
     assert stored["_original_bytes"] > TRACE_BODY_LIMIT
-    # Announced, not silent. A reader who finds a fragment must be able to
-    # tell it IS a fragment and how much is missing.
     assert stored["_limit_bytes"] == TRACE_BODY_LIMIT
-    # It used to keep `_head`: the first 64 KB of the serialised JSON, cut
-    # mid-token, which is a string and not JSON. Measured on data/loop5.db,
-    # that shape made 342 of 566 successful calls unreadable to every tool
-    # that reads this store. What is stored now is a smaller VALID OBJECT -
-    # see broker/tests/test_a_capped_body_is_still_readable.py.
     assert "_head" not in stored
     assert json.loads(json.dumps(stored, default=str)), "must still parse"
     assert len(json.dumps(stored, default=str)) <= TRACE_BODY_LIMIT

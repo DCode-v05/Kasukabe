@@ -44,9 +44,6 @@ async def cast(world, *ids: str, place: str = MARKET) -> None:
         world.agent_names[agent_id] = f"Resident {agent_id}"
 
 
-# ── say ──────────────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_speaking_alone_opens_no_conversation(world, registry) -> None:
     await cast(world, "n01")
@@ -102,9 +99,6 @@ async def test_a_second_speaker_arriving_joins_the_thread(world, registry) -> No
     second = await registry.dispatch(world, "n02", "say", {"content": "How much?"})
     assert second.result["conversation_id"] == first.result["conversation_id"]
     assert len(world.conversations) == 1
-
-
-# ── start_conversation ───────────────────────────────────────────────
 
 
 @pytest.mark.asyncio

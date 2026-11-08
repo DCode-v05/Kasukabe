@@ -84,10 +84,8 @@ def create_llm(settings: Settings, model_id: str | None = None) -> LLM:
 
 
 __all__ = [
-    # Protocol
     "LLM",
     "create_llm",
-    # Types
     "Message",
     "TextBlock",
     "ToolUseBlock",
@@ -102,7 +100,6 @@ __all__ = [
     "StreamEvent",
     "StopReason",
     "Usage",
-    # Catalog + defaults
     "ModelCost",
     "ModelDef",
     "MODEL_DEFAULTS",
@@ -117,5 +114,4 @@ __all__ = [
     "estimate_cost",
     "format_tokens",
     "format_usd",
-    # v2.0.0: src.herald.router — multi-dimensional scoring, session pinning, fallback chains
 ]

@@ -83,7 +83,7 @@ class TestWebFetchCache:
         first, second = asyncio.run(run())
         assert "hello cached world" in first
         assert second == first
-        assert len(StubAsyncClient.calls) == 1  # one network round trip
+        assert len(StubAsyncClient.calls) == 1
 
     def test_expired_entry_refetches(self, web_fetch_module):
         handler = web_fetch_module["handler"]
@@ -91,7 +91,6 @@ class TestWebFetchCache:
 
         async def run():
             await handler({"url": "https://example.com/page"})
-            # Backdate instead of sleeping.
             cache.entries["https://example.com/page"].expires_at = time.monotonic() - 1
             await handler({"url": "https://example.com/page"})
 
@@ -110,7 +109,7 @@ class TestWebFetchCache:
         first, second = asyncio.run(run())
         assert first.startswith("Error fetching")
         assert second.startswith("Error fetching")
-        assert len(StubAsyncClient.calls) == 2  # no error caching
+        assert len(StubAsyncClient.calls) == 2
         assert web_fetch_module["url_cache"].get("https://example.com/broken") is None
 
     def test_blocked_url_never_reaches_cache_or_network(self, web_fetch_module):

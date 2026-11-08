@@ -46,8 +46,6 @@ from world.life.health import (
 from world.life.models import AgentLifeRecord, Ailment, AilmentKind, DeathCause, HealthState, Sex
 from world.life.tests.conftest import InMemoryEconomy
 
-# A short ailment runs one day (AILMENT_DURATION_DAYS_SHORT). Onset on
-# day 3 means it is still live on day 3 and already spent on day 4.
 ONSET_DAY = 3
 STILL_ILL_DAY = 3
 ALREADY_OVER_DAY = 4

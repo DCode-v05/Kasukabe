@@ -89,10 +89,6 @@ def require_pending_subpoena(world: WorldState, subpoena_id: str, deciding_agent
     if subpoena.status is not SubpoenaStatus.PENDING:
         raise ActorRequirementError(tool_name, [f"subpoena {subpoena_id} is not pending"])
     if subpoena.requested_by_agent_id == deciding_agent_id:
-        # Separation of powers - see module docstring. A different sitting
-        # government member must sign off than the one who filed it, the
-        # same police-requests / minister-signs split DESIGN.md section 6
-        # gives crime/warrants.py's real arrest warrants.
         raise ActorRequirementError(
             tool_name, [f"{deciding_agent_id} filed this subpoena and cannot also decide it"]
         )
@@ -111,12 +107,6 @@ async def grant_subpoena_handler(
     subpoena.decided_by_agent_id = agent.agent_id
     subpoena.decided_tick = world.tick()
 
-    # The reveal: every invocation record for the subpoenaed agent, public
-    # or confidential namespace alike (DESIGN.md: "logged for researchers
-    # regardless of in-world secrecy" - a valid warrant is what makes that
-    # log visible to the court too, not just to research). Returned in
-    # `result` only - see module docstring for why this never touches
-    # `events`.
     records = [
         record.model_dump()
         for record in world.tool_invocations

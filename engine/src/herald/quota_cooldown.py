@@ -27,8 +27,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from src.herald.provider import CitadelBudgetExhausted, CitadelQuotaExhausted
 
-# Module-level state: the monotonic-free wall-clock instant the current cooldown
-# ends, or 0.0 when nothing is armed. Kept deliberately simple and process-local.
 cooldown_until: float = 0.0
 
 

@@ -46,10 +46,6 @@ from typing import Mapping
 
 from pydantic import BaseModel, Field
 
-# This project's own knobs; none of these are standard AWS/Supabase env
-# var names except the S3 region, which reuses AWS's own convention
-# (AWS_REGION / AWS_DEFAULT_REGION) so a .env written for this project
-# also works unmodified with the AWS CLI and every AWS SDK.
 ENV_SQLITE_PATH = "KASUKABE_SQLITE_PATH"
 ENV_BUSY_TIMEOUT_MS = "KASUKABE_SQLITE_BUSY_TIMEOUT_MS"
 ENV_S3_BUCKET = "KASUKABE_S3_BUCKET"
@@ -78,22 +74,10 @@ class SupabaseConfig(BaseModel):
     safety pragmas, and where its archived blobs go.
     """
 
-    # ":memory:" (the default) gives every caller a fresh, isolated
-    # database, which is what tests want; a real path persists across
-    # process restarts and is what the genesis host uses. WAL mode is only
-    # enabled for a real file (see sqlite_client.py) - SQLite has no WAL
-    # concept for ":memory:" databases.
     sqlite_path: str = ":memory:"
 
-    # How long a connection blocks on SQLITE_BUSY before sqlite3 raises
-    # "database is locked", instead of failing on the first contended
-    # write. 5s comfortably covers a batch insert or a Litestream
-    # checkpoint holding a brief lock; it is not so long that a genuinely
-    # stuck writer hangs a caller indefinitely.
     busy_timeout_ms: int = Field(default=5000, ge=0)
 
-    # Empty string (the default) means "archive to the local filesystem
-    # fallback" - see archiver.py / sqlite_client.py.upload_archive.
     s3_bucket: str = ""
     s3_prefix: str = ""
     s3_region: str = ""

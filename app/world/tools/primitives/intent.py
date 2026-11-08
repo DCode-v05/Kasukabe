@@ -56,9 +56,6 @@ async def set_intention_handler(
             "set_intention",
             [f"{MAX_INTENTION_CHARS} characters at most. Yours is {len(text)}."],
         )
-    # TOOL-13, the same fold `keep_doing` needs: run 23 refused
-    # `set_intention(done_when_tool="world_cook")` twice, for a verb the
-    # resident had been shown under exactly that name.
     done_when_tool = params.done_when_tool
     if done_when_tool is not None:
         registry = world.tool_registry
@@ -69,9 +66,6 @@ async def set_intention_handler(
     if done_when_tool is not None and done_when_tool not in (
         world.registry_tool_names or ()
     ):
-        # Named a tool that does not exist, so nothing could ever clear it.
-        # Better to say so now than to leave a resident carrying an
-        # intention that outlives every possible act.
         known = ", ".join(sorted(world.registry_tool_names or ())[:12])
         raise ToolValidationError(
             "set_intention",
@@ -142,9 +136,6 @@ def build_specs() -> list[ToolSpec]:
         ToolSpec(
             name="set_intention",
             description=(
-                # Addendum section 7, 56 words. Says plainly that nothing
-                # enforces it, because a resident that believed otherwise
-                # would be reading a contract into a note.
                 "Write down, in your own words, what you have set out to do. It is "
                 "shown back to you at the start of every turn until you drop it, "
                 "until the tool you name succeeds, or until the day ends. Nothing "

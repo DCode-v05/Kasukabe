@@ -97,8 +97,6 @@ from src.engine_core.schema import (
 )
 
 
-# ToolDef + ToolRegistry — owned by utility_directory.tool_runtime.
-# Imported here so internal tool registration methods can create ToolDef instances.
 from src.utility_directory.tool_runtime import (
     ToolDef,
     ToolRegistry,
@@ -106,7 +104,6 @@ from src.utility_directory.tool_runtime import (
     ALWAYS_SAFE,
 )
 
-# Permission pipeline — rule-based gate before every tool call.
 from src.sandbox.permissions import (
     AskUserParams,
     AskUserReply,
@@ -127,8 +124,6 @@ from src.sandbox.permission_store import PermissionStore, PermissionProvenance
 logger = logging.getLogger(__name__)
 
 
-# Ask-user callback: str-in/str-out for legacy ask_user tool, dict-in/dict-out
-# for permission prompts. Shape helpers live in src.sandbox.permissions.
 AskUserCallback = Callable[[AskUserParams], Awaitable[AskUserReply]]
 
 
@@ -172,12 +167,10 @@ async def generate_tool_use_summary(
             for tc in tool_calls
         ]
 
-        # Use the lightest available model (Haiku-tier equivalent)
         try:
             light_model = resolve_model_for_tier(ModelTier.LIGHT, settings)
             adapter = create_llm(settings, light_model.id)
         except Exception:
-            # No light model configured — skip summary to avoid using main model
             return
 
         is_cancelled = (lambda: cancellation_token.cancelled) if cancellation_token else None
@@ -199,7 +192,6 @@ async def generate_tool_use_summary(
                 )
             )
     except Exception:
-        # Swallow all errors — summaries are non-critical
         pass
 
 
@@ -243,13 +235,12 @@ class EmittingMemory:
                 )
             )
         except Exception:
-            pass  # never let event emission break the write path
+            pass
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self.inner, name)
 
 
-# Default user-input timeout: 72 hours (matches checkpoint TTL)
 USER_INPUT_TIMEOUT_SECONDS = 72 * 3600
 
 
@@ -310,12 +301,8 @@ def tool_source(tool_name: str) -> str:
     return "platform"
 
 
-# Safety net — agent decides when done, 200 prevents infinite loops
 MAX_AGENT_TURNS = 200
 
-# How many deferred-tool schemas a single tool_search may return. Deferral exists
-# to keep schemas out of the context until they are needed; handing back an
-# unbounded match list defeats it on the first broad query.
 TOOL_SEARCH_MAX_RESULTS = 5
 
 
@@ -344,15 +331,8 @@ def score_tool_match(query: str, tool: Any) -> int:
     return score
 
 
-# Pre-flight complexity nudge
 COMPLEXITY_NUDGE_THRESHOLD = 5
 
-# Memory-prefetch bounded-wait window in ``execute_turn``. When the coordinator
-# starts a recall task in parallel with the router and the recall has not yet
-# settled when the thread reaches its turn, we wait at most this long before
-# handing the task off to the agent loop's per-iteration consume path. Sized
-# to "fast recall" (small episodic store, warm embedder); slower recall lands
-# as a synthetic reminder mid-loop instead of stalling the first model call.
 PREFETCH_BOUNDED_WAIT_SECONDS = 0.1
 
 
@@ -522,8 +502,7 @@ def complexity_score(text: str) -> int:
     return score
 
 
-# Replan callback type: (current_charter, reason) -> new_charter or None
-ReplanCallback = Callable[["Charter", str], Any]  # returns Awaitable[Charter | None]
+ReplanCallback = Callable[["Charter", str], Any]
 
 
 def trace_mod():
@@ -548,8 +527,6 @@ def append_permission_content_block(builder: ToolResultBuilder, cb: dict) -> Non
     elif block_type == "text":
         builder.append_text(cb.get("text", ""), label="permission")
     else:
-        # Unknown shape — fall back to image semantics for back-compat
-        # with the original assumption that content_blocks are images.
         builder.append_image(cb)
 
 
@@ -709,9 +686,6 @@ class ExecutionThread:
         self.signal_store = signal_store
         self.scratchpad: dict[str, Any] = {}
         self.cancel_requested: bool = False
-        # Whether the product layer has claimed this thread. Set by the
-        # coordinator at dispatch from the thread index, and read when writing
-        # a checkpoint so a claimed thread's parked work does not expire.
         self.pinned: bool = False
         self.charter: Charter | None = None
         self.tools_frozen: bool = False
@@ -720,18 +694,11 @@ class ExecutionThread:
         self.turn_lock = asyncio.Lock()
         self.sub_agent_results: list = []
         self.replan_state: dict = {"triggered": False}
-        # Coordination: planner ↔ sub-agent mutual exclusion
         self.planner_gate = asyncio.Event()
-        self.planner_gate.set()  # set = planner NOT active, sub-agents may proceed
+        self.planner_gate.set()
         self.sub_agent_count: int = 0
         self.connected_services_text: str = ""
         self.deferred_ad_tools: dict[str, ToolDef] = {}
-        # Per-thread memory of which ACTIVE connection was picked for a given
-        # server_name when >=2 tied-authority connections existed. Populated
-        # by resolve_ad_connection(). Persists for the thread's whole life -
-        # ExecutionThread is one instance per thread_id (coordinator.py
-        # get_or_create_thread) - so the HITL disambiguation prompt below
-        # fires at most once per (thread, server_name).
         self.ad_connection_choice: dict[str, str] = {}
         self.deny_rules: list[PermissionRule] = []
         self.session_rules: list[PermissionRule] = []
@@ -739,51 +706,21 @@ class ExecutionThread:
         self.permission_mode: PermissionMode = PermissionMode.DEFAULT
         self.denial_tracker = DenialTracker()
         self.sub_agents_done = asyncio.Event()
-        self.sub_agents_done.set()  # set = no sub-agents active, planner may proceed
+        self.sub_agents_done.set()
         self.active_sub_agents: list[Any] = []
-        self.compactor: Any = None  # Lazy-init CompactionOrchestrator
-        # TOKEN_BUDGET cross-turn carry anchor. See architecture/sections/42_engine_core_context_compaction.md.
+        self.compactor: Any = None
         self.last_turn_budget: int | None = None
-        # Pre-tool hooks — fire before every tool call (permission check,
-        # executor). Can deny, allow, or mutate tool input. Empty registry
-        # is a zero-overhead no-op (see PreToolUseHookRegistry.has_hooks).
         self.pre_tool_hooks: PreToolUseHookRegistry = PreToolUseHookRegistry()
-        # Post-tool hooks — fire after every tool result is produced.
-        # Can append additional_context to the result or signal loop exit.
-        # Empty registry is a zero-overhead no-op.
         self.post_tool_hooks: PostToolUseHookRegistry = PostToolUseHookRegistry()
-        # Turn-boundary stop hooks — run at every agent-loop exit decision.
-        # Empty registry is a zero-overhead no-op (see StopHookRegistry.has_hooks).
         self.stop_hooks: StopHookRegistry = StopHookRegistry()
-        # Flag set by pre/post-tool hooks to signal the loop to exit after
-        # the current tool batch. Reset at the start of each agent_loop.
         self.tool_hook_prevented: bool = False
-        # Session lifecycle hooks — fired once on first execute() (SessionStart)
-        # and on explicit session_end() calls (SessionEnd).
         self.session_started: bool = False
         self.session_start_hooks: list[tuple[str, Any, float]] = []
         self.session_end_hooks: list[tuple[str, Any, float]] = []
-        # Generic lifecycle-event hook bundle (PreCompact, PostCompact,
-        # SubagentStart/Stop, UserPromptSubmit, TaskCreated/Completed,
-        # PermissionDenied, PostToolUseFailure, StopFailure, Setup,
-        # Notification, ConfigChange, CwdChanged,
-        # FileChanged, InstructionsLoaded, WorktreeCreate/Remove,
-        # TeammateIdle).  Empty registries are zero-overhead no-ops.
         from src.engine_core.lifecycle_hooks import LifecycleHookBundle
 
         self.lifecycle_hooks: LifecycleHookBundle = LifecycleHookBundle()
 
-        # Settings-driven hook loader. Reads user/project/local/plugin
-        # JSON settings files, routes each entry to the right registry
-        # (tool-lifecycle → pre/post/stop; everything else →
-        # lifecycle_hooks bundle).
-        #
-        # Two levers, and BOTH must say yes. Settings.hooks_settings_load_enabled
-        # (HOOKS_SETTINGS_LOAD_ENABLED) is the documented one that sits beside
-        # the other hook gates. INTELLIGENCE_ENGINE_DISABLE_HOOK_SETTINGS is the
-        # older inverted env var that tests and air-gapped runs already set;
-        # it is kept working so nothing that relies on it silently starts
-        # loading settings files again.
         from src.engine_core.hook_settings import HookSettingsManager as HSM
 
         settings_load_flag = bool(
@@ -808,11 +745,10 @@ class ExecutionThread:
         self.results_dir_path: Path | None = None
         self.results_dir_finalizer: Any = None
 
-        # Deferred import — avoids circular: thread -> engine_core -> coordinator -> thread
         from src.engine_core import execution_trace as et
         from src.engine_core.schema import ThreadState
 
-        self.ThreadState = ThreadState  # store for use in methods
+        self.ThreadState = ThreadState
         self.execution_trace: ExecutionTrace = et.ExecutionTrace()
         self.current_node_trace: NodeTrace | None = None
         self.thread_state: ThreadState = ThreadState.IDLE
@@ -898,9 +834,6 @@ class ExecutionThread:
 
         db = getattr(self.conversation_store, "db", None) if self.conversation_store else None
 
-        # Context Collapse is ON by default. The kill switch is
-        # FEATURE_CONTEXT_COLLAPSE=false, which fully disables the
-        # pre-pass and restores pre-change compaction behaviour.
         collapse_enabled = os.environ.get("FEATURE_CONTEXT_COLLAPSE", "true").lower() != "false"
         collapse_manager = ContextCollapseManager(
             db=db,
@@ -971,8 +904,6 @@ class ExecutionThread:
 
             from src.infra.september_home import resolve_september_home, september_paths
 
-            # Under the engine root, not TMPDIR: thread state references these
-            # files by path, so they must live in the tree a runtime captures.
             parent = september_paths(resolve_september_home())["results"]
             parent.mkdir(parents=True, exist_ok=True, mode=0o700)
             self.results_dir_path = Path(
@@ -986,7 +917,6 @@ class ExecutionThread:
             )
         return self.results_dir_path
 
-    # ── Tool registration ────────────────────────────────────────────
 
     ASK_USER_VALID_FORMATS: frozenset[str] = frozenset({"choice", "multichoice", "confirm"})
     ASK_USER_DEFAULT_CONFIRM_OPTIONS: list[dict] = [
@@ -1078,15 +1008,9 @@ class ExecutionThread:
                 preview = f" with {raw[:200]}{'…' if len(raw) > 200 else ''}"
         except (TypeError, ValueError):
             preview = ""
-        # Name the account, not just the server. Approving "gmail.send_email"
-        # when a personal and a work mailbox are both connected was a decision
-        # the user could not actually make: the two prompts read identically.
         account_label = await self.lookup_account_label(connection_id)
         actor = f"'{server_name}'" + (f" ({account_label})" if account_label else "")
         question = f"{actor} wants to run {action_name}{preview}. Allow this action?"
-        # Emit the structured permission_request block on the asset channel. The
-        # actual reply still flows through await_user_input below (this event is
-        # the render, not the waiter), so no new pause/resume plumbing is needed.
         await self.emitter.emit(
             PermissionRequestEvent(
                 thread_id=getattr(self, "current_thread_id", ""),
@@ -1266,8 +1190,6 @@ class ExecutionThread:
 
     MAX_SUB_AGENTS = 5
 
-    # Tools that close over parent-thread state (WAITING_INPUT on ask_user).
-    # The sub-agent entries are gone with sub_agent.py: this build spawns none.
     PARENT_STATE_TOOLS: frozenset[str] = frozenset({"ask_user", "spawn_thread"})
 
     def register_checkpoint_tool(
@@ -1281,7 +1203,6 @@ class ExecutionThread:
         """
         checkpoints: dict[str, NodeCheckpoint] = {}
 
-        # Pre-populate with pending checkpoints for all nodes
         for node in charter.nodes:
             checkpoints[node.node_id] = NodeCheckpoint(
                 node_id=node.node_id,
@@ -1307,7 +1228,6 @@ class ExecutionThread:
                 timestamp=cp_timestamp,
             )
 
-            # Slice tool calls since last checkpoint into a per-node trace
             if trace_watermarks is not None and self.current_node_trace is not None:
                 et = trace_mod()
                 buf = self.current_node_trace
@@ -1330,7 +1250,6 @@ class ExecutionThread:
                 wm["last_checkpoint_at"] = cp_timestamp
                 self.execution_trace.nodes.append(node_trace)
 
-            # Write checkpoint to task-scoped WM
             thread_id = getattr(self, "current_thread_id", "")
             if thread_id:
                 try:
@@ -1359,7 +1278,6 @@ class ExecutionThread:
                 )
             )
 
-            # WM: record todo update (checkpoint)
             try:
                 if thread_id:
                     await self.memory.write(
@@ -1377,7 +1295,6 @@ class ExecutionThread:
             except Exception as e:
                 logger.debug("WM write (todo checkpoint) failed: %s", e)
 
-            # Channel state: write mid-execution checkpoint to SQLite
             if self.resume_state_mgr is not None:
                 try:
                     from src.engine_core.resume_state import ResumeState
@@ -1393,11 +1310,6 @@ class ExecutionThread:
                         },
                         scratchpad_snapshot=dict(self.scratchpad),
                     )
-                    # Set by the coordinator when it dispatched this turn. The
-                    # index it reads is the running answer to "is this thread
-                    # claimed"; asking SQLite again on every checkpoint would
-                    # both cost a round trip in the agent loop and introduce a
-                    # second source that can disagree with the first.
                     await self.resume_state_mgr.write_checkpoint(mid_state, pinned=self.pinned)
                 except Exception as e:
                     logger.debug("Channel state mid-checkpoint write failed: %s", e)
@@ -1466,7 +1378,6 @@ class ExecutionThread:
                 )
             )
 
-            # WM: record replan request
             try:
                 tid = getattr(self, "current_thread_id", "")
                 if tid:
@@ -1606,7 +1517,6 @@ class ExecutionThread:
                     fallback_error="Error: action gap escalation failed",
                 )
 
-            # Info gap — escalate to the user
             return await escalate_to_user(
                 question=question,
                 gap_type=GapType.INFO_GAP,
@@ -1740,20 +1650,10 @@ class ExecutionThread:
                 searched += cs.get("searched_entries", 0)
                 truncated = truncated or bool(cs.get("truncated"))
 
-            # max_results counts MATCHES, so it must not be spent on count-mode
-            # rows: those are one per entry, not one per match. Budgeting them
-            # meant a thread with max_results content entries - even entries with
-            # ZERO matches - skipped the ingestion store entirely, and the tool
-            # description tells the model that count mode is how you learn the
-            # true match volume. A 200-page ingested PDF was never opened and the
-            # model concluded the term did not appear.
             merged = {
                 key: all_items,
                 "total_matches": total_matches,
                 "searched_entries": searched,
-                # Whether the cap cut the result short. Without it a capped
-                # answer is indistinguishable from a complete one, and the model
-                # reports a partial finding as the whole picture.
                 "truncated": truncated,
             }
             return json.dumps(merged, ensure_ascii=False, default=str)
@@ -1813,7 +1713,6 @@ class ExecutionThread:
             )
         )
 
-    # ── Skill creation tool ──────────────────────────────────────────
 
     def register_create_skill_tool(self) -> None:
         """Register create_skill tool — LLM creates user skills through conversation."""
@@ -1900,11 +1799,6 @@ class ExecutionThread:
             if not self.deferred_ad_tools:
                 return json.dumps({"tools": [], "message": "No deferred tools available."})
 
-            # Score, sort, cap. An unranked, uncapped substring sweep returns
-            # every hit with equal weight, so a broad query ("send", "list",
-            # "get") against a wide deferred pool dumps dozens of schemas back
-            # into the context - reintroducing exactly the bloat deferral exists
-            # to prevent.
             scored: list[tuple[int, str, dict]] = []
             for name, tool in self.deferred_ad_tools.items():
                 score = score_tool_match(query, tool)
@@ -1920,8 +1814,6 @@ class ExecutionThread:
                             },
                         )
                     )
-            # Name is the tiebreak so identical scores are stable across turns
-            # and do not churn the prompt cache.
             scored.sort(key=lambda row: (-row[0], row[1]))
             truncated = len(scored) > TOOL_SEARCH_MAX_RESULTS
             matches = [row[2] for row in scored[:TOOL_SEARCH_MAX_RESULTS]]
@@ -1937,7 +1829,6 @@ class ExecutionThread:
 
             payload: dict[str, Any] = {"tools": matches}
             if truncated:
-                # Never let a capped list read as the complete set.
                 payload["message"] = (
                     f"Showing the {TOOL_SEARCH_MAX_RESULTS} best matches of "
                     f"{len(scored)}. Narrow the query to see others."
@@ -1968,7 +1859,6 @@ class ExecutionThread:
             )
         )
 
-    # ── Skill context builder ─────────────────────────────────────────
 
     def build_skill_context(self, skills: list[dict]) -> str:
         """Build skill context for system prompt injection via skill_execute().
@@ -1987,7 +1877,6 @@ class ExecutionThread:
                 parts.append(result["prompt"])
         return "\n".join(parts) if len(parts) > 1 else ""
 
-    # ── Prompt section registration ─────────────────────────────────
 
     TOKEN_BUDGET_TEXT = (
         'When the user specifies a token target (e.g., "+500k", '
@@ -2081,11 +1970,6 @@ class ExecutionThread:
             for s in ad_meta.get("servers", [])
             if s.get("server_name") in active_servers
         }
-        # A server's own guidance - call ordering, required scopes, rate limits -
-        # was captured at handshake and then rendered nowhere, so the model saw
-        # per-tool descriptions and no server-level operating context at all.
-        # This section is VOLATILE precisely so late-connecting servers' guidance
-        # still reaches the model without invalidating the cached prefix.
         instructions_by_server = {
             s["server_name"]: (s.get("instructions") or "")
             for s in ad_meta.get("servers", [])
@@ -2105,14 +1989,10 @@ class ExecutionThread:
             lines.append(f"  - {display} ({server_name}): {tool_names}")
             guidance = instructions_by_server.get(server_name, "").strip()
             if guidance:
-                # Indented under its server and labelled as the server's own
-                # words, so it reads as third-party data rather than as
-                # instructions from the operator.
                 flattened = " ".join(guidance.split())
                 lines.append(f"      notes from {server_name}: {flattened}")
         self.connected_services_text = "\n".join(lines)
 
-    # ── Mission prompt ───────────────────────────────────────────────
 
     def build_mission_prompt(self, charter: Charter) -> str:
         """Build the mission system prompt from charter goals.
@@ -2193,21 +2073,6 @@ class ExecutionThread:
         lines.append("When all goals are complete, provide a final summary.")
         return "\n".join(lines)
 
-    # ── Three-layer architecture ─────────────────────────────────────
-    #
-    #  ┌───────────────────────────────────────────────────────┐
-    #  │ Layer 1: initiate()                                    │
-    #  │ Called ONCE when thread is created.                     │
-    #  │ Registers tools, provisions AD, builds consciousness.  │
-    #  ├───────────────────────────────────────────────────────┤
-    #  │ Layer 2: execute(message)                              │
-    #  │ Called PER MESSAGE. Acquires turn lock, loads history,  │
-    #  │ builds prompt, runs agent_loop(), saves state.        │
-    #  ├───────────────────────────────────────────────────────┤
-    #  │ Layer 3: agent_loop()                                 │
-    #  │ Raw LLM loop. Stream → tool call → dispatch → repeat.  │
-    #  │ Runs parsers and tool dispatch per iteration.         │
-    #  └───────────────────────────────────────────────────────┘
 
     async def initiate(self, thread_id: str = "") -> None:
         """Layer 1 — one-time setup. Called once when thread is created.
@@ -2219,7 +2084,6 @@ class ExecutionThread:
         self.current_thread_id = thread_id
         await self.set_state(self.ThreadState.INITIALIZING, thread_id)
 
-        # Register ALL engine tools — always available regardless of charter
         self.sub_agent_results = []
         self.replan_state = {"triggered": False}
         self.register_ask_user_tool()
@@ -2229,8 +2093,6 @@ class ExecutionThread:
         self.register_search_content_tool()
         self.register_create_skill_tool()
 
-        # Register report_checkpoint with final schema from the start — handler checks charter internally.
-        # Schema never changes mid-session, preserving the cached prefix.
         self.ensure_tools()
         if self.ensure_tools().get_tool("report_checkpoint") is None:
 
@@ -2275,7 +2137,6 @@ class ExecutionThread:
                 )
             )
 
-        # Merge platform tools from utility module (sorted for deterministic cache prefix)
         if self.utility and hasattr(self.utility, "platform_tools") and self.utility.platform_tools:
             platform_metas = sorted(
                 self.utility.platform_tools.list_tools_meta(),
@@ -2287,14 +2148,10 @@ class ExecutionThread:
                     if tool:
                         self.ensure_tools().register(tool)
 
-        # Register tool_search for deferred AD tool discovery
         self.register_tool_search()
 
-        # Provision AD tools from assets module
         await self.provision_ad_tools()
 
-        # Assign ToolSource to tools registered with default INTERNAL source
-        # Engine tools keep INTERNAL; platform/network/ad tools get correct source
         if self.tools:
             for meta in self.tools.list_tools_meta():
                 tool = self.ensure_tools().get_tool(meta["name"])
@@ -2304,7 +2161,6 @@ class ExecutionThread:
                     elif not tool.name.startswith("ad:"):
                         tool.source = ToolSource.PLATFORM
 
-        # Load deny rules from settings (.env config — read-only)
         if self.settings and hasattr(self.settings, "deny_rules"):
             for rule_dict in self.settings.deny_rules or []:
                 self.deny_rules.append(
@@ -2316,11 +2172,7 @@ class ExecutionThread:
                     )
                 )
 
-        # Load persistent permission rules from JSON files
         if self.settings:
-            # One persistent tier, under the engine root. The former
-            # cwd-relative "project" tier is gone: a file the sandboxed agent
-            # could create must never be an authority source.
             user_path = Path(self.settings.permission_store_user_path).expanduser()
             self.permission_store = PermissionStore(user_path=user_path)
             self.permission_store.load()
@@ -2329,7 +2181,6 @@ class ExecutionThread:
                 len(self.permission_store.get_rules()),
             )
 
-        # Freeze tool set — no additions mid-session to preserve cached prefix
         self.tools_frozen = True
 
         await self.set_state(self.ThreadState.IDLE, thread_id)
@@ -2386,7 +2237,6 @@ class ExecutionThread:
         fallback = max(top, key=lambda c: c.get("created_at") or "")["connection_id"]
 
         if len(top) > 4:
-            # More tied candidates than the 'choice' UI format shows cleanly.
             logger.info(
                 "AD connection disambiguation for %s: %d tied-authority "
                 "candidates, skipping prompt and using most recent",
@@ -2508,20 +2358,10 @@ class ExecutionThread:
                 ad_meta = await self.search.ad_connections()
                 connections = ad_meta.get("connections", [])
 
-                # Group ACTIVE connections by server_name - a server may have
-                # several at once (different provenance/account_ref; see
-                # idx_conn_identity_active in migrations/003_asset_directory.sql).
-                # Exactly one connection_id is resolved per server so tool
-                # names (ad:{server_name}.{action_name}) never collide.
                 active_by_server: dict[str, list[dict[str, Any]]] = {}
                 for conn in connections:
                     if conn.get("status") != "ACTIVE":
                         continue
-                    # Per-asset pause: enabled=false keeps the connection ACTIVE
-                    # and credentialed but excludes it from tool provisioning and
-                    # connection selection (not a disconnect). enabled is absent
-                    # only from non-DB callers; the column defaults TRUE, so a
-                    # missing value means enabled.
                     if not bool(conn.get("enabled", True)):
                         continue
                     server_name = conn.get("server_name", "")
@@ -2543,12 +2383,6 @@ class ExecutionThread:
             except Exception as e:
                 logger.debug("AD tool provisioning failed: %s", e)
 
-        # Wire names must be unique across the whole pool, not just per server.
-        # The model only ever sees ad:{server}.{action}, so a duplicate would
-        # route a call to whichever tool happened to register last, and the two
-        # may sit on different connections carrying different permissions.
-        # safe_server_name should make this unreachable by forbidding a dot in
-        # the server half; this is the tripwire for a row that predates it.
         seen: set[str] = set()
         unique_ad_tools = []
         for tool in all_ad_tools:
@@ -2573,12 +2407,6 @@ class ExecutionThread:
             {"name": t.name, "description": t.description, "input_schema": t.input_schema}
             for t in all_ad_tools
         ]
-        # filter_ad_tools_by_budget has always accepted relevance_scores and
-        # the only call site never passed any, so when the cap did bite, WHICH
-        # tools got hidden from the model was whatever order the connection
-        # rows came back in. Rank by a stable, meaningful signal instead:
-        # read-only tools are the cheap, safe ones an agent reaches for first,
-        # and a shorter schema costs less to keep loaded.
         relevance = {
             t.name: (1.0 if t.is_read_only({}) else 0.5)
             + 1.0 / (1 + len(json.dumps(t.input_schema, default=str)) / 1000.0)
@@ -2617,14 +2445,6 @@ class ExecutionThread:
                         input_schema={"type": "object", "properties": {}},
                         handler=deferred_proxy,
                         source=ad_source,
-                        # ToolDef.defer_loading and the wire emission in
-                        # herald.provider were implemented and unit-tested end to
-                        # end, and no production path ever set the flag - two
-                        # implementations of deferral, only the weaker one
-                        # running. They are complementary rather than rival: the
-                        # stub keeps the tool nameable and tool_search hands the
-                        # real schema back on demand, while this flag stops us
-                        # paying for the schema on the wire in the meantime.
                         defer_loading=True,
                         server_name=tool.server_name,
                         action_name=tool.action_name,
@@ -2658,7 +2478,6 @@ class ExecutionThread:
         tid = thread_id or self.current_thread_id
         self.current_thread_id = tid
 
-        # Acquire turn lock — one turn at a time per thread
         try:
             await asyncio.wait_for(self.turn_lock.acquire(), timeout=30.0)
         except asyncio.TimeoutError:
@@ -2670,19 +2489,14 @@ class ExecutionThread:
         tracker = UsageAccumulator()
         tracker_token = usage_tracker_var.set(tracker)
         try:
-            # Reset per-turn state
             self.sub_agent_results = []
             self.replan_state = {"triggered": False}
             self.denial_tracker.reset()
 
-            # SessionStart — fire once on first execute() call
             if not self.session_started and self.session_start_hooks:
                 self.session_started = True
                 await self.fire_session_hooks(self.session_start_hooks)
 
-            # UserPromptSubmit lifecycle hook.  Hook can rewrite user_input
-            # via updated_payload={"text": "..."} or veto this turn via
-            # prevent_continuation (returns the blocking_error text).
             if self.lifecycle_hooks.has_hooks(HookEvent.USER_PROMPT_SUBMIT):
                 from src.engine_core.lifecycle_hooks import UserPromptSubmitInput
 
@@ -2706,7 +2520,6 @@ class ExecutionThread:
             await self.set_state(self.ThreadState.EXECUTING, tid)
             await self.emitter.emit(ThreadLifecycle(thread_id=tid, status="started"))
 
-            # WM: record execution start
             try:
                 await self.memory.write(
                     tid,
@@ -2783,33 +2596,21 @@ class ExecutionThread:
         prefetch_memory_task: "asyncio.Task | None" = None,
     ) -> str:
         """Inner turn execution — called with turn lock held."""
-        # Refresh consciousness from cache (event-driven invalidation, no polling)
         if self.consciousness_mgr:
             refreshed = await self.consciousness_mgr.get()
             if refreshed is not None and refreshed is not self.consciousness:
                 self.consciousness = refreshed
                 logger.info("Consciousness updated (cache was invalidated by data change)")
 
-        # Register prompt sections once per session. Sections are memoized
-        # by ConsciousnessManager and invalidated on compact/clear alongside
-        # the consciousness context itself — single invalidation point.
         if self.consciousness_mgr and not self.consciousness_mgr.sections:
             self.register_prompt_sections()
 
-        # Refresh the connected_services snapshot before the prompt builds.
-        # The section's sync compute callback can't await Search.ad_connections,
-        # so we warm self.connected_services_text here on the async path.
         await self.refresh_connected_services_snapshot()
 
-        # Build structured system prompt blocks with per-section cache scopes.
-        # Stable sections (identity, mission) → scope=global, ttl=1h.
-        # Dynamic sections (context) → ephemeral only.
         sys_prompt = None
         if self.consciousness_mgr:
             sys_prompt = self.consciousness_mgr.build_prompt_blocks()
 
-        # Teach the <craft> tag ONLY when the craft gate is on for this turn.
-        # Off → no section → the model writes plain prose (no tags to parse).
         from src.engine_core.coordinator import craft_gate_var
 
         if craft_gate_var.get():
@@ -2820,8 +2621,6 @@ class ExecutionThread:
                 SystemPromptBlock(text=compose_craft_guidance()),
             ]
 
-        # Teach the ⟦cite:h⟧ marker ONLY when the citations gate is on for this
-        # turn. Off → no section → the model writes plain prose, nothing to strip.
         from src.engine_core.coordinator import citations_gate_var
 
         if citations_gate_var.get():
@@ -2832,23 +2631,9 @@ class ExecutionThread:
                 SystemPromptBlock(text=compose_citation_guidance()),
             ]
 
-        # The <voice> / media guidance blocks and the URL-provenance registry
-        # went with engine_core/voice_guides.py and media_registry.py: a
-        # Kasukabe tick has no voice channel, no media tags, and no URLs to
-        # vouch for.
 
-        # Dynamic context — assembled per turn, sent as <system-reminder> in user message
         reminder_parts: list[str] = []
 
-        # Memory recall (episodic / knowledge / social) — coordinator started
-        # this in parallel with the router. Try briefly to consume in the user
-        # message; if it has not settled within the bounded window, hand the
-        # task to ``agent_loop`` which injects the recall as soon as it is
-        # ready (Claude-Code-style per-iteration consume).
-        # Skill matching below reuses the same query embedding when available.
-        # The bounded wait keeps the "memory always-on" contract honored when
-        # recall is fast (typical) and only relaxes it when recall is heavy
-        # (large episodic indexes, slow embedding service).
         query_emb: list[float] | None = None
         prefetched: dict | None = None
         pending_recall_task: "asyncio.Task | None" = None
@@ -2871,10 +2656,8 @@ class ExecutionThread:
                 except Exception as e:
                     logger.debug("Prefetch result failed: %s", e)
             else:
-                # Not settled in window — agent loop consumes when ready.
                 pending_recall_task = prefetch_memory_task
         elif self.search:
-            # Fallback: no coordinator prefetch, recall inline.
             try:
                 query_emb = await self.search.embed(user_input)
                 episodes, knowledge, social = await asyncio.gather(
@@ -2901,8 +2684,6 @@ class ExecutionThread:
                 reminder_parts.append(recall_block)
             await self.emit_new_sources(src_reg)
 
-        # Matched skills — reuse the shared query embedding instead of
-        # re-embedding the user input.
         if self.skill_catalog:
             try:
                 matched_skills = self.skill_catalog.match_skills(user_input, query_emb, top_k=5)
@@ -2915,20 +2696,17 @@ class ExecutionThread:
             except Exception as e:
                 logger.debug("Skill discovery failed: %s", e)
 
-        # Complexity nudge
         if complexity_score(user_input) >= COMPLEXITY_NUDGE_THRESHOLD:
             reminder_parts.append(
                 "<system-reminder>This task appears complex. Consider calling request_plan "
                 "to create a structured approach before proceeding.</system-reminder>"
             )
 
-        # Assemble user message: <system-reminder> blocks + actual input
         if reminder_parts:
             enriched_input = "\n".join(reminder_parts) + "\n\n" + user_input
         else:
             enriched_input = user_input
 
-        # Create a node trace so tool calls / agent loop get recorded
         et = trace_mod()
         run_trace = et.NodeTrace(
             node_id="run",
@@ -2938,11 +2716,7 @@ class ExecutionThread:
         self.current_node_trace = run_trace
         run_start_ns = time.monotonic_ns()
 
-        # Load conversation history — prefer SQLite conversation store, fall back to WM
         prior_messages: list = []
-        # Next sequence number for saving. ``None`` means "could not be
-        # determined" - the save path must refuse to guess rather than write at
-        # a seq that already exists.
         conv_seq: int | None = 0
         from src.herald.types import Message as LLMMessage
 
@@ -2981,18 +2755,12 @@ class ExecutionThread:
                 logger.debug("SQLite conversation load failed, falling back to WM: %s", e)
                 prior_messages = []
 
-            # The write sequence comes from the database, never from what the
-            # read handed back. load_messages returns [] on a read error and
-            # skips rows with corrupt content_json, so trusting it would rewind
-            # the counter onto seq values that already exist and every later
-            # write would collide with UNIQUE(thread_id, seq).
             try:
                 conv_seq = await self.conversation_store.next_seq(thread_id)
             except ConversationPersistenceError as e:
                 logger.critical("Cannot determine conversation sequence for %s: %s", thread_id, e)
                 conv_seq = None
 
-        # Fall back to WM temporal log if no SQLite messages loaded
         if not prior_messages:
             try:
                 log_entries = await self.memory.read(thread_id)
@@ -3023,13 +2791,11 @@ class ExecutionThread:
             except Exception as e:
                 logger.debug("Failed to load conversation history: %s", e)
 
-        # Resolve context window from model catalog
         from src.herald.catalog import get_context_window
 
         model_id = resolve_model(ModelRole.PRIMARY, self.settings)
         context_window = get_context_window(model_id)
 
-        # Run the agent loop — pass enriched_input (with <system-reminder> tags)
         loop_state: LoopState | None = None
         if self.tools and self.tools.tool_count > 0:
             loop_state = await self.agent_loop(
@@ -3055,12 +2821,9 @@ class ExecutionThread:
                 )
             ]
             full_text = ""
-            # No citation seam: engine_core/citation_parser.py is gone, so there
-            # are no ⟦cite:h⟧ markers to strip on the no-tools path either.
             async for chunk in self.adapter.stream(all_messages, system=sys_prompt):
                 full_text += await self.stream_text(chunk, None, None, thread_id)
 
-        # Finalize trace
         run_trace.completed_at = datetime.now(timezone.utc).isoformat()
         run_trace.duration_ms = (time.monotonic_ns() - run_start_ns) // 1_000_000
         run_trace.agent_output = full_text[:2000]
@@ -3071,30 +2834,20 @@ class ExecutionThread:
         self.execution_trace.thread_id = thread_id
         self.execution_trace.total_duration_ms = run_trace.duration_ms
 
-        # Write execution trace to WM
         try:
             trace_json = json.dumps(self.execution_trace.to_dict())
             await self.memory.write(thread_id, EntryType.SYSTEM_EVENT, trace_json)
         except Exception as e:
             logger.debug("WM write (execution trace) failed: %s", e)
 
-        # Persist to task-scoped WM
         await self.memory.write(thread_id, EntryType.MESSAGE_ASSISTANT, full_text)
 
-        # Persist user + assistant messages to SQLite conversation store
         if self.conversation_store is not None:
             if conv_seq is None:
-                # The sequence could not be read, so any seq we picked would
-                # collide with an existing row and be discarded anyway. Fail the
-                # turn rather than report success over a history we could not write.
                 raise ConversationPersistenceError(
                     f"conversation sequence unavailable for {thread_id}; "
                     "refusing to write history at a guessed seq"
                 )
-            # save_message raises on failure, so a lost user message aborts
-            # before the assistant message is written. That keeps the pair
-            # atomic: the alternative is a stored answer to a question the
-            # history no longer contains, which nothing downstream can detect.
             await self.conversation_store.save_message(
                 thread_id,
                 conv_seq,
@@ -3111,8 +2864,6 @@ class ExecutionThread:
         await self.set_state(self.ThreadState.COMPLETED, thread_id)
         await self.emitter.emit(ThreadLifecycle(thread_id=thread_id, status="completed"))
 
-        # Emit execution summary telemetry — prefer tracker totals (captures all
-        # adapter calls: agent loop, generate(), embeddings) over manual counters.
         model_id = resolve_model(ModelRole.PRIMARY, self.settings)
         tracker = getattr(self, "usage_tracker", None)
         if tracker is not None:
@@ -3163,7 +2914,6 @@ class ExecutionThread:
             )
         )
 
-        # WM: record execution done
         try:
             await self.memory.write(
                 thread_id,
@@ -3197,7 +2947,6 @@ class ExecutionThread:
             )
         return None
 
-    # ── Agent loop (core execution engine) ───────────────────────────
 
     async def agent_loop(
         self,
@@ -3243,21 +2992,7 @@ class ExecutionThread:
         )
         from src.engine_core.cache_hit_monitor import CacheHitMonitor
 
-        # Per-step routing: adapter_override takes precedence (sub-agent spawn,
-        # tests that pass an explicit adapter). Otherwise, the router picks a
-        # model per turn inside the loop below. adapter_cache avoids creating
-        # duplicate adapters for the same model.
-        #
-        # Explicit per-request model override (options.model): when the caller
-        # names a model and it is available, build a forced adapter and feed it
-        # through the SAME adapter_override slot so `use_router` flips to False
-        # and the per-turn pick_model block (below) is skipped entirely. An
-        # unavailable id does NOT hard-fail the request — we warn and fall back
-        # to the default router (adapter_override stays None).
         if adapter_override is None and options is not None and options.model:
-            # herald/router.py was removed for the Kasukabe build, so there is no
-            # availability index to consult: the broker is the only authority on
-            # whether a model id resolves, and it answers with a 403 at call time.
             if True:
                 try:
                     from src.herald import create_llm
@@ -3296,7 +3031,6 @@ class ExecutionThread:
         adapter = adapter_override or self.adapter
         await self.ensure_compactor()
         self.compactor.update_context(charter=self.charter)
-        # Prepend conversation history, then current user input
         messages: list[LLMMessage] = [
             *(prior_messages or []),
             LLMMessage(role="user", content=user_input, timestamp=time.time()),
@@ -3315,8 +3049,6 @@ class ExecutionThread:
                 self.permission_mode = PermissionMode.DEFAULT
         state = LoopState(max_turns=max_turns_val, thread_id=thread_id)
 
-        # TOKEN_BUDGET entry: parse shorthand → API param → cross-turn carry.
-        # See architecture/sections/42_engine_core_context_compaction.md for precedence and cross-turn carry rationale.
         budget_enabled = bool(self.settings and self.settings.token_budget_enabled)
         if budget_enabled:
             parsed_budget = parse_token_budget(user_input)
@@ -3327,10 +3059,6 @@ class ExecutionThread:
                 state.budget_tracker = create_budget_tracker()
             self.last_turn_budget = effective_budget
 
-        # CACHE_HIT_MONITOR: one monitor per invocation, so the turn-over-turn
-        # drop calculation never spans two conversations. cache_monitor_last_ms
-        # carries the previous turn's completion time; the gap between turns is
-        # what lets the monitor tell a TTL expiry apart from a prefix change.
         cache_monitor_enabled = bool(self.settings and self.settings.cache_hit_monitor_enabled)
         cache_monitor = CacheHitMonitor() if cache_monitor_enabled else None
         cache_monitor_last_ms: float | None = None
@@ -3344,21 +3072,12 @@ class ExecutionThread:
         self.current_chain = state.chain
         self.current_node_id = node_id
 
-        # MAX_TOKENS recovery state
         MAX_CONTINUATIONS = 3
         continuation_count = 0
         escalation_attempted = False
-        # Spit-back rounds for provenance-rejected media tags (spec D12): when
-        # a turn would end with rejected media, the rejection reasons go back
-        # as a correction message so the model can re-author with a URL that
-        # actually appeared in this thread. Bounded so a model that keeps
-        # inventing URLs cannot loop.
         MAX_MEDIA_CORRECTION_ROUNDS = 2
         media_correction_rounds = 0
         max_output_override: int | None = None
-        # Stop-hook retry guard. Set True when we inject a blocking-error
-        # reminder after a turn; reset to False on the next successful
-        # post-tool hook pass. Caps retry at exactly one per turn cycle.
         stop_hook_active = False
         from src.config import Settings
         from src.herald.catalog import get_model
@@ -3396,7 +3115,6 @@ class ExecutionThread:
             and ESCALATED_MAX_OUTPUT_TOKENS > self.settings.max_tokens
         )
 
-        # Restore WM-persisted struggling counters
         try:
             se = await self.memory.read_by_type(thread_id, EntryType.SYSTEM_EVENT)
             for entry in reversed(se):
@@ -3411,11 +3129,6 @@ class ExecutionThread:
         max_budget = options.max_budget_usd if options else None
         has_budget = max_budget is not None and max_budget > 0
 
-        # Track which streaming executor is currently registered with the
-        # interrupt source.  The closure below swaps the registration
-        # whenever a new per-turn executor replaces the old one (overflow
-        # retries, model fallback, natural turn boundaries).  A release
-        # call at agent-loop exit drops the last one.
         interrupt_source = get_interrupt_source()
         registered_executor: StreamingToolExecutor | None = None
 
@@ -3434,12 +3147,6 @@ class ExecutionThread:
                 registered_executor.cleanup()
                 registered_executor = None
 
-        # Stop-hook sweep — runs at both end-turn and post-tool-use
-        # boundaries. Returns None when the feature flag is off or no
-        # hooks are registered (zero-overhead early-out). Otherwise
-        # returns the aggregated result for the caller to act on.
-        # last_text and last_stop are passed explicitly so the helper
-        # does not depend on name lookup in the enclosing turn body.
         async def run_stop_hooks(trigger: str, last_text: str, last_stop: str):
             flag_on = bool(self.settings and getattr(self.settings, "stop_hooks_enabled", True))
             if not flag_on:
@@ -3482,11 +3189,6 @@ class ExecutionThread:
             return LLMMessage(role="user", content=content, timestamp=time.time())
 
         for turn in range(state.max_turns):
-            # Per-iteration recall consume — when ``execute_turn`` could not
-            # consume the prefetch within the bounded wait window, the task is
-            # passed in and we peek every iteration. As soon as it has settled
-            # we inject the recall as a synthetic user-role message before the
-            # next model call. Zero-wait, never blocks the loop.
             from src.engine_core.coordinator import source_registry_var
 
             src_reg = source_registry_var.get()
@@ -3501,9 +3203,6 @@ class ExecutionThread:
             if recall_consumed and not was_consumed:
                 await self.emit_new_sources(src_reg)
 
-            # Per-user-message circuit-breaker reset: decay CLOSED failures,
-            # arm HALF_OPEN probe when cooldown has elapsed. Gated by
-            # config.circuit_breaker_reset_per_user_message (default True).
             if self.compactor is not None:
                 try:
                     await self.compactor.reset_for_new_user_message(thread_id)
@@ -3535,7 +3234,7 @@ class ExecutionThread:
                 break
 
             if has_budget and state.turns > 0:
-                assert max_budget is not None  # has_budget ⟹ max_budget set
+                assert max_budget is not None
                 cost = self.estimate_running_cost()
                 if cost is not None:
                     from src.herald.catalog import format_usd
@@ -3553,8 +3252,6 @@ class ExecutionThread:
                         ),
                     ]
 
-            # TOKEN_BUDGET: running-count reminder so the model can self-steer
-            # between nudges. See architecture/sections/42_engine_core_context_compaction.md.
             if (
                 budget_enabled
                 and state.turns > 0
@@ -3580,7 +3277,6 @@ class ExecutionThread:
                     ),
                 ]
 
-            # Struggling detection — check at top of each turn
             struggle_reason = state.struggle.check(has_charter=self.charter is not None)
             if struggle_reason and not state.struggle.struggle_triggered:
                 state.struggle.struggle_triggered = True
@@ -3656,23 +3352,11 @@ class ExecutionThread:
             )
             messages = compact_result.messages
 
-            # A compaction or a microcompact just rewrote the prefix, so the
-            # next response will legitimately read fewer cached tokens. Tell
-            # the monitor to skip one PREFIX_UNSTABLE alert rather than report
-            # our own edit as instability. This mirrors notify_cache_deletion()
-            # on the break-detection side.
             if cache_monitor is not None and (
                 compact_result.was_compacted or compact_result.microcompacted
             ):
                 cache_monitor.suppress_next_drop()
 
-            # PreCompact/PostCompact hook context injection. Hooks can
-            # supply additional_context via their result; the orchestrator
-            # collects them into CompactionResult.hook_contexts. We wrap
-            # each block in <system-reminder> and append as a user-role
-            # message so the model sees it on the next turn — same
-            # convention used for search/skill enrichment earlier in this
-            # file. Fail-silent: an empty list is a no-op.
             if compact_result.hook_contexts:
                 from src.herald.types import Message as HookMessage
 
@@ -3690,23 +3374,15 @@ class ExecutionThread:
                         )
                     ]
 
-            # TOKEN_BUDGET: after compaction, reset BOTH the turn snapshot AND
-            # the tracker's delta origin. Without the tracker reset, the next
-            # check computes delta = (small post-compaction) - (large pre-
-            # compaction) = negative, trivially tripping the diminishing guard.
-            # budget_tracker is guaranteed non-None here because agent_loop
-            # entry creates it whenever budget_enabled is True.
             if budget_enabled and compact_result.was_compacted and state.current_turn_token_budget:
                 state.snapshot_turn_budget(state.current_turn_token_budget)
-                assert state.budget_tracker is not None  # created when budget_enabled
+                assert state.budget_tracker is not None
                 state.budget_tracker.reset_delta_origin()
 
-            # Freeze prefix so mid-turn mutations don't invalidate prompt cache
             messages_for_api = list(messages)
             turn_assistant_msgs: list[LLMMessage] = []
             turn_tool_results_msgs: list[LLMMessage] = []
 
-            # Stream LLM response token-by-token (with overflow recovery)
             turn_text = ""
             turn_tool_calls: list[LLMToolCall] = []
             turn_thinking: list[ThinkingBlock] = []
@@ -3723,9 +3399,6 @@ class ExecutionThread:
             turn_assistant_id = str(uuid.uuid4()) if state.chain else ""
 
             def check_concurrency(tc: LLMToolCall) -> bool:
-                # Use partition_tool_calls to classify each call — single-item
-                # list gives us the same concurrent/serial decision that the
-                # post-stream batch executor uses, keeping both paths consistent.
                 if not self.tools:
                     return False
                 batches = partition_tool_calls([tc], self.tools)
@@ -3733,9 +3406,6 @@ class ExecutionThread:
 
             def check_interrupt(tc: LLMToolCall) -> InterruptBehavior:
                 td = self.ensure_tools().get_tool(tc.name) if self.tools else None
-                # Runtime query so tools can vary interrupt behavior per
-                # invocation based on tc.input; falls back to the static
-                # field, and to BLOCK on any exception inside the runtime fn.
                 return td.get_interrupt_behavior(tc.input) if td else InterruptBehavior.BLOCK
 
             def check_command_execution(tc: LLMToolCall) -> bool:
@@ -3793,11 +3463,6 @@ class ExecutionThread:
                 turn_tool_calls = []
                 turn_thinking = []
                 mid_stream_results: list[ToolResultBlock] = []
-                # The craft / voice-media / citation parsers went with their
-                # modules in the Kasukabe build: an agent tick emits plain text
-                # and world tool calls, nothing that needs a text-stage parser.
-                # The names stay (always None) so the streaming call sites and
-                # the end-of-turn flush keep their shape.
                 craft_parser = None
                 vm_parser = None
                 vm_state: dict = {"voice_open": False, "rejections": []}
@@ -3838,10 +3503,7 @@ class ExecutionThread:
                             turn_message_id = event.message_id
                         elif event.type == "usage" and event.usage is not None:
                             turn_usage = event.usage
-                    # No craft / voice-media / citation parser to flush: those
-                    # stages were removed with their modules, so the model's text
-                    # has already reached both the stream and turn_text verbatim.
-                    break  # Success — exit overflow retry loop
+                    break
                 except Exception as exc:
                     try:
                         exc_code = overload_tracker.record_error(exc)
@@ -3912,12 +3574,6 @@ class ExecutionThread:
                                 f"persistent_retry:attempt={advice.attempt}"
                             )
                             continue
-                        # Terminal citadel conditions (quota / budget /
-                        # subscription) already surface as a clean structured SSE
-                        # error block from server.py. Writing the raw exception
-                        # string as a tombstone on top of that double-writes the
-                        # failure and leaks an internal message into the durable
-                        # transcript — so skip the tombstone for these three.
                         from src.herald.provider import (
                             CitadelBudgetExhausted,
                             CitadelQuotaExhausted,
@@ -3944,14 +3600,10 @@ class ExecutionThread:
                             messages = [*messages, *err_tombstones]
                         raise
 
-                    # Feature flag gate: surface overflow immediately if disabled
                     if not (self.settings and self.settings.reactive_compact_enabled):
                         state.last_transition_reason = "reactive_compact_disabled"
                         raise
 
-                    # Try all tiers sequentially without re-hitting the API
-                    # between no-op tiers. Only retry the API when a tier
-                    # actually reduces token count.
                     for tier in range(overflow_attempt, MAX_OVERFLOW_RETRIES + 1):
                         logger.warning(
                             "Context overflow (tier %d/%d), compacting...",
@@ -4001,8 +3653,6 @@ class ExecutionThread:
                         f"reactive_compact:tier={rc_result.tier},strategy={rc_result.strategy}"
                     )
                     messages = rc_result.messages
-                    # Same reasoning as the proactive path above: a reactive
-                    # tier that made progress shrank the prefix on purpose.
                     if cache_monitor is not None:
                         cache_monitor.suppress_next_drop()
                     if state.chain:
@@ -4017,9 +3667,6 @@ class ExecutionThread:
             overload_tracker.record_success()
             state.record_turn_usage(turn_usage)
 
-            # CACHE_HIT_MONITOR: compare this turn's cache split against the
-            # previous one. state.turns was just incremented, so it is the
-            # 1-based turn number the monitor expects.
             if cache_monitor is not None:
                 now_ms = time.monotonic() * 1000
                 cm_elapsed_ms = (
@@ -4053,7 +3700,6 @@ class ExecutionThread:
                         )
                     )
 
-            # TOKEN_BUDGET: per-turn progress event for observers.
             if budget_enabled and state.current_turn_token_budget:
                 tb_turn_tokens = state.get_turn_output_tokens()
                 await self.emitter.emit(
@@ -4069,7 +3715,7 @@ class ExecutionThread:
                 )
 
             if has_budget:
-                assert max_budget is not None  # has_budget ⟹ max_budget set
+                assert max_budget is not None
                 running_cost = self.estimate_running_cost()
                 if running_cost is not None and running_cost >= max_budget:
                     from src.herald.catalog import format_usd
@@ -4085,7 +3731,6 @@ class ExecutionThread:
 
             if turn_text:
                 state.full_text += turn_text
-                # WM: record text
                 try:
                     if tid:
                         await self.memory.write(tid, EntryType.SYSTEM_EVENT, turn_text[:2000])
@@ -4093,16 +3738,11 @@ class ExecutionThread:
                     logger.debug("WM write (text delta) failed: %s", e)
 
             if halt_for_wait:
-                # An authored wait-craft ended the turn: cancel any pre-craft
-                # tools still in flight and force the end-of-turn path so the
-                # assistant message persists now and the user's answer is handled
-                # by a fresh turn (no parked-future to lose across a restart).
                 turn_executor.discard()
                 turn_tool_calls = []
                 turn_stop_reason = StopReason.END_TURN
 
             if turn_stop_reason != StopReason.TOOL_USE or not turn_tool_calls:
-                # MAX_TOKENS recovery: escalation first, then multi-turn continuation
                 if turn_stop_reason == StopReason.MAX_TOKENS:
                     turn_executor.discard()
                     if turn_tool_calls:
@@ -4158,9 +3798,6 @@ class ExecutionThread:
 
                     logger.info("MAX_TOKENS recovery exhausted (%d attempts)", continuation_count)
 
-                # TOKEN_BUDGET end-of-turn check. MAX_TOKENS stops are handled
-                # by the recovery block above; we must not re-enter here.
-                # is_sub_agent=False — sub-agents never reach agent_loop.
                 if (
                     budget_enabled
                     and turn_stop_reason != StopReason.MAX_TOKENS
@@ -4230,8 +3867,6 @@ class ExecutionThread:
                 elif turn_stop_reason == StopReason.MAX_TOKENS:
                     state.exit_reason = LoopExitReason.MAX_TOKENS
 
-                # Post-turn signal capture: model summarizes the exchange
-                # into ~100 tokens using the same cached context. Deterministic.
                 if self.signal_store is not None and len(user_input.strip()) >= 20:
                     try:
                         from src.learning_centre.signals import LearningSignal
@@ -4260,7 +3895,6 @@ class ExecutionThread:
                         except Exception:
                             summary = f"[user] {user_input[:100]} [engine] {state.full_text[:100]}"
 
-                        # Collect tool outputs: only ask_user and AD tools
                         tool_ctx = ""
                         for tc in turn_tool_calls:
                             if tc.name == "ask_user" or tc.name.startswith("ad:"):
@@ -4282,11 +3916,6 @@ class ExecutionThread:
                     except Exception as e:
                         logger.debug("Post-turn signal capture failed: %s", e)
 
-                # Stop-hook sweep at the end-of-turn boundary. See the
-                # run_stop_hooks closure for the stop_hook_active retry
-                # invariant; the three branches handled below are prevent
-                # (force exit), blocking-error (inject reminder + retry
-                # once), and clean pass (fall through to break).
                 sh_agg = await run_stop_hooks(
                     "after_end_turn",
                     turn_text,
@@ -4314,10 +3943,6 @@ class ExecutionThread:
                             ),
                         ]
                         stop_hook_active = True
-                        # Clear end-turn exit reason flags so the retry
-                        # turn starts clean. If the second turn also ends
-                        # naturally, we'll re-enter this block with the
-                        # guard set and fall through to the break below.
                         if state.exit_reason in (
                             LoopExitReason.REFUSAL,
                             LoopExitReason.MAX_TOKENS,
@@ -4329,7 +3954,6 @@ class ExecutionThread:
 
             calls = turn_tool_calls
 
-            # Mid-stream results already yielded + remaining from executor
             tool_results: list[ToolResultBlock] = list(mid_stream_results)
             async for result in turn_executor.results():
                 tool_results.append(result)
@@ -4339,9 +3963,6 @@ class ExecutionThread:
                 tool_results, context_window, tool_names=tool_names
             )
 
-            # Tool use summary: fork a background LLM call concurrent with the
-            # next agent turn. Non-critical — failures are swallowed in the
-            # service; the task reference is intentionally not awaited.
             asyncio.ensure_future(
                 generate_tool_use_summary(
                     tool_calls=calls,
@@ -4355,8 +3976,6 @@ class ExecutionThread:
                 )
             )
 
-            # Add the assistant's response (with tool_use blocks) to messages
-            # so the model sees what it decided to do
             assistant_blocks: list[ContentBlock] = []
             for tb in turn_thinking:
                 assistant_blocks.append(tb)
@@ -4388,15 +4007,10 @@ class ExecutionThread:
             )
             messages = [*messages_for_api, *turn_assistant_msgs, *turn_tool_results_msgs]
 
-            # Reset recovery state after successful tool execution
             escalation_attempted = False
             max_output_override = None
             continuation_count = 0
 
-            # Stop-hook sweep at the post-tool-use boundary. Symmetric
-            # to the end-of-turn sweep above; the clean-pass branch
-            # additionally resets stop_hook_active so the next turn
-            # cycle starts with a fresh retry budget.
             sh_agg_tool = await run_stop_hooks(
                 "after_tool_use",
                 turn_text,
@@ -4426,7 +4040,6 @@ class ExecutionThread:
                 else:
                     stop_hook_active = False
 
-            # Update struggling counters after tool execution
             state.struggle.record_tool_results(
                 tool_calls=turn_tool_calls,
                 tool_results=tool_results,
@@ -4443,8 +4056,6 @@ class ExecutionThread:
             except Exception:
                 pass
 
-            # Replan: update internal charter, inject goals via system-reminder
-            # (do NOT rebuild system prompt or register new tools — cache stability)
             if replan_state and replan_state.get("new_charter"):
                 new_charter = replan_state.pop("new_charter")
                 new_tools = replan_state.pop("new_tools", None)
@@ -4471,7 +4082,6 @@ class ExecutionThread:
                     ),
                 ]
 
-                # Emit todo list replacement with the new charter's goals
                 replan_items = [
                     {"node_id": n.node_id, "label": n.label, "status": "pending"}
                     for n in new_charter.nodes
@@ -4486,7 +4096,6 @@ class ExecutionThread:
                     )
                 )
 
-                # WM: record todo update (replan)
                 try:
                     replan_tid = getattr(new_charter, "thread_id", self.current_thread_id)
                     if replan_tid:
@@ -4503,7 +4112,6 @@ class ExecutionThread:
                 except Exception as e:
                     logger.debug("WM write (todo replan) failed: %s", e)
 
-                # WM: record charter update event
                 try:
                     await self.memory.write(
                         getattr(new_charter, "thread_id", self.current_thread_id),
@@ -4519,8 +4127,6 @@ class ExecutionThread:
                 except Exception as e:
                     logger.debug("WM write (charter update) failed: %s", e)
 
-            # If request_plan created a charter this turn, inject mission goals
-            # via system-reminder (do NOT rebuild system prompt)
             if (
                 self.charter is not None
                 and self.charter is not self.session_charter
@@ -4537,7 +4143,6 @@ class ExecutionThread:
                     ),
                 ]
 
-                # Replace checkpoint stub handler (schema unchanged, cache safe)
                 trace_watermarks: dict = {
                     "tool_calls": 0,
                     "skill_calls": 0,
@@ -4547,7 +4152,6 @@ class ExecutionThread:
                 }
                 self.register_checkpoint_tool(self.charter, trace_watermarks)
 
-                # Emit todo list init
                 todo_items = [
                     {"node_id": n.node_id, "label": n.label, "status": "pending"}
                     for n in self.charter.nodes
@@ -4561,11 +4165,9 @@ class ExecutionThread:
                 )
 
         else:
-            # for-loop exhausted without break — hit turn limit
             if state.exit_reason == LoopExitReason.COMPLETED:
                 state.exit_reason = LoopExitReason.MAX_TURNS
 
-        # Trace: record agent loop summary on current node trace
         if self.current_node_trace is not None:
             et = trace_mod()
             self.current_node_trace.agent_loop = et.AgentLoopTrace(
@@ -4575,8 +4177,6 @@ class ExecutionThread:
                 goal=user_input[:200],
             )
 
-        # Drop the last-registered executor from the interrupt source so
-        # SIGINT (or any future trigger) does not try to cancel a dead turn.
         release_turn_executor()
 
         return state
@@ -4653,9 +4253,6 @@ class ExecutionThread:
             except Exception as e:
                 logger.debug("WM write (tool call %s) failed: %s", call.name, e)
 
-        # --- Pre-tool hook sweep ---
-        # Fires before the permission check so hooks can deny or mutate
-        # input independently of the rule-based permission pipeline.
         effective_input = call.input
         pre_additional_contexts: list[str] = []
         pre_hooks_on = bool(
@@ -4715,7 +4312,6 @@ class ExecutionThread:
             permission_request_fn=self.permission_request_hook_fn(),
             permission_mode=self.permission_mode,
         )
-        # Handle new rule from "Always" choices
         if perm.new_rule is not None:
             if perm.persist and self.permission_store:
                 self.permission_store.add_rule(perm.new_rule)
@@ -4724,8 +4320,6 @@ class ExecutionThread:
                 self.session_rules.append(perm.new_rule)
         if not perm.allowed:
             result_text = f"Permission denied: {perm.reason}"
-            # PermissionDenied lifecycle hook — observational; hook may
-            # supply additional_context explaining the denial to the model.
             if self.lifecycle_hooks.has_hooks(HookEvent.PERMISSION_DENIED):
                 from src.engine_core.lifecycle_hooks import PermissionDeniedInput
 
@@ -4752,10 +4346,6 @@ class ExecutionThread:
                         f"Agent aborted: {denial.total_count} "
                         f"denial(s) with no user approval channel"
                     )
-                # Route through await_user_input (not the callback directly) so the
-                # WAITING_INPUT state transition fires and every pause path —
-                # ask_user, permission, denial-escalation — registers exactly
-                # one waiter in the coordinator's pending_inputs.
                 user_response = await self.await_user_input(
                     f"The agent has been denied {denial.total_count} "
                     f"time(s) (recent tools: {denial.recent_tools}). "
@@ -4785,8 +4375,6 @@ class ExecutionThread:
         if tool_success and call.name in ("file_read", "read_file") and self.compactor:
             file_path = effective_input.get("file_path") or effective_input.get("path", "")
             if file_path:
-                # Hash raw disk content (not result_text which has tool-layer formatting).
-                # Restoration re-reads from disk and compares this hash to detect changes.
                 import hashlib
 
                 try:
@@ -4803,11 +4391,6 @@ class ExecutionThread:
                     size=raw_size,
                 )
 
-        # --- Post-tool hook sweep ---
-        # Fires after tool execution so hooks can observe the result,
-        # inject context, replace the output, or signal loop exit.
-        # Runs before builder construction so updated_tool_output can
-        # replace the base result cleanly.
         effective_result = result_text
         post_additional_contexts: list[str] = []
         post_hooks_on = bool(
@@ -4844,9 +4427,6 @@ class ExecutionThread:
                 effective_result = post_agg.updated_tool_output
             post_additional_contexts = post_agg.additional_contexts
 
-        # PostToolUseFailure lifecycle hook — fires when the tool result
-        # indicates failure. Hooks can surface telemetry or supply
-        # additional_context that the model sees.
         if not tool_success and self.lifecycle_hooks.has_hooks(HookEvent.POST_TOOL_USE_FAILURE):
             from src.engine_core.lifecycle_hooks import PostToolUseFailureInput
 
@@ -4867,20 +4447,11 @@ class ExecutionThread:
             except Exception as exc:
                 logger.debug("PostToolUseFailure hook dispatch failed: %s", exc)
 
-        # Post-tool injection pipeline. The legacy hard truncate and
-        # smart-trim are superseded by the disk-spill cap — strictly
-        # more recoverable because the model can ask to read the
-        # persisted file. results_dir is passed as a callable so the
-        # lazy property only materializes when persistence triggers.
-        # Sourcing: register an asset/web tool result as a citable source and
-        # label the MODEL-ONLY copy (effective_result) with its [handle] — never
-        # result_text, so the handle can't leak into the wire tool block. Then
-        # emit the new source block. Gated by citations (registry None when off).
         from src.engine_core.coordinator import source_registry_var
 
         src_reg = source_registry_var.get()
         if src_reg is not None:
-            if tool_success:  # don't turn a failed tool result into a citable source
+            if tool_success:
                 effective_result = register_tool_source(call.name, effective_result, src_reg)
             await self.emit_new_sources(src_reg)
 

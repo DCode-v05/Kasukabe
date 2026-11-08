@@ -97,15 +97,9 @@ async def test_revising_a_tool_comes_back_with_the_same_context_as_revising_a_sk
 ) -> None:
     """The improvement path was the one arriving blind."""
     await _worker(world)
-    # toolify's steps are {order, tool_name}; skillify's are
-    # {order, kind, ref}. Two authoring tools, two step shapes - noted
-    # rather than papered over, because a test that quietly used one
-    # shape for both would hide it.
     await registry.execute(world, "n01", "toolify", {
         "name": "walk_and_cut",
         "description": "go to the field and harvest",
-        # TOOL-06: filing now dry-runs each step's literal params, so
-        # both of these carry the arguments they would need at call time.
         "steps": [
             {"order": 1, "tool_name": "move",
              "params": {"destination_location_id": "sector:900007"}},

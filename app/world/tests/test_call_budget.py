@@ -27,9 +27,6 @@ from world.call_budget import (
 from world.retrieval_depth import format_volatile_line
 
 
-# ── the bound ─────────────────────────────────────────────────────────
-
-
 def test_a_tick_cannot_exceed_the_call_budget():
     """The spec's first named test. A rich resident is still capped:
     wealth buys runway, not a fifty-call turn."""
@@ -57,12 +54,6 @@ def test_a_nearly_empty_wallet_still_buys_a_turn():
 def test_the_budget_tightens_as_the_wallet_empties():
     """The whole mechanism in one assertion, and the reason `buy_energy`
     is a decision rather than a curiosity."""
-    # $2.00, $0.45, $0.20. At 5% of the wallet and about three quarters of
-    # a cent a call that is 6 (capped), 3, and the floor - the first draft
-    # of this test picked 40 and 2 cents, which both land on the floor, so
-    # it was asserting a gradient in a range that has none, and $0.90 was
-    # re-picked when the ceiling came down from 12 to 6 for the same
-    # reason: at 90 cents a wallet now buys the ceiling too.
     full = budget_for(wallet_cents=200).calls
     thin = budget_for(wallet_cents=45).calls
     empty = budget_for(wallet_cents=20).calls
@@ -106,9 +97,6 @@ def test_a_ceiling_below_the_floor_does_not_invert_the_bound(monkeypatch):
     assert budget.calls == MIN_CALLS_PER_TICK
 
 
-# ── and what the resident is told about it ────────────────────────────
-
-
 def test_the_budget_line_is_rendered_and_names_no_remedy():
     """The spec's second named test, and the addendum's section 10 in as
     many words: "No verb is named. `buy_energy` must be found from the
@@ -125,7 +113,6 @@ def test_the_budget_line_is_rendered_and_names_no_remedy():
 
     assert "You ran out of energy for thinking last turn after 6 steps." in line
     assert "buy_energy" not in line
-    # Nor any of the ways a hint sneaks back in.
     for word in ("should", "consider", "try ", "you could", "government store"):
         assert word not in line.lower()
 
@@ -142,9 +129,6 @@ def test_the_sentence_is_past_tense_and_carries_the_count():
     assert spent_line(6) == (
         "You ran out of energy for thinking last turn after 6 steps."
     )
-
-
-# ── the runner computes it from the real wallet ───────────────────────
 
 
 @pytest.mark.asyncio
@@ -194,9 +178,6 @@ async def test_the_sentence_arrives_on_exactly_one_turn(tmp_path) -> None:
     assert second["ran_out_after_steps"] is None
 
 
-# ── the companion setting: schemas for where you are standing ─────────
-
-
 @pytest.mark.asyncio
 async def test_a_tool_gated_elsewhere_comes_back_as_one_line(tmp_path) -> None:
     """A fresh context is about 8,000 tokens before a word of perception,
@@ -211,13 +192,9 @@ async def test_a_tool_gated_elsewhere_comes_back_as_one_line(tmp_path) -> None:
 
     rows = {row["name"]: row for row in tool_registry_rows(registry, world, "n01")}
 
-    # `buy_energy` is gated to the government store, and this resident is
-    # in a field.
     reduced = rows["buy_energy"]
     assert reduced.get("elsewhere") is True
     assert reduced["input_schema"]["properties"] == {}
-    # The NAME survives, always: a resident that cannot see a tool exists
-    # cannot walk to where it works.
     assert "buy_energy" == reduced["name"]
     assert "move" in reduced["description"]
 
@@ -287,9 +264,6 @@ def test_the_companion_setting_can_be_turned_off(monkeypatch):
     assert local_tool_schemas() is False
 
 
-# ── the ablation arm reaches the engine (evaluation spec 5.2) ─────────
-
-
 @pytest.mark.asyncio
 async def test_the_runner_reads_each_residents_arm_from_the_genesis_cast(
     tmp_path,
@@ -304,7 +278,6 @@ async def test_the_runner_reads_each_residents_arm_from_the_genesis_cast(
 
     arms = {runner.ablation_arm_for(a) for a in runner.world_state.agents}
     assert arms <= {"full", "no_learning", "no_reflection", "deepseek_locked"}
-    # Genesis splits the cast, so a real town is not all one arm.
     assert len(arms) > 1, "every resident is in the same arm; there is no control"
 
 

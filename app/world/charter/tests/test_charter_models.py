@@ -28,14 +28,11 @@ def test_genesis_charter_builds_with_defaults() -> None:
 
 def test_amendment_votes_required_is_ceiling_division() -> None:
     charter = Charter()
-    # 3/5 of 5 seats is exactly 3.
     assert charter.amendment_votes_required == 3
 
 
 def test_amendment_votes_required_rounds_up_for_odd_seat_counts() -> None:
-    charter = Charter(minister_seats=5)  # 1 pm + 5 ministers = 6 seats
-    # 3/5 of 6 is 3.6, must round up to 4 so a bare 3-vote minority can
-    # never pass a supermajority amendment.
+    charter = Charter(minister_seats=5)
     assert charter.amendment_votes_required == 4
 
 

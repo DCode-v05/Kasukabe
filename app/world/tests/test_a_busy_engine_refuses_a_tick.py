@@ -55,14 +55,6 @@ def _runner(tmp_path, timeout_s: float = 0.2) -> GenesisRunner:
     )
 
 
-# -- the engine half -----------------------------------------------------
-
-# The engine is a separate package with its own venv, so these two read
-# the seam as TEXT rather than importing it. The behaviour they describe is
-# tested for real next door, in
-# engine/tests/test_a_busy_engine_refuses_a_tick.py, where the imports
-# resolve. What belongs on THIS side is the contract: the runner's 409
-# handling below is worthless if the engine stops sending one.
 SEAM = Path(__file__).resolve().parents[3] / "engine" / "src" / "sim"
 
 
@@ -88,8 +80,6 @@ def test_the_tick_route_refuses_with_409() -> None:
     )
     assert "status_code=409" in source
 
-
-# -- the runner half -----------------------------------------------------
 
 def test_the_outcome_distinguishes_refused_from_failed() -> None:
     """A refusal costs nothing and means nothing is broken. Counting it as
@@ -158,8 +148,6 @@ async def test_a_refusal_is_counted_as_a_skip_not_a_failure(tmp_path) -> None:
     )
 
 
-# -- the test the review asks for ----------------------------------------
-
 @pytest.mark.asyncio
 async def test_a_slow_gateway_gets_no_second_tick_while_the_first_pends(
     tmp_path,
@@ -186,7 +174,6 @@ async def test_a_slow_gateway_gets_no_second_tick_while_the_first_pends(
         async def send_tick(self, agent_id, *, tick, **kw) -> TickOutcome:
             started.append(tick)
             if len(started) == 1:
-                # 2x the timeout, per the review's wording.
                 await asyncio.wait_for(release.wait(), timeout=5.0)
             return TickOutcome(
                 agent_id=agent_id, reply="ok", learning_ran=False,
@@ -201,14 +188,12 @@ async def test_a_slow_gateway_gets_no_second_tick_while_the_first_pends(
 
     runner.gateway = SlowGateway()
 
-    # Tick 1: dispatched, times out at 0.2s while the gateway sleeps on.
     await runner.dispatch_due_agents(
         TickResult(tick=timestamp_for(60), due_agents=[someone])
     )
     assert started == [60], "the first tick must have been sent"
     assert runner.timed_out_ticks >= 1
 
-    # Tick 2, three ticks later - the interval the finding names.
     await runner.dispatch_due_agents(
         TickResult(tick=timestamp_for(63), due_agents=[someone])
     )

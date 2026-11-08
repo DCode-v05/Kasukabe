@@ -59,9 +59,6 @@ def _gateway(handler) -> OpenAIGateway:
     )
 
 
-# ── the request going out ─────────────────────────────────────────────
-
-
 def test_the_system_prompt_becomes_a_system_message() -> None:
     body = converse_request_to_openai(CONVERSE, "gpt-6-luna")
 
@@ -139,9 +136,6 @@ def test_tools_keep_their_schema() -> None:
     assert fn["parameters"] == {"type": "object"}
 
 
-# ── the response coming back ──────────────────────────────────────────
-
-
 def test_text_and_tool_calls_come_back_as_converse_blocks() -> None:
     converse = openai_response_to_converse({
         "choices": [{"message": {"content": "I will vote.", "tool_calls": [
@@ -200,9 +194,6 @@ async def test_a_whole_call_round_trips() -> None:
     assert got["usage"]["inputTokens"] == 900
 
 
-# ── failures the pool has to be able to act on ────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_rate_limit_is_overload_so_the_pool_re_routes() -> None:
     gw = _gateway(lambda r: httpx.Response(429, json={"error": {"message": "slow down"}}))
@@ -220,9 +211,6 @@ async def test_a_bad_request_is_not_retried() -> None:
     with pytest.raises(UpstreamError) as caught:
         await gw.converse(CONVERSE)
     assert not isinstance(caught.value, UpstreamOverloadedError)
-
-
-# ── streaming, where the index bookkeeping lives ──────────────────────
 
 
 def _sse(*chunks: dict) -> str:
@@ -287,9 +275,6 @@ async def test_text_and_a_tool_call_get_different_block_indexes() -> None:
     assert text_ix != tool_ix
     stops = [e["contentBlockStop"]["contentBlockIndex"] for e in events if "contentBlockStop" in e]
     assert sorted(stops) == sorted({text_ix, tool_ix}), "every opened block is closed"
-
-
-# ── the shape of the allowlist itself ─────────────────────────────────
 
 
 def test_openai_models_are_not_expected_to_have_bedrock_lanes() -> None:

@@ -40,9 +40,6 @@ def make_db(path, schema=SCHEMA_WITH_HOP, rows=()):
     return str(path)
 
 
-# ── health ────────────────────────────────────────────────────────────
-
-
 def test_a_healthy_run_reads_as_believable(tmp_path):
     db = make_db(tmp_path / "t.db", rows=[
         (f"c{i}", "a1", 1, 1000, None, None, None) for i in range(95)
@@ -86,9 +83,6 @@ def test_no_calls_is_not_a_failing_run(tmp_path):
     assert "nothing to judge" in snapshot.verdict
 
 
-# ── hops ──────────────────────────────────────────────────────────────
-
-
 def test_failures_group_by_the_link_that_broke(tmp_path):
     db = make_db(tmp_path / "t.db", rows=[
         ("a", "a1", 0, 0, "LedgerUnavailableError", "ledger down", "ledger"),
@@ -114,9 +108,6 @@ def test_untagged_failures_are_reported_not_hidden(tmp_path):
     ])
     conn = sqlite3.connect(db)
     assert hops.untagged_share(conn) == 0.5
-
-
-# ── gaps ──────────────────────────────────────────────────────────────
 
 
 def test_a_gap_gets_a_name_and_a_headcount():
@@ -150,9 +141,6 @@ def test_headcount_beats_attempt_count():
            for i in range(9)]
     )
     assert found[0].unmet_requirement == "location:mill", "9 agents beat 1 agent x200"
-
-
-# ── the service, and its degraded paths ───────────────────────────────
 
 
 def test_the_page_serves(tmp_path):

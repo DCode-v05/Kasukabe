@@ -21,9 +21,7 @@ from src.infra.memoize import TTLCache
 
 logger = logging.getLogger(__name__)
 
-# Search result freshness. Independent of the utility and asset cache TTLs
-# (coincidentally equal values, separate policies; do not unify).
-CACHE_TTL_SECONDS = 900  # 15 minutes
+CACHE_TTL_SECONDS = 900
 
 
 class Search:
@@ -51,8 +49,6 @@ class Search:
         self.embedder = embedding_service
         self.catalog = catalog
         self.signal_store = signal_store
-        # Sizes the skill-metadata budget. None falls back to a fixed character
-        # budget, which is the safe reading when the model is unknown.
         self.skill_context_window = skill_context_window
         self.cache = TTLCache(default_ttl=CACHE_TTL_SECONDS)
 
@@ -75,7 +71,6 @@ class Search:
     def invalidate_all(self) -> None:
         self.cache.invalidate()
 
-    # --- Episodic Memory ---
 
     async def episodes(
         self, query: str, limit: int = 20, query_embedding: list[float] | None = None
@@ -86,7 +81,6 @@ class Search:
             query, limit=limit, query_embedding=query_embedding
         )
 
-    # --- Knowledge Store ---
 
     async def knowledge(
         self, query: str, limit: int = 20, query_embedding: list[float] | None = None
@@ -97,7 +91,6 @@ class Search:
             query, limit=limit, query_embedding=query_embedding
         )
 
-    # --- Social Graph ---
 
     async def social(
         self, query: str, limit: int = 10, query_embedding: list[float] | None = None
@@ -108,7 +101,6 @@ class Search:
             query, limit=limit, query_embedding=query_embedding
         )
 
-    # --- Pending Learning Signals (FTS5, pre-consolidation) ---
 
     async def signals(self, query: str, limit: int = 10) -> list[dict]:
         """Search pending learning signals via FTS5. Pre-consolidation data."""
@@ -119,7 +111,6 @@ class Search:
         except Exception:
             return []
 
-    # --- Unified Cross-Memory Search ---
 
     async def unified(self, query: str, limit: int = 20) -> list[dict]:
         """Cross-memory search with entity fusion.
@@ -127,7 +118,6 @@ class Search:
         Pre-computes query embedding once, runs episodes + knowledge + social
         in parallel, then boosts results that mention people from the social graph.
         """
-        # Pre-compute embedding once (eng review decision 4A)
         query_embedding = None
         if self.embedder:
             query_embedding = await self.embedder.embed(query)
@@ -150,7 +140,6 @@ class Search:
             self.signals(query, limit=5),
         )
 
-        # Tag results with source
         for r in ep_results:
             r["_source"] = "episode"
         for r in kn_results:
@@ -161,13 +150,11 @@ class Search:
             r["_source"] = "pending_signal"
             r["score"] = r.get("score", 0.5)
 
-        # Collect person names from social results for cross-reference boosting
         person_names = set()
         for r in sg_results:
             if r.get("result_type") == "node" and r.get("name"):
                 person_names.add(r["name"].lower())
 
-        # Boost episodes/knowledge that mention people found in social results
         all_results = ep_results + kn_results + sg_results + sig_results
         if person_names:
             for r in all_results:
@@ -178,7 +165,6 @@ class Search:
                     text = (r.get("subject", "") + " " + r.get("content", "")).lower()
 
                 if text:
-                    # Word-boundary regex matching (eng review decision 2A)
                     mentions = sum(
                         1
                         for name in person_names
@@ -190,7 +176,6 @@ class Search:
         all_results.sort(key=lambda x: x.get("score", 0), reverse=True)
         return all_results[:limit]
 
-    # --- AD Metadata (cached, from SQLite) ---
 
     async def ad_connections(self) -> dict[str, Any]:
         """Return AD catalog: servers, connections, action names by server."""
@@ -207,7 +192,6 @@ class Search:
             "SELECT server_name, display_name, category, vetted, instructions FROM server_registry"
         ):
             entry = dict(r)
-            # vetted is a BOOLEAN column; sqlite hands back 1/0, normalize to bool.
             entry["vetted"] = bool(entry.get("vetted"))
             servers.append(entry)
         connections = []
@@ -217,8 +201,6 @@ class Search:
                FROM connections"""
         ):
             entry = dict(r)
-            # enabled is the per-asset pause flag (BOOLEAN); expose it as a real
-            # bool so callers can gate selection/exposure on it.
             entry["enabled"] = bool(entry.get("enabled"))
             connections.append(entry)
         actions = await self.db.fetch("SELECT server_name, action_name FROM action_registry")
@@ -235,7 +217,6 @@ class Search:
         self.set_cached(cache_key, result)
         return result
 
-    # --- UD Metadata (cached, from catalog + SQLite) ---
 
     async def agents(self, capabilities: list[str] | None = None) -> list[dict]:
         """Return agent metadata from catalog + user overrides from SQLite."""
@@ -246,7 +227,6 @@ class Search:
 
         results: list[dict] = []
 
-        # Platform agents from catalog (in-memory)
         if self.catalog:
             for agent_data in self.catalog.all_agents():
                 if capabilities:
@@ -265,7 +245,6 @@ class Search:
                 }
                 results.append(d)
 
-        # User agents from SQLite
         if self.db:
             user_rows = await self.db.fetch(
                 """SELECT name, type, capabilities, input_signature,
@@ -276,7 +255,6 @@ class Search:
                 d = dict(row)
                 d["source"] = "user_created"
                 d["version"] = "user"
-                # Parse JSON string fields
                 for field in ("capabilities", "input_signature", "output_signature"):
                     if isinstance(d.get(field), str):
                         try:
@@ -314,8 +292,6 @@ class Search:
                     }
                 )
 
-        # Bound what reaches the model. Without this the list grows with the
-        # skill count and silently eats context that belongs to the conversation.
         from src.catalog import apply_skill_metadata_budget, skill_metadata_budget
 
         results, _dropped = apply_skill_metadata_budget(
@@ -345,7 +321,6 @@ class Search:
         self.set_cached(cache_key, results)
         return results
 
-    # --- Embedding for slot scoring ---
 
     EMBED_CACHE_MAX = 256
 
@@ -372,7 +347,6 @@ class Search:
                 cache.popitem(last=False)
         return emb
 
-    # --- Health ---
 
     def cache_stats(self) -> dict[str, Any]:
         return {

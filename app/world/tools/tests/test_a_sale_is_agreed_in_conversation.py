@@ -78,9 +78,6 @@ async def _refused(registry, world, actor, tool, params) -> str:
     return str(result.error) if getattr(result, "error", None) else ""
 
 
-# ── person to person ──────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_strangers_in_the_same_room_cannot_buy_from_each_other(world, registry):
     await _buyer_and_seller(world)
@@ -173,9 +170,6 @@ async def test_a_third_person_talking_to_the_seller_does_not_make_you_part_of_it
     assert "conversation" in why.lower()
 
 
-# ── buying from a shop ────────────────────────────────────────────────
-
-
 async def _a_shop(world, *, staff_here: bool):
     await spawn_agent(world, "buyer", "business:b_grocery")
     await spawn_agent(world, "grocer", "business:b_grocery" if staff_here else "street")
@@ -187,26 +181,6 @@ async def _a_shop(world, *, staff_here: bool):
     _open_shop_account(world, "b_grocery")
     world.price_board["b_grocery"] = {"bread": PricePost(item="bread", ask_sim=12)}
     world.inventory.credit("b_grocery", "bread", 4)
-
-
-# ── a shop that has posted a price is open, whoever is standing in it ──
-#
-# These two used to assert the opposite, and the change is the operator's,
-# made on the evidence of election30: buyers turned away because "nobody is
-# minding Kasukabe Cafe right now", 9 of 47 sell calls landing, and a town
-# eating raw flour beside shelves it could not buy from.
-#
-# It restores the spec's `test_absent_owner_still_sells_at_the_posted_price`
-# and its reason - "a shop that only trades while its owner is standing in it
-# is a person, not a business" - without giving back the defect that replaced
-# it, because THE POSTED PRICE IS THE AGREEMENT. `post_price` is an act a
-# resident performs standing in the shop, saying in public and in advance
-# what it sells for. A customer who pays that price is not buying from
-# somebody who never agreed.
-#
-# Everything the 2026-09-21 rule caught is still caught, and the tests for
-# it are directly below: a PERSON is not a shop, and a shop that has priced
-# nothing is still shut.
 
 
 @pytest.mark.asyncio
@@ -308,9 +282,6 @@ async def test_the_worlds_own_control_shop_still_sells(world, registry):
     assert why == ""
 
 
-# ── what is not a purchase, and the switch ────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_gift_needs_no_negotiation(world, registry):
     await _buyer_and_seller(world)
@@ -339,9 +310,6 @@ def test_which_rule_was_in_force_is_recorded() -> None:
     from world.run_manifest import RECORDED_ENV
 
     assert "KASUKABE_SALES_NEED_CONVERSATION" in RECORDED_ENV
-
-
-# ── the market says which shops are open ──────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -396,7 +364,7 @@ async def test_the_control_bakery_can_still_buy_its_flour(world, registry):
 
     from world.tools.primitives.commerce import _require_dealing
 
-    _require_dealing(world, "buy", "control:cb01", "miller")   # must not raise
+    _require_dealing(world, "buy", "control:cb01", "miller")
 
 
 @pytest.mark.asyncio

@@ -1,11 +1,3 @@
-// UI-04's harness: with a world bound, does the page still speak over it?
-//
-// Lifts the REAL functions out of the shipped township-v2.js and runs them
-// against a bound LIVE record. Grepping the source for `isBound(` would
-// pass while every one of them still printed the model's answer.
-//
-// Prints one JSON line of what each produced.
-
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
@@ -15,10 +7,6 @@ const SOURCE = path.join(
 );
 const text = fs.readFileSync(SOURCE, "utf8");
 
-/* Pull one top-level `function NAME(...) {...}` out by brace matching.
- * Naive counting would break on a brace inside a string or a comment, so
- * this tracks both - the file is full of HTML string literals with braces
- * in them and one miscount takes half the file with it. */
 function lift(name) {
   const decl = "function " + name + "(";
   const start = text.indexOf(decl);
@@ -50,9 +38,6 @@ const LIFTED = [
   "liveSkillChips",
 ].map(lift).join("\n\n");
 
-// The town this file would model if nothing were bound. a0001 is engine-
-// bound; a0002 is a resident of the same roster whose id the world does not
-// know, and MUST keep the model or it freezes on the map.
 function agent(id, occ) {
   return {
     id: id, n: "Resident " + id, occ: occ, sex: "f", age: 30, br: "working",
@@ -101,7 +86,7 @@ function run(liveJson) {
 const BOUND = {
   connected: true, bound: 1, enabled: true,
   zone: { a0001: "government" },
-  balance: { a0001: 0 },                    // the world says: broke
+  balance: { a0001: 0 },
   usdCents: { a0001: 40 },
   skills: { a0001: [{ name: "Baking", level: 2 }] },
   government: { prime_minister: { agent_id: "a0002", name: "Resident a0002" },

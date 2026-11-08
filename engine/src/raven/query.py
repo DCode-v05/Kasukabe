@@ -46,10 +46,6 @@ class Rollup:
         return d
 
 
-# The daily-counter table carries exactly one dimension besides the metric
-# (see migrations/013: day, metric, model, value). A day-granularity query can
-# therefore honour a filter on "model" and nothing else - the other dimensions
-# were aggregated away when the counter row was written.
 COUNTER_FILTER_KEYS: frozenset[str] = frozenset({"model"})
 
 
@@ -174,7 +170,6 @@ async def query_exact(
     import json
     from collections import defaultdict
 
-    # token_usage events store their metric in the kind column
     kind = metric.replace("tokens_used", "token_usage")
     rows = await db.fetch(
         "SELECT payload FROM obs_events WHERE kind=? AND timestamp >= ? AND timestamp <= ?",

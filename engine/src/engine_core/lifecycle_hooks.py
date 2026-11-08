@@ -83,11 +83,6 @@ from src.engine_core.generic_hooks import (
 from src.engine_core.hooks import HookEvent
 
 
-# ---------------------------------------------------------------------------
-# Input dataclasses — one per event (keep field set minimal + stable)
-# ---------------------------------------------------------------------------
-
-
 @dataclass(frozen=True)
 class PreCompactInput:
     thread_id: str
@@ -95,7 +90,7 @@ class PreCompactInput:
     message_count: int
     token_estimate: int
     context_window: int
-    trigger_reason: str  # "threshold" | "emergency" | "microcompact" | "manual"
+    trigger_reason: str
     cwd: str = ""
     hook_event_name: str = "PreCompact"
 
@@ -108,7 +103,7 @@ class PostCompactInput:
     after_message_count: int
     before_token_estimate: int
     after_token_estimate: int
-    strategy: str  # "summary" | "truncate" | "emergency" | "collapse" | ...
+    strategy: str
     summary_sha: str = ""
     cwd: str = ""
     hook_event_name: str = "PostCompact"
@@ -135,7 +130,7 @@ class SubagentStopInput:
     duration_ms: int
     input_tokens: int
     output_tokens: int
-    exit_reason: str  # "completed" | "cancelled" | "error" | "max_turns"
+    exit_reason: str
     cwd: str = ""
     hook_event_name: str = "SubagentStop"
 
@@ -164,7 +159,7 @@ class TaskCompletedInput:
     thread_id: str
     planner_thread_id: str
     title: str
-    status: str  # "completed" | "failed" | "skipped"
+    status: str
     result_summary: str = ""
     cwd: str = ""
     hook_event_name: str = "TaskCompleted"
@@ -210,7 +205,7 @@ class SetupInput:
 @dataclass(frozen=True)
 class NotificationInput:
     thread_id: str
-    level: str  # "info" | "warning" | "error"
+    level: str
     message: str
     cwd: str = ""
     hook_event_name: str = "Notification"
@@ -228,7 +223,7 @@ class TeammateIdleInput:
 @dataclass(frozen=True)
 class ConfigChangeInput:
     source_path: str
-    change_type: str  # "created" | "modified" | "deleted"
+    change_type: str
     cwd: str = ""
     hook_event_name: str = "ConfigChange"
 
@@ -243,7 +238,7 @@ class CwdChangedInput:
 @dataclass(frozen=True)
 class FileChangedInput:
     path: str
-    change_type: str  # "created" | "modified" | "deleted"
+    change_type: str
     cwd: str = ""
     hook_event_name: str = "FileChanged"
 
@@ -271,11 +266,6 @@ class WorktreeRemoveInput:
     hook_event_name: str = "WorktreeRemove"
 
 
-# ---------------------------------------------------------------------------
-# Event → input dataclass mapping (used by hook_settings for serialisation
-# and by dispatch sites for type-safety documentation).
-# ---------------------------------------------------------------------------
-
 EVENT_INPUT_TYPES: dict[HookEvent, type] = {
     HookEvent.PRE_COMPACT: PreCompactInput,
     HookEvent.POST_COMPACT: PostCompactInput,
@@ -297,11 +287,6 @@ EVENT_INPUT_TYPES: dict[HookEvent, type] = {
     HookEvent.WORKTREE_CREATE: WorktreeCreateInput,
     HookEvent.WORKTREE_REMOVE: WorktreeRemoveInput,
 }
-
-
-# ---------------------------------------------------------------------------
-# Bundle — central registry container
-# ---------------------------------------------------------------------------
 
 
 class LifecycleHookBundle:
@@ -380,10 +365,6 @@ class LifecycleHookBundle:
     def clear(self) -> None:
         self.registries.clear()
 
-
-# ---------------------------------------------------------------------------
-# Helper re-exports for dispatch sites that only import this module.
-# ---------------------------------------------------------------------------
 
 __all__ = [
     "PreCompactInput",

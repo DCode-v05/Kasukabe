@@ -25,9 +25,6 @@ from src.utility_directory.subprocess_env import (
 )
 
 
-# ── Fixtures ─────────────────────────────────────────────────────
-
-
 @pytest.fixture(autouse=True)
 def reset_module_state():
     """Reset module-level proxy fn, session mode, and observer between tests."""
@@ -41,30 +38,20 @@ def reset_module_state():
 def secret_env(monkeypatch):
     """Populate os.environ with one secret from every category + the allowlist."""
     seeded = {
-        # engine_core
         "ANTHROPIC_API_KEY": "anthropic-sk-sentinel",
         "DATABASE_URL": "postgres://sentinel",
         "FERNET_KEY": "fernet-sentinel",
-        # anthropic_secondary
         "CLAUDE_CODE_OAUTH_TOKEN": "oauth-sentinel",
-        # otlp_telemetry (strict only)
         "OTEL_EXPORTER_OTLP_HEADERS": "Authorization=Bearer otlp-sentinel",
-        # cloud_creds (strict only)
         "AWS_SECRET_ACCESS_KEY": "aws-sentinel",
         "GOOGLE_APPLICATION_CREDENTIALS": "/tmp/gcp.json",
-        # gha_oidc (strict only)
         "ACTIONS_ID_TOKEN_REQUEST_TOKEN": "oidc-sentinel",
-        # gha_runtime (strict only)
         "ACTIONS_RUNTIME_TOKEN": "runtime-sentinel",
-        # action_duplicates (strict only)
         "ALL_INPUTS": '{"anthropic_api_key":"leaked"}',
-        # INPUT_ duplicates (GHA auto-generated)
         "INPUT_ANTHROPIC_API_KEY": "input-sentinel",
-        "INPUT_MY_CUSTOM_FLAG": "true",  # not a scrubbed var base → should survive
-        # Allowlist
+        "INPUT_MY_CUSTOM_FLAG": "true",
         "GITHUB_TOKEN": "gh-token-sentinel",
         "GH_TOKEN": "gh-alias-sentinel",
-        # Innocuous — should survive every mode
         "PATH": "/usr/bin",
         "HOME": "/home/test",
     }
@@ -73,14 +60,10 @@ def secret_env(monkeypatch):
     return seeded
 
 
-# ── Tier semantics ───────────────────────────────────────────────
-
-
 class TestOffMode:
     def test_off_returns_fresh_copy_not_reference(self, secret_env):
         result = subprocess_env(mode="off")
         assert isinstance(result, SubprocessEnvResult)
-        # Fresh dict — mutating the returned env must not touch os.environ.
         result.env["NEW_KEY"] = "1"
         assert "NEW_KEY" not in os.environ
 
@@ -108,7 +91,6 @@ class TestDefaultMode:
 
     def test_default_preserves_strict_only_vars(self, secret_env):
         result = subprocess_env(mode="default")
-        # Strict-only vars should still be present in default mode
         assert result.env.get("AWS_SECRET_ACCESS_KEY") == "aws-sentinel"
         assert result.env.get("OTEL_EXPORTER_OTLP_HEADERS") == "Authorization=Bearer otlp-sentinel"
         assert result.env.get("ACTIONS_RUNTIME_TOKEN") == "runtime-sentinel"
@@ -116,9 +98,6 @@ class TestDefaultMode:
 
     def test_default_scrub_count_matches_stripped_vars(self, secret_env):
         result = subprocess_env(mode="default")
-        # engine_core seeded: DATABASE_URL, FERNET_KEY (2)
-        # anthropic_auth seeded: ANTHROPIC_API_KEY, CLAUDE_CODE_OAUTH_TOKEN (2)
-        # INPUT_ duplicates seeded: INPUT_ANTHROPIC_API_KEY (1)
         assert result.scrubbed_count == 5
 
 
@@ -180,14 +159,12 @@ class TestInputDuplicateSweep:
 
     def test_input_prefix_with_non_scrubbed_base_is_preserved(self, secret_env):
         result = subprocess_env(mode="strict")
-        # MY_CUSTOM_FLAG is not in any scrub set → its INPUT_ shadow must survive.
         assert result.env.get("INPUT_MY_CUSTOM_FLAG") == "true"
 
 
 class TestOverrides:
     def test_overrides_applied_after_scrub(self, secret_env):
         result = subprocess_env(mode="default", overrides={"ANTHROPIC_API_KEY": "override-value"})
-        # Override takes precedence because it merges AFTER the scrub.
         assert result.env.get("ANTHROPIC_API_KEY") == "override-value"
 
     def test_overrides_can_add_new_vars(self, secret_env):
@@ -222,7 +199,6 @@ class TestProxyEnvFn:
 
         register_proxy_env_fn(bad_proxy)
         result = subprocess_env(mode="default")
-        # Scrub still happened; proxy not applied; no exception.
         assert "ANTHROPIC_API_KEY" not in result.env
         assert result.has_proxy_env is False
 
@@ -255,9 +231,7 @@ class TestOsEnvironImmutability:
     def test_os_environ_unchanged_after_call(self, secret_env):
         snapshot = dict(os.environ)
         subprocess_env(mode="strict")
-        # Same keys, same values, still in os.environ.
         assert dict(os.environ) == snapshot
-        # Secrets still accessible on the parent.
         assert os.environ.get("ANTHROPIC_API_KEY") == "anthropic-sk-sentinel"
         assert os.environ.get("AWS_SECRET_ACCESS_KEY") == "aws-sentinel"
 
@@ -331,7 +305,7 @@ class TestSpawnObserver:
     def test_observer_skipped_when_spawn_site_empty(self, secret_env):
         captured: list[tuple] = []
         register_spawn_observer(lambda r, s: captured.append((r, s)))
-        subprocess_env(mode="strict")  # no spawn_site
+        subprocess_env(mode="strict")
         assert captured == []
 
     def test_observer_raising_does_not_break_subprocess_env(self, secret_env):
@@ -340,7 +314,6 @@ class TestSpawnObserver:
 
         register_spawn_observer(bad_observer)
         result = subprocess_env(mode="default", spawn_site="sandbox_exec")
-        # Spawn still got its scrubbed env.
         assert "ANTHROPIC_API_KEY" not in result.env
 
     def test_observer_register_none_clears(self, secret_env):
@@ -376,8 +349,6 @@ class TestCategoryCompleteness:
         declared = sum(len(v) for v in DEFAULT_TIER_VARS.values()) + sum(
             len(v) for v in STRICT_TIER_VARS.values()
         )
-        # Union can only be smaller than the sum if a var is declared in two
-        # categories; we want the lists disjoint so audits stay unambiguous.
         assert len(STRICT_SCRUB) == declared, (
             "scrub categories have overlapping vars — each var should appear in exactly one category"
         )

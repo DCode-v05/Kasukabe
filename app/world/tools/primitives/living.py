@@ -69,9 +69,6 @@ def _revive_description() -> str:
         "`transfer`. Cost: 0 - the fee is the price."
     )
 
-# What counts as food. The same set run_genesis uses for the larder figure
-# in an agent's standing brief, so the number a resident is shown and the
-# thing it is allowed to eat can never disagree.
 EDIBLE: frozenset[str] = frozenset({
     "wheat", "rice", "corn", "potato", "tomato", "carrot", "cabbage",
     "soybean", "barley", "flour", "bread", "meal", "apple", "milk",
@@ -92,15 +89,6 @@ class GiveParams(BaseModel):
 
 
 class RestParams(BaseModel):
-    # TOOL-05(d). `rest` cancelled any journey unconditionally, and its
-    # description said "Stay where you are for now" - so a resident that
-    # wanted to pause read the first half and lost the walk it had spent
-    # three ticks on. Run 23: twelve cancellations against thirty-six
-    # rests, residents abandoning journeys they had not decided to abandon.
-    #
-    # Defaults False, which is the CHANGE: resting no longer ends a walk
-    # unless you say so. The old behaviour is still reachable and is now
-    # a thing a resident chooses rather than a thing that happens to it.
     stop_walking: bool = Field(
         default=False,
         description="True to also give up the journey you were on.",
@@ -115,8 +103,6 @@ async def eat_handler(
     world: WorldState, agent: AgentLifeRecord, params: EatParams
 ) -> ToolOutcome:
     if params.item not in EDIBLE:
-        # Name what IS food. A bare "you cannot eat that" is the dead end
-        # that produced a 5% recovery rate on refused calls across a run.
         raise ToolValidationError(
             "eat",
             [
@@ -195,7 +181,6 @@ async def give_handler(
             [f"you hold {held} {params.item}, not {params.quantity}"],
         )
 
-    # Debit before credit, so a failure can never mint goods out of nothing.
     world.inventory.debit(agent.agent_id, params.item, params.quantity)
     world.inventory.credit(params.to_agent_id, params.item, params.quantity)
 
@@ -277,10 +262,6 @@ async def rest_handler(
             "stopped_walking": stopped,
             "here_with_you": others,
             "still_walking": still_walking,
-            # TOOL-05(d): a resident that rested mid-walk has to be told
-            # the walk survived, or it will assume the old behaviour and
-            # re-issue the `move` - which is the churn `move`'s own
-            # "already walking there" branch exists to stop.
             "note": (
                 "You gave up the journey and stayed put."
                 if stopped
@@ -332,9 +313,6 @@ async def revive_handler(
 
     target_id = params.agent_id
     if target_id == agent.agent_id:
-        # Unreachable in a run - a dormant resident takes no turns and so
-        # can call nothing - but stated rather than left to the physics,
-        # because a tool whose refusals are only implicit teaches nothing.
         raise ToolValidationError(
             "revive",
             [
@@ -364,9 +342,6 @@ async def revive_handler(
     here = world.location_of(agent.agent_id)
     there = world.location_of(target_id)
     if here is None or not satisfies_gate(there, here):
-        # Not a declared location_gate: the required place depends on the
-        # TARGET, and a gate resolver cannot see who that is. Same reason
-        # `trade` checks co-location in its handler.
         raise LocationGateError("revive", there, here)
 
     held = world.ledger.sim_balance(agent.agent_id)
@@ -380,9 +355,6 @@ async def revive_handler(
             ],
         )
 
-    # Fallible external system first, tools-owned bookkeeping after - the
-    # ordering discipline in registry.py's docstring. A payer who cannot
-    # cover the fee leaves the target exactly as dormant as it found them.
     dormant_since = target.dormancy.dormant_since_hours
     updated_dormancy, life_events = await life_revive(
         agent.agent_id,
@@ -409,13 +381,8 @@ async def revive_handler(
             "revived_id": target_id,
             "ticks_dormant": ticks_dormant,
             "sim_paid": REVIVAL_COST_SIM,
-            # Both sides perceive it: the payer sees what it bought, and
-            # the revived resident's next turn opens with who paid.
             "involved_agent_ids": [agent.agent_id, target_id],
             "location_id": here,
-            # S4 asks who pays for whom - household or stranger - so the
-            # relationship is recorded at the moment it is known rather
-            # than reconstructed from two tables later.
             "same_household": bool(
                 agent.household_id and agent.household_id == target.household_id
             ),
@@ -442,7 +409,6 @@ class KeepDoingParams(BaseModel):
     tool: str
     params: dict[str, Any] = Field(default_factory=dict)
     until: dict[str, Any] = Field(default_factory=dict)
-
 
 
 def _fold_tool_name(world, ref: str) -> str:
@@ -525,26 +491,7 @@ async def keep_doing_handler(
     """
     from world.tools.state import CONTINUABLE_TOOLS
 
-    # TOOL-13: the engine shows every tool namespaced - "world:mine",
-    # "world_mine" - and a resident names back what it was shown. BOTH of
-    # run 23's `keep_doing` calls died here: "'world_mine' is not something
-    # you can keep doing", for a tool the caller had used that morning.
-    # `skillify` has folded this since Marta lost a six-step workflow the
-    # same way; the fold just never reached the other two verbs that take a
-    # tool name.
     tool = _fold_tool_name(world, params.tool)
-    # TOOL-11.4. A tool a resident INVENTED is repeatable too.
-    #
-    # `CONTINUABLE_TOOLS` is a fixed list of the six primitives, so an
-    # authored tool - the whole point of `toolify` - could never be put on
-    # a routine. That makes "mastery lowers the cost of living in dollars"
-    # unclaimable by construction: the only way to run an invented tool
-    # twenty times was twenty model calls, which is strictly more expensive
-    # than the primitive it was built to replace. A resident who automates
-    # its own job should pay LESS to do it, not the same.
-    #
-    # The gate below therefore asks what the tool IS, not whether it is on
-    # a list: a labour tool, or one this town wrote itself.
     if tool not in CONTINUABLE_TOOLS and tool not in world.custom_tools:
         raise ToolValidationError(
             "keep_doing",
@@ -596,12 +543,6 @@ async def keep_doing_handler(
         },
         events=[
             WorldEvent(
-                # The spec names this `action.continuing.started`, but the
-                # world's own event validator allows the domains agent,
-                # broker, business, crime, economy, health and politics and
-                # rejects `action` outright. The subject here IS an agent,
-                # so `agent.` is the domain the spec would have chosen had
-                # it checked - recorded rather than silently renamed.
                 type="agent.continuing.started",
                 tick=world.tick(),
                 payload={
@@ -612,10 +553,6 @@ async def keep_doing_handler(
             )
         ],
     )
-
-
-
-# ── the pharmacy, which had a purpose and no verb ─────────────────────
 
 
 class BuyTreatmentParams(BaseModel):
@@ -658,9 +595,6 @@ async def buy_treatment_handler(
         None,
     )
     if shop is None:
-        # Name the premises rather than the room type, for the reason
-        # `places_that_satisfy` exists: "pharmacy" is not somewhere `move`
-        # will take you, and a town may have none at all.
         open_ones = sorted(
             f"{b.name} ({b.location_id})"
             for b in world.businesses.values()
@@ -680,9 +614,6 @@ async def buy_treatment_handler(
     treated, life_events = await treat_at_pharmacy(
         agent, day=world.tick() // TICKS_PER_DAY, economy=economy
     )
-    # The cured record goes back whole, the way `life/health.py` asks: one
-    # object written into `world.agents`, not an agent reassembled around a
-    # health field the caller had to know to replace.
     world.agents[agent.agent_id] = treated
 
     return ToolOutcome(
@@ -715,7 +646,7 @@ def build_specs() -> list[ToolSpec]:
             params_model=BuyTreatmentParams,
             handler=buy_treatment_handler,
             namespace=ToolNamespace.PUBLIC,
-            location_gate=None,  # resolved against the town's pharmacies, in the handler
+            location_gate=None,
             actor_requirements=ActorRequirements(require_alive=True, require_not_dormant=True),
         ),
         ToolSpec(
@@ -741,25 +672,12 @@ def build_specs() -> list[ToolSpec]:
             params_model=ReviveParams,
             handler=revive_handler,
             namespace=ToolNamespace.PUBLIC,
-            # The gate depends on the target, not the params, so the
-            # co-location check lives in the handler - see `trade`.
             location_gate=None,
             actor_requirements=ActorRequirements(require_alive=True, require_not_dormant=True),
         ),
         ToolSpec(
             name="eat",
             description=(
-                # Deliberately does not name the other food tools. An earlier
-                # wording said "harvesting and cooking put it in your
-                # inventory", and `describe_primitives(contains="harvest")`
-                # then returned `eat` ahead of `harvest` - a tool's blurb is
-                # searchable text, not prose.
-                #
-                # TOOL-26. The closing sentence was a nudge rather than a
-                # fact (Addendum rule 2: "never the strategy"), and it was
-                # not even a true one - `cook` consumes food to make other
-                # food, and a household's upkeep consumes it daily without
-                # anybody calling a tool at all.
                 "Eat food you are holding, so it feeds you instead of sitting "
                 "in your inventory."
             ),
@@ -784,12 +702,6 @@ def build_specs() -> list[ToolSpec]:
         ToolSpec(
             name="rest",
             description=(
-                # TOOL-26, found alongside the three the finding names and
-                # the same defect: the second sentence told the resident
-                # what to want, where the first already states the physics
-                # (this cancels a journey in progress).
-                # TOOL-05(d): the sentence follows the behaviour. Resting
-                # no longer ends a walk unless the resident says so.
                 "Take a turn doing nothing. If you were walking somewhere you "
                 "keep walking; pass stop_walking to give the journey up."
             ),

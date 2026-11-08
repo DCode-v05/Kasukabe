@@ -103,10 +103,6 @@ def test_the_live_path_is_wired_while_a_browser_is_connected(booted) -> None:
 
     with TestClient(app) as client:
         with client.websocket_connect("/ws/events") as socket:
-            # Read one frame first. That the handler has sent anything
-            # proves it is past `accept` and past `subscribe`, which is
-            # what makes this deterministic rather than a race against the
-            # app's own event loop.
             socket.receive_json()
             during = len(bus.subscribers.get("*", []))
 
@@ -123,11 +119,6 @@ def test_a_new_tab_is_caught_up_on_what_it_missed(tmp_path) -> None:
     replayed: list[dict] = []
     with TestClient(app) as client:
         with client.websocket_connect("/ws/events") as socket:
-            # Genesis itself emits (agent.spawned and friends), so the
-            # three moved-events are in the catch-up, not at the head of
-            # it. Reading a bounded window and looking for them is the
-            # honest assertion; "the first frame is mine" was true only
-            # of a town that had done nothing.
             for _ in range(WS_REPLAY_EVENTS):
                 frame = socket.receive_json()
                 replayed.append(frame)
@@ -193,9 +184,6 @@ def test_a_disconnect_does_not_leave_a_subscriber_behind(booted) -> None:
             self.sent.append(payload)
 
         async def receive_text(self) -> str:
-            # By now the catch-up is done and the subscription is live -
-            # the one moment where "is the browser being listened for"
-            # can be asked without a race.
             self.subscribed_while_open = len(bus.subscribers.get("*", []))
             raise WebSocketDisconnect(code=1000)
 

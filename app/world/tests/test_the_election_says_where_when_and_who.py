@@ -67,7 +67,6 @@ async def test_the_notice_states_the_rules_of_taking_part(tmp_path) -> None:
 
     assert "in person at Kasukabe Government Complex" in text
     assert "aged 18 and over" in text
-    # A day-long window from dawn on day 0, not from the midnight before it.
     assert "Candidacy closes game-day 1, 06:00" in text
     assert "voting opens game-day 2, 06:00" in text
     assert "voting closes game-day 3, 06:00" in text
@@ -76,7 +75,6 @@ async def test_the_notice_states_the_rules_of_taking_part(tmp_path) -> None:
 @pytest.mark.asyncio
 async def test_once_voting_is_open_it_says_when_it_closes_and_not_when_it_opens(tmp_path) -> None:
     runner = await _town(tmp_path)
-    # Voting opens at 324 now (36 + two day-long windows), not 288.
     await runner.charter_tick(timestamp_for(336))
 
     text = format_civic_notice(runner.civic_notice_for(sorted(runner.world_state.agents)[0]))

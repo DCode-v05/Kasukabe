@@ -10,8 +10,6 @@ from world.tools.tests.conftest import spawn_agent
 
 @pytest.mark.asyncio
 async def test_vote_records_a_ballot(world, registry) -> None:
-    # GOV-04: watch the charter's own sink, which is where the event is
-    # emitted from now that the handler no longer duplicates it.
     sink_rows: list[dict] = []
     previous = world.charter.elections.event_sink
 
@@ -39,12 +37,6 @@ async def test_vote_records_a_ballot(world, registry) -> None:
 
     stored = await world.charter.store.get_election(election.election_id)
     assert stored.ballots["voter"] == "candidate"
-    # GOV-04: the event comes from the charter engine's sink now, not from
-    # the handler's return value. This test used to assert the HANDLER's
-    # copy, which is exactly the duplicate row the finding is about - the
-    # engine emitted one too, and once the runner wired the sink every
-    # vote wrote two. `test_one_row_per_political_act.py` holds the
-    # no-duplicates rule; this holds that the act is still recorded.
     seen = [row["type"] for row in sink_rows]
     assert "politics.vote.cast" in seen, (
         "GOV-04: the vote reached the store and no event was emitted at "
@@ -81,9 +73,6 @@ async def test_vote_requires_town_hall(world, registry) -> None:
 async def test_petition_requires_sitting_government(world, registry) -> None:
     await spawn_agent(world, "citizen", LOCATION_GOVERNMENT_COMPLEX)
     with pytest.raises(ToolNotFoundError):
-        # petition is GOVERNMENT-namespace: an ordinary citizen cannot even
-        # see it, matching DESIGN.md's "non-members cannot see a
-        # confidential tool exists."
         await registry.execute(
             world, "citizen", "petition", {"title": "x", "description": "y", "tile_count_requested": 1}
         )
@@ -169,14 +158,6 @@ async def test_file_complaint_records_a_crime_case(world, registry) -> None:
     assert len(world.crime_cases) == 1
     assert world.crime_cases[0].case_id == result.result["case_id"]
     assert world.crime_cases[0].against_agent_id == "accused"
-
-
-# -- hire_employee / fire_employee / transfer_business -----------------
-# DESIGN.md section 2: business namespace is "owner + explicitly granted
-# employees ... transfers with sale/inheritance." These exercise the only
-# two things that ever change who a BUSINESS-namespace tool is visible to
-# (registry.py's `is_visible`): the employee roster and `owner_agent_id`
-# itself.
 
 
 async def register_business(world, registry, owner_id: str, business_id: str = "biz-1"):
@@ -267,7 +248,6 @@ async def test_transfer_business_old_owner_loses_authority_immediately(world, re
         await registry.execute(
             world, "seller", "hire_employee", {"business_id": "biz-1", "employee_agent_id": "buyer", "employee_consent": True}
         )
-    # The new owner's authority is live in the same instant.
     await spawn_agent(world, "staffer2", "park")
     await registry.execute(
         world, "buyer", "hire_employee", {"business_id": "biz-1", "employee_agent_id": "staffer2", "employee_consent": True}

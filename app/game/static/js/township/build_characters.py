@@ -53,10 +53,6 @@ GENESIS = APP_ROOT / "world" / "genesis.json"
 CHAR_DIR = STATIC / "data" / "characters"
 AGENTS_JS = HERE / "agents.js"
 
-# First names are picked from the pool matching the resident's real `sex`
-# field. They have to agree: the kinship labels below ("mother", "uncle") are
-# generated from that same field, so a female agent handed a male-reading name
-# produces cards that read "mother Arlo Vance" and "aunt Leo Jost".
 FIRST_MALE = [
     "Ben", "Dan", "Finn", "Hugo", "Jack", "Leo", "Noah", "Sam", "Wes", "Yuri",
     "Amos", "Cole", "Eli", "Gus", "Ivan", "Jem", "Kai", "Milo", "Omar", "Silas",
@@ -82,8 +78,6 @@ LAST = [
     "Gray", "Holt",
 ]
 
-# Zone ids must match ZONES in village.js exactly - an occupation pointing at a
-# building that does not exist would strand that resident off the map.
 WORK_ZONE = {
     "artisan": "tradeoffices", "office_administrator": "tradeoffices",
     "trader": "marketrow", "day_laborer": "marketrow",
@@ -93,7 +87,6 @@ WORK_ZONE = {
     "construction_company_owner": "construction", "construction_worker": "construction",
     "farmer": "farmland", "miner": "oreoutcrop", "forester": "forest",
     "college_instructor": "college", "college_student": "college",
-    # Institution staff (see INSTITUTION_STAFF below).
     "doctor": "hospital", "nurse": "hospital",
     "police_officer": "police", "firefighter": "fire",
     "baker": "bakery", "chef": "restaurant", "waiter": "restaurant",
@@ -156,9 +149,8 @@ SKILL_POOL = {
     "shopkeeper": ["Stock Rotation", "Haggling"],
 }
 
-# Real fiscal constants, world/ledger/head_tax.py + world/life/constants.py.
 HEAD_TAX_BASE_SIM = 1_000
-TAX_RATE_BPS = 300  # illustrative rate; genesis default is 0, government amends it
+TAX_RATE_BPS = 300
 
 
 def stable(text: str, salt: str) -> int:
@@ -224,10 +216,6 @@ def assign_names(agents: list[dict]) -> dict[str, str]:
     return names
 
 
-# --------------------------------------------------------------------------
-# Kinship
-# --------------------------------------------------------------------------
-
 def gendered(male: str, female: str, sex: str) -> str:
     return male if sex == "male" else female
 
@@ -253,7 +241,6 @@ def build_genesis_relations(agents: list[dict], by_id: dict) -> dict[str, list[d
             add(aid, cid, gendered("son", "daughter", by_id[cid]["sex"]))
             add(cid, aid, gendered("father", "mother", sex))
 
-    # Siblings: anyone sharing at least one parent.
     kids_of: dict[str, list[str]] = {}
     for a in agents:
         for pid in a.get("parent_ids") or []:
@@ -286,7 +273,7 @@ def build_extended_relations(agents, by_id, genesis_rel) -> dict[str, list[dict]
         if subject == other:
             return
         if any(r["agent_id"] == other for r in genesis_rel[subject]):
-            return  # never shadow a real genesis edge
+            return
         if not any(r["agent_id"] == other and r["relation"] == label for r in ext[subject]):
             ext[subject].append({"relation": label, "agent_id": other, "source": "inferred"})
 
@@ -295,9 +282,6 @@ def build_extended_relations(agents, by_id, genesis_rel) -> dict[str, list[dict]
     if not elders:
         return ext
 
-    # Seat each elder as the head of a lineage, then distribute adults across
-    # those lineages as their children. 38 elders over 174 adults gives
-    # families of about four or five siblings.
     lineage: dict[str, list[str]] = {e: [] for e in elders}
     for i, adult in enumerate(adults):
         lineage[elders[i % len(elders)]].append(adult)
@@ -309,13 +293,11 @@ def build_extended_relations(agents, by_id, genesis_rel) -> dict[str, list[dict]
             add(child, elder, gendered("father", "mother", esex))
             add(elder, child, gendered("son", "daughter", by_id[child]["sex"]))
             inferred_parents.setdefault(child, []).append(elder)
-        # Adult siblings within one lineage.
         for x in children:
             for y in children:
                 if x != y:
                     add(x, y, gendered("brother", "sister", by_id[y]["sex"]))
 
-    # An elder's grandchildren: the genesis children of their inferred children.
     for elder, children in lineage.items():
         esex = by_id[elder]["sex"]
         for child in children:
@@ -324,7 +306,6 @@ def build_extended_relations(agents, by_id, genesis_rel) -> dict[str, list[dict]
                     add(grandchild, elder, gendered("grandfather", "grandmother", esex))
                     add(elder, grandchild, gendered("grandson", "granddaughter", by_id[grandchild]["sex"]))
 
-    # Uncles/aunts and nephews/nieces: a parent's sibling, by blood or marriage.
     for a in agents:
         aid = a["agent_id"]
         for pid in a.get("parent_ids") or []:
@@ -333,13 +314,11 @@ def build_extended_relations(agents, by_id, genesis_rel) -> dict[str, list[dict]
             for sib in [r["agent_id"] for r in ext[pid] if r["relation"] in ("brother", "sister")]:
                 add(aid, sib, gendered("uncle", "aunt", by_id[sib]["sex"]))
                 add(sib, aid, gendered("nephew", "niece", a["sex"]))
-                # The sibling's spouse is an uncle/aunt by marriage.
                 sib_spouse = by_id[sib].get("spouse_id")
                 if sib_spouse in by_id:
                     add(aid, sib_spouse, gendered("uncle", "aunt", by_id[sib_spouse]["sex"]))
                     add(sib_spouse, aid, gendered("nephew", "niece", a["sex"]))
 
-    # Cousins: children of a parent's sibling.
     for a in agents:
         aid = a["agent_id"]
         for pid in a.get("parent_ids") or []:
@@ -351,7 +330,6 @@ def build_extended_relations(agents, by_id, genesis_rel) -> dict[str, list[dict]
                         add(aid, cousin, "cousin")
                         add(cousin, aid, "cousin")
 
-    # In-laws through marriage.
     for a in agents:
         aid = a["agent_id"]
         spouse = a.get("spouse_id")
@@ -366,10 +344,6 @@ def build_extended_relations(agents, by_id, genesis_rel) -> dict[str, list[dict]
                 add(r["agent_id"], aid, gendered("brother-in-law", "sister-in-law", a["sex"]))
     return ext
 
-
-# --------------------------------------------------------------------------
-# Memory stream (Park et al., UIST '23 format)
-# --------------------------------------------------------------------------
 
 def build_memory_stream(agent, name, occupation, persona, relations, names) -> list[dict]:
     """Seed memories in the paper's observation / reflection / plan shape.
@@ -441,17 +415,6 @@ def build_memory_stream(agent, name, occupation, persona, relations, names) -> l
     return stream
 
 
-
-# --------------------------------------------------------------------------
-# Staff for the institutions the town runs
-# --------------------------------------------------------------------------
-# genesis.json seeds 250 residents for the genesis buildings only. A town with
-# a hospital, police station, fire station, school, library, bank, bakery,
-# restaurant and inn needs people to run them, so this adds those workers as
-# real residents: their own households, personas, kinship, memory stream and
-# expert reflections, exactly like anyone born into genesis. They carry
-# `origin: "institution_staff"` so they are always distinguishable from the
-# genesis 250 in any analysis.
 INSTITUTION_STAFF = [
     ("hospital",   "doctor",           3), ("hospital",   "nurse",          7),
     ("police",     "police_officer",   8),
@@ -525,7 +488,7 @@ def build_staff(existing_agents, names, households):
     hh_index = len(households) + 1
     idx = 0
     made = []
-    pairs = []          # (male, female) candidates to marry to each other
+    pairs = []
     for zone, occupation, count in INSTITUTION_STAFF:
         for _ in range(count):
             idx += 1
@@ -536,7 +499,7 @@ def build_staff(existing_agents, names, households):
             hh_index += 1
             made.append({
                 "agent_id": aid,
-                "name": None,                    # assigned after, needs the surname map
+                "name": None,
                 "age_years": float(age),
                 "sex": "male" if male else "female",
                 "household_id": hh,
@@ -568,8 +531,6 @@ def build_staff(existing_agents, names, households):
             })
             pairs.append(aid)
 
-    # Marry roughly half of them to one another, so the staff have families too
-    # rather than being 60 unattached adults dropped into the town.
     males = [a for a in made if a["sex"] == "male"]
     females = [a for a in made if a["sex"] == "female"]
     for m, f in zip(males, females):
@@ -578,32 +539,10 @@ def build_staff(existing_agents, names, households):
         m["marital_status"] = f["marital_status"] = "married"
         m["spouse_id"] = f["agent_id"]
         f["spouse_id"] = m["agent_id"]
-        f["household_id"] = m["household_id"]      # move in together
+        f["household_id"] = m["household_id"]
     return made
 
-# --------------------------------------------------------------------------
-# Expert reflection (Park et al. 2024, "Generative Agent Simulations of 1,000
-# People", SM 3)
-# --------------------------------------------------------------------------
 
-# That paper's central architectural contribution. Prompting a model with a
-# person's raw description in one chain of thought makes it miss latent
-# information never stated outright, so they add a reflection pass that adopts
-# four social-science expert personas - psychologist, behavioral economist,
-# political scientist, demographer - and has each write up to 20 observations
-# about the same person. At question time they classify which expert best fits
-# the question and retrieve only that expert's reflections.
-#
-# Two honest caveats, both carried in the output file:
-#   - The paper runs this pass with GPT-4o over a two-hour interview transcript.
-#     There are no interviews in Kasukabe and no model is called here, so these
-#     reflections are rule-derived from the persona fields genesis.json already
-#     carries. They demonstrate the structure and give the retrieval step
-#     something real to route over; they are not a reproduction of the result.
-#   - The paper's own finding is that this architecture works because of the
-#     interview. Interview-based agents scored 0.85 normalized accuracy on the
-#     GSS against 0.70 for persona-based agents - and Kasukabe's agents are
-#     persona-based. See RESEARCH_NOTES.md.
 EXPERTS = ("psychologist", "behavioral_economist", "political_scientist", "demographer")
 
 EXPERT_LABEL = {
@@ -721,30 +660,16 @@ def route_expert(question: str) -> str:
     return best
 
 
-# --------------------------------------------------------------------------
-
 def build() -> None:
     data = json.loads(GENESIS.read_text(encoding="utf-8"))
     agents = data["agents"]
 
-    # The institution staff are REAL AGENTS now, generated into genesis.json
-    # by world/life/genesis.py (see INSTITUTION_STAFF there). They arrive in
-    # `agents` with everyone else, so inventing them again here would give
-    # the town two doctors for every post and a cast of 378.
-    #
-    # build_staff() below is kept, unused, as the record of how these people
-    # were faked before they existed - and as the thing to delete once no
-    # genesis predating the roster is still in circulation.
     staff: list[dict] = []
 
     by_id = {a["agent_id"]: a for a in agents}
     names = assign_names(agents)
-    # Staff records were created before names existed; fill in the two fields
-    # that depend on the final name map.
     for a in staff:
         a["name"] = names[a["agent_id"]]
-        # No trailing period here: first_clause() adds one, and two produced
-        # "...at the town hospital.." on every staff card.
         a["bio"] = f"{a['name']} is a {round(a['age_years'])}-year-old resident of Kasukabe who " \
                    f"{STAFF_BIO.get(a['occupation'], 'works in the town')}"
     names = assign_names(agents)
@@ -879,8 +804,6 @@ def build() -> None:
                       "occupation": occ, "household_id": a["household_id"],
                       "file": f"data/characters/{aid}.json"})
 
-        # Compact record for the page. Same facts, short keys, so 250 of them
-        # stay a reasonable download.
         spouse = a.get("spouse_id")
         bundle.append({
             "id": aid, "n": name, "rn": a["name"], "org": a.get("origin", "genesis"),

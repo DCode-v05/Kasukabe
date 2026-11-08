@@ -1,56 +1,15 @@
-/* ═══════════════════════════════════════════════════════════════════
-   THE RESIDENT FILE — #profilePanel / #modalBody
-   ───────────────────────────────────────────────────────────────────
-   Everything else on this deck is a table of 314 rows. This is the one
-   surface where the town stops being a population and becomes a person,
-   so it is laid out as a dossier: a name at the top of the page, vital
-   signs under it, then the record in ruled sections.
-
-   The rules it inherits were written for a light theme and for a page
-   that had not yet decided what its colours meant. What that left here:
-   a raw JSON block on a bone-white background, a status bar that filled
-   itself green so the WORD "Alive" carried the signal instead of a mark,
-   and personality lines set in the body face like form fields. Those are
-   the three things this layer actually changes.
-
-   Signals are spent the way the instrument spends them everywhere else:
-   ember is money, mint is alive, rust is death, brass is the state.
-   COPPER APPEARS NOWHERE IN THIS FILE. Copper means an agent authored
-   the thing you are looking at, and a biography, a household and a seed
-   memory were all authored by us — colouring them copper would sell the
-   reader a claim the data cannot back.
-
-   Loads last, so plain selectors win. The few descendant and id-scoped
-   selectors below exist either to out-specify an older rule, or to keep
-   a class this file shares with other panels (.section-lbl, .facts,
-   .rel-note) from being restyled outside the dossier.
-   ═══════════════════════════════════════════════════════════════════ */
-
-/* ── the sheet ────────────────────────────────────────────────────── */
-
 .inspector-body { font-family: var(--font-body); font-size: 13px; line-height: 1.6; color: var(--ink-soft); }
-/* Out-specifies #profilePanel .inspector-body in township.css, which set
-   its padding in raw pixels off the old spacing guesses. */
 #profilePanel .inspector-body { padding: var(--s5) var(--s5) var(--s6); }
 
-/* Nothing selected is a normal state, not a failure, so it is set as an
-   invitation in the reading face rather than as a dashed error box. */
 .inspector-empty {
   font-family: var(--font-display); font-variation-settings: 'opsz' 40;
   font-size: 14px; font-style: italic; font-weight: 400; line-height: 1.7;
   color: var(--ink-faint); text-align: center; padding: var(--s7) var(--s5); border: 0;
 }
 
-/* ── the head: the name is the page ───────────────────────────────── */
-
 .insp-head { display: flex; align-items: center; gap: var(--s4); padding-bottom: var(--s4); }
-/* A long display name must wrap rather than stretch the flex row past
-   the drawer's edge. */
 .insp-head > div:last-child { min-width: 0; }
 
-/* occFace() writes the occupation colour in as an inline background, so
-   this rule only ever owns the frame. The inset near-black ring stops a
-   saturated tile from glowing against near-black chrome. */
 .insp-avatar {
   width: 52px; height: 52px; flex-shrink: 0; border: 0; border-radius: var(--rm);
   display: grid; place-items: center; font-size: 26px; line-height: 1;
@@ -61,26 +20,13 @@
   font-size: clamp(25px, 3vw, 32px); font-weight: 600;
   letter-spacing: -.02em; line-height: 1.08; color: var(--ink); margin: 0;
 }
-/* Id, age and occupation are the index-card facts: mono so the id lines
-   up with every other id on the deck, tabular so the age does not jitter
-   as the inspector re-renders each tick. */
 .agent-sub {
   font-family: var(--font-mono); font-variant-numeric: tabular-nums;
   font-size: 11px; letter-spacing: .02em; color: var(--ink-faint); margin: var(--s1) 0 0;
 }
-/* .agent-sub2.modelled is owned by instrument.css, and :not() keeps that
-   provenance warning from inheriting a treatment meant for the ordinary
-   "genesis record" line. */
 .agent-sub2 { font-family: var(--font-body); font-size: 11px; margin: var(--s1) 0 0; }
 .agent-sub2:not(.modelled) { color: var(--ink-faint); line-height: 1.5; }
 
-/* ── the index ────────────────────────────────────────────────────── */
-
-/* Seven tabs do not fit a 460px drawer, so the strip scrolls sideways on
-   one line rather than wrapping into two rows that shove the body down.
-   It sticks because the memory and expert tabs are long, and a reader
-   deep inside one should still be able to leave it. --surface matches
-   the panel behind it, so the strip reads as the sheet's own edge. */
 .tabs {
   display: flex; flex-wrap: nowrap; gap: 0; overflow-x: auto; scrollbar-width: none;
   position: sticky; top: 0; z-index: 3;
@@ -90,12 +36,6 @@
 .tabs::-webkit-scrollbar { display: none; }
 .tab-body { min-height: 190px; padding-top: var(--s1); }
 
-/* ── vital signs ──────────────────────────────────────────────────── */
-
-/* The old bar filled itself with the signal colour, which made a healthy
-   resident the loudest object on the page and left no headroom for a
-   dying one. The bar is neutral now and the dot carries the state, so
-   critical and deceased can shout without competing with alive. */
 .status-line {
   display: grid; grid-template-columns: auto 1fr; align-items: center;
   column-gap: var(--s3); row-gap: 3px;
@@ -119,21 +59,15 @@
 .status-line.ill .status-dot { background: var(--brass); box-shadow: 0 0 0 4px rgba(220,169,69,.14); }
 .status-line.crit { border-left-color: var(--rust); background: var(--rust-soft); }
 .status-line.crit .status-dot { background: var(--rust); box-shadow: 0 0 0 4px rgba(232,92,80,.2); }
-/* Dead is the same hue drained of light: still unmistakably rust, but it
-   has stopped signalling, because nothing here is urgent any more. */
 .status-line.dead { border-left-color: var(--rust-dim); background: var(--paper); }
 .status-line.dead b { color: var(--ink-soft); }
 .status-line.dead .status-dot { background: var(--rust-dim); box-shadow: none; }
 
-/* A heartbeat, not a blink. The whole instrument exists to watch whether
-   these 314 are still going. */
 @keyframes residentAlivePulse {
   0%, 100% { box-shadow: 0 0 0 4px rgba(74,222,155,.14); }
   50%      { box-shadow: 0 0 0 7px rgba(74,222,155,.04); }
 }
 
-/* Where they are this hour is the one line on the file that is true only
-   right now, so it is set apart from the record below it. */
 .now-box {
   display: flex; flex-direction: column; gap: 1px;
   padding: var(--s3) var(--s4); margin-bottom: var(--s2);
@@ -148,11 +82,6 @@
 .now-box.dead { background: transparent; border-left-color: var(--rust-dim); }
 .now-box.dead .now-verb { color: var(--ink-faint); font-style: italic; }
 
-/* ── the record: section labels and prose ─────────────────────────── */
-
-/* A label with a rule running off it reads as a ledger heading and costs
-   no vertical space; the source tags the family tab drops in here sit on
-   the same line, ahead of the rule. */
 .tab-body .section-lbl {
   display: flex; align-items: center; gap: var(--s2);
   font-family: var(--font-body); font-size: 10px; font-weight: 700;
@@ -163,11 +92,6 @@
 .tab-body > .section-lbl:first-child { margin-top: 0; }
 .tab-body .agent-bio { font-size: 13px; line-height: 1.65; color: var(--ink-soft); max-width: 62ch; margin: 0 0 var(--s2); }
 
-/* Tension, fear, ambition, the line they will not cross. These are the
-   only sentences on the deck that make a claim about an inner life, so
-   they are set as pull-quotes and cannot be mistaken for form fields.
-   The rule beside them stays neutral: this prose is genesis-authored,
-   and copper would say an agent wrote it. */
 .agent-quote {
   font-family: var(--font-display); font-variation-settings: 'opsz' 30, 'WONK' 1;
   font-style: italic; font-weight: 400; font-size: 15px; line-height: 1.55;
@@ -180,8 +104,6 @@
   color: var(--ink-faint); margin-bottom: var(--s1);
 }
 
-/* Both chips are roster data, not something this resident invented, so
-   they stay neutral; the skills tab is where authored work gets colour. */
 .tab-body .skill-chip {
   display: inline-flex; align-items: center; gap: var(--s1);
   font-family: var(--font-body); font-size: 11px; font-weight: 500;
@@ -189,8 +111,6 @@
   background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-soft);
 }
 .tab-body .skill-chip.locked { background: transparent; border-style: dashed; border-color: var(--line-soft); color: var(--ink-faint); }
-
-/* ── ledger rows: every dl.facts the tabs build ───────────────────── */
 
 .tab-body dl.facts { margin: 0; }
 .tab-body dl.facts > div {
@@ -203,9 +123,6 @@
   font-family: var(--font-body); font-size: 10px; font-weight: 600;
   text-transform: uppercase; letter-spacing: .1em; color: var(--ink-faint);
 }
-/* Every value in these lists is a record field — a balance, a date, an
-   address, a named heir — so they all take the figure face with tabular
-   numerals, which is what keeps a column of sim balances aligned. */
 .tab-body dl.facts dd {
   flex: 1 1 auto; margin: 0; text-align: right;
   font-family: var(--font-mono); font-variant-numeric: tabular-nums;
@@ -213,8 +130,6 @@
 }
 .tab-body dl.facts dd.pos { color: var(--mint); }
 .tab-body dl.facts dd.neg { color: var(--rust); }
-
-/* ── kin ──────────────────────────────────────────────────────────── */
 
 .rel-list { display: flex; flex-direction: column; }
 .rel-row {
@@ -229,14 +144,10 @@
   font-family: var(--font-body); font-size: 10px; font-weight: 600;
   text-transform: uppercase; letter-spacing: .1em; color: var(--ink-faint);
 }
-/* A relative is a person too, so their name gets the same face as the
-   name at the top of the file — only quieter. */
 .rel-name {
   font-family: var(--font-display); font-variation-settings: 'opsz' 40;
   font-size: 14px; font-weight: 600; color: var(--ink);
 }
-/* The inline variant sits inside a <dd>, where a full-width row would
-   break the ledger, so it reads as a link instead. */
 .rel-row.inline {
   display: inline; width: auto; padding: 0; border-bottom: 0;
   font-family: var(--font-mono); font-size: 12px; color: var(--ink);
@@ -244,9 +155,6 @@
 }
 .rel-row.inline:hover { background: transparent; text-decoration-color: var(--ink-soft); }
 
-/* Recorded fact versus derived guess is the distinction this tab exists
-   to hold, so it gets the provenance hues: mint for what genesis.json
-   actually says, brass for what a lineage layer worked out. */
 .src-tag {
   font-family: var(--font-mono); font-size: 9px; font-weight: 500;
   letter-spacing: .06em; text-transform: uppercase;
@@ -254,11 +162,7 @@
 }
 .src-tag.genesis { background: var(--mint-soft); color: var(--mint); border: 1px solid var(--mint-dim); }
 .src-tag.inferred { background: var(--brass-soft); color: var(--brass); border: 1px solid var(--brass-dim); }
-/* Method notes are the smallest, calmest type on the file, because they
-   explain the data rather than being it. */
 .tab-body .rel-note { font-size: 11px; line-height: 1.65; font-style: italic; color: var(--ink-faint); max-width: 62ch; margin: var(--s3) 0 0; }
-
-/* ── memory stream ────────────────────────────────────────────────── */
 
 .mem-list { display: flex; flex-direction: column; gap: 2px; }
 .mem-row {
@@ -267,16 +171,11 @@
   background: transparent; border: 0; border-radius: 0; border-left: 2px solid var(--line);
 }
 .mem-row:hover { background: var(--surface-2); }
-/* Observation, reflection and plan already carry an icon and a legend,
-   and none of the three is money, death or the state — so signal hues
-   here would spend meaning to repeat a distinction the row has already
-   made. They separate by weight of rule instead. */
 .mem-row.mem-o { border-left-color: var(--line-soft); }
 .mem-row.mem-r { border-left-color: var(--line); }
 .mem-row.mem-p { border-left-color: var(--line-lit); }
 .mem-ico { font-size: 12px; line-height: 1.5; opacity: .85; }
 .mem-text { font-family: var(--font-body); font-size: 12.5px; font-weight: 400; line-height: 1.55; letter-spacing: 0; color: var(--ink-soft); }
-/* Importance is a 1–10 score, and a score is a number. */
 .mem-imp {
   font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 10px;
   color: var(--ink-faint); background: var(--paper);
@@ -288,10 +187,6 @@
   margin-top: var(--s3); padding-top: var(--s2); border-top: 1px solid var(--line-soft);
 }
 
-/* ── expert reflection ────────────────────────────────────────────── */
-
-/* The question is the observer's, not the town's, so the field is plain
-   chrome and its focus ring is a lit hairline rather than a signal. */
 .expert-q {
   width: 100%; box-sizing: border-box; font-family: var(--font-body); font-size: 13px;
   padding: var(--s3) var(--s4); background: var(--paper); color: var(--ink);
@@ -302,9 +197,6 @@
 .expert-q:focus, .expert-q:focus-visible { outline: none; border-color: var(--line-lit); box-shadow: 0 0 0 3px rgba(58,75,94,.35); }
 .routed { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); margin: var(--s2) 0 var(--s4); }
 .routed b { font-family: var(--font-display); font-variation-settings: 'opsz' 40; font-size: 13px; font-weight: 600; color: var(--ink); }
-/* Only one expert is retrieved at question time. The other three are
-   dimmed rather than hidden, because the point of the tab is that four
-   readings exist and the router chose among them. */
 .expert-block {
   border: 0; border-left: 1px solid var(--line-soft);
   padding: var(--s2) 0 var(--s2) var(--s4); margin-bottom: var(--s3);
@@ -318,10 +210,6 @@
 }
 .expert-note { font-size: 12.5px; line-height: 1.65; color: var(--ink-soft); max-width: 62ch; margin: var(--s1) 0; }
 
-/* ── money ────────────────────────────────────────────────────────── */
-
-/* The polyline's stroke is written inline by the renderer, so this rule
-   only gives the chart a field to sit in. */
 .spark {
   width: 100%; height: 56px; display: block; box-sizing: border-box;
   margin: var(--s1) 0 var(--s2); padding: var(--s1) 0;
@@ -337,12 +225,7 @@
   font-family: var(--font-mono); font-variant-numeric: tabular-nums;
   font-size: 11px; color: var(--ink-faint);
 }
-/* The left figure is real dollars already burned on this one resident's
-   thinking. That is money in motion, and it is the number this whole
-   instrument was built to watch. */
 .cost-line span:first-child { color: var(--ember); }
-
-/* ── the raw record ───────────────────────────────────────────────── */
 
 .json-toggle {
   display: inline-flex; align-items: center; gap: var(--s1);
@@ -355,11 +238,6 @@
 }
 .json-toggle:hover { color: var(--ink); border-color: var(--line-lit); }
 
-/* This block was bone-white with green text — a light-theme leftover
-   that punched a hole in the drawer every time anyone opened it. It is
-   the darkest surface on the page now, which is what a record dump
-   should be. Its open/closed display stays with the older rule, since
-   that part was never wrong. */
 .tab-body pre,
 pre.json-view {
   font-family: var(--font-mono); font-size: 11px; line-height: 1.6; tab-size: 2;

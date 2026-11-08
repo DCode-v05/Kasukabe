@@ -6,9 +6,6 @@ from src.sandbox.command_semantics import extract_base_command, interpret_exit_c
 from src.sandbox.executor import SandboxResult
 
 
-# ── extract_base_command ─────────────────────────────────────────
-
-
 class TestExtractBaseCommand:
     def test_simple(self):
         assert extract_base_command("grep foo bar.txt") == "grep"
@@ -42,9 +39,6 @@ class TestExtractBaseCommand:
 
     def test_diff(self):
         assert extract_base_command("diff file1 file2") == "diff"
-
-
-# ── interpret_exit_code ──────────────────────────────────────────
 
 
 class TestInterpretExitCode:
@@ -100,7 +94,7 @@ class TestInterpretExitCode:
     def test_unknown_command_exit_1_with_stderr(self):
         is_error, msg = interpret_exit_code("ls /nonexistent", 1, stderr="No such file")
         assert is_error is True
-        assert msg is None  # suppressed when stderr already explains
+        assert msg is None
 
     def test_unknown_command_exit_0(self):
         is_error, msg = interpret_exit_code("ls", 0)
@@ -111,9 +105,6 @@ class TestInterpretExitCode:
         is_error, msg = interpret_exit_code("cat file | grep pattern", 1)
         assert is_error is False
         assert msg == "No matches found"
-
-
-# ── SandboxResult integration ────────────────────────────────────
 
 
 class TestSandboxResultSemantics:
@@ -168,9 +159,6 @@ class TestSandboxResultSemantics:
     def test_to_str_no_command_error_backward_compat(self):
         r = SandboxResult("", "", 1)
         assert r.to_str() == "[exit code 1]"
-
-
-# ── End-to-end: run_bash → SandboxResult → to_str ───────────────
 
 
 class TestEndToEndSemantics:

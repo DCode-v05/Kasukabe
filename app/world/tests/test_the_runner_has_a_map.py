@@ -93,4 +93,4 @@ async def test_the_map_round_trips_a_checkpoint(tmp_path):
     adapter = runner.tick_engine.checkpoints.components["map"]
     blob = adapter.snapshot()
     assert blob, "the map adapter snapshotted nothing"
-    adapter.restore(blob)  # must not raise on its own output
+    adapter.restore(blob)

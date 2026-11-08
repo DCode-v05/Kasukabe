@@ -43,9 +43,6 @@ import pytest
 GENESIS = pathlib.Path(__file__).resolve().parents[2] / "world"
 GENESIS_FILES = sorted(p.name for p in GENESIS.glob("genesis*.json"))
 
-#: Trades that cannot be practised without premises the registry knows about.
-#: A farmer works a field and a forester works the woods - neither needs a
-#: row in `small_businesses`. A baker without a bakery has nowhere to bake.
 NEEDS_PREMISES = {
     "pharmacist": "pharmacy",
     "baker": "bakery",

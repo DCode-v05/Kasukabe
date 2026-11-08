@@ -36,7 +36,6 @@ class FakeAdapter:
         max_output_tokens: int | None = None,
         skip_cache_write: bool = False,
     ) -> AsyncIterator[StreamEvent]:
-        # Stream the body in two chunks so the cross-delta path is exercised.
         mid = len(self.text) // 2
         yield StreamEvent(type="text", text=self.text[:mid])
         yield StreamEvent(type="text", text=self.text[mid:])
@@ -102,15 +101,12 @@ async def test_loop_keeps_raw_text_when_gate_off(db):
     events = collect(emitter)
     th = await make_thread(db, FakeAdapter(CRAFT_TEXT), emitter)
 
-    # gate off (default) → parser never runs → the raw tag streams as plain text.
     await th.execute("hi", thread_id="t-off")
 
     assert [e for e in events if isinstance(e, CraftAuthored)] == []
     text = "".join(e.text for e in events if isinstance(e, TextDelta))
     assert "<craft" in text and "craft-action" in text
 
-
-# --- wait-craft halts the turn -------------------------------------------------
 
 CRAFT_ONLY = (
     '<craft surface="inline" format="html" wait="true" key="c" title="C">'
@@ -189,10 +185,8 @@ async def test_craft_wait_off_runs_post_craft_tool_call(db):
         craft_gate_var.reset(token)
         craft_wait_var.reset(token_wait)
 
-    assert flag["called"] is True  # no halt → the tool ran
+    assert flag["called"] is True
 
-
-# --- craft is persisted as a placeholder, not raw markup -----------------------
 
 CRAFT_NOWAIT = (
     '<craft surface="inline" format="html" wait="false" key="c" title="C">'
@@ -212,5 +206,4 @@ def assistant_text(messages) -> str:
         elif isinstance(content, list):
             out.extend(getattr(b, "text", "") or "" for b in content)
     return " ".join(out)
-
 

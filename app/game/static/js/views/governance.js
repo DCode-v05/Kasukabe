@@ -1,8 +1,3 @@
-// Governance tab: current charter, active policies, sitting government,
-// the amendment log with per-agent votes and a real text diff, and the
-// immutable complaint ledger. DESIGN.md section 8's "World view /
-// governance" bullet, in full.
-
 import { fetchActivePolicies, fetchAmendments, fetchCharter, fetchComplaints, fetchGovernment } from "./api.js";
 import { agentLabel, el, escapeHtml, fmtBps, fmtSim, fmtTick, renderDiffText, setError, setLoading, statusBadge } from "./dom.js";
 

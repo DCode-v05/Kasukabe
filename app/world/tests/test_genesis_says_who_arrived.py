@@ -40,8 +40,6 @@ async def test_every_genesis_resident_is_announced(tmp_path):
             seen.append(dict(event.payload))
 
     await runner.boot()
-    # Subscribe after boot and re-seed is not possible, so assert against
-    # the bus's own recent ring, which is what a late subscriber reads.
     spawned = [
         e for e in runner.world_state.event_bus.recent()
         if e.type == "agent.spawned"

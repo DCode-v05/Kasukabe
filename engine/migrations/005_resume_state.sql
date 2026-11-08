@@ -1,5 +1,3 @@
--- Resume state and pending input (replaces Redis).
-
 CREATE TABLE IF NOT EXISTS resume_state (
     charter_id      TEXT PRIMARY KEY,
     state_json      TEXT NOT NULL,

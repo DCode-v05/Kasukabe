@@ -52,16 +52,10 @@ from src.sandbox.command_path_extractor import PATH_EXTRACTORS, resolve_removal_
 logger = logging.getLogger(__name__)
 
 
-# Collapse any run of forward- or back-slashes into a single forward
-# slash. Callers pass mixed slash forms (Unix, Windows, double-slash
-# injection) and this keeps the comparison tables small.
 SLASH_COLLAPSE_RE: re.Pattern[str] = re.compile(r"[\\/]+")
 
-# Windows drive root: ``C:``, ``C:/``. Matched after slash collapse.
 WIN_DRIVE_ROOT_RE: re.Pattern[str] = re.compile(r"^[A-Za-z]:/?$")
 
-# Windows drive child: ``C:/Windows``, ``C:/Users``. One component under
-# the drive root. Matched after slash collapse.
 WIN_DRIVE_CHILD_RE: re.Pattern[str] = re.compile(r"^[A-Za-z]:/[^/]+$")
 
 
@@ -75,11 +69,6 @@ def normalize_slashes(path: str) -> str:
     return SLASH_COLLAPSE_RE.sub("/", path)
 
 
-# Expanded home directory, slash-normalised. Cached at import time — HOME
-# is a process-lifetime env var, and the home-directory check runs on the
-# hot permission path. Recomputing via ``expanduser('~')`` per call
-# wastes a dict lookup plus a ``~``-prefix pass on every positional arg
-# of every removal command.
 HOME: str = normalize_slashes(os.path.expanduser("~"))
 
 
@@ -108,12 +97,9 @@ def is_dangerous_removal_path(resolved_path: str) -> bool:
 
     forward = normalize_slashes(resolved_path)
 
-    # Wildcard alone or path ending with wildcard — trap before any
-    # trailing-slash stripping so ``*`` and ``/home/*`` both match.
     if forward == "*" or forward.endswith("/*"):
         return True
 
-    # Strip a trailing slash unless the whole string IS the root slash.
     normalized = forward if forward == "/" else forward.rstrip("/")
 
     if normalized == "/":
@@ -125,8 +111,6 @@ def is_dangerous_removal_path(resolved_path: str) -> bool:
     if normalized == HOME:
         return True
 
-    # ``dirname('/etc')`` is ``'/'`` — catches every direct root child in
-    # one line without enumerating the full list.
     parent = os.path.dirname(normalized)
     if parent == "/":
         return True
@@ -163,8 +147,6 @@ def is_dangerous_removal_raw_path(file_path: str) -> bool:
     if not cleaned:
         return False
 
-    # Explicit raw ``~`` handling — protects against the HOME-unset
-    # expanduser fallthrough noted above.
     if cleaned == "~":
         return True
 
@@ -227,8 +209,6 @@ def check_dangerous_removal(
         return None
 
     for raw_path in paths:
-        # Raw check first — catches the user-typed shape before realpath
-        # has a chance to canonicalise it away.
         if is_dangerous_removal_raw_path(raw_path):
             logger.warning(
                 "Dangerous removal blocked (raw): cmd=%s path=%s",
@@ -237,8 +217,6 @@ def check_dangerous_removal(
             )
             return f"{canonical} on critical path: {raw_path}"
 
-        # Resolved check — strip quotes, expand tilde, make absolute,
-        # then realpath. Symlinks are followed here on purpose.
         cleaned = raw_path.strip().strip("\"'")
         if not cleaned:
             continue

@@ -1,5 +1,3 @@
--- Content Ingestion Gate — chunked document storage for tool-based retrieval.
-
 CREATE TABLE IF NOT EXISTS ingestion_chunks (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     thread_id         TEXT NOT NULL,

@@ -31,19 +31,13 @@ from world.tools.place_aliases import place_for_charter
 
 from .conftest import spawn_agent
 
-# What the map draws and `move` walks you to.
 COMPLEX_SECTOR = "Kasukabe Government Complex"
-
-
-# ── the helper ────────────────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
 async def test_a_satisfied_gate_is_handed_on_as_the_constant(world):
     await spawn_agent(world, "n01", COMPLEX_SECTOR)
 
-    # Standing in the sector satisfies both constants on this map, so the
-    # charter is handed the exact string its `!=` expects.
     assert place_for_charter(world, "n01", LOCATION_GOVERNMENT_COMPLEX) == (
         LOCATION_GOVERNMENT_COMPLEX
     )
@@ -63,9 +57,6 @@ async def test_an_unsatisfied_gate_still_reports_where_the_resident_really_is(
     await spawn_agent(world, "n02", "Kasukabe Farmland")
 
     assert place_for_charter(world, "n02", LOCATION_TOWN_HALL) == "Kasukabe Farmland"
-
-
-# ── the tools, end to end ─────────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -111,11 +102,7 @@ async def test_a_petition_can_be_filed_from_the_sector_the_map_draws(world, regi
             },
         )
 
-    # Refused for the seat. NOT for standing in the government complex.
     assert "location" not in str(raised.value).lower()
-
-
-# ── the refusal reaches the log ───────────────────────────────────────
 
 
 @pytest.mark.asyncio

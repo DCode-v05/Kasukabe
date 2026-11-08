@@ -1,26 +1,4 @@
 #!/usr/bin/env bash
-# Local CI. This is the whole gate: there is no GitHub Actions run behind it.
-#
-# Everything here used to live in .github/workflows/{test,style,security}.yml.
-# Two things changed in the move, both deliberate:
-#
-#   1. Trivy scanned the image twice, once to fail on CRITICAL and once to print
-#      HIGH. That is two full scans of one image for one report. It now scans
-#      once and splits the output.
-#   2. `docker compose run --rm test` defaults to a bare pytest with no coverage,
-#      while CI ran it with --cov-fail-under=72 and the stress ignores. The two
-#      had silently diverged, so "tests pass locally" did not mean "tests pass in
-#      CI". The `test` target below runs the CI invocation, exactly.
-#
-# Usage:
-#   scripts/ci.sh              run everything
-#   scripts/ci.sh lint types   run only those targets
-#   scripts/ci.sh --list       show targets
-#
-# Every target is independent and each records pass/fail/skip; the run does not
-# stop at the first failure, because knowing all of what is broken beats knowing
-# the first thing. Exit status is non-zero if anything failed OR was skipped for
-# a missing tool: a gate that did not run is not a gate that passed.
 
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -30,10 +8,6 @@ GITLEAKS_VERSION=8.30.1
 COV_FLOOR=72
 TEST_IMAGE=september-engine-test:local
 
-# Vulnerabilities suppressed for the audit gate. EMPTY, and it should stay that
-# way: cryptography>=48.0.1 and Pillow>=12.3.0 cleared the entire backlog that
-# used to live here. Add an entry only with a dated reason and a plan to remove
-# it; anything NOT listed here fails the run.
 PIP_AUDIT_IGNORES=()
 
 RED=$'\033[31m'; GRN=$'\033[32m'; YEL=$'\033[33m'; DIM=$'\033[2m'; OFF=$'\033[0m'
@@ -55,8 +29,6 @@ have() { command -v "$1" >/dev/null 2>&1; }
 
 banner() { printf "\n%s>> %s%s\n" "$DIM" "$1" "$OFF"; }
 
-# --- targets ----------------------------------------------------------------
-
 t_lint() {
   banner "ruff check + ruff format --check (src/ tests/)"
   have ruff || { record skip ruff "ruff not installed: pip install ruff==$RUFF_VERSION"; return; }
@@ -74,18 +46,12 @@ t_types() {
 }
 
 t_style() {
-  # Diff-scoped house gate: no em dashes, no new leading-underscore names, judged
-  # only on the lines this change ADDS. Base defaults to HEAD (what you are about
-  # to commit); pass CI_STYLE_BASE=origin/main to judge a whole branch.
   banner "house style (diff-scoped)"
   python3 scripts/check_style_diff.py --base "${CI_STYLE_BASE:-HEAD}" \
     && record pass style || record fail style
 }
 
 t_test() {
-  # The CI invocation, verbatim. Docker only: the sandbox tests fail-close unless
-  # bubblewrap can create namespaces and fork(), which needs the privileged
-  # container from docker-compose.yml.
   banner "pytest + coverage (privileged container)"
   have docker || { record skip pytest "docker not available"; return; }
   docker compose run --rm test \
@@ -97,8 +63,6 @@ t_test() {
 }
 
 t_image() {
-  # One scan, two readings. CRITICAL blocks; HIGH is reported but does not fail,
-  # so a single unpatched HIGH in a base layer cannot wedge everything.
   banner "trivy image scan"
   have docker || { record skip trivy "docker not available"; return; }
   docker image inspect "$TEST_IMAGE" >/dev/null 2>&1 \
@@ -130,18 +94,12 @@ t_image() {
 t_audit() {
   banner "pip-audit (resolved dependency tree)"
   have pip-audit || { record skip pip-audit "not installed: pip install pip-audit"; return; }
-  # ${arr[@]+"${arr[@]}"} keeps `set -u` from treating an EMPTY array as an
-  # unbound variable — bash 3.2 (still the macOS system bash) does exactly that,
-  # so a clean ignore list would otherwise crash this target.
   local args=()
   for v in ${PIP_AUDIT_IGNORES[@]+"${PIP_AUDIT_IGNORES[@]}"}; do args+=(--ignore-vuln "$v"); done
   pip-audit ${args[@]+"${args[@]}"} && record pass pip-audit || record fail pip-audit
 }
 
 t_secrets() {
-  # Scans COMMITTED history, not the working tree, so a local gitignored .env is
-  # never seen. A secret committed once and later removed stays a finding until
-  # allowlisted in .gitleaks.toml or removed from history.
   banner "gitleaks (committed history)"
   have gitleaks || { record skip gitleaks "not installed: brew install gitleaks (CI pinned v$GITLEAKS_VERSION)"; return; }
   gitleaks detect --source . --config .gitleaks.toml --redact --no-banner \
@@ -149,10 +107,6 @@ t_secrets() {
 }
 
 t_deps() {
-  # What .github/dependabot.yml used to do weekly: tell you which pinned
-  # dependencies have moved. It cannot open the PR for you, so this reports and
-  # never fails the run - an outdated dependency is information, not a defect.
-  # pip-audit above is the gate; this is the nudge behind it.
   banner "outdated dependencies (report only)"
   local pip; pip="$(command -v pip3 || command -v pip)"
   if [ -z "$pip" ]; then record skip deps "pip not found"; return; fi
@@ -168,8 +122,6 @@ t_deps() {
 
 TARGETS=(lint types style test image audit secrets deps)
 DEFAULT=(lint types style test image audit secrets)   # deps is informational, ask for it explicitly
-
-# --- driver -----------------------------------------------------------------
 
 if [ "${1:-}" = "--list" ]; then printf '%s\n' "${TARGETS[@]}"; exit 0; fi
 

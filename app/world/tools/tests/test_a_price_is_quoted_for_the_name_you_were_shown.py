@@ -97,14 +97,9 @@ class TestNormaliseToolName:
         assert normalise_tool_name("world_mien", {"mine", "say"}) is None
 
     def test_a_literal_name_wins_over_the_stripped_one(self) -> None:
-        # A tool genuinely called `world_map` must not be answered as `map`
-        # just because both are registered.
         assert normalise_tool_name("world_map", {"world_map", "map"}) == "world_map"
 
     def test_an_unverifiable_name_is_stripped_not_refuted(self) -> None:
-        # No vocabulary to check against (the pure function, no world
-        # behind it): strip the prefix, but never claim a tool is absent
-        # on no evidence.
         assert normalise_tool_name("world_mine", None) == "mine"
         assert normalise_tool_name("anything_at_all", None) == "anything_at_all"
 
@@ -120,7 +115,6 @@ class TestQuoteActionCost:
         assert quote.requested_tool_name == "world_mine"
         assert quote.known_tool is True
         assert quote.priced is True
-        # The schedule was asked about the name it actually has a row for.
         assert schedule.asked == ["mine"]
 
     def test_an_unknown_name_is_not_quoted_as_free(self) -> None:
@@ -130,19 +124,14 @@ class TestQuoteActionCost:
         )
         assert quote.known_tool is False
         assert quote.priced is False
-        # Not "you can afford it": there is nothing to afford.
         assert quote.affordable is None
         assert quote.sim_balance_after is None
         assert "no published sim-currency charge" not in quote.summary
         assert "no published sim-currency charge" not in quote.basis
         assert "mien" in quote.summary
-        # And the schedule was never consulted about a name it could only
-        # have answered with a misleading None.
         assert schedule.asked == []
 
     def test_a_real_tool_with_no_published_price_still_quotes_as_free(self) -> None:
-        # The other half of the collapsed answer: this one IS free, and
-        # must keep saying so.
         schedule = StubSchedule({})
         quote = quote_action_cost(
             schedule, "look_around", current_sim_balance=500, known_tool_names={"look_around"}
@@ -176,12 +165,10 @@ class TestThroughTheRealRegistry:
         )
 
         quoted = result.result["sim_cost"]
-        # The finding's whole point: this was 0, and mining was not free.
         assert quoted > 0
         assert result.result["tool_name"] == "mine"
         assert result.result["requested_tool_name"] == "world_mine"
         assert result.result["known_tool"] is True
-        # The number a resident is quoted is the number dispatch charges.
         charged = world.action_costs.cost_for("mine", call_params, ActionActor(actor_id="a1"))
         assert quoted == charged
 
@@ -226,9 +213,6 @@ class TestThroughTheRealRegistry:
     async def test_the_live_registry_is_what_a_name_is_checked_against(
         self, world, registry
     ) -> None:
-        # `quote_action_cost` is registered AFTER build_world freezes
-        # `registry_tool_names`, so it is the proof that the vocabulary is
-        # read live rather than off the snapshot.
         assert "quote_action_cost" not in world.registry_tool_names
         assert "quote_action_cost" in world_tool_vocabulary(world)
 

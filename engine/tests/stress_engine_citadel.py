@@ -44,9 +44,6 @@ from src.herald import create_llm
 from src.herald.types import Message, SystemPromptBlock, ToolDef
 
 
-# ── Config / gating ────────────────────────────────────────────────────
-
-
 CDT_URL = os.environ.get("CDT_URL", "").strip()
 CDT_KEY = os.environ.get("CDT_KEY", "").strip()
 CDT_ADMIN_TOKEN = os.environ.get("CDT_ADMIN_TOKEN", "").strip()
@@ -66,9 +63,6 @@ pytestmark = pytest.mark.skipif(
 )
 
 MODEL = os.environ.get("STRESS_MODEL", "claude-haiku-4-5")
-
-
-# ── Helpers ────────────────────────────────────────────────────────────
 
 
 @dataclass
@@ -105,9 +99,6 @@ async def close_adapter(adapter) -> None:
         await adapter.client.close()
     except Exception:
         pass
-
-
-# ── Stress 1: deadly concurrent mixed load ─────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -194,17 +185,11 @@ async def test_stress_deadly_concurrent_mixed():
     print(f"  output_tokens:      {stats.output_tokens}")
     print(f"  cache_read_tokens:  {stats.cache_read_tokens}")
     print(f"  tool_calls:         {stats.tool_calls_observed}")
-    # Allow up to 5% failure under deadly burst — these are upstream rate
-    # limits surfaced cleanly by citadel as 503/InternalServerError. The
-    # invariant we care about is: engine never hangs, never loops, every
-    # error is a typed SDK exception. If failures spike past 5%, citadel
-    # cooldown is leaking too many requests to exhausted credentials.
     failure_rate = stats.failed / max(1, total)
     assert failure_rate < 0.05, (
         f"failure rate {failure_rate:.1%} ({stats.failed}/{total}) exceeds 5% — "
         f"errors: {dict(stats.errors)}"
     )
-    # Errors must all be typed SDK exceptions (no asyncio hangs / generic crashes)
     for name in stats.errors:
         assert name in {
             "InternalServerError",
@@ -214,9 +199,6 @@ async def test_stress_deadly_concurrent_mixed():
             "ServiceUnavailableError",
         }, f"unexpected exception type: {name}"
     assert stats.tool_calls_observed > 0
-
-
-# ── Stress 2: sustained soak, many adapters ────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -273,13 +255,6 @@ async def test_stress_sustained_soak():
     print(
         f"  p50/p99 ms:         {percentile(stats.latencies_ms, 50):.0f} / {percentile(stats.latencies_ms, 99):.0f}"
     )
-    # Sustained soak proves the engine path doesn't leak fds, hang, or
-    # corrupt state under hours of load. Under free-tier Anthropic rate
-    # limits, citadel will exhaust credentials and return 503s — which
-    # surface cleanly as a CitadelAPIError (5xx). The invariant we
-    # enforce is: every failure is a typed SDK exception (no hangs, no
-    # generic crashes). Throughput under rate-limited upstream is a
-    # separate question, gated on the credential pool size.
     for name in stats.errors:
         assert name in {
             "InternalServerError",
@@ -289,13 +264,7 @@ async def test_stress_sustained_soak():
             "ServiceUnavailableError",
             "PermissionDeniedError",
         }, f"unexpected exception type: {name} — engine should only see typed SDK exceptions"
-    # Total = succeeded + failed must equal what the loop generated. If
-    # not, something in the engine path swallowed exceptions or
-    # double-counted — that would be a real regression.
     assert total > 0, "soak generated zero requests"
-
-
-# ── Stress 3: prompt-cache hot path under contention ───────────────────
 
 
 @pytest.mark.asyncio
@@ -305,13 +274,8 @@ async def test_stress_prompt_cache_under_contention():
     grows over multiple turns. Citadel must pass cache_control through
     intact for this to land.
     """
-    # Use sonnet for the cache test — its 1024-token threshold is reachable
-    # with a high-entropy prefix that fits in budget. Haiku's 2048 minimum
-    # is too tight under our test compute envelope.
     settings = make_settings(model="claude-sonnet-4-6")
 
-    # Deterministic ~3000-token prefix of varied vocabulary so Anthropic's
-    # tokenizer and entropy heuristics actually engage the cache.
     import random
 
     rng = random.Random(42)
@@ -363,8 +327,6 @@ async def test_stress_prompt_cache_under_contention():
         finally:
             await close_adapter(adapter)
 
-    # Lower concurrency than other tests — Anthropic's haiku tier rate-limits
-    # aggressively under burst, which makes cache_creation hard to observe.
     n_adapters = max(2, STRESS_ADAPTERS // 5)
     print(f"\n  ── PROMPT-CACHE CONTENTION ({n_adapters} adapters × 3 turns) ──")
     await asyncio.gather(*[driver(i) for i in range(n_adapters)])
@@ -373,10 +335,6 @@ async def test_stress_prompt_cache_under_contention():
     print(f"  input_tokens:       {stats.input_tokens}")
     print(f"  cache_read_tokens:  {stats.cache_read_tokens}")
     print(f"  cache events seen:  {cache_seen}")
-    # cache_control must reach Anthropic in a valid shape AND engage the
-    # prompt cache. Turn 0 creates, turns 1-2 read. With a 900-word
-    # high-entropy prefix sent under cache_scope/ttl='1h', cache_seen
-    # should be at minimum the number of post-first-turn rounds.
     for name in stats.errors:
         assert name in {
             "InternalServerError",
@@ -388,8 +346,6 @@ async def test_stress_prompt_cache_under_contention():
             "BadRequestError",
         }, f"unexpected exception type for cache_control payload: {name}"
     if stats.succeeded > 0:
-        # A non-zero successful run must show cache engagement; otherwise
-        # something is dropping cache_control between engine and upstream.
         assert cache_seen > 0, (
             "cache_control flow broken: succeeded > 0 but no turn observed "
             "cache_creation or cache_read — engine→citadel→Anthropic is "
@@ -400,9 +356,6 @@ async def test_stress_prompt_cache_under_contention():
         print("  This is a heuristic on their end (low-entropy prefix, or minimum-")
         print("  token threshold not cleared by the tokenizer's compressed view).")
         print("  The cache_control round-trip itself is verified by the 0-error path.")
-
-
-# ── Stress 4: bad model id → clean 4xx propagation ─────────────────────
 
 
 @pytest.mark.asyncio
@@ -427,16 +380,11 @@ async def test_stress_bad_model_id_returns_clean_error():
     finally:
         await close_adapter(adapter)
     print(f"\n  ── BAD MODEL ID → ──  {type(exc_info.value).__name__}: {str(exc_info.value)[:120]}")
-    # The transport maps citadel's 4xx response to a CitadelAPIError.
     from src.herald.transport import CitadelAPIError
 
     assert isinstance(exc_info.value, CitadelAPIError)
     code = getattr(exc_info.value, "status_code", None)
-    # citadel returns 403 (model not in pool) or 404 (model unknown) or 400 (bad shape)
     assert code in (400, 403, 404, 422), f"unexpected status: {code}"
-
-
-# ── Stress 5: sticky binding verification via spend_logs ───────────────
 
 
 @pytest.mark.asyncio
@@ -465,10 +413,8 @@ async def test_stress_sticky_binding_via_spend_logs():
     finally:
         await close_adapter(adapter)
 
-    # Wait briefly for spend log flusher
     await asyncio.sleep(2.0)
 
-    # Read spend logs for OUR key (filtered by request_model + recent ts)
     try:
         conn = await asyncpg.connect(
             host=CDT_PG_HOST,
@@ -507,9 +453,6 @@ async def test_stress_sticky_binding_via_spend_logs():
     assert not violators, f"sticky binding broken: {violators}"
 
 
-# ── Stress 6: bursting cancellations to verify generator cleanup ───────
-
-
 @pytest.mark.asyncio
 async def test_stress_streaming_cancellation_storm():
     """Cancel many streams mid-flight. The anthropic SDK's
@@ -533,7 +476,7 @@ async def test_stress_streaming_cancellation_storm():
                 pass
 
         task = asyncio.create_task(consume())
-        await asyncio.sleep(0.05)  # let it start
+        await asyncio.sleep(0.05)
         task.cancel()
         try:
             await task
@@ -548,12 +491,7 @@ async def test_stress_streaming_cancellation_storm():
     await asyncio.gather(*[cancel_one(i) for i in range(STRESS_ADAPTERS)])
     print(f"  cancellations clean: {succeeded_cancels}")
     print(f"  unexpected failures: {failed_starts}")
-    # Cancels SHOULD propagate cleanly. Some failures are tolerable
-    # (network race), but the bulk must cancel cleanly.
     assert succeeded_cancels >= STRESS_ADAPTERS // 2
-
-
-# ── Stress 7: citadel kill mid-stream → engine sees clean error ────────
 
 
 @pytest.mark.asyncio
@@ -567,7 +505,7 @@ async def test_stress_citadel_kill_mid_call_clean_error():
     isolation-friendly variant.)
     """
     bad_settings = Settings(
-        cdt_url="http://127.0.0.1:1",  # nothing listening
+        cdt_url="http://127.0.0.1:1",
         cdt_key=CDT_KEY,
         llm_model=MODEL,
         max_tokens=16,
@@ -587,11 +525,7 @@ async def test_stress_citadel_kill_mid_call_clean_error():
         await close_adapter(adapter)
     elapsed = time.monotonic() - t0
     print(f"\n  ── CITADEL UNREACHABLE → ──  {type(exc_info.value).__name__} in {elapsed:.2f}s")
-    # Should fail fast, not hang
     assert elapsed < 8.0
-
-
-# ── Stress 8: many models in flight via single engine ──────────────────
 
 
 @pytest.mark.asyncio
@@ -600,10 +534,8 @@ async def test_stress_multi_model_per_engine():
     different model_id. Citadel must dispatch each to the right
     deployment without cross-talk.
     """
-    # We only have haiku registered in citadel by default; this is a
-    # smoke test that adapter-per-model construction works.
     base = make_settings()
-    models = [MODEL] * 4  # repeat — engine would normally have multi
+    models = [MODEL] * 4
     adapters = [
         create_llm(
             Settings(
@@ -631,8 +563,6 @@ async def test_stress_multi_model_per_engine():
         succeeded = [r for r in results if isinstance(r, str)]
         errors = [r for r in results if isinstance(r, BaseException)]
         print(f"  succeeded: {len(succeeded)}, typed errors: {len(errors)}")
-        # We just need to prove the multi-adapter construction path is sound —
-        # under sustained burst from prior tests, upstream may be rate-limited.
         assert len(succeeded) + len(errors) == len(adapters)
         for e in errors:
             assert type(e).__name__ in {

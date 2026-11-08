@@ -44,9 +44,6 @@ import pytest
 SIM = Path(__file__).resolve().parents[1] / "src" / "sim"
 PINNED_BOOT = SIM / "pinned_boot.py"
 
-#: Seam modules that register a tool directly onto the agent's thread.
-#: `world_tools` is deliberately absent - it grants one `world:*` rule for
-#: the whole namespace rather than one per verb.
 THREAD_TOOL_MODULES = ("session_log", "memory_stream", "memory_query")
 
 

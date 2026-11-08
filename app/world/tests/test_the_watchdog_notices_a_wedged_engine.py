@@ -90,11 +90,11 @@ async def test_an_engine_that_stops_answering_is_restarted() -> None:
     supervisor.now = clock[0]
     watchdog = SupervisorWatchdog(supervisor, clock=lambda: clock[0])
 
-    await watchdog.check_once()          # answers: stamps a fresh time
+    await watchdog.check_once()
     assert not supervisor.restarted
 
-    supervisor.answers = False           # wedged: alive, not responding
-    clock[0] += 10_000.0                 # well past any silence timeout
+    supervisor.answers = False
+    clock[0] += 10_000.0
     await watchdog.check_once()
 
     assert supervisor.restarted == ["n01"], (

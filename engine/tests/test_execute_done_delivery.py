@@ -36,8 +36,6 @@ def make_state(emitter):
     from src.config import Settings
 
     state = EngineState(settings=Settings(), emitter=emitter)
-    # Mirror server.lifespan(): wire the one global event→block fan sink.
-    # ASGITransport bypasses lifespan, so do it explicitly.
     emitter.on(server.block_fan_sink)
     return state
 
@@ -83,7 +81,7 @@ def answering_handle_input(emitter, tid):
         craft=False,
         craft_wait=True,
         citations=False,
-        **gates,  # output-gate kwargs the server forwards (voice, image, ...)
+        **gates,
     ):
         if thread_id_box is not None:
             thread_id_box[0] = tid
@@ -124,7 +122,6 @@ async def test_fresh_input_done_arrives_when_handle_input_returns_answer_text(mo
     text = next(b for b in blocks if b["type"] == "text")
     assert text["payload"]["text"] == "turn-output"
     assert types[-1] == "done"
-    # The done carries the REAL thread id — never the answer text.
     assert blocks[-1]["thread_id"] == tid
     server.active_streams.clear()
 

@@ -88,9 +88,6 @@ async def run_turn(writer, emitter, perception: str, events) -> None:
     await emitter.emit(ExecutionSummary(thread_id=TID, status="completed"))
 
 
-# ── half one: reasoning arrives as text ──────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_reasoning_that_arrives_as_text_still_becomes_a_plan(writer):
     """The finding itself. Nothing here emits a ThinkingDelta, because on
@@ -157,9 +154,6 @@ async def test_thinking_deltas_still_win_where_a_provider_emits_them(writer):
     assert written[0]["content"] == "I will go to the market."
 
 
-# ── half two: a result belongs to its own call ───────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_parallel_calls_to_one_tool_keep_their_own_results(writer):
     """Two `say` calls in one batch. Paired newest-first, the refusal was
@@ -197,19 +191,6 @@ async def test_a_serial_pair_is_unaffected(writer):
         "I did harvest: harvested 8 wheat",
         "I tried and failed to harvest: the field is bare",
     ]
-
-
-# Note on what is NOT tested here: narrowing the match by
-# `parallel_batch_id` as well as by order. It is the only correlation field
-# both phases of `ToolExecution` carry, and it makes no observable
-# difference - an observation's content records the tool and the result and
-# never which call it was, so every arrangement of an abandoned call and a
-# later same-named result writes byte-identical records either way. It was
-# written, found to leave this file green when reverted, and removed:
-# a branch no test can distinguish is a branch nothing defends.
-
-
-# ── the wiring: a real engine, a real turn ───────────────────────────────
 
 
 def world_client_that_accepts_memories(agent_id: str):

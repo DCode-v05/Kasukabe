@@ -31,8 +31,4 @@ NO_MAP_REASON = (
     "host precondition rather than a result (INFRA-30, TOOL-27)"
 )
 
-# Applied per MODULE as `pytestmark = needs_the_map`, never to a shared
-# world-building fixture: most tests using those fixtures do not touch
-# the map, and skipping there would hide hundreds of real passes behind
-# one absent directory.
 needs_the_map = pytest.mark.skipif(not MAP_ASSETS_PRESENT, reason=NO_MAP_REASON)

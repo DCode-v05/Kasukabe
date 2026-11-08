@@ -82,13 +82,11 @@ class TestSubDayWindowAppliesFilters:
         await store.track(ToolCallEvent(tool_name="bash", timestamp=now - 60))
         await store.track(ToolCallEvent(tool_name="file_read", timestamp=now - 30))
 
-        # tool_name is a real field on ToolCallEvent, so it is accepted.
         result = await query(
             db, metric="tool_call", window="1h", filters={"tool_name": "bash"}
         )
         assert result.groups == []
 
-        # model is not, and must be rejected rather than ignored.
         with pytest.raises(ValueError):
             await query(db, metric="tool_call", window="1h", filters={"model": "x"})
 

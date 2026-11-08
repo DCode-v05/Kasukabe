@@ -68,42 +68,12 @@ from world.core.events import WorldEvent
 from world.map.model import TileCoord, WorldMap
 from world.map.pathfinding import find_path
 
-# See module docstring's "Speed model". Expressed directly in whole ticks
-# rather than fractional game-minutes-per-tick bookkeeping: a journey's
-# total tick cost is exactly the sum of these over the tiles it crosses,
-# no rounding, no partial-tick state for advance() to reason about.
-# How far a resident gets in one tick, on a road and off one.
-#
-# RECALIBRATED, with the arithmetic that forced it. A tick is ten
-# game-minutes (world.core.clock.TICK_MINUTES). The previous model charged
-# one tick per street tile and two off it, and advance() moved at most one
-# tile per tick - so a resident covered one tile per ten game-minutes, and
-# the longest route on this 140x130 map took 404 ticks. That is 67
-# game-hours: nearly three days of continuous walking to cross the town.
-#
-# Measured consequence in run 15: of 103 journeys that started, the median
-# was 68 ticks (11 game-hours) and the worst 179. Residents said so
-# themselves - "Five hours walking, never reaching the College."
-#
-# 40 street tiles per tick is a brisk walk at this map's scale, and it
-# keeps the property the old model was protecting: a journey still takes
-# real ticks, still publishes a real position each tick, and is still
-# something another resident can watch happen. It is not teleportation -
-# crossing the whole map remains a ten-tick walk.
 STREET_TILES_PER_TICK = 40
 OFF_STREET_TILES_PER_TICK = 20
 
-# Kept because tile_step_cost is part of this module's published surface
-# and other code reads it. One tick is now the cost of a whole stride, not
-# of a single tile.
 TICKS_PER_STREET_TILE = 1
 TICKS_PER_OFF_STREET_TILE = 2
 
-# A caller-supplied way to turn a tile the agent is currently standing on
-# into a location_id string (the payload key world.core.perception.
-# LocationIndex and every location-gated tool already key off of). Takes
-# (world_map, tile) rather than just tile so a resolver can consult
-# sector/arena data without capturing its own WorldMap reference.
 LocationIdResolver = Callable[[WorldMap, TileCoord], str]
 
 
@@ -164,11 +134,6 @@ def estimate_travel_ticks(world_map: WorldMap, path: list[TileCoord]) -> int:
     ticks = 0
     index = 1
     while index < len(path):
-        # One tick carries the resident as far as the ground under them
-        # allows. Charged from the tile they are standing on, which is the
-        # same tile advance() reads when it sets the next stride, so the
-        # estimate a `move` result reports and the walk that follows it
-        # cannot disagree.
         index += stride_length(world_map, path[index - 1])
         ticks += 1
     return ticks
@@ -286,15 +251,6 @@ class MovementSystem:
             path=path,
             destination_location_id=location_id,
             step_index=0,
-            # One tick to the first stride, not one-per-tile.
-            #
-            # This used to be tile_step_cost of the first tile, which is 1
-            # on a road and 2 off it. With a stride-per-tick model that
-            # extra tick is charged before the walk starts and never
-            # appears in estimate_travel_ticks - so the `move` tool told an
-            # agent a journey would take four ticks and it took five. An
-            # estimate that disagrees with the walk is the exact fault this
-            # module was just repaired for.
             ticks_remaining=1 if len(path) > 1 else 0,
         )
 
@@ -363,21 +319,6 @@ class MovementSystem:
             if journey.ticks_remaining > 0:
                 continue
 
-            # A whole stride per tick, reported one tile at a time.
-            #
-            # advance() used to move a single tile per tick whatever the
-            # step cost said. At ten game-minutes a tick that is one tile
-            # per ten minutes, and the longest route on this 140x130 map
-            # took 404 ticks - 67 game-hours to cross the town. The
-            # residents said so themselves: "Five hours walking, never
-            # reaching the College."
-            #
-            # Every tile crossed still publishes its own agent.moved, in
-            # order. That is what keeps the event stream a proof that the
-            # agent walked a real, contiguous, collision-free route rather
-            # than stepping over whatever lay between - a guarantee this
-            # module exists to make, and one that a single per-tick event
-            # would quietly drop.
             stride = stride_length(self.world_map, journey.current_tile)
             arrived = False
             for _ in range(stride):
@@ -398,16 +339,6 @@ class MovementSystem:
                     "walked": True,
                 }
                 if arrived:
-                    # TOOL-05(a). `default_interrupt_policy` interrupts the
-                    # scheduler for an event naming a resident in
-                    # `target_agent_id`; `agent.moved` carried `agent_id`
-                    # only, so arriving somewhere never woke anybody -
-                    # a resident walked for ten ticks and then waited for
-                    # its next scheduled turn to notice it had got there.
-                    #
-                    # Only on ARRIVAL, never on the intermediate tiles. One
-                    # per tile is the 21 GB; one per journey is the moment
-                    # the resident has something new to do.
                     payload["target_agent_id"] = agent_id
                 events.append(WorldEvent(type="agent.moved", tick=tick, payload=payload))
                 if arrived:
@@ -416,9 +347,6 @@ class MovementSystem:
             if arrived:
                 finished.append(agent_id)
             else:
-                # One tick until the next stride. The distance covered is
-                # carried by stride_length above, not by a per-tile
-                # countdown, so this is simply "keep walking next tick".
                 journey.ticks_remaining = 1
 
         for agent_id in finished:
@@ -426,12 +354,6 @@ class MovementSystem:
 
         return events
 
-    # -- Checkpointable (world/core/checkpoint.py's structural protocol) --
-    # Forward-compatible with CheckpointManager.register("movement", ...)
-    # even though wiring that registration call is out of this module's
-    # scope (see module docstring) - every other world/core submodule
-    # implements exactly this snapshot()/restore() shape, so a future
-    # caller that does wire this in needs no adapter.
 
     def snapshot(self) -> dict[str, Any]:
         return {

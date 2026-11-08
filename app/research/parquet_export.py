@@ -46,21 +46,8 @@ import duckdb
 
 from supabase.s3_client import PARQUET_EXPORT_PREFIX, S3Client, S3Config
 
-# Ticks per game-day (DESIGN.md section 1), the same constant every
-# *_game_day generated column in supabase/sqlite_schema.sql hardcodes.
 TICKS_PER_GAME_DAY = 144
 
-# Which tick column(s) attribute a row of each table to a game day.
-# Exhaustive over every table in supabase/sqlite_schema.sql -
-# test_research_parquet_export.py checks that against the real schema, so
-# a table added there without an entry here fails a test instead of
-# silently exporting nothing for it.
-#
-# Every table has exactly one tick column except agents, which carries
-# two independent ones (birth_tick, created_tick) and no single "this row
-# belongs to day N" column - its export takes any agent born OR created
-# on the given day (see build_where_clause), matching "activity involving
-# this agent on this day" rather than picking one tick arbitrarily.
 TABLE_TICK_COLUMNS: dict[str, tuple[str, ...]] = {
     "agents": ("birth_tick", "created_tick"),
     "businesses": ("registered_tick",),
@@ -158,28 +145,6 @@ def export_game_day_sync(*, sqlite_path: str, game_day: int, output_dir: Path) -
     output_dir.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect(":memory:")
     try:
-        # INFRA-10: LOAD first, INSTALL only if that fails.
-        #
-        # `INSTALL sqlite` ran on every export and reaches the network on a
-        # host that does not already have the extension - it failed here
-        # with HTTP 403 behind a proxy, taking nine tests with it. The
-        # Dockerfile pre-fetches it for the image, so inside a container
-        # LOAD alone always works and the install was pure latency;
-        # outside one, an export that needs the network is an export that
-        # fails at exactly the moment a day boundary fires.
-        #
-        # Ordered this way round so the common case makes no network call
-        # at all, and the uncommon one still self-heals.
-        #
-        # EVAL-20 asks for more than this: "vendor the extension or use
-        # Python sqlite3 -> pyarrow directly". Reading the rows with
-        # Python's own `sqlite3` was tried and does work for the READ -
-        # what it cannot do is hand DuckDB a typed relation to COPY from
-        # without pyarrow, and adding pyarrow to this project's
-        # dependencies is a decision for whoever owns them, not a repair.
-        # `SqliteExtensionUnavailable` below is the honest middle: the
-        # export says which of the two it needs rather than failing with
-        # an HTTP status code from a download nobody asked for.
         try:
             con.execute("LOAD sqlite")
         except duckdb.Error:
@@ -202,10 +167,6 @@ def export_game_day_sync(*, sqlite_path: str, game_day: int, output_dir: Path) -
 
             row_count = con.execute(f"SELECT count(*) FROM ({query})", params).fetchone()[0]
             local_path = output_dir / f"{table}.parquet"
-            # DuckDB writes a schema-correct, zero-row Parquet file when
-            # the query matches nothing - not an error, and exactly what
-            # a downstream DuckDB/pandas reader expects for a quiet game
-            # day (e.g. no cases filed), so no special-casing here.
             con.execute(f"COPY ({query}) TO '{local_path.as_posix()}' (FORMAT PARQUET)", params)
             results.append(TableExportResult(table=table, row_count=row_count, local_path=local_path))
         return results

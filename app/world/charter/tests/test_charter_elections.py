@@ -45,8 +45,6 @@ async def test_schedule_election_derives_windows_from_charter() -> None:
     engine, _ = await make_engine()
     election = await engine.schedule_election(now_tick=0)
 
-    # Genesis defaults: 1 day candidacy + 1 day campaign + 1 day voting,
-    # 144 ticks/day (DESIGN.md section 1).
     assert election.candidacy_opens_tick == 0
     assert election.candidacy_closes_tick == 144
     assert election.voting_opens_tick == 288
@@ -58,7 +56,7 @@ async def test_schedule_election_derives_windows_from_charter() -> None:
 @pytest.mark.asyncio
 async def test_declare_candidacy_before_window_opens_fails() -> None:
     engine, _ = await make_engine()
-    election = await engine.schedule_election(now_tick=10)  # opens at tick 10
+    election = await engine.schedule_election(now_tick=10)
 
     with pytest.raises(ElectionPhaseError):
         await engine.declare_candidacy(

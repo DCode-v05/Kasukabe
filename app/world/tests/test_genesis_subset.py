@@ -110,10 +110,6 @@ def test_the_ledger_adds_up(full, n):
     assert isinstance(led["treasury_cents"], int)
     assert led["agent_wallets_cents"] == sum(a["usd_wallet_cents"] for a in out["agents"])
     assert led["total_cents"] == led["agent_wallets_cents"] + led["treasury_cents"]
-    # And the total is the SAME $1000 the full town holds. world/'s snapshot
-    # table has a CHECK constraint pinning wallets+treasury+burned to 100000,
-    # so a subset that re-derives a smaller total is internally consistent and
-    # still rejected the first time it is checkpointed.
     assert led["total_cents"] == full["usd_ledger"]["total_cents"]
 
 
@@ -182,9 +178,6 @@ def test_the_shipped_thirty_agent_file_matches_the_generator(full):
     shipped = json.loads(path.read_text(encoding="utf-8"))
     fresh = build(full, 30)
     assert [a["agent_id"] for a in shipped["agents"]] == [a["agent_id"] for a in fresh["agents"]]
-
-
-# ── the two bugs that stopped a 30-agent live run from ever ticking ───
 
 
 def test_the_broker_token_is_the_agent_id_when_unsigned():

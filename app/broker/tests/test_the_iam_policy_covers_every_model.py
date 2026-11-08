@@ -25,10 +25,6 @@ from pathlib import Path
 
 import pytest
 
-# BEDROCK_MODELS, not MODEL_ALLOWLIST. An IAM policy grants
-# `bedrock:InvokeModel` on a Bedrock model arn; `gpt-6-luna` is served over
-# HTTPS from api.openai.com with a bearer token and has no arn to grant, so
-# asking IAM to cover it is asking the wrong question of the right list.
 from broker.config import BEDROCK_MODELS, MODEL_ALLOWLIST, OPENAI_MODELS
 
 POLICY = (
@@ -65,7 +61,6 @@ def test_every_allowlisted_model_is_granted(model_id: str, policy_text: str) -> 
 def test_the_dashed_spelling_is_granted_too(model_id: str, policy_text: str) -> None:
     """Nobody has confirmed which spelling this account's ARNs use, so both
     are allowed until somebody looks."""
-    # e.g. moonshotai.kimi-k2.5 -> moonshotai.kimi-k2-5
     head, _, tail = model_id.rpartition(".")
     dashed = f"{head}-{tail}" if head else model_id
     assert f"foundation-model/{dashed}" in policy_text, (

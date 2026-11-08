@@ -33,11 +33,9 @@ def self_orphan_detection_enabled() -> bool:
 
 def is_self_orphaned() -> bool:
     """Return True if this process appears to be orphaned."""
-    # Check 1: parent died → reparented to init (pid 1)
     if os.getppid() == 1:
         return True
 
-    # Check 2: TTY revoked (macOS terminal close)
     try:
         if hasattr(sys.stdout, "writable") and not sys.stdout.writable():
             return True

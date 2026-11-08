@@ -21,8 +21,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-FLUSH_SWEEP_INTERVAL_SECONDS = 1800  # 30 minutes
-FLUSH_TURN_THRESHOLD = 5  # flush threads with 5+ new turns since watermark
+FLUSH_SWEEP_INTERVAL_SECONDS = 1800
+FLUSH_TURN_THRESHOLD = 5
 
 
 class LCScheduler:
@@ -38,18 +38,10 @@ class LCScheduler:
         self.interval_seconds = interval_hours * 3600
         self.task: asyncio.Task | None = None
         self.sweep_task: asyncio.Task | None = None
-        self.coordinator: Any = None  # set via set_coordinator()
-        # paused=True means the batch + sweep loops are suspended.  Lets the
-        # ActivityManager/ActivityPolicy halt autonomous work on AWAY /
-        # DISCONNECTED and resume it on reconnect without tearing the tasks
-        # down and back up.
+        self.coordinator: Any = None
         self.paused: bool = False
         self.resume_event: asyncio.Event = asyncio.Event()
         self.resume_event.set()
-        # Tripped by pause()/stop() so in-flight sleeps wake immediately and
-        # re-check the resume gate.  Without this, a paused loop still sits
-        # through the remainder of its current sleep (up to interval_seconds,
-        # default 6h) before honouring the pause.
         self.interruption: asyncio.Event = asyncio.Event()
 
     def set_coordinator(self, coordinator: Any) -> None:
@@ -129,8 +121,6 @@ class LCScheduler:
 
         while True:
             await self.resume_event.wait()
-            # Quota cooldown: while citadel's window is exhausted every batch
-            # call would only 429, so skip this cycle instead of burning it.
             if quota_cooldown.cooldown_active():
                 logger.info(
                     "LC batch skipped: quota cooldown active (%.0fs remaining)",
@@ -176,7 +166,6 @@ class LCScheduler:
         if memory is None or db is None:
             return 0
 
-        # Incremental flush for threads with enough new turns
         thread_ids = list(getattr(coordinator, "threads", {}).keys())
         thread_index = getattr(coordinator, "thread_index", {})
 
@@ -207,23 +196,18 @@ class LCScheduler:
                     if conv_store:
                         await conv_store.save_metadata(tid, lc_watermark=new_watermark)
 
-        # Clean up expired threads (24h TTL)
         if conv_store:
             deleted = await conv_store.cleanup_expired(CONVERSATION_TTL_SECONDS)
             if deleted:
-                # Remove deleted threads from coordinator's dicts
                 for tid in list(coordinator.threads.keys()):
                     if tid not in thread_ids:
                         continue
-                    # Check if conversation still exists
                     convo = await conv_store.load_conversation(tid)
                     if convo is None:
                         coordinator.threads.pop(tid, None)
                         coordinator.thread_index.pop(tid, None)
                         logger.info("Removed expired thread %s", tid)
 
-        # Clean up expired ingestion chunks (shared conversation-working-set
-        # TTL; rows carry their expires_at stamped at write time)
         if coordinator.ingestion_store:
             try:
                 ig_deleted = await coordinator.ingestion_store.cleanup_expired()

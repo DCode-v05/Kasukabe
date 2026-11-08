@@ -20,11 +20,6 @@ from world.agent_viewer_api import AgentViewerDeps, build_agent_viewer_router
 from world.wiring import WorldConfig, build_world_server
 from world.tests.map_assets import needs_the_map
 
-# TOOL-27. This module needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped, and red for environment hides real regressions inside the
-# noise - which is how TOOL-09 stayed invisible for a whole cycle.
 pytestmark = needs_the_map
 
 
@@ -65,13 +60,6 @@ async def test_finder_lists_all_250_genesis_agents_with_real_identity() -> None:
         by_name = client.get("/agent-viewer/agents", params={"q": sample_genesis_agent.name}).json()
         assert any(a["agent_id"] == sample_genesis_agent.agent_id for a in by_name["agents"])
 
-        # Real bug this test locks in: `getattr(row, field) or ""` treats
-        # a genuine 0 (age_years == 0.0 for a newborn genesis agent - the
-        # real genesis.json used here has at least one) as falsy and
-        # coerces it to "", which raises TypeError comparing str to float
-        # the moment the sort actually needs to order that row against a
-        # nonzero one - confirmed against the real genesis population,
-        # not a hypothetical.
         by_age = client.get("/agent-viewer/agents", params={"sort_by": "age_years"})
         assert by_age.status_code == 200
         age_values = [a["age_years"] for a in by_age.json()["agents"]]
@@ -159,8 +147,6 @@ async def test_reasoning_list_and_detail_against_a_real_llm_calls_row() -> None:
         assert detail["request_body"]["messages"][0]["content"] == "what now?"
         assert detail["extracted"]["text_blocks"] == ["I should go to town hall."]
         assert detail["extracted"]["tool_calls"][0]["name"] == "move"
-        # The real move tool call (executed at the same tick=0 the trace
-        # row claims) is found via the actor_id+tick correlation.
         assert any(t["tool_name"] == "move" for t in detail["matched_tool_calls"])
         assert move_result.result["location_id"] == "town_hall"
 

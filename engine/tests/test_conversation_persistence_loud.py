@@ -116,7 +116,6 @@ class TestNextSeqComesFromTheDatabase:
         visible = await store.load_messages("thread-1")
         assert [m["seq"] for m in visible] == [0]
 
-        # The naive derivation (last visible seq + 1) would say 1 and collide.
         assert await store.next_seq("thread-1") == 2
         await store.save_message("thread-1", 2, "user", json.dumps("c"))
 

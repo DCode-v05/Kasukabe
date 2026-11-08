@@ -53,7 +53,7 @@ async def test_an_overrunning_tick_does_not_compound_the_delay(tmp_path):
     clock further behind, permanently.
     """
     runner = _runner(tmp_path, tick_interval_s=0.5)
-    already_spent = time.monotonic() - 0.6  # this tick overran its budget
+    already_spent = time.monotonic() - 0.6
     started = time.monotonic()
     await runner.wait_out_the_tick(already_spent)
     elapsed = time.monotonic() - started

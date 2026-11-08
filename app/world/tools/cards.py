@@ -39,9 +39,6 @@ from __future__ import annotations
 import re
 from typing import Any
 
-# Words that carry no signal about who to ask. Taken from Atlas's own
-# STOPWORDS and extended with the ones this town's residents actually open
-# with ("anyone", "buying", "know"), which would otherwise match everybody.
 STOPWORDS: frozenset[str] = frozenset(
     {
         "the", "and", "for", "with", "what", "whats", "how", "who", "can", "you",
@@ -54,52 +51,16 @@ STOPWORDS: frozenset[str] = frozenset(
     }
 )
 
-# Weights. Tag-style overlap dominates, exactly as Atlas's scorer does, and
-# every term is explainable to somebody reading a result they disagree with.
 SKILL_WEIGHT = 2.0
 OCCUPATION_WEIGHT = 1.5
-# Agents use this as a person-finder as well as a trade-finder: of the first
-# ten `find_people` calls a live town made, three were name lookups ("Bram
-# Holloway", "where is Tobias Holloway working now"). Before this weight
-# existed those only answered by accident, when a surname happened to appear
-# in a shared business name.
-#
-# Deliberately BELOW the occupation weight. A household shares a surname, so
-# a name match is weaker evidence than a trade match, and "Ainsley, who does
-# the mining here?" must answer with the miner rather than with Ainsley.
 NAME_WEIGHT = 1.3
-# Naming somebody in full identifies one resident, not a family. Large
-# enough to outrank a surname collected several times over from a
-# household's shop and workplace names, small enough that it cannot beat a
-# genuine trade match plus a skill.
 FULL_NAME_BONUS = 2.0
 BUSINESS_WEIGHT = 1.2
 WORKPLACE_WEIGHT = 1.0
-# Proficiency is the Kasukabe analogue of Atlas's seniority bias: it breaks
-# ties between two people who both do a thing, in favour of the one the town
-# has actually watched get good at it. Scaled to stay below a single extra
-# term match, so competence orders equals rather than outvoting relevance.
 PROFICIENCY_WEIGHT = 0.9
 
 DEFAULT_LIMIT = 5
 
-# One trade, several words: what a resident ASKS and what the town CALLS the
-# job are almost never the same token.
-#
-# Bram asked who was "trading" copper and who was "buying" it; the town's
-# word is "trader". He asked who was "working metal"; the town's words are
-# "miner" and "mining". Exact matching answered none of those, which is
-# indistinguishable from a town with no trader in it.
-#
-# An explicit table rather than a stemmer, and for the same reason
-# world/tools/place_aliases.py is a table: the vocabulary is small, closed,
-# and known, while a stemmer on this vocabulary is actively wrong -
-# "baker" stems to "bak" and "bakery" to "bake", so the two would stop
-# matching each other. A table is auditable, and a wrong row is one line to
-# fix rather than a rule to re-derive.
-#
-# Keyed by the word an agent might use; the values are the tokens the town
-# actually stores in occupations and skill names.
 TRADE_ALIASES: dict[str, tuple[str, ...]] = {
     "trade": ("trader",), "trades": ("trader",), "trading": ("trader",),
     "buy": ("trader",), "buys": ("trader",), "buying": ("trader",),
@@ -205,8 +166,6 @@ def agent_card(world: Any, agent_id: str) -> "dict[str, Any] | None":
         "occupation": read(world, "occupations", agent_id, "") or "",
         "workplace": read(world, "workplaces", agent_id, "") or "",
         "business": business_for(world, agent_id),
-        # Highest proficiency first: what somebody is known for comes before
-        # what they have merely tried.
         "skills": dict(sorted(skills.items(), key=lambda kv: (-kv[1], kv[0]))),
         "location_id": world.locations.location_of(agent_id)
         if hasattr(world, "locations")
@@ -226,25 +185,12 @@ def score_card(card: "dict[str, Any]", query_terms: set[str]) -> float:
     for skill, proficiency in skills.items():
         if tokenize(skill) & query_terms:
             score += SKILL_WEIGHT
-            # 0-100 proficiency, normalised so a master adds just under one
-            # extra term match and a novice adds almost nothing.
             score += PROFICIENCY_WEIGHT * (min(max(proficiency, 0), 100) / 100.0)
 
-    # Name match scores per matching part, so a full name beats a shared
-    # surname: "Marta Thorne" outranks her household on both words, while
-    # a bare "Thorne" ranks the whole family level, which is the honest
-    # answer to a question about a family.
     name_parts = tokenize(card.get("name") or "")
     matched_parts = name_parts & query_terms
     score += NAME_WEIGHT * len(matched_parts)
     if name_parts and matched_parts == name_parts:
-        # Every part of this person's name is in the question, which
-        # identifies ONE resident rather than describing a family. That has
-        # to be decisive, because a surname is otherwise scattered across
-        # the household's shop and workplace names: "where is Idris Thorne
-        # working" was answered with Marta, whose bakery is called
-        # "Thorne's Bakery" and who therefore collected the surname three
-        # times over.
         score += FULL_NAME_BONUS
 
     if tokenize(card.get("occupation") or "") & query_terms:

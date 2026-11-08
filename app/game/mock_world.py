@@ -62,12 +62,6 @@ logger = logging.getLogger("game.mock_world")
 
 MOCK_MAP_PATH = STATIC_ROOT / "assets" / "the_ville" / "visuals" / "the_ville_jan7.json"
 
-# A realistic subset of the_ville's real sectors, plus Kasukabe's two
-# minted genesis-only sectors (world/map/expansion.py). Coordinates are
-# hand-picked tile centers inside each named building's known footprint
-# on the base Ville map, close enough for a mock town's purposes - the
-# real world/ HTTP API resolves this from Sector.tiles, this table does
-# not need to be exact.
 MOCK_LOCATIONS: tuple[tuple[str, int, int], ...] = (
     ("Hobbs Cafe", 106, 71),
     ("The Rose and Crown Pub", 126, 96),
@@ -238,9 +232,6 @@ def build_mock_agents(count: int, seed: int) -> dict[str, MockAgent]:
             current_action=rng.choice(MOCK_ACTIONS),
         )
 
-    # Seed a handful of relationships among the roster so the inspector
-    # panel has something real to show (DESIGN.md section 8) instead of
-    # an empty list on every mock agent.
     agent_ids = list(agents.keys())
     for agent_id in agent_ids:
         other_count = rng.randint(1, 3)
@@ -333,9 +324,6 @@ def step(state: MockTownState, rng: random.Random) -> tuple[MockTownState, list[
             },
         )
     else:
-        # Utterance bubbles are transient - clear any stale one once this
-        # tick didn't produce a new line, matching how a real speech
-        # bubble should decay in the browser too (see static/js/town.js).
         for agent in state.agents.values():
             agent.current_utterance = None
 
@@ -378,17 +366,6 @@ class MockWorldClient:
     """
 
     def __init__(self, settings: GameSettings, tick_interval_s: float = 1.5) -> None:
-        # NO MOCK IN PRODUCTION (this task's own instruction): this is the
-        # one place a running game/ process can end up serving simulated
-        # agent state instead of a real world/ - server.py's
-        # build_world_client() only ever reaches here when
-        # GameSettings.mock_mode is True, an explicit flag (MOCK_MODE env
-        # var - config.py's own docstring: defaults True for local dev/
-        # tests only, since world/'s HTTP API historically did not exist
-        # past /health). Logging loudly on construction, not just
-        # defaulting quietly, so "why is the live town full of
-        # mock-agent-000..011" is one grep away instead of a silent
-        # surprise in a deploy that forgot to set MOCK_MODE=false.
         logger.warning(
             "game.mock_world: MockWorldClient constructed - serving %d SIMULATED agents, "
             "not a real world/ process. This must never happen in a live deploy; set "
@@ -433,11 +410,6 @@ class MockWorldClient:
         return agent.to_detail()
 
     async def get_places(self) -> list[Place]:
-        # The mock town is built on the exact same real genesis map/sector
-        # names as a live world/ (see this module's own docstring), so the
-        # real GENESIS_PLACES catalog (world_client.py) is the correct
-        # places list here too - no separate mock-only place data to
-        # maintain.
         return list(GENESIS_PLACES)
 
     async def get_provenance(self) -> dict[str, str | None]:
@@ -446,32 +418,10 @@ class MockWorldClient:
         return {"cognition": "mock", "inference": "mock"}
 
     async def get_spend_status(self) -> SpendStatus:
-        # Believable, clearly-mock spend curve so the HUD has something
-        # to show under an explicitly mock-mode game process instead
-        # of a permanent "unavailable" - DESIGN.md section 11's ~$0.003/
-        # agent-tick blended cost, scaled by this mock town's (much
-        # smaller) agent count, capped at the real $1000 total so a long
-        # `make run-game` session never reports more spend than the whole
-        # system could ever hold.
         total_cents = 100_000
         burned_cents = min(total_cents, int(self.state.tick * len(self.state.agents) * 0.3))
         return SpendStatus(burned_usd_cents=burned_cents, total_usd_cents=total_cents, available=True)
 
-    # ── the rest of the WorldClient Protocol (UI-13) ────────────────────
-    #
-    # These eight were on the Protocol and not on this class, so
-    # `MockWorldClient` had stopped satisfying the interface it exists to
-    # stand in for. Nothing failed, because `server.py` reaches every one
-    # of them through `getattr(client, "get_vitals", None)` - a pattern
-    # that turns "this double is incomplete" into "this panel is quietly
-    # empty in mock mode", and would do the same for a REAL client that
-    # lost a method.
-    #
-    # Implemented rather than deleted: six tests stand on this module, and
-    # the shapes are cheap. Each returns what the real client's route
-    # returns for a town with nothing of that kind going on - which is the
-    # honest answer for a twelve-agent fake with no charter, no workshop
-    # and no trace store, not an empty dict standing in for an error.
 
     async def get_workshop(self) -> dict[str, Any]:
         """No skills or inventions in the mock town."""
@@ -538,7 +488,6 @@ class MockWorldClient:
             try:
                 await self._task
             except asyncio.CancelledError:
-                # Expected: this is the task we just cancelled above.
                 pass
             except Exception:
                 logger.exception("game.mock_world: background tick task raised on shutdown")

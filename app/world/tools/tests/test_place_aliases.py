@@ -92,17 +92,6 @@ def test_an_unknown_place_is_left_as_itself():
     assert canonical_place("") is None
 
 
-# ── walking somewhere that does not exist ───────────────────────────────
-#
-# `move` allowed an opaque jump to ANY string, which is right for the town's
-# own non-sector locations and wrong for everything else. Observed live, at
-# one moment, alongside four residents correctly at "Harvey Oak Supply Store":
-#
-#     'store_harvey_oak'  'loc_farmland'  'place:t_temple'  'marketplace'
-#
-# One resident each, every one standing alone in a place of its own making
-# where nobody could see them, speak to them, or trade with them.
-
 @pytest.mark.asyncio
 async def test_the_towns_own_non_sector_locations_are_real():
     """temple, mill, farmland:wheat have no sector of their own and are
@@ -157,9 +146,6 @@ async def test_the_tool_location_set_is_built_by_calling_the_constructors():
     assert mill_location() in known
     assert farmland_location("wheat") in known
     assert len(known) == 26, "10 crops + 5 metals + 11 fixed places"
-
-
-# ── a sector contains the places it contains ────────────────────────────
 
 
 def test_standing_in_the_farmland_satisfies_a_crop_strip() -> None:

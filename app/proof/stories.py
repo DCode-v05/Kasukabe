@@ -105,9 +105,6 @@ async def _stand_where_the_verb_is_allowed(t: Town, actor: str, tool: str) -> st
     return str(gate)
 
 
-# ---------------------------------------------------------------------------
-
-
 async def a_seat_that_is_filled_can_govern(findings: Findings) -> None:
     """GOV-3's other half.
 
@@ -244,10 +241,6 @@ async def a_purchase_needs_a_conversation(findings: Findings) -> None:
         if where:
             t.world.locations.place(buyer, where)
 
-        # The half of the rule that can be checked without stock: `buy` is
-        # dropped from the SERVED list when the resident is in no
-        # conversation. This is a different mechanism from the refusal and
-        # it is the one a resident actually meets first.
         from world.tools.registry import tool_registry_rows
 
         served = {
@@ -266,10 +259,6 @@ async def a_purchase_needs_a_conversation(findings: Findings) -> None:
             )
         )
 
-        # Everything the purchase needs EXCEPT the conversation, so that the
-        # conversation is the only thing left to refuse it. Without this the
-        # buy died on "nobody has posted a price for bread" and the row
-        # proved nothing about the rule it was written for.
         t.world.inventory.credit(seller, "bread", 5)
         await t.do(seller, "post_price", item="bread", ask_sim=10)
 
@@ -278,11 +267,6 @@ async def a_purchase_needs_a_conversation(findings: Findings) -> None:
         )
         row = t.last_refusal(buyer)
         reason = (row.unmet_requirement if row else "") or bought.detail
-        # Only conversation-specific words count. An earlier version of
-        # this story matched "agree" and passed on "`trade` is how two
-        # people agree one" - a refusal about a missing price, not about
-        # the rule. That is the gate-that-cannot-fail shape this whole
-        # package exists to remove, so the match is narrow on purpose.
         about_the_rule = any(
             word in (bought.detail + str(reason)).lower()
             for word in ("conversation", "dealing", "not talking", "in no conversation")
@@ -334,11 +318,6 @@ async def the_day_boundary_actually_charges(findings: Findings) -> None:
     async with town() as t:
         before_usd = t.usd_total()
         before_treasury = t.ledger.sim_balance(TREASURY_ACCOUNT_ID)
-        # THE WHOLE TOWN, not a sample. The first eight ids in this genesis
-        # are children, and a child pays no head tax - the earners in its
-        # household do. Sampling them and reporting "0 of 8 are poorer" said
-        # nothing about whether the boundary charges anybody, which is the
-        # one thing this story exists to ask.
         people = sorted(t.world.agents)
         before_wallets = {w: t.ledger.sim_balance(w) for w in people}
 
@@ -381,11 +360,6 @@ async def the_day_boundary_actually_charges(findings: Findings) -> None:
                 "runs at a 0 bps rate; this asks the ledger instead",
             )
         )
-        # Where the treasury's gain came from, stated rather than assumed.
-        # It is not only the residents: businesses pay too, and a gain that
-        # exceeds what residents lost is the town's firms being charged, not
-        # money appearing from nowhere. Saying which is the difference
-        # between a finding and an alarm.
         findings.add(
             _v(
                 "the treasury's gain is money somebody else lost",
@@ -421,9 +395,6 @@ async def a_town_can_be_put_down_and_picked_up(findings: Findings) -> None:
 
         wrote = ""
         try:
-            # The same call `shutdown()` makes for its final checkpoint, so
-            # this story resumes from the artifact a real run leaves behind
-            # rather than one written specially for it.
             await t.runner.tick_engine.checkpoints.write(
                 before_tick, timestamp_for(before_tick).game_day
             )
@@ -520,14 +491,6 @@ async def a_lesson_can_be_bought_and_sold(findings: Findings) -> None:
             )
         )
 
-        # Measured, not asserted: the tuition arrived and the call took the
-        # same amount back out. At the price the one real attempt chose -
-        # 15 sim - a teacher ends the lesson exactly as rich as it started,
-        # and any cheaper lesson costs the teacher money to give. That may
-        # be deliberate pricing rather than a defect, which is why this is
-        # recorded and not scored; but it is the most economical
-        # explanation this instrument has for ECON-7 never holding, and for
-        # all three lessons in the 50-resident run being given away free.
         findings.add(
             Verdict(
                 AREA,
@@ -536,15 +499,6 @@ async def a_lesson_can_be_bought_and_sold(findings: Findings) -> None:
                 f"after the call's own cost of {student_paid - teacher_net} sim - teaching at "
                 "this price earns nothing, and any cheaper lesson costs the teacher money",
                 UNPROVEN,
-                # Checked, so the row is a calibration question and not a
-                # hunt. The cost is NOT hidden: the description a teacher is
-                # served reads "Cost: 15 sim-currency (the teacher's time,
-                # separate from any voluntary tuition price_sim)", so a
-                # teacher who charges above 15 profits and has what it needs
-                # to know that. The rule is deliberate too - base_cost=15,
-                # min_cost=15, SOCIAL. So nothing here is broken; what is
-                # open is whether 15 against a 15 floor is the calibration
-                # the town wants, which is a decision and not a defect.
                 "not a defect: the cost is disclosed in the tool description "
                 "and pricing above 15 sim profits. Open question is the "
                 "calibration - a 15 sim floor against the one tuition ever "
@@ -577,11 +531,6 @@ async def a_job_can_be_offered_paid_and_ended(findings: Findings) -> None:
             return
         owner = shop.owner_agent_id
         hand = next(a for a in sorted(t.world.agents) if a != owner and a not in shop.employee_agent_ids)
-        # Both parties at the shop: `set_wage` and `pay_wage` are gated to
-        # the premises, which is the town's rule and not a thing to work
-        # around. Pre-positioning is the same fairness `_stand_where_the_
-        # verb_is_allowed` grants every other story - walking has its own
-        # proven row and is not what is being asked here.
         where = f"business:{shop.business_id}"
         t.world.locations.place(owner, where)
         t.world.locations.place(hand, where)
@@ -699,16 +648,9 @@ async def the_town_can_physically_grow(findings: Findings) -> None:
             )
         )
 
-        # The footprint is the builder's own design - "any subset of a
-        # permitted plot's footprint". Four tiles of the grant is the
-        # smallest thing worth calling a workshop; the plot itself says
-        # which tiles are on offer.
         plot = t.world.plots.get(plot_id)
         granted = sorted(plot.footprint) if plot is not None else []
         footprint = [list(tile) for tile in granted[:4]]
-        # Materials, credited rather than gathered. `harvest` and `mine`
-        # have their own proven rows; what is being asked here is whether
-        # the building verbs work, not whether a resident can fell trees.
         for item, quantity in (("timber", 100), ("iron_ore", 100), ("stone", 100), ("copper_ore", 100)):
             t.world.inventory.credit(builder, item, quantity)
 
@@ -763,16 +705,11 @@ async def a_theft_can_be_tried(findings: Findings) -> None:
 
     async with town() as t:
         pm, thief, owner, judge = _grown_ups(t, 4)
-        # Two seats, because the town separates them: whoever files a
-        # subpoena "cannot also decide it", which is a rule worth keeping
-        # rather than a setup problem to route around.
         await t.world.charter.store.set_government_state(
             GovernmentState(
                 pm_agent_id=pm, minister_agent_ids=[judge], terms_served={}, caretaker=True
             )
         )
-        # An unattended store: its owner is somewhere else, which is what
-        # "unattended cash/inventory" means in the crime primitive.
         yard, elsewhere = "market_row", "farmland"
         t.world.storages["s_yard"] = Storage(storage_id="s_yard", owner_id=owner, location_id=yard)
         t.world.inventory.credit("s_yard", "timber", 10)
@@ -795,13 +732,6 @@ async def a_theft_can_be_tried(findings: Findings) -> None:
         if not case_id:
             return
 
-        # `arrest` answers "you are not police. A seat appoints one with
-        # appoint_police" - so the seat does, standing where that verb is
-        # gated, before anybody tries to make an arrest.
-        # A case opened by a theft "accuses nobody yet. Somebody has to name
-        # a suspect with file_complaint" - so the keeper of the yard does,
-        # which is the step the whole justice chain turns on and which no
-        # resident has ever taken.
         t.world.locations.place(owner, "government_complex")
         accused = await t.do(
             owner, "file_complaint", against_agent_id=thief, case_id=case_id,
@@ -920,8 +850,6 @@ async def residents_can_organise(findings: Findings) -> None:
             founder, "register_org", kind="society", name="The Timber Guild",
             charter_text="Members sell timber at a fair price and teach their own.",
         )
-        # The registry lists by kind rather than wholesale, and a society is
-        # what this guild had to be registered as.
         from world.charter.models import OrganizationKind
 
         listed = await t.world.charter.organizations.list_by_kind(OrganizationKind.SOCIETY)
@@ -1009,10 +937,6 @@ async def something_invented_can_be_sold(findings: Findings) -> None:
         if not made.ok:
             return
 
-        # `revise_tool` refuses a patented tool - "its disclosed steps are
-        # what was granted" - and `define_tool` files one at the patent
-        # office by definition. `toolify` is the unfiled door, so the
-        # revision is asked of a tool made that way.
         await t.do(
             inventor, "toolify", name="look_once",
             description="Look around, once, deliberately.",
@@ -1251,9 +1175,6 @@ async def a_government_can_use_every_lever(findings: Findings) -> None:
             description="Look around twice before saying what is there.",
             steps=[{"tool_name": "look_around", "params": {}}],
         )
-        # Applications live in the charter's own store, not on the world -
-        # which is why an earlier version of this story found an empty inbox
-        # and reported the patent verbs as having nothing to act on.
         applications = await t.world.charter.store.list_patent_applications()
         app_ids = [a.application_id for a in applications]
         t.world.locations.place(pm, "government_complex")
@@ -1268,9 +1189,6 @@ async def a_government_can_use_every_lever(findings: Findings) -> None:
                     f"application {app_ids[0]}",
                 )
             )
-            # The other two answers a patent office can give, on their own
-            # applications so that refusing one does not depend on granting
-            # another.
             t.world.locations.place(citizen, "patent_office")
             await t.do(
                 citizen, "define_tool", name="count_thrice",
@@ -1386,13 +1304,6 @@ async def a_life_has_its_own_verbs(findings: Findings) -> None:
             )
         )
 
-        # Coming of age needs somebody on the edge of it, and dormancy needs
-        # somebody who has stopped thinking. Both are states the town
-        # produces on its own over days; the story puts a resident in them
-        # rather than waiting a week for one.
-        # Eighteen, not sixteen: the verb refuses anybody below the age it
-        # marks, which makes it the choice an adult makes rather than the
-        # birthday itself.
         youngster = next(
             (a for a, r in sorted(t.world.agents.items()) if 18 <= getattr(r, "age_years", 0) <= 21),
             None,
@@ -1410,15 +1321,8 @@ async def a_life_has_its_own_verbs(findings: Findings) -> None:
             )
 
         sleeper = _grown_ups(t, 4)[-1]
-        # Dormancy is a state on the resident, and the only exit any run has
-        # ever recorded was a family member paying for it. The story puts a
-        # resident there rather than waiting for one to run out of money.
         t.world.agents[sleeper].dormancy.is_dormant = True
         t.world.locations.place(sleeper, t.world.location_of(one) or "")
-        # Waking somebody costs 5,000 sim and a resident starts with less,
-        # which is exactly why the only revival any run has seen was a
-        # family pooling money. The reviver is given the price rather than
-        # the rule being bent.
         await _give_sim(t, one, 6000)
         woken = await t.do(one, "revive", agent_id=sleeper)
         findings.add(
@@ -1455,10 +1359,6 @@ async def property_and_dues_change_hands(findings: Findings) -> None:
         plot = next((p for p in t.world.plots.values() if p.owner_agent_id == owner), None)
         tile = sorted(plot.footprint)[0] if plot else (0, 0)
 
-        # A plot is permission to build, not a deed: the tiles under it still
-        # belong to `government:treasury`, and the seat cannot hand them over
-        # either, because the treasury is an account and not a pair of hands.
-        # What conveys land is building on it, so the story builds first.
         for item, quantity in (("timber", 200), ("iron_ore", 200), ("stone", 200)):
             t.world.inventory.credit(owner, item, quantity)
         await t.do(pm, "issue_builder_license", holder_agent_id=owner)
@@ -1468,9 +1368,6 @@ async def property_and_dues_change_hands(findings: Findings) -> None:
             purpose="cottage", metal_kind="iron",
         )
         building_id = next(iter(sorted(getattr(t.world, "buildings", {}) or {})), "")
-        # Worked until it stands, not a fixed number of turns: a half-built
-        # cottage conveys nothing, and the tile under it stays the
-        # treasury's until the building is finished.
         for _ in range(40):
             if not building_id:
                 break
@@ -1480,21 +1377,6 @@ async def property_and_dues_change_hands(findings: Findings) -> None:
             worked_once = await t.do(owner, "work_site", building_id=building_id)
             if not worked_once.ok:
                 break
-        # WHY THIS ROW CANNOT BE PROVEN, which is the finding.
-        #
-        # Every tile in the town belongs to `government:treasury` at
-        # genesis. A granted plot is permission to build, not a deed - the
-        # refusal says so: "tile (0, 0) belongs to government:treasury, not
-        # a0040". Ownership moves only when a building on it COMPLETES, and
-        # `complete_construction` is not a verb any resident can call: the
-        # runner runs it every tick, after the labour is done and the
-        # completion tick has passed. And the treasury cannot sell either,
-        # because `transfer_tile` requires an actor who owns the tile and
-        # the treasury is an account, not a pair of hands.
-        #
-        # So X16 - "does land ever change hands" - has been answered "no"
-        # in every run for a reason no resident could have changed. That is
-        # worth more than a green row.
         holder = "government:treasury"
         seller = owner
         t.world.locations.place(seller, where)
@@ -1551,17 +1433,8 @@ async def property_and_dues_change_hands(findings: Findings) -> None:
                 )
             )
 
-        # `pay_tax` is the verb this project has most evidence about and
-        # least proof of: ten calls, zero successes, and five of the ten
-        # were answered "you owe no head tax" - the town refusing correctly
-        # because nothing had charged anybody yet. So charge first.
         from world.core.clock import TICKS_PER_DAY, timestamp_for
 
-        # The head tax is taken automatically at the boundary. `pay_tax`
-        # answers ARREARS - what is left owing when the automatic charge
-        # found an empty wallet - which is why five of its ten recorded
-        # calls were told "you owe no head tax" by a town that was right.
-        # So a resident is emptied before the day turns.
         await _take_all_sim(t, buyer)
         await t.runner.run_life_ticks(timestamp_for(TICKS_PER_DAY))
         owed = await t.world.head_tax_debts.all_outstanding()

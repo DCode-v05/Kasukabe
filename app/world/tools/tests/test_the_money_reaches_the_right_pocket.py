@@ -38,8 +38,6 @@ from world.tools.economy_bridge import LedgerEconomyPort
 from .test_construction import spawn_agent  # noqa: F401
 
 
-# ── ECON-29 ─────────────────────────────────────────────────────────────
-
 def test_a_fee_with_no_trade_behind_it_goes_to_the_town() -> None:
     """A wedding has no payee: the temple is a place, not a business."""
     port = LedgerEconomyPort(ledger=None, tick_provider=lambda: 0, world=None)
@@ -98,8 +96,6 @@ def test_a_port_with_no_world_behaves_exactly_as_before() -> None:
     assert port.payee_for("pharmacy_treatment") == TREASURY_ACCOUNT_ID
 
 
-# ── ECON-30 ─────────────────────────────────────────────────────────────
-
 @pytest.mark.asyncio
 async def test_a_zero_margin_changes_nothing(world, registry) -> None:
     """Genesis sets no margin, so every existing run must be unaffected."""
@@ -107,8 +103,6 @@ async def test_a_zero_margin_changes_nothing(world, registry) -> None:
 
     await spawn_agent(world, "buyer", LOCATION_GOVERNMENT_COMPLEX)
     world.ledger.get_account("buyer").sim_units = 50_000
-    # The credit store pays out of the treasury's USD, and a bare test
-    # world starts with none.
     world.ledger.get_account(TREASURY_ACCOUNT_ID).usd_cents = 100_000
     before = world.ledger.get_account("buyer").usd_cents
 
@@ -137,8 +131,6 @@ async def test_the_margin_is_charged_and_kept_by_the_treasury(
 
     await spawn_agent(world, "buyer", LOCATION_GOVERNMENT_COMPLEX)
     world.ledger.get_account("buyer").sim_units = 50_000
-    # The credit store pays out of the treasury's USD, and a bare test
-    # world starts with none.
     world.ledger.get_account(TREASURY_ACCOUNT_ID).usd_cents = 100_000
     treasury_before = world.ledger.get_account(TREASURY_ACCOUNT_ID).sim_units
 
@@ -175,8 +167,6 @@ async def test_a_margin_that_eats_the_whole_purchase_is_refused(
 
     await spawn_agent(world, "buyer", LOCATION_GOVERNMENT_COMPLEX)
     world.ledger.get_account("buyer").sim_units = 50_000
-    # The credit store pays out of the treasury's USD, and a bare test
-    # world starts with none.
     world.ledger.get_account(TREASURY_ACCOUNT_ID).usd_cents = 100_000
     before = world.ledger.get_account("buyer").sim_units
 

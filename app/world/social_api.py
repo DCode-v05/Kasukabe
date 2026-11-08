@@ -53,8 +53,6 @@ from supabase.client import SupabaseClient, eq, in_
 from world.life.models import Genesis
 from world.tools.state import WorldState
 
-# ── deps ──────────────────────────────────────────────────────────────
-
 
 @dataclass
 class SocialDeps:
@@ -65,9 +63,6 @@ class SocialDeps:
 
 def name_map(genesis: Genesis) -> dict[str, str]:
     return {agent.agent_id: agent.name for agent in genesis.agents}
-
-
-# ── scenarios: curated event-type -> category map ───────────────────────
 
 
 class ScenarioCategory(str, Enum):
@@ -84,21 +79,6 @@ class ScenarioCategory(str, Enum):
     REGIME = "regime"
     ELECTION = "election"
 
-# DESIGN.md section 8: "crimes and trials, births and deaths, marriages,
-# disasters, miracles, cult formation, business launches and failures,
-# amendments tabled, regime transitions." Every key here is a REAL event
-# type this codebase actually emits (verified: `grep -rhoE
-# '"[a-z_]+\.[a-z_]+\.[a-z_]+"' world/ broker/` over every module that
-# publishes to the shared EventBus - see this track's report for the full
-# list). Two DESIGN.md-named categories have NO real emitter yet, and are
-# left out of this map rather than silently mapped to nothing:
-# "business launches and failures" (no `business.registered` /
-# `business.closed` event exists - genesis businesses are seeded directly
-# into the trace store's `businesses` table, never through an event, and
-# there is no runtime "open a business" tool yet) and "cult formation"
-# specifically (there is no `religion.cult.formed`-shaped event; the
-# closest real signal is `politics.organization.registered` with
-# `kind="cult"` in its payload, which IS mapped below under CULT).
 EVENT_TYPE_TO_CATEGORY: dict[str, ScenarioCategory] = {
     "crime.theft.attempted": ScenarioCategory.CRIME,
     "crime.theft.witnessed": ScenarioCategory.CRIME,
@@ -141,11 +121,6 @@ EVENT_TYPE_TO_CATEGORY: dict[str, ScenarioCategory] = {
     "politics.election.tallied": ScenarioCategory.ELECTION,
 }
 
-# Payload keys, checked in this order, that correlate one scenario event to
-# the rest of its causal chain - e.g. every crime.* event on the same
-# case_id, or every politics.charter.* event on the same proposal_id. Not
-# every event type carries every key; build_trace() below tries each in
-# turn and uses whichever the anchor event actually has.
 CORRELATION_KEYS: tuple[str, ...] = (
     "case_id",
     "proposal_id",
@@ -228,9 +203,6 @@ def event_row_to_scenario(row: dict[str, Any], names: dict[str, str]) -> Scenari
     )
 
 
-# ── conversations ────────────────────────────────────────────────────────
-
-
 class UtteranceView(BaseModel):
     id: int
     speaker: str
@@ -245,7 +217,7 @@ class UtteranceView(BaseModel):
 
 class ConversationSummary(BaseModel):
     conversation_cluster_id: str
-    kind: str  # "individual" | "group"
+    kind: str
     location: str | None
     participant_ids: list[str]
     participant_names: list[str]
@@ -369,9 +341,6 @@ def conversation_summary(cluster_id: str, rows: list[dict[str, Any]], names: dic
     preview = preview_row["content"][:140]
     return ConversationSummary(
         conversation_cluster_id=cluster_id,
-        # DESIGN.md section 8: "make group visually distinct from
-        # one-to-one" - 3+ distinct participants is a group scene; 2 (or a
-        # 1-participant broadcast/monologue utterance) is individual.
         kind="group" if len(participants) > 2 else "individual",
         location=location,
         participant_ids=sorted(participants),
@@ -382,8 +351,6 @@ def conversation_summary(cluster_id: str, rows: list[dict[str, Any]], names: dic
         preview=preview,
     )
 
-
-# ── the router ────────────────────────────────────────────────────────
 
 DEFAULT_SCENARIO_LIMIT = 200
 DEFAULT_CONVERSATION_ROW_LIMIT = 5000
@@ -396,7 +363,6 @@ async def add_cors_headers(response: Response) -> None:
 def build_social_router(get_deps: Callable[[], SocialDeps]) -> APIRouter:
     router = APIRouter(tags=["social"], dependencies=[Depends(add_cors_headers)])
 
-    # -- scenarios ----------------------------------------------------------
 
     @router.get("/scenarios", response_model=list[ScenarioEntry])
     async def scenarios(
@@ -418,9 +384,6 @@ def build_social_router(get_deps: Callable[[], SocialDeps]) -> APIRouter:
         filters: dict[str, str] = {"type": in_(types)}
         if agent_id is not None:
             filters["agent_id"] = eq(agent_id)
-        # The generic select() interface takes one filter value per
-        # column (see supabase/client.py), so a tick range needs two
-        # passes rather than one query with both gte and lte on `tick`.
         rows = await deps.trace.select("events", filters=filters, order="tick.desc", limit=max(limit * 4, 500))
         if since_tick is not None:
             rows = [r for r in rows if r.get("tick") is not None and r["tick"] >= since_tick]
@@ -450,13 +413,6 @@ def build_social_router(get_deps: Callable[[], SocialDeps]) -> APIRouter:
             value = payload.get(key)
             if value is None:
                 continue
-            # `domain` (everything before the first dot in `type`) is a
-            # real generated column on this table (sqlite_schema.sql), not
-            # a Python-side reconstruction - a crime.case.opened anchor
-            # pulls every OTHER crime.* event sharing the same case_id,
-            # including ones no scenario category maps to (e.g. a
-            # crime.interview.logged entry still belongs in the causal
-            # trace even though it isn't curated-feed-worthy on its own).
             domain = anchor["type"].split(".", 1)[0]
             rows = await deps.trace.select(
                 "events", filters={"domain": eq(domain)}, order="tick.asc", limit=2000
@@ -465,12 +421,11 @@ def build_social_router(get_deps: Callable[[], SocialDeps]) -> APIRouter:
                 row_payload = row.get("payload") or {}
                 if row_payload.get(key) == value:
                     correlated[str(row["id"])] = row
-            break  # use the first correlation key the anchor actually carries
+            break
 
         ordered = sorted(correlated.values(), key=lambda r: (r.get("tick") if r.get("tick") is not None else -1, r["id"]))
         return [event_row_to_scenario(r, names) for r in ordered]
 
-    # -- conversations --------------------------------------------------------
 
     @router.get("/conversations", response_model=list[ConversationSummary])
     async def conversations(

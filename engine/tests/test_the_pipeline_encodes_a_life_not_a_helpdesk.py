@@ -42,9 +42,6 @@ from src.learning_centre import pipeline as frozen_pipeline
 from src.sim import resident_learning_prompts as resident
 
 
-# ── 1. the register changed ───────────────────────────────────────────
-
-
 @pytest.mark.parametrize("name", resident.PROMPT_NAMES)
 def test_no_resident_prompt_speaks_of_a_user_or_an_assistant(name):
     """"the user" is the whole defect: it is a third party who does not
@@ -58,12 +55,6 @@ def test_no_resident_prompt_speaks_of_a_user_or_an_assistant(name):
     """
     text = getattr(resident, name).lower()
 
-    # Every occurrence must OPEN a quoted example - i.e. be preceded by an
-    # apostrophe. Stripping quoted spans instead would be wrong here: the
-    # naive `'[^']*'` pairs the closing quote of one example with the
-    # opening quote of the next and deletes the prose between them, which
-    # is how the first draft of this test read `... two loads` + `the user
-    # exhibits ...` as one word.
     for match in re.finditer(r"the user", text):
         preceding = text[match.start() - 1 : match.start()]
         assert preceding == "'", (
@@ -89,7 +80,6 @@ def test_the_worked_examples_are_from_this_world():
     for stale in ("deploys on tuesdays", "code review", "grafana", "ec2", "redis"):
         assert stale not in knowledge, f"{stale!r} survived the rewrite"
 
-    # And it teaches the food chain the town actually has.
     assert "wheat" in knowledge and "mill" in knowledge
 
 
@@ -102,12 +92,6 @@ def test_consolidation_forbids_the_line_it_actually_produced():
     assert "workflow optimization" in text, "the observed failure is not named"
     assert "empty list is a good answer" in text, "noise is still cheaper than silence"
 
-
-# ── 2. the JSON contract did NOT change ───────────────────────────────
-#
-# This is the half that fails silently. Each pair below is (frozen, ours):
-# every JSON key the engine's prompt asked for must still be asked for by
-# ours, because `pipeline.py` parses the reply by those exact names.
 
 CONTRACTS = [
     ("EPISODE_ENCODING_SYSTEM", ["key", "description"]),
@@ -162,9 +146,6 @@ def test_the_confidence_bands_are_the_stores(_bands=None):
     assert "1.0" in ours and "0.7-0.8" in ours and "0.4-0.6" in ours
 
 
-# ── 3. install() actually rebinds, and says so when it cannot ─────────
-
-
 def test_install_rebinds_every_prompt_on_the_frozen_module():
     fake = SimpleNamespace(**{n: "the engine's original" for n in resident.PROMPT_NAMES})
 
@@ -179,7 +160,7 @@ def test_a_renamed_prompt_upstream_is_loud_not_silent(caplog):
     """Silently skipping is how a prompt rewrite becomes a no-op nobody
     notices for twenty-three runs. This is the L1 failure the evaluation
     spec exists to catch, applied to itself."""
-    fake = SimpleNamespace(EPISODE_ENCODING_SYSTEM="x")  # the other three are gone
+    fake = SimpleNamespace(EPISODE_ENCODING_SYSTEM="x")
 
     with caplog.at_level("ERROR"):
         count = resident.install(fake)
@@ -224,7 +205,6 @@ def test_boot_installs_them():
     ]
     assert called_at, "pinned_boot never CALLS install_resident_prompts"
 
-    # Before the pipeline is built, so no batch can run against the old text.
     built_at = [
         node.lineno
         for node in ast.walk(tree)
@@ -272,7 +252,6 @@ def test_the_prompt_rewrite_itself_edits_nothing_frozen():
             f"an unlisted breach makes the freeze a fiction."
         )
 
-    # And the file this test is actually about is untouched either way.
     assert "resident_learning_prompts" not in changed
 
 

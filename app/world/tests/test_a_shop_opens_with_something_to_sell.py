@@ -72,24 +72,8 @@ def test_declared_stock_survives_the_parse() -> None:
     assert shop.opening_stock == {"bread": 12, "flour": 20}
 
 
-# EVERY genesis file, not two of them.
-#
-# This test named `genesis_10.json` and `genesis_20.json` and stopped there,
-# so the other eighteen files were never checked and never stocked.
-# election30 ran on `genesis_30_town.json`: three shops, all empty, no
-# bakery and no mill. Its report is the consequence read back - 0.43 meals
-# per resident-day, 9 of 47 sell calls succeeding, and residents telling
-# each other the bakery had no bread.
 GENESIS_FILES = sorted(p.name for p in GENESIS.glob("genesis*.json"))
 
-# A pharmacy sells `pharmacy_treatment`, which is a SERVICE (see
-# `tools/economy_bridge.py`). There is no medicine good in this world, so it
-# has nothing to put on a shelf and an empty one is correct rather than
-# missed. Named here so "empty" stays a decision somebody made.
-# A pharmacy used to be exempt here: it sells a service and this world has no
-# medicine good. That left it the one shop whose owner could post prices and
-# stock nothing. It now opens with what a village market-and-pharmacy sells,
-# so nothing is exempt.
 SELLS_A_SERVICE_NOT_GOODS: set[str] = set()
 
 

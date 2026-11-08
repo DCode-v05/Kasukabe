@@ -29,7 +29,6 @@ import shlex
 from typing import Iterator
 
 
-# Shell tokens emitted by shlex that terminate a command's argument list.
 SHELL_OPERATOR_TOKENS: frozenset[str] = frozenset(
     {
         "|",
@@ -46,22 +45,12 @@ SHELL_OPERATOR_TOKENS: frozenset[str] = frozenset(
     }
 )
 
-# Subset that starts a fresh pipeline / sequence segment (no '<', no '>'-family).
 PIPELINE_SEPARATORS: frozenset[str] = frozenset({"|", "||", "&", "&&", ";"})
 
-# Commands whose entire tail of non-flag arguments are write targets.
 WRITE_ALL_TAIL_CMDS: frozenset[str] = frozenset({"rm", "touch"})
 
-# Commands where the final non-flag argument is the write target.
 WRITE_LAST_ARG_CMDS: frozenset[str] = frozenset({"mv", "cp", "ln"})
 
-# Wrappers that delegate execution directly to the next word — e.g.
-# `sudo rm ~/.bashrc`, `env FOO=bar tee ~/.zshrc`, `nohup nice cp src ~/.bashrc`.
-# Without skipping these, the dangerous-target gate would only see "sudo" /
-# "env" as the base command and miss the actual write. Limited to wrappers
-# whose plain form is `WRAPPER CMD ...`; tools that take their own positional
-# arguments (timeout, ionice, chrt, stdbuf) are excluded — handling them would
-# need per-tool argument parsing.
 PRECOMMAND_PREFIXES: frozenset[str] = frozenset(
     {
         "sudo",
@@ -153,20 +142,15 @@ def collect_sed_in_place_targets(tokens: list[str], start: int) -> list[str]:
             has_in_place = True
             break
         if t.startswith("--"):
-            # Any other long flag — skip and keep scanning.
             continue
         if t == "-i" or (t.startswith("-i") and "." in t):
-            # `-i` or GNU backup form `-i.bak`.
             has_in_place = True
             break
         if t.startswith("-") and len(t) >= 2:
-            # Short flag or combined-short-flag token: look for `i` among the
-            # individual short-flag characters. Excludes the leading `-`.
             if "i" in t[1:]:
                 has_in_place = True
                 break
             continue
-        # Non-flag token — positional args begin here.
         break
 
     if not has_in_place:
@@ -264,11 +248,8 @@ def extract_written_paths(command: str) -> list[str]:
 
     targets: list[str] = []
 
-    # shlex.split() does NOT split ">" from adjacent tokens when they were
-    # already separated by whitespace. "echo hi >foo" tokenizes to
-    # ['echo', 'hi', '>foo'] — we have to handle both forms.
     i = 0
-    command_start = 0  # index where the current pipeline segment's command begins
+    command_start = 0
     while i < len(tokens):
         tok = tokens[i]
 
@@ -289,9 +270,6 @@ def extract_written_paths(command: str) -> list[str]:
             continue
 
         if i == command_start:
-            # Skip past env-var assignments and wrappers (sudo, env, nice, ...)
-            # so `sudo rm ~/.bashrc` and `env FOO=bar tee ~/.zshrc` are
-            # recognized as writes to the actual target.
             base_idx = find_base_command_index(tokens, i)
             if base_idx is not None:
                 base = strip_leading_path(tokens[base_idx])

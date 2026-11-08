@@ -31,11 +31,6 @@ from world.tools.inventory import holdings_line
 from world.tools.registry import ActorRequirements, ToolNamespace, ToolOutcome, ToolSpec
 from world.tools.state import WorldState
 
-# What each genesis sector is FOR, in the agent's terms. Keyed by a
-# lowercase substring of the sector name so a renamed or extended map still
-# matches ("Hobbs Cafe" -> cafe). Anything unmatched is still listed, just
-# without a purpose line - never hidden, because a place an agent cannot
-# see is a place it can never choose.
 PLACE_PURPOSES: dict[str, str] = {
     "cafe": "Buy and sell food and drink. People gather and talk here.",
     "bar": "Drink, talk, and meet people.",
@@ -64,14 +59,6 @@ PLACE_PURPOSES: dict[str, str] = {
 }
 
 
-# The workshops, keyed by their exact location id.
-#
-# Separate from PLACE_PURPOSES because that one matches on substrings, and
-# substrings get these wrong in three different ways: "sawmill" contains
-# "mill", "loom_house" contains "house", and "patent_office" contains
-# "office". The first pass at this told residents the sawmill grinds grain
-# and the patent office is a desk job. An exact id wins outright - the same
-# rule the movement fold holds to for the same reason.
 WORKSHOP_PURPOSES: dict[str, str] = {
     "mill": "Grind grain into flour. `craft` works here.",
     "kitchen": "Cook raw food into meals. `cook` works here.",
@@ -148,9 +135,6 @@ def known_places(world: WorldState) -> list[dict[str, str]]:
     from world.tools.place_aliases import known_tool_locations, satisfies_gate
 
     covered = [p["place_id"] for p in places]
-    # Workshops a business provides are real ground: the shop is listed
-    # below and standing in it satisfies the gate (TOOL-02). Listing the
-    # bare id as well would offer a second, emptier door to the same trade.
     from world.tools.place_aliases import _business_rows
 
     provided: set[str] = set()
@@ -158,39 +142,14 @@ def known_places(world: WorldState) -> list[dict[str, str]]:
         provided |= business.provides_workshops
 
     for location in sorted(known_tool_locations()):
-        # Per-variety families (farmland:wheat, ore_outcrop:copper) are
-        # already listed as resource zones above; the bare workshop ids are
-        # the ones with nothing standing for them.
         if any(satisfies_gate(place, location) for place in covered):
             continue
-        # TOOL-02/GROW-28: a workshop nobody provides is a string, not a
-        # place. `move("mill")` took the opaque-jump fallback into a room
-        # with no tiles, no people and no way for a customer to find it, and
-        # this list was where residents were told it existed. Run 23's
-        # `location:mill` refusals came from exactly this invitation: the
-        # miller walked to the phantom while her own mill stood elsewhere.
-        #
-        # Kept out of the list, NOT out of the gate: a recipe still names
-        # `mill`, and a town that builds one (GROW-05) will satisfy it the
-        # same way a business does.
         if location in provided:
             continue
         places.append({
             "place_id": location, "kind": "workshop", "purpose": purpose_for(location),
         })
 
-    # The shops. A business's premises are where its owner stands all day
-    # and where `buy` and `sell` are gated, and this list - the only answer
-    # a resident gets to "where can I go?" - never mentioned one.
-    #
-    # Run 19: Junia Vance, grocery clerk, spent fifty-nine ticks at
-    # `business:b_grocery`, a room no customer could have found by asking.
-    # Every shop in every run has been empty, and this is the half of the
-    # reason that lives here: nobody could be told where they are.
-    #
-    # Listed under the name people call them by, with the id as the place,
-    # and skipped when a sector already stands for the same ground so no
-    # shop is listed twice.
     for business_id, business in sorted(world.businesses.items()):
         location_id = getattr(business, "location_id", None) or f"business:{business_id}"
         if any(satisfies_gate(place, location_id) for place in [p["place_id"] for p in places]):
@@ -220,10 +179,6 @@ async def list_places_handler(
     )
 
 
-# How many offers the town-wide board carries. Every one of them is paid
-# for on every call of every turn (there is no prompt caching), and fifty
-# residents can post hundreds, so the board is the cheapest slice that
-# still answers "where do I get food": in-stock first, then by item.
 MARKET_BOARD_LIMIT = 12
 
 
@@ -269,26 +224,13 @@ def market_offers(world: WorldState, limit: int = MARKET_BOARD_LIMIT) -> list[di
                 "where": where,
                 "ask_sim": post.ask_sim,
                 "bid_sim": post.bid_sim,
-                # What the seller actually holds. A bid needs none - a buyer
-                # is not selling anything - so it is only meaningful for asks.
                 "stock": world.inventory.quantity(holder_id, item),
-                # Whether this can actually be bought right now - which is
-                # what a resident reading the board needs, and no longer the
-                # same question as "is somebody standing there".
-                #
-                # A shop with a posted price sells whoever is minding it
-                # (`commerce.shop_is_open_for`), so reporting it as
-                # unattended would send residents away from counters that
-                # would serve them - the 87 refusals again, by the opposite
-                # route. A PERSON selling from their own hands still has to
-                # be present and spoken to.
                 "minded": (
                     shop_is_open_for(world, holder_id, item)
                     or is_minded(world, holder_id)
                 ),
             })
     offers.sort(key=lambda o: (
-        # Takeable first: stocked AND somebody there to agree the sale.
         0 if o["minded"] and (o["ask_sim"] is None or o["stock"] > 0) else 1,
         o["item"],
         o["ask_sim"] if o["ask_sim"] is not None else 10**9,
@@ -334,8 +276,6 @@ async def describe_place_handler(
         None,
     )
     if match is None:
-        # Not an error: an agent guessing at a name it half-remembers should
-        # be told what does exist rather than punished with an exception.
         return ToolOutcome(
             result={
                 "found": False,
@@ -362,10 +302,6 @@ async def describe_place_handler(
             "purpose": match["purpose"],
             "people_here_now": occupants,
             "businesses_here": businesses,
-            # A3: so a customer can compare before walking. A price a
-            # resident can only discover by making the journey is a price
-            # that cannot be shopped around, and E2 asks whether the spread
-            # between shops narrows.
             "prices_there": describe_prices(world, match["place_id"]),
         },
         events=[],
@@ -379,17 +315,6 @@ async def look_around_handler(
     others = sorted(a for a in world.locations.agents_at(here) if a != agent.agent_id) if here else []
     tile = world.agent_tiles.get(agent.agent_id)
 
-    # What is being talked about here, reported the way people_here is.
-    #
-    # Runs 18 and 19 both ended with start_conversation registered, priced,
-    # served to every engine and never called once. This result is why: it
-    # named the people in the room and said nothing about the conversation
-    # nine of them were in the middle of. No id to answer into, and nothing
-    # anywhere in a resident's view referring to convening one. A tool that
-    # nothing you can see refers to is not a tool you can choose.
-    #
-    # Facts only - who is talking, about what, how long it has run. Nobody
-    # is told to join.
     conversations = [
         {
             "conversation_id": record["conversation_id"],
@@ -402,9 +327,6 @@ async def look_around_handler(
         for record in world.open_conversations_at(here, world.tick())
     ]
 
-    # A3. Nothing is for sale until somebody posts a price, so "what is
-    # priced where I stand" is a fact a resident cannot get any other way -
-    # and `buy`'s refusal points here by name.
     prices = describe_prices(world, here)
     result: dict[str, Any] = {
         "location_id": here,
@@ -413,10 +335,6 @@ async def look_around_handler(
         "people_here": others,
         "conversations_here": conversations,
         "prices_here": prices or "Nothing is priced here.",
-        # TOOL-04. What you are holding, in the same breath as what is for
-        # sale beside you - the two facts a decision to buy is made from.
-        # Free, and here rather than behind its own tool: a resident too
-        # poor to act must not also be too poor to find out what it has.
         "you_are_holding": holdings_line(world, agent.agent_id)
         or "nothing you could give, eat, or sell",
         "places_you_could_go": [p["place_id"] for p in known_places(world)][:40],
@@ -428,9 +346,6 @@ async def look_around_handler(
             "holding two conversations muddles them."
         )
     elif len(others) >= 2:
-        # Standing with two or more people and nothing being said is the one
-        # moment convening is worth anything, and `people_here` alone cannot
-        # tell a resident that.
         result["note"] = (
             f"{len(others)} people are here and nobody is talking. "
             "start_conversation calls them together about something, and "
@@ -444,12 +359,6 @@ def build_specs() -> list[ToolSpec]:
         ToolSpec(
             name="list_places",
             description=(
-                # TOOL-26. The second sentence used to hand the resident a
-                # plan - which errands to run and in what order - which is
-                # the Addendum's rule 2 exactly: a tool blurb states the
-                # physics and the prices and stops there. What a place is
-                # for is already in the first sentence and in the rows this
-                # returns; what to go and DO about it is the resident's.
                 "List the places in Kasukabe you could travel to, with what each is for. "
                 "A tool with a location gate can only be called from the place its gate names."
             ),

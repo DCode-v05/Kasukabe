@@ -32,7 +32,6 @@ from world.ledger.models import TransactionReason
 from world.tools.economy_bridge import LedgerEconomyPort
 from world.wiring import TX_REASON_TO_SCHEMA_TYPE
 
-# The seven the finding names.
 NEW_REASONS = (
     "UPKEEP", "ACTION_COST", "REFUND", "FEE",
     "DONATION", "REVIVAL", "ENERGY_EXCHANGE",
@@ -75,8 +74,6 @@ def test_the_schema_vocabulary_was_not_widened() -> None:
             "constraint, on old ones silently"
         )
 
-
-# ── the mapping the finding asks for ────────────────────────────────────
 
 def test_upkeep_is_booked_as_upkeep() -> None:
     """The exact string the report queries. `run_report._transactions`
@@ -129,8 +126,6 @@ def test_an_unknown_reason_is_not_guessed_into_a_category() -> None:
         TransactionReason.TRANSFER
     )
 
-
-# ── the two ledger-side sites ───────────────────────────────────────────
 
 def test_an_action_cost_says_it_is_one() -> None:
     from world.ledger import action_costs

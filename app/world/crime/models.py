@@ -38,10 +38,6 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, model_validator
 
-# DESIGN.md section 1: "tick = 10 game-minutes". Confinement sentences are
-# authored in game-hours (this task's own vocabulary: "confinement N
-# game-hours") and converted to ticks at the point of use, exactly like
-# charter/models.py's days_to_ticks converts election windows.
 TICKS_PER_GAME_HOUR = 6
 
 

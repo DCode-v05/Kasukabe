@@ -20,8 +20,6 @@ from datetime import datetime, timezone
 from src.memory.embeddings import EmbeddingService, hybrid_score
 from src.memory.working_memory import LogEntry, EntryType
 
-# Alias of the canonical conversation-working-set retention window (see the
-# comment on CONVERSATION_TTL_SECONDS in conversation_store.py).
 from src.engine_core.conversation_store import CONVERSATION_TTL_SECONDS
 
 TTL_SECONDS = CONVERSATION_TTL_SECONDS

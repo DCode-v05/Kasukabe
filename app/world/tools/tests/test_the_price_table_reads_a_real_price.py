@@ -61,8 +61,6 @@ async def test_the_price_table_renders_what_post_price_actually_emits(
 
     rendered = "\n".join(prices_section(posted))
 
-    # The failure this exists for: a column read from a key that is not
-    # there renders as the string "None", once per missing field per row.
     assert "None" not in rendered, (
         "the price table read a field the payload does not carry.\n"
         f"payload keys: {sorted(posted[0])}\n\n{rendered}"

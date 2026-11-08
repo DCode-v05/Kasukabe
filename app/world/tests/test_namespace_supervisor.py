@@ -45,9 +45,6 @@ def spec(agent_id):
                     extra_env={"AGENT_ID": agent_id})
 
 
-# ── the namespace ─────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_each_agent_gets_its_own_september_home(tmp_path):
     """The isolation boundary. Same layout ProcessSupervisor exports, so a run
@@ -85,9 +82,6 @@ async def test_a_restart_keeps_the_namespace(tmp_path):
     await sup.restart("u-a0001")
 
     assert (sup.home_for("a0001") / "skills" / "limbing.json").exists()
-
-
-# ── the supervisor contract ───────────────────────────────────────────
 
 
 @pytest.mark.asyncio

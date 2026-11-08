@@ -1,29 +1,11 @@
-/* Kasukabe township viewer: simulation clock, resident behaviour, live
- * conversation, the town economy, and every panel on the page.
- *
- * Rendering lives in village.js (isometric canvas). This file owns what the
- * residents DO: where each of the 250 is at any hour, who talks to whom,
- * what each one earns and owes, and what the panels show.
- *
- * Honesty line, repeated on the page itself: population, families,
- * occupations, personas, balances and the fiscal constants are real, read
- * from world/genesis.json and world/ledger/*. The daily schedule, the
- * conversations, and the spend ticker are a deterministic client-side model -
- * a visualisation of the environment, not a socket into the Python engine.
- */
-
 const OCC_LABEL = o => o.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
-// ---- real fiscal constants (world/ledger/*, world/life/constants.py) ----
-const HEAD_TAX_BASE_SIM = 1000;   // world/ledger/head_tax.py
-const TAX_RATE_BPS = 300;         // illustrative; genesis default 0, government amends
+const HEAD_TAX_BASE_SIM = 1000;
+const TAX_RATE_BPS = 300;
 const HEAD_TAX_PER_DAY = HEAD_TAX_BASE_SIM * TAX_RATE_BPS / 10000;
-const GENESIS_TREASURY_USD = 500; // world/life/constants.py
-const POP = AGENTS.length;   // 250 genesis residents + the institution staff
+const GENESIS_TREASURY_USD = 500;
+const POP = AGENTS.length;
 
-// Daily sim-currency wage by occupation, and daily household upkeep. DESIGN.md
-// section 3's "everything costs: living is not free" - these are the numbers
-// that make a resident's balance move day to day.
 const WAGE = {
   construction_company_owner: 220, grocery_store_owner: 200, cafe_owner: 195,
   pharmacist: 185, college_instructor: 170, office_administrator: 150,
@@ -90,10 +72,6 @@ const OCC_FACE = {
 };
 function occFace(o) { return OCC_FACE[o] || ['🙂', '#9AA7B4']; }
 
-// What each occupation wears. shirt/legs are the body colours; `coat` paints a
-// white coat or apron over the shirt; `hat` picks the headwear drawn by
-// village.js's drawHat. Everyone used to wear one of eight random shirts,
-// which made a doctor and a miner indistinguishable on the map.
 const OCC_OUTFIT = {
   doctor:            { shirt: '#EAF2F6', legs: '#3B5566', coat: '#FFFFFF', hat: 'scrub-cap' },
   nurse:             { shirt: '#BFE4DC', legs: '#3B5566', coat: '#FFFFFF', hat: 'scrub-cap' },
@@ -130,9 +108,6 @@ const OCC_OUTFIT = {
   retired:           { shirt: '#C08552', legs: '#5A5248', hat: 'straw' },
 };
 
-// What a resident is visibly holding while working. Drives the little tool and
-// the working animation on the map, so a farmer at the field reads as farming
-// rather than as a person standing in a field.
 const WORK_TOOL = {
   farmer: 'hoe', miner: 'pick', forester: 'axe', construction_worker: 'hammer',
   construction_company_owner: 'plan', artisan: 'hammer', baker: 'tray', chef: 'pan',
@@ -161,10 +136,6 @@ const VERB_AT_WORK = {
   innkeeper: 'Keeping the rooms', street_sweeper: 'Sweeping the streets',
   shopkeeper: 'Minding the shop',
 };
-// What someone is doing when they are AT a place but not doing their own job
-// there. Every zone needs an entry or the fallback ("Out and about") shows up
-// for whole districts - which it was doing for the school, library, bank, inn,
-// police, fire, restaurant, bakery, hospital and the new outer zones.
 const ZONE_ACTIVITY = {
   grocery: 'Shopping', cafe: 'Having coffee', pharmacy: 'Picking up medicine',
   park: 'Relaxing in the park', townsquare: 'Socialising',
@@ -181,15 +152,6 @@ const ZONE_ACTIVITY = {
   docks: 'Down at the docks',
 };
 
-// ---- deterministic seeding ----------------------------------------------
-// FNV-1a, not djb2. djb2's final step is h*33 + c, so two salts differing only
-// in their last character ('jx' vs 'jy') come out one apart - which made every
-// resident's x and y offsets identical to four decimal places, standing them
-// all on their zone's diagonal. In isometric projection a diagonal is a
-// vertical line, so the town rendered as columns of stacked people. FNV-1a's
-// multiply-after-xor spreads that one-bit difference across the whole word.
-/** Nudge a hex colour lighter or darker, so a uniform still has some
- * person-to-person variation. */
 function shiftColour(hex, f) {
   if (!hex || hex[0] !== '#') return hex;
   const n = parseInt(hex.slice(1), 16);
@@ -200,11 +162,6 @@ function shiftColour(hex, f) {
 function hash(str) {
   let h = 2166136261;
   for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
-  // Final avalanche (murmur3's fmix32). Without it, two salts differing only in
-  // their last character still come out a *constant* distance apart, because
-  // the loop's last step is a single multiply - so jy stayed jx plus a fixed
-  // offset, and the residents sat on a diagonal all the same. Mixing the high
-  // bits down is what actually decorrelates them.
   h ^= h >>> 16; h = Math.imul(h, 2246822507);
   h ^= h >>> 13; h = Math.imul(h, 3266489909);
   h ^= h >>> 16;
@@ -212,13 +169,10 @@ function hash(str) {
 }
 function seeded01(str, salt) { return (hash(str + '|' + salt) % 100000) / 100000; }
 
-// ---- per-resident derived state -----------------------------------------
 const HAIR = ['#3B2A20', '#6B4A2B', '#2B2B33', '#8C6239', '#A6603C', '#4A3B32'];
 const SHIRT = ['#E4694E', '#4E82C4', '#59A86B', '#D6A128', '#8E6BC4', '#DA7BA8', '#3FA9A0', '#C4643E'];
 
 function initAgentDerived(a) {
-  // Keep the genesis kinship so resetHealth() can restore it: births append to
-  // `rel` and bump `nk`, and a replay has to undo exactly that.
   if (!a._relBase) { a._relBase = (a.rel || []).slice(); a._nkBase = a.nk || 0; }
   if (a.dz) a.dayZone = a.dz;
   else if (a.br === 'elderly') a.dayZone = seeded01(a.id, 'day') < 0.5 ? 'park' : 'library';
@@ -232,31 +186,21 @@ function initAgentDerived(a) {
   a.skillUnlockDay = 2 + Math.floor(seeded01(a.id, 'unlockday') * 5);
   a._loggedSkill = false;
 
-  // Dress by trade. Shades vary slightly per person so a row of ten farmers
-  // is not ten identical sprites.
   const fit = OCC_OUTFIT[a.occ] || { shirt: SHIRT[Math.floor(seeded01(a.id, 'shirt') * SHIRT.length)] };
   a.outfit = fit;
   a.shirt = shiftColour(fit.shirt, 0.92 + seeded01(a.id, 'tone') * 0.16);
   a.hair = HAIR[Math.floor(seeded01(a.id, 'hair') * HAIR.length)];
 
   a.wage = WAGE[a.occ] || 0;
-  a.upkeep = a.br === 'minor' ? 0 : UPKEEP_PER_DAY;   // minors are covered by their household
-  // A8: where this resident's own age clock starts. Genesis minors start at
-  // the age they were seeded with, at hour zero; a resident born during the
-  // run starts at zero, on the day they were born. Adults never age
-  // (DESIGN.md section 4, "adults static") and get no clock at all.
+  a.upkeep = a.br === 'minor' ? 0 : UPKEEP_PER_DAY;
   if (a.br === 'minor') {
     a._bornMinorAge = a.bornDay !== undefined ? 0 : a.age;
     a._bornAtHour = a.bornDay !== undefined ? a.bornDay * 24 : 0;
   }
   a._costDecay = 40 + seeded01(a.id, 'decay') * 70;
 
-  // Stable position offsets inside a zone, spread across most of its area so a
-  // busy workplace reads as a crowd rather than a single clump.
   a._jx = 0.06 + seeded01(a.id, 'jx') * 0.88;
   a._jy = 0.06 + seeded01(a.id, 'jy') * 0.88;
-  // Home is household-shared, with a small per-person offset so family members
-  // stand together at their own house instead of exactly on top of each other.
   a._eastSide = seeded01(a.hh, 'side') > 0.55;
   const hjx = 0.06 + seeded01(a.hh, 'hjx') * 0.88;
   const hjy = 0.06 + seeded01(a.hh, 'hjy') * 0.88;
@@ -268,29 +212,16 @@ AGENTS.forEach(initAgentDerived);
 const AGENT_BY_ID = {};
 AGENTS.forEach(a => AGENT_BY_ID[a.id] = a);
 
-// ---- who lives where -----------------------------------------------------
-// Every household is given an actual address. Before this, night positions
-// came from a random point anywhere inside the housing zone, which is why
-// residents were shown asleep on the grass between buildings. Homes are
-// matched to what a household's earners make: the best-paid families get the
-// villas, then the houses, and single people and low-wage households take a
-// flat in an apartment block.
 function assignHomes() {
   const households = {};
   for (const a of AGENTS) (households[a.hh] = households[a.hh] || []).push(a);
 
   const ranked = Object.entries(households).map(([hh, members]) => ({
     hh, members,
-    // household income = its best earner, which is what decides what a family
-    // can afford to live in
     income: Math.max(0, ...members.map(m => WAGE[m.occ] || 0)),
     size: members.length,
   })).sort((x, y) => (y.income - x.income) || (y.size - x.size));
 
-  // Slots best-first: modern houses, then 3 BHK, 2 BHK, and finally the
-  // 1 BHK flats. Ordering by tier descending matters - an earlier version
-  // hardcoded three tiers, so when the fourth (modern) was added it never
-  // entered the pool and the best-paid households ended up in 2 BHKs.
   const homes = plans.filter(p => p.home).sort((a, b) => b.tier - a.tier);
   const slots = [];
   for (const h of homes) {
@@ -303,7 +234,6 @@ function assignHomes() {
     for (const m of hd.members) {
       m._home = slot.plan;
       m._flat = slot.idx || 0;
-      // a stable spot inside the home's own footprint, never outside it
       const inset = 1.2;
       const jx = inset + seeded01(m.id, 'homex') * Math.max(0.4, slot.plan.w - inset * 2);
       const jy = inset + seeded01(m.id, 'homey') * Math.max(0.4, slot.plan.h - inset * 2);
@@ -314,10 +244,6 @@ function assignHomes() {
 }
 
 
-// ---- health, ailment and death ------------------------------------------
-// Every constant here is copied from world/life/constants.py, not invented.
-// DESIGN.md section 5 pins the incidence rates and the 85+ hazard threshold;
-// the hazards marked ASSUMPTION there are carried across with the same values.
 const AILMENT_DAILY_INCIDENCE = { short: 0.04, medium: 0.01, long: 0.0025, terminal: 0.0008 };
 const AILMENT_DURATION = { short: 1, medium: [3, 7], long: 20 };
 const TERMINAL_DEATH_WINDOW_DAYS = [3, 10];
@@ -328,23 +254,10 @@ const WORK_CAPACITY_BY_AILMENT = { short: 0.5, medium: 0.3, long: 0.15, terminal
 const PHARMACY_SHORT_TREATMENT_COST_SIM = 500;
 const REVIVAL_COST_SIM = 10000;
 
-// The hospital is why building it matters. world/life/constants.py:
-// "At genesis the pharmacy only covers short ailments ... so every medium/long
-// ailment is untreated by construction until the town builds a hospital."
 const PHARMACY_TREATS = ['short'];
 const HOSPITAL_TREATS = ['short', 'medium', 'long'];
 
-// ---- what the town builds, and when -------------------------------------
-// DESIGN.md section 1 lists the genesis buildings and says outright that the
-// hospital and police station are "deliberately absent - the town must build
-// its institutions." Everything below is therefore a construction project with
-// a completion day, not a building that exists on day one. The days are a
-// plausible build order, flagged as modelled on the page.
 const BUILD_PROJECTS = [
-  // NOTE: day 0 for all of these is a deliberate divergence from DESIGN.md
-  // section 1, which leaves the hospital and police station out of genesis so
-  // "the town must build its institutions." Every building now stands from the
-  // first tick and is staffed. Costs are still charged to the treasury on day 0.
   { zone: 'bakery',     name: 'Bakery',          icon: '🥖', day: 0,  build: 'bakery',     kind: 'business',
     note: 'A resident registers a bakery — grain → flour → bread, the first real production chain.' },
   { zone: 'restaurant', name: 'Restaurant',      icon: '🍽️', day: 0,  build: 'restaurant', kind: 'business',
@@ -364,12 +277,6 @@ const BUILD_PROJECTS = [
   { zone: 'inn',        name: 'The Inn',         icon: '🛏️', day: 0, build: 'inn',        kind: 'business',
     note: 'Beds for anyone between households.' },
 ];
-// A project's `day` is the earliest the town WANTS it. When it actually opens
-// depends on whether the treasury can pay for it: DESIGN.md's ledger "refuses
-// an over-large debit" and balances may never go negative, so the town cannot
-// put up a 140,000-sim hospital out of a 10,000-sim treasury. This walks the
-// days once, accruing each day's net, and records the first day each project
-// is both wanted and affordable.
 const FISCAL_HORIZON_DAYS = 1200;
 let _fiscal = null;
 function fiscal() {
@@ -390,7 +297,6 @@ function fiscal() {
   _fiscal = { balance, cumIn, cumOut };
   return _fiscal;
 }
-// Every institution is genesis infrastructure now, so nothing is ever pending.
 function openedOn() { return 0; }
 function isBuilt(zoneId, day) {
   const proj = BUILD_PROJECTS.find(b => b.zone === zoneId);
@@ -399,18 +305,9 @@ function isBuilt(zoneId, day) {
 function hospitalOpen(day) { return day >= openedOn('hospital'); }
 function treatableOn(day) { return hospitalOpen(day) ? HOSPITAL_TREATS : PHARMACY_TREATS; }
 
-// A resident's health is simulated day by day and cached, because each day
-// depends on the one before it (an ailment that started on day 4 is still
-// running on day 6). Recomputing the whole history every frame would be far
-// too slow, so the sim only ever steps forward; scrubbing the clock backwards
-// replays from day 0, which is cheap enough at 250 residents.
-// `log` is a capped feed of recent events; `causes` is the cumulative tally,
-// which must be kept separately or old deaths vanish as the feed scrolls.
 const healthSim = { day: -1, states: {}, log: [], deaths: 0, recoveries: 0, causes: {} };
 
 function resetHealth() {
-  // Remove anyone born during the previous run before replaying, or a
-  // scrub-and-replay would stack duplicate newborns onto the population.
   for (let i = AGENTS.length - 1; i >= 0; i--) {
     if (AGENTS[i].bornDay !== undefined) { delete AGENT_BY_ID[AGENTS[i].id]; AGENTS.splice(i, 1); }
   }
@@ -443,7 +340,6 @@ function stepHealthDay(d) {
     if (!h.alive) continue;
     const roll = (salt) => seeded01(a.id, 'h' + d + salt);
 
-    // 1. A running ailment either resolves, kills, or continues.
     if (h.ailment) {
       const treated = treats.includes(h.ailment);
       if (h.ailment === 'terminal') {
@@ -461,14 +357,12 @@ function stepHealthDay(d) {
       }
     }
 
-    // 2. The 85+ hazard applies whether or not they are ill.
     if (h.alive && a.age + d / 365 >= ELDERLY_HAZARD_AGE_YEARS && roll('eld') < ELDERLY_DAILY_HAZARD) {
       h.alive = false; h.status = 'deceased'; h.cause = 'old age (85+ hazard)';
       recordDeath(d, a, h);
       continue;
     }
 
-    // 3. A healthy resident may fall ill, at the real incidence rates.
     if (h.alive && !h.ailment) {
       for (const kind of ['terminal', 'long', 'medium', 'short']) {
         if (roll(kind) < AILMENT_DAILY_INCIDENCE[kind]) {
@@ -512,34 +406,24 @@ const HEALTH_LABEL = {
   long: 'Long illness', terminal: 'Terminally ill', deceased: 'Deceased',
 };
 
-// ---- shift work ----------------------------------------------------------
-// A hospital, a police station and a fire station do not close at 17:00. The
-// staff of those services are split across three shifts so the buildings are
-// manned round the clock, and - the part that was wrong before - a night-shift
-// nurse sleeps through the MORNING, not at midnight while she is on ward.
 const SHIFT_SERVICES = {
   doctor: 'hospital', nurse: 'hospital',
   police_officer: 'police', firefighter: 'fire',
   innkeeper: 'inn',
 };
 const SHIFTS = {
-  day:     { on: [7, 15],  sleep: [22, 6] },   // 07-15 on, sleeps 22-06
-  evening: { on: [15, 23], sleep: [0, 8] },    // 15-23 on, sleeps 00-08
-  night:   { on: [23, 7],  sleep: [8, 16] },   // 23-07 on, sleeps 08-16
+  day:     { on: [7, 15],  sleep: [22, 6] },
+  evening: { on: [15, 23], sleep: [0, 8] },
+  night:   { on: [23, 7],  sleep: [8, 16] },
 };
 const SHIFT_NAMES = ['day', 'evening', 'night'];
 
-/** Hour ranges wrap midnight (a night shift runs 23:00-07:00), so a plain
- * start <= h < end test is wrong for exactly the shift that matters most. */
 function inWindow(h, [start, end]) {
   return start <= end ? (h >= start && h < end) : (h >= start || h < end);
 }
 function onShift(a, h) { return a.shift && inWindow(h, SHIFTS[a.shift].on); }
 function shiftAsleep(a, h) { return a.shift && inWindow(h, SHIFTS[a.shift].sleep); }
 
-/** Spread each service's staff evenly across the three shifts, so no shift is
- * left without cover. Assigned per workplace, not globally, or the hospital
- * could end up with every doctor on days and the police with none at night. */
 function assignShifts() {
   const byService = {};
   for (const a of AGENTS) {
@@ -553,13 +437,7 @@ function assignShifts() {
   }
 }
 
-// ---- movement -----------------------------------------------------------
 function zoneAnchor(zoneId, a, useHome) {
-  // Home is split across the two residential neighbourhoods so 250 people are
-  // not stacked on one block; which one a household lives in is fixed by its
-  // household id, so relatives always share a neighbourhood.
-  // Home is a real address inside a real building, not a point somewhere in
-  // the housing district.
   if (zoneId === 'housing' && a._home) return { tx: a._homeTx, ty: a._homeTy };
   let z = ZONES[zoneId] || ZONES.townsquare;
   if (zoneId === 'housing') z = a._eastSide ? ZONES.housingEast : ZONES.housing;
@@ -567,25 +445,12 @@ function zoneAnchor(zoneId, a, useHome) {
   const jy = useHome ? a._hjy : a._jy;
   return { tx: z.x + z.w * jx, ty: z.y + z.h * jy };
 }
-/** Where a resident stands inside a zone at this moment.
- *
- * Each person gets `TASK_POINTS` fixed spots scattered across the zone - a
- * field has rows, a market has stalls, a ward has beds - and works through
- * them in a loop, walking between one and the next. The spots are seeded per
- * agent so they are stable across a replay, and the walk is interpolated so
- * you see someone crossing the yard rather than teleporting.
- */
 const TASK_POINTS = 4;
-const TASK_MINUTES = 55;          // how long one task takes before moving on
-// Over half of each cycle is spent on the move, so people are seen crossing
-// the room and the yard rather than blinking between two standing spots.
+const TASK_MINUTES = 55;
 const WALK_FRACTION = 0.55;
 
-/** A walking pace: a short push off, a long constant stride, a short slowing
- * at the end. A plain ease-in-out accelerates the whole way and reads as
- * gliding once the distance is more than a couple of tiles. */
 function paceEase(e) {
-  const A = 0.15;                            // share spent speeding up / slowing
+  const A = 0.15;
   if (e < A) return (e * e) / (2 * A * (1 - A));
   if (e > 1 - A) { const d = 1 - e; return 1 - (d * d) / (2 * A * (1 - A)); }
   return (e - A / 2) / (1 - A);
@@ -605,11 +470,8 @@ function taskPos(a, zoneId, hourFrac, salt) {
   const frac = phaseT - idx;
   const from = taskSpot(a, zoneId, idx % TASK_POINTS);
   const to = taskSpot(a, zoneId, (idx + 1) % TASK_POINTS);
-  // Stand at the spot just walked TO, not the one walked FROM. Returning
-  // `from` here teleported everyone back to where they started the moment the
-  // walk finished, so each cycle was a walk out followed by a snap back.
   if (frac > WALK_FRACTION) return { tx: to.tx, ty: to.ty, walking: false };
-  const e = frac / WALK_FRACTION;            // 0..1 across the walk
+  const e = frac / WALK_FRACTION;
   const ease = paceEase(e);
   return { tx: from.tx + (to.tx - from.tx) * ease, ty: from.ty + (to.ty - from.ty) * ease, walking: true };
 }
@@ -627,18 +489,7 @@ const PHASE_LABEL = {
   commute2: 'heading out for the evening', evening: 'evening — cafe, park, inn, square',
   commute3: 'heading home',
 };
-/** Walk from A to B the way a person would: out to the street, along it, then
- * in to the door. A straight line between two zone anchors sends people
- * clipping diagonally through houses and across the river, which is the main
- * thing that made the commute look wrong.
- *
- * The route is a three-leg dog-leg through a corridor point chosen on the
- * road grid, and `f` walks it at a constant rate, so the pace stays even
- * around the corner instead of speeding up on the diagonal.
- */
 function walkRoute(p1, p2, f) {
-  // corridor point: turn along the x axis first, then the y - which is what
-  // the street layout actually offers
   const via = { tx: p2.tx, ty: p1.ty };
   const legA = Math.abs(via.tx - p1.tx);
   const legB = Math.abs(p2.ty - via.ty);
@@ -659,17 +510,11 @@ function agentPosition(a, hourFrac) {
   const hod = hourFrac - dayStart;
   const phase = phaseAt(Math.floor(hod));
   const h = healthOf(a);
-  // The dead stay where they were buried; nothing below applies to them.
   if (!h.alive) return { pos: zoneAnchor('housing', a, true), zone: 'housing', moving: false, dead: true };
-  // Anyone too ill to work spends the day being treated: at the pharmacy while
-  // that is all the town has, at the hospital once it opens.
   if (h.ailment && WORK_CAPACITY_BY_AILMENT[h.ailment] <= 0.3 && phase === 'day') {
     const ward = hospitalOpen(day) && isBuilt('hospital', day) ? 'hospital' : 'pharmacy';
     return { pos: taskPos(a, ward, hourFrac, 'ward'), zone: ward, moving: false, ill: true };
   }
-  // Shift workers ignore the town's ordinary day entirely: they are at work
-  // when their shift says so, asleep in their own bed when it says so, and off
-  // duty the rest of the time.
   if (a.shift) {
     if (onShift(a, hod)) {
       const t = taskPos(a, a.dayZone, hourFrac, 'shift');
@@ -683,9 +528,6 @@ function agentPosition(a, hourFrac) {
   }
 
   if (phase === 'night') return { pos: zoneAnchor('housing', a, true), zone: 'housing', moving: false };
-  // A working day is not nine hours of standing still. Each resident walks a
-  // small circuit of task points inside their workplace, so the town reads as
-  // people doing jobs rather than as pins dropped on buildings.
   if (phase === 'day') {
     const t = taskPos(a, a.dayZone, hourFrac, 'work');
     return { pos: t, zone: a.dayZone, moving: t.walking };
@@ -717,9 +559,6 @@ function activityFor(a, zone, hod) {
   return ZONE_ACTIVITY[zone] || 'Out and about';
 }
 
-// ---- economy ------------------------------------------------------------
-// A resident's balance is a pure function of the day, so scrubbing the clock
-// backwards gives exactly the same figures as playing forwards.
 function balanceOn(a, day) {
   const net = a.wage - a.upkeep - (a.br === 'minor' ? 0 : HEAD_TAX_PER_DAY);
   const drift = (seeded01(a.id, 'drift') - 0.45) * 12 * day;
@@ -734,22 +573,9 @@ function costSpent(a, hourFrac) {
   return (a.usd / 100) * (1 - Math.exp(-hourFrac / a._costDecay));
 }
 
-// ---- A8: coming of age (The 250 section 26) ------------------------------
-// "At 18 (MINOR_AGE_LIMIT_YEARS), a former minor crosses into the working-age
-// population... the parent-billing relationship for their own thinking should
-// end... What they do next is not scripted."
-//
-// The engine half of this is world/life/household.py's come_of_age(); this is
-// the viewer's model of the same rule, running on the same two constants.
-// Minors age at DESIGN.md section 4's rate - 1 year per game-hour - which is
-// deliberately fast, so birth -> childhood -> working age is something a short
-// run can actually show instead of a mechanic nobody ever sees fire.
 const YEARS_AGED_PER_GAME_HOUR = 1;
 const MINOR_AGE_LIMIT_YEARS = 18;
 
-// The three futures section 26 names. Weights are a modelling assumption, not
-// a number from the design - what is NOT an assumption is that the choice
-// exists and has consequences for the household and the bill.
 const COMING_OF_AGE_WEIGHTS = [
   ['stay_and_contribute', 0.45],
   ['move_out_alone', 0.35],
@@ -761,24 +587,16 @@ const COMING_OF_AGE_LABEL = {
   pair_off: 'Paired off and started a household together',
 };
 
-// Section 26: "this is where the town's occupational roster actually gets
-// filled over time, not just at genesis." A new adult takes up whichever
-// trade the town is shortest of, so a run that loses farmers grows farmers.
 const ENTRY_TRADES = [
   'farmer', 'miner', 'forester', 'day_laborer', 'artisan', 'trader',
   'shopkeeper', 'construction_worker', 'office_administrator', 'waiter',
 ];
 
-/** The hour of the run at which this minor turns 18, or null if they never
- *  were one. A pure function of their genesis age, so scrubbing the clock
- *  backwards un-ages them exactly the way it un-spends their money. */
 function comingOfAgeHour(a) {
   if (a._bornMinorAge === undefined) return null;
   return Math.max(0, (MINOR_AGE_LIMIT_YEARS - a._bornMinorAge) / YEARS_AGED_PER_GAME_HOUR);
 }
 
-/** How old this resident is right now. Adults are static (DESIGN.md section
- *  4: "adults static"), minors age until they hit the limit and stop. */
 function ageAt(a, hourFrac) {
   const coa = comingOfAgeHour(a);
   if (coa === null) return a.age;
@@ -794,7 +612,6 @@ function isAdultAt(a, hourFrac) {
   if (coa === null) return a.br !== 'minor';
   return hourFrac >= (a._bornAtHour || 0) + coa;
 }
-/** Working-age bracket as of now, which is what the census counts. */
 function bracketAt(a, hourFrac) {
   if (a.br !== 'minor' && a._bornMinorAge === undefined) return a.br;
   return isAdultAt(a, hourFrac) ? 'working' : 'minor';
@@ -812,7 +629,6 @@ function entryTrade(a) {
   return ENTRY_TRADES[Math.floor(seeded01(a.id, 'entry-trade') * ENTRY_TRADES.length)];
 }
 
-/** Everyone who crossed eighteen on this day, for the news feed and census. */
 function cameOfAgeOn(day) {
   return AGENTS.filter(a => {
     const coa = comingOfAgeHour(a);
@@ -822,13 +638,6 @@ function cameOfAgeOn(day) {
   });
 }
 
-/** Who pays for this resident's own thinking, right now.
- *
- * DESIGN.md section 4's parent-debit rule is scoped to minors; the moment
- * they cross eighteen the bill is their own. This is the viewer's mirror of
- * Ledger.end_parent_billing() - and, like it, the thing that was missing:
- * before this, a grown child's spend still read as their parent's forever.
- */
 function billPayerFor(a, hourFrac) {
   if (bracketAt(a, hourFrac) !== 'minor') return a;
   const sponsorName = (a.pn && a.pn.length) ? a.pn[0] : null;
@@ -836,24 +645,13 @@ function billPayerFor(a, hourFrac) {
   return sponsor || a;
 }
 
-// ---- A9: property and wills (The 250 section 31) -------------------------
-// "The town's land divides into 1x1 units, each addressable by its own
-// simulation coordinate... Every unit has exactly one owner record at any
-// given time." The engine half is world/tools/primitives/property.py; this is
-// the viewer's model of the same two classes and the same will override.
 const GOVERNMENT_OWNER_ID = 'treasury';
 const CIVIC_ZONES = [
   'government', 'school', 'college', 'library', 'hospital', 'police', 'fire',
   'townsquare', 'park', 'construction', 'docks',
-  // The temple is a civic place: DESIGN section 7 gives it weddings,
-  // prayers and donations, and `pray`/`marry` are gated on it. It was
-  // missing from this list and from the map itself.
   'temple',
 ];
 
-/** Every 1x1 unit one household holds: the footprint of its own address.
- *  A building is a contiguous SET of owned units, not a new kind of object
- *  (section 31.1), so this is derived from the home's own rect. */
 function tilesOfPlan(p) {
   const out = [];
   const depth = p.d !== undefined ? p.d : p.h;
@@ -863,8 +661,6 @@ function tilesOfPlan(p) {
 }
 
 let _estate = null;
-/** The town's land register: who holds what, in both of section 31.2's
- *  classes. Built once - the map does not move. */
 function landRegister() {
   if (_estate) return _estate;
   const byOwner = {};
@@ -873,7 +669,6 @@ function landRegister() {
     const tiles = tilesOfPlan(p);
     const civic = CIVIC_ZONES.includes(p.zone || p.zid);
     if (p.home && !civic) {
-      // A dwelling is held by the household that lives in it.
       const owner = (p._ownerId = p._ownerId || ('hh:' + Math.round(p.x) + ',' + Math.round(p.y)));
       (byOwner[owner] = byOwner[owner] || []).push(...tiles);
       privateTiles += tiles.length;
@@ -886,17 +681,12 @@ function landRegister() {
   return _estate;
 }
 
-/** The land one resident holds, through the home they were assigned. */
 function tilesOwnedBy(a) {
   if (!a._home) return [];
   landRegister();
   return tilesOfPlan(a._home);
 }
 
-/** Section 31.3: the default is the nearest living relative; a will
- *  overrides it. Spouse first, then eldest child, then a parent, then a
- *  sibling - and the town escheats an estate with nobody left to take it,
- *  exactly as Ledger.settle_inheritance escheats money to the treasury. */
 function defaultHeirOf(a) {
   const living = id => {
     const h = AGENT_BY_ID[id];
@@ -913,15 +703,11 @@ function defaultHeirOf(a) {
   return null;
 }
 
-/** A resident's will. Most people have none, and the default stands; the
- *  ones who set one are the section 31.3 case - "exactly as Kenji specified
- *  if he'd set one while he was still alive". */
 function willOf(a) {
   if (a._will !== undefined) return a._will;
   const heir = defaultHeirOf(a);
   const setsOne = seeded01(a.id, 'will') < 0.28 && heir;
   if (!setsOne) return (a._will = null);
-  // A named heir who is not the default is the whole point of allowing one.
   const kin = (a.rel || []).map(r => AGENT_BY_ID[r.id]).filter(h => h && isAlive(h));
   const alt = kin.length ? kin[Math.floor(seeded01(a.id, 'willheir') * kin.length)] : heir;
   return (a._will = {
@@ -932,18 +718,9 @@ function willOf(a) {
 }
 
 
-
-
-
-// ---- births --------------------------------------------------------------
-// DESIGN.md section 5 pairs death with birth; world/life/ owns marriage and
-// birth for real. This is the viewer's model of it: a married couple, both
-// alive, the mother of childbearing age, roll each day for a child. A newborn
-// is a genuine new resident - added to AGENTS, given the household's surname
-// and both parents as kin, and counted in the population from that day on.
 const BIRTH_MIN_AGE = 18;
 const BIRTH_MAX_AGE = 45;
-const DAILY_BIRTH_CHANCE = 0.004;   // ASSUMPTION - DESIGN.md pins no rate
+const DAILY_BIRTH_CHANCE = 0.004;
 const BABY_NAMES_M = ['Bo', 'Cato', 'Dov', 'Eli', 'Finn', 'Gus', 'Hal', 'Ivo', 'Jem', 'Kit', 'Lev', 'Mik', 'Nils', 'Ove', 'Pax', 'Rue', 'Sig', 'Tov'];
 const BABY_NAMES_F = ['Ana', 'Bea', 'Cleo', 'Dot', 'Eve', 'Fay', 'Gia', 'Hana', 'Ida', 'Juno', 'Kit', 'Lia', 'Mae', 'Nell', 'Ola', 'Pia', 'Rae', 'Sia'];
 let birthCount = 0;
@@ -976,11 +753,6 @@ function makeNewborn(mother, father, day) {
     rel: [], mem: [], exp: {},
     bornDay: day,
   };
-  // Kinship, both directions, so the family graph stays consistent.
-  // Siblings are gathered across BOTH parents into a set first, then written
-  // once. Writing them inside the parent loop pushed each existing child twice
-  // - once per parent - and the duplicate landed on the sibling's own record,
-  // where a later dedupe of the newborn's list would never have caught it.
   const siblingIds = new Set();
   for (const parent of [mother, father]) {
     if (!parent) continue;
@@ -1008,9 +780,6 @@ function makeNewborn(mother, father, day) {
 }
 
 function stepBirths(day) {
-  // Snapshot first: makeNewborn pushes onto AGENTS, and iterating an array
-  // while appending to it would let a newborn be considered for parenthood on
-  // the day it was born.
   const candidates = AGENTS.filter(a =>
     isAlive(a) && a.sex === 'f' && a.ms === 'married' && a.sp &&
     a.age >= BIRTH_MIN_AGE && a.age <= BIRTH_MAX_AGE);
@@ -1022,35 +791,16 @@ function stepBirths(day) {
   }
 }
 
-// ---- the government budget ----------------------------------------------
-// The treasury was previously income-only: tax came in and nothing ever went
-// out, so it grew without bound. A real government pays for things. Every
-// outgoing below has a basis in the repo:
-//   - Government jobs carry a salary paid from treasury
-//     (world/charter/models.py, Job.salary_sim; DESIGN.md section 6's
-//     "police recruited on treasury salary").
-//   - Pensions are paid from treasury at 25% of last salary for private-sector
-//     retirees and 50% for government ones, from age 70
-//     (world/ledger/money.py: PENSION_MINIMUM_AGE / PENSION_*_PCT).
-//   - Buildings the town puts up have to be paid for out of the same pot.
 const PENSION_MINIMUM_AGE = 70;
 const PENSION_PRIVATE_PCT = 25;
 const PENSION_GOVERNMENT_PCT = 50;
 
-// Seat salaries. DESIGN.md gives the government the power to set jobs and
-// their pay but pins no number, so these are ASSUMPTIONS, flagged on the page.
 const PM_SALARY_SIM = 260;
 const MINISTER_SALARY_SIM = 200;
 const POLICE_SALARY_SIM = 130;
 const POLICE_FORCE_SIZE = 6;
-const GOV_CLERK_SALARY_SIM = WAGE.government_clerk;   // 145, same as their wage
+const GOV_CLERK_SALARY_SIM = WAGE.government_clerk;
 
-// Every institution stands from the first tick, so its capital cost was a
-// founding investment rather than a charge on the running treasury. What the
-// treasury pays instead is DAILY UPKEEP - staffing, heat, repairs - which is
-// the government spending money continuously on the town rather than only
-// collecting tax. Figures are ASSUMPTIONS: DESIGN.md gives the government
-// power over jobs, permits and buildings but pins no upkeep number.
 const BUILD_UPKEEP_SIM = {
   hospital: 900, police: 620, fire: 500, school: 560, library: 240,
   bakery: 120, restaurant: 160, bank: 200, inn: 140,
@@ -1060,10 +810,6 @@ const CAPITAL_VALUE_SIM = {
   police: 90000, library: 45000, fire: 75000, bank: 50000, inn: 30000,
 };
 
-/** Who sits in government. The charter seats 1 PM + 4 ministers
- * (world/charter/models.py: pm_seats=1, minister_seats=4). Genesis records no
- * election, so the seats are filled deterministically from the clerks - the
- * residents who actually work in the government complex. */
 function seatHolders() {
   const clerks = AGENTS.filter(a => a.occ === 'government_clerk' && isAlive(a));
   const pool = clerks.length >= 5 ? clerks : AGENTS.filter(isAlive);
@@ -1075,9 +821,6 @@ function seatHolders() {
   }));
 }
 
-/** Income minus recurring costs for one day, ignoring construction. The build
- * scheduler needs this before the schedule exists, so it cannot call
- * budgetForDay (which asks the schedule what was built). */
 function dailyNetBeforeBuilding(day) {
   const aliveCount = AGENTS.filter(isAlive).length || POP;
   const seats = PM_SALARY_SIM + 4 * MINISTER_SALARY_SIM;
@@ -1092,7 +835,6 @@ function dailyNetBeforeBuilding(day) {
   return aliveCount * HEAD_TAX_PER_DAY - seats - clerks - pensions - upkeep;
 }
 
-/** The day's income and outgoings, in sim. */
 function budgetForDay(day) {
   const alive = AGENTS.filter(isAlive);
   const taxIncome = alive.length * HEAD_TAX_PER_DAY;
@@ -1103,7 +845,6 @@ function budgetForDay(day) {
   const clerkPay = clerks * GOV_CLERK_SALARY_SIM;
   const police = isBuilt('police', day) ? POLICE_FORCE_SIZE * POLICE_SALARY_SIM : 0;
 
-  // Pensions: everyone at or over the eligibility age draws from treasury.
   let pensions = 0, pensioners = 0;
   for (const a of alive) {
     if (a.age < PENSION_MINIMUM_AGE) continue;
@@ -1120,14 +861,9 @@ function budgetForDay(day) {
            spend, net: taxIncome - spend, seats, clerks };
 }
 
-/** Treasury balance after `day` days of income and spending. Walks the days
- * rather than closing the form, because pensioner and population counts change
- * as people die - and it is only a few hundred iterations. */
 function treasuryOn(hourFrac) {
   const { balance } = fiscal();
   const day = Math.min(FISCAL_HORIZON_DAYS - 1, Math.max(0, Math.floor(hourFrac / 24)));
-  // Interpolate across the day so the figure ticks over smoothly rather than
-  // jumping once every 24 hours.
   const frac = (hourFrac - Math.floor(hourFrac / 24) * 24) / 24;
   return Math.round(balance[day] + (balance[day + 1] - balance[day]) * frac);
 }
@@ -1138,9 +874,6 @@ function renderTreasury(hourFrac) {
   const day = Math.floor(hourFrac / 24);
   const b = budgetForDay(day);
   const bal = treasuryOn(hourFrac);
-  // Cumulative totals come from the one-pass fiscal history, not from
-  // re-walking budgetForDay for every day up to now - that was O(days x
-  // population) on every day boundary and stalled the page by day ~100.
   const f = fiscal();
   const cumIn = f.cumIn[Math.min(day, FISCAL_HORIZON_DAYS)];
   const cumOut = f.cumOut[Math.min(day, FISCAL_HORIZON_DAYS)];
@@ -1178,11 +911,10 @@ function renderTreasury(hourFrac) {
     r.addEventListener('click', () => selectAgent(r.dataset.id)));
 }
 
-// ---- canvas + camera ----------------------------------------------------
 const canvas = document.getElementById('village');
 const ctx = canvas ? canvas.getContext('2d') : null;
 const camera = { zoom: 1, ox: 0, oy: 0, drag: null };
-let liveAgentPos = {};   // id -> { tx, ty, zone, sx, sy }
+let liveAgentPos = {};
 let zoneCounts = {};
 let selectedId = null;
 let cardEls = null;
@@ -1197,20 +929,8 @@ function resizeCanvas() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
-/** The tile rectangle currently visible, used to cull the ground and prop
- * passes. Inverts the isometric projection at the four screen corners:
- *   u = tx - ty = (sx - ox) / (TILE_W/2 * zoom)
- *   v = tx + ty = (sy - oy) / (TILE_H/2 * zoom)
- * so tx = (u + v)/2 and ty = (v - u)/2. A margin is added because buildings
- * are drawn above their own ground tile and would otherwise pop at the edge.
- */
-// The ground is ~9,800 tiles and does not move. Redrawing it every frame cost
-// ~68,000 canvas operations and held the page to 25fps once the map grew.
-// Instead it is painted into an offscreen canvas and blitted, and only
-// repainted when the camera actually changes - plus occasionally, so the
-// river shimmer keeps animating rather than freezing.
 const groundCache = { canvas: null, ctx: null, key: '', frame: 0 };
-const GROUND_REPAINT_EVERY = 24;    // frames, keeps the water and lamps alive
+const GROUND_REPAINT_EVERY = 24;
 
 function drawCachedScene(ctx, t, view, w, h, lightsOn) {
   const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -1240,7 +960,6 @@ function drawCachedScene(ctx, t, view, w, h, lightsOn) {
     drawProps(g, t, lightsOn, view);
     g.restore();
   }
-  // Blitted in screen space, so the caller's world transform must not apply.
   ctx.save();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.drawImage(groundCache.canvas, 0, 0, w, h);
@@ -1248,12 +967,6 @@ function drawCachedScene(ctx, t, view, w, h, lightsOn) {
 }
 
 function viewBounds(w, h) {
-  // Back to isometric, so inverting the projection means undoing the u/v
-  // rotation at the four screen corners:
-  //   u = tx - ty = (sx - ox) / (TILE_W/2 * zoom)
-  //   v = tx + ty = (sy - oy) / (TILE_H/2 * zoom)
-  // giving tx = (u + v)/2 and ty = (v - u)/2. The margin covers buildings and
-  // trees, which are drawn well above their own ground tile.
   const hw = (TILE_W / 2) * camera.zoom;
   const hh = (TILE_H / 2) * camera.zoom;
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -1277,10 +990,6 @@ function worldToScreen(tx, ty) {
     sy: (tx + ty) * (TILE_H / 2) * camera.zoom + camera.oy,
   };
 }
-/** The zoom at which the whole grid fits the viewport. In this projection the
- * grid spans x from -GRID_H*TILE_W/2 to +GRID_W*TILE_W/2, and y from 0 to
- * (GRID_W+GRID_H)*TILE_H/2; the extra height is headroom for buildings, which
- * stick up above their own ground tile. */
 function fitZoom() {
   const w = canvas.clientWidth || 1100, h = canvas.clientHeight || 780;
   const spanX = (GRID_W + GRID_H) * (TILE_W / 2);
@@ -1288,14 +997,12 @@ function fitZoom() {
   return Math.min(w / spanX, h / spanY) * 0.97;
 }
 
-/** Point the camera at a tile, at the current zoom. */
 function lookAt(tx, ty) {
   const w = canvas.clientWidth || 1100, h = canvas.clientHeight || 780;
   camera.ox = w / 2 - (tx - ty) * (TILE_W / 2) * camera.zoom;
   camera.oy = h / 2 - (tx + ty) * (TILE_H / 2) * camera.zoom;
 }
 
-/** Fit the entire village in view - what the Recentre button does. */
 function fitCamera() {
   if (!canvas) return;
   camera.zoom = fitZoom();
@@ -1303,10 +1010,6 @@ function fitCamera() {
   updateZoomLabel();
 }
 
-/** The opening view. Fitting all 3,328 tiles makes every building too small to
- * read, so open closer in on the town centre and let the reader zoom out. */
-/** Show the zoom as a percentage of the fit-the-whole-town zoom, so 100% means
- * "the whole village is on screen" rather than an arbitrary scale number. */
 function updateZoomLabel() {
   const el = document.getElementById('zoomLevel');
   if (!el || !canvas) return;
@@ -1321,33 +1024,24 @@ function centreCamera() {
   updateZoomLabel();
 }
 
-// ---- the render pass ----------------------------------------------------
 function render(t, hourFrac) {
   if (!ctx) return;
   const w = canvas.clientWidth, h = canvas.clientHeight;
   const hod = hourFrac % 24;
   const lightsOn = hod >= 18 || hod < 6.5;
 
-  // Sky behind the village.
   const sky = ctx.createLinearGradient(0, 0, 0, h);
   if (lightsOn) { sky.addColorStop(0, '#22355C'); sky.addColorStop(1, '#3E5A85'); }
   else { sky.addColorStop(0, '#7FC9F0'); sky.addColorStop(1, '#C4EBFB'); }
   ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
 
   const view = viewBounds(w, h);
-  // Ground, props AND buildings all go in one cached layer: none of them
-  // move, and in the isometric view redrawing them per frame means ~11,500
-  // ground diamonds plus 643 furniture boxes plus 2,200 props every 16ms,
-  // which stalled the page outright.
   drawCachedScene(ctx, t, view, w, h, lightsOn);
 
   ctx.save();
   ctx.translate(camera.ox, camera.oy);
   ctx.scale(camera.zoom, camera.zoom);
 
-  // Residents, painted back-to-front with the props already down. Sorting by
-  // depth keeps a person behind a house hidden by it.
-  // Isometric: depth is tx + ty, so someone closer to the camera draws last.
   const ordered = AGENTS.slice().sort((a, b) => {
     const pa = liveAgentPos[a.id], pb = liveAgentPos[b.id];
     return (pa.tx + pa.ty) - (pb.tx + pb.ty);
@@ -1356,18 +1050,14 @@ function render(t, hourFrac) {
     const p = liveAgentPos[a.id];
     const sx = (p.tx - p.ty) * (TILE_W / 2), sy = (p.tx + p.ty) * (TILE_H / 2);
     if (p.dead) continue;
-    // Roofs on: anyone indoors is hidden by the roof, exactly as they would
-    // be. Without this they drew over the roof slab and appeared to be
-    // standing on it. Lift the roofs and they reappear in their rooms.
     if (typeof ROOFS_ON !== 'undefined' && ROOFS_ON && indoors(p)) continue;
-    const working = p.atWork;   // tool shows while walking between tasks too
+    const working = p.atWork;
     drawPerson(ctx, sx, sy, a.shirt, a.hair, a.id === selectedId,
                !!talkingNow[a.id], p.moving, t, working ? WORK_TOOL[a.occ] : null, a.outfit);
   }
 
   drawBirds(ctx, t);
 
-  // Live speech bubbles sit above everything so they are never occluded.
   const bubbles = activeChats
     .filter(c => liveAgentPos[c.from])
     .sort((x, y) => (x.from === selectedId ? -1 : y.from === selectedId ? 1 : 0))
@@ -1382,24 +1072,11 @@ function render(t, hourFrac) {
   nightTint(ctx, w, h, hod);
 }
 
-/** A name plaque over every district, so the reader can tell the hospital from
- * the fire station without clicking anything.
- *
- * Drawn AFTER ctx.restore(), i.e. in screen space rather than world space, so
- * the text stays the same readable size at every zoom instead of shrinking
- * into the tiles when you zoom out. Plaques outside the viewport are skipped,
- * and they fade out below a zoom where the map is too small to label.
- */
 function drawZoneLabels(ctx, w, h) {
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  // Biggest districts first, so when plaques compete for room the major ones
-  // win. A fixed zoom cutoff was wrong: fitting the whole town sits at ~0.21
-  // zoom, which hid every label at exactly the moment they are most useful.
-  // Instead each plaque is skipped only if it would collide with one already
-  // placed, which self-regulates at any zoom.
   const order = ZONE_ORDER
     .filter(z => z !== 'housingEast')
     .map(z => ({ z, area: ZONES[z].w * ZONES[z].h }))
@@ -1474,8 +1151,6 @@ function drawBubble(c, x, y, text) {
   c.textAlign = 'left';
 }
 
-// ---- positions ----------------------------------------------------------
-/** Is this position inside any building footprint? */
 function indoors(p) {
   for (const b of plans) {
     if (p.tx >= b.x && p.tx < b.x + b.w && p.ty >= b.y && p.ty < b.y + b.h) return true;
@@ -1493,16 +1168,11 @@ function updatePositions(hourFrac) {
                             : phaseAt(Math.floor(hourFrac % 24)) === 'day');
     liveAgentPos[a.id] = { tx: pos.tx, ty: pos.ty, zone, moving, dead: !!dead, ill: !!ill,
                            atWork, onShift: !!shiftNow, offDuty: !!offDuty, sx: sc.sx, sy: sc.sy };
-    if (!dead) counts[zone] = (counts[zone] || 0) + 1;   // the living only
+    if (!dead) counts[zone] = (counts[zone] || 0) + 1;
   }
   zoneCounts = counts;
 }
 
-// ---- live conversation --------------------------------------------------
-// Residents at the same place talk to each other. Lines are drawn from
-// templates keyed to the speaker's occupation and their real persona fields,
-// so a trader haggles and a clerk talks about tax - the words are generated
-// here, but who says them, to whom, and where is driven by real data.
 const LINES = {
   greet: [
     'Morning. Cold one today.', 'You are about early.', 'Good to see you.',
@@ -1550,30 +1220,26 @@ function lineFor(a, salt) {
   return pool[Math.floor(seeded01(a.id + salt, 'line') * pool.length)];
 }
 
-// Everyone's exchanges are logged, but only a handful get a bubble drawn -
-// past roughly this many the map disappears under speech balloons.
 const MAX_BUBBLES = 5;
-let activeChats = [];       // [{from, to, text}]
+let activeChats = [];
 let talkingNow = {};
 let chatLog = [];
 let lastChatHour = -1;
 
 function tickConversations(hourFrac) {
-  const hourKey = Math.floor(hourFrac * 2);   // a new exchange every half hour
+  const hourKey = Math.floor(hourFrac * 2);
   if (hourKey === lastChatHour) return;
   lastChatHour = hourKey;
   activeChats = [];
   talkingNow = {};
 
   const hod = hourFrac % 24;
-  if (phaseAt(Math.floor(hod)) === 'night') return;   // the town is asleep
+  if (phaseAt(Math.floor(hod)) === 'night') return;
 
-  // Group residents by where they actually are, then pair people up inside a
-  // location: a conversation can only happen between two people in one place.
   const byZone = {};
   for (const a of AGENTS) {
     const p = liveAgentPos[a.id];
-    if (!p || p.moving || p.dead) continue;   // the dead do not speak
+    if (!p || p.moving || p.dead) continue;
     (byZone[p.zone] = byZone[p.zone] || []).push(a);
   }
   const clock = fmtClock(hourFrac);
@@ -1586,9 +1252,6 @@ function tickConversations(hourFrac) {
       const salt = zone + hourKey + k;
       const i = Math.floor(seeded01(salt, 'i') * here.length);
       const from = here[i];
-      // Prefer someone the speaker actually knows. People talk to their own
-      // family far more than to strangers, and it makes the kinship graph
-      // visible in the feed instead of buried in the cards.
       const known = here.filter(o => o.id !== from.id && (from.rel || []).some(r => r.id === o.id));
       let to;
       if (known.length && seeded01(salt, 'pref') < 0.7) {
@@ -1601,7 +1264,6 @@ function tickConversations(hourFrac) {
       const text = lineFor(from, salt);
       activeChats.push({ from: from.id, to: to.id, text });
       talkingNow[from.id] = true;
-      // Relationship, if any, makes the exchange legible as family or not.
       const rel = (from.rel || []).find(r => r.id === to.id);
       chatLog.unshift({
         day, clock, fromId: from.id, from: from.n, to: to.n, toId: to.id,
@@ -1618,8 +1280,6 @@ function renderChat() {
   const el = document.getElementById('chatLog');
   if (!el) return;
   if (!chatLog.length) {
-    // Before 08:00 nobody has arrived anywhere yet, so an empty list here is
-    // correct - but a blank panel reads as broken, so say which it is.
     el.innerHTML = '<p class="chat-empty">Nobody is talking yet — residents are still ' +
       'walking to work. Conversations start once people arrive somewhere.</p>';
     return;
@@ -1643,7 +1303,6 @@ function renderChat() {
     b.addEventListener('click', () => selectAgent(b.dataset.id)));
 }
 
-// ---- panels -------------------------------------------------------------
 function renderOccupancy() {
   const rows = ZONE_ORDER.map(z => ({ label: ZONES[z].label, icon: ZONES[z].icon, n: zoneCounts[z] || 0 }))
     .filter(r => r.n > 0).sort((a, b) => b.n - a.n).slice(0, 8);
@@ -1711,8 +1370,6 @@ function renderScoreboard(hourFrac) {
 
   const hudSpend = document.getElementById('hudSpend');
   if (hudSpend) hudSpend.textContent = '$' + spend.toFixed(2);
-  // The cap is the sum of every resident's real $2 wallet, so it grows with
-  // the population instead of staying pinned at the genesis 250's $500.
   const capEl = document.getElementById('hudSpendCap');
   if (capEl) capEl.textContent = '$' + (AGENTS.reduce((t, a) => t + a.usd, 0) / 100).toFixed(2);
   const hudWealth = document.getElementById('hudWealth');
@@ -1738,12 +1395,8 @@ function renderScoreboard(hourFrac) {
     r.addEventListener('click', () => selectAgent(r.dataset.id)));
 }
 
-// ---- inspector ----------------------------------------------------------
 let inspectorTab = 'profile';
 
-// Expert-reflection routing (Park et al. 2024, SM 3). Their classifier is an
-// LLM call; keyword matching is enough to show the retrieval step and is
-// labelled as such on the page.
 let expertQuestion = 'How would you vote on raising the tax rate?';
 const EXPERT_KEYS = {
   psychologist: ['feel', 'fear', 'trust', 'angry', 'happy', 'personality', 'friend', 'believe'],
@@ -1839,9 +1492,6 @@ function renderInspector(a, hourFrac) {
       'uncles, aunts and cousins are built by a deterministic lineage layer and marked as inferred — ' +
       'never mixed with the recorded facts above.</p>';
   } else if (inspectorTab === 'estate') {
-    // A9 (section 31) and A8 (section 26) both land here: what this resident
-    // owns, who inherits it, and - for anyone who grew up during the run -
-    // the day they stopped being billed to a parent.
     const tiles = tilesOwnedBy(a);
     const will = willOf(a);
     const heir = will ? will.heir : defaultHeirOf(a);
@@ -2005,18 +1655,6 @@ function renderInspector(a, hourFrac) {
   });
 }
 
-/** Open a resident's file. Every entry point - a figure on the map, a roster
- * card, a name in the chat feed, a relative, a scoreboard row - lands here, so
- * the profile always appears the same way: as a popup over the town. */
-/** Open a resident's record.
- *
- * `reveal` decides whether the full file below the map is opened and scrolled
- * to. A click on the MAP is the question "who is this", asked about someone you
- * are looking at - pinning the card and simultaneously yanking the page down to
- * the file loses your place on the map, which is the one thing you were using.
- * So the map pins the card and stops there; "Full record" is the way down.
- * A click on a name in a list is a request for the record, so that one reveals
- * it. */
 function selectAgent(id, opts) {
   if (!AGENT_BY_ID[id]) return;
   selectedId = id;
@@ -2027,9 +1665,6 @@ function selectAgent(id, opts) {
   if (cardEls) Object.keys(cardEls).forEach(cid => cardEls[cid].classList.toggle('selected', cid === id));
 }
 
-/** The resident file is a panel directly under the map, not an overlay: the
- * map stays visible and in motion while you read, and scrolling on past the
- * card reaches the rest of the town's records. */
 function openModal() {
   const panel = document.getElementById('profilePanel');
   if (!panel) return;
@@ -2040,8 +1675,6 @@ function openModal() {
 function closeModal() {
   const panel = document.getElementById('profilePanel');
   if (panel) panel.hidden = true;
-  // The map keeps its highlight ring on the last-opened resident, so closing
-  // the card does not lose your place in a town of 300-odd.
 }
 
 function wireModal() {
@@ -2051,12 +1684,6 @@ function wireModal() {
 }
 
 
-// ---- the card that opens on the map, at the person ----------------------
-// Clicking someone should answer "who is this" without moving you off the
-// map, so the card is anchored to that resident and follows them as they
-// walk. The full record (family, memory, expert reflections, money) still
-// lives in the panel below - this is the at-a-glance view, with a button
-// through to it.
 let mapCardId = null;
 
 function showMapCard(a) {
@@ -2101,8 +1728,6 @@ function hideMapCard() {
   mapCardId = null;
 }
 
-/** Keep the card pinned to its resident, clamped inside the viewport so it
- * never gets clipped by the map's overflow. */
 function positionMapCard() {
   const el = document.getElementById('mapCard');
   if (!el || el.hidden || !mapCardId || !canvas) return;
@@ -2111,21 +1736,18 @@ function positionMapCard() {
   const w = canvas.clientWidth, h = canvas.clientHeight;
   const cw = el.offsetWidth || 232, ch = el.offsetHeight || 190;
   let x = p.sx - cw / 2;
-  let y = p.sy - ch - 26;                     // above their head
+  let y = p.sy - ch - 26;
   let below = false;
-  if (y < 6) { y = p.sy + 22; below = true; } // not enough room above
+  if (y < 6) { y = p.sy + 22; below = true; }
   x = Math.max(6, Math.min(w - cw - 6, x));
   y = Math.max(6, Math.min(h - ch - 6, y));
   el.style.left = x + 'px';
   el.style.top = y + 'px';
   el.classList.toggle('below', below);
-  // The pointer tracks the resident even after the card is clamped sideways.
   const tip = Math.max(14, Math.min(cw - 14, p.sx - x));
   el.style.setProperty('--tip', tip + 'px');
 }
 
-/** Refresh only the values that move, so the card stays live without
- * rebuilding its markup every frame. */
 function refreshMapCard() {
   if (!mapCardId) return;
   const a = AGENT_BY_ID[mapCardId], p = liveAgentPos[mapCardId];
@@ -2142,7 +1764,6 @@ function refreshMapCard() {
   if (sp) sp.textContent = '$' + costSpent(a, state.hourFrac).toFixed(3);
 }
 
-// ---- roster -------------------------------------------------------------
 const rosterState = { q: '', br: 'all', occ: 'all', sort: 'name' };
 
 function buildCard(a) {
@@ -2208,9 +1829,6 @@ function buildRoster() {
   }
 }
 
-/** Give any resident born since the last check a roster card. buildRoster()
- * runs once at boot, so without this a newborn would exist everywhere except
- * the Characters grid. */
 function addNewbornCards() {
   const grid = document.getElementById('rosterGrid');
   if (!grid || !cardEls) return;
@@ -2254,8 +1872,6 @@ function applyRosterFilter() {
   if (e) e.hidden = matches.length !== 0;
 }
 
-// Card values refresh on their own slow cadence: 250 cards x 60fps of text
-// writes costs far more than these slow-moving numbers are worth.
 function refreshRosterLiveValues() {
   if (!cardEls) return;
   for (const a of AGENTS) {
@@ -2301,16 +1917,9 @@ function wireRosterControls() {
 }
 
 
-// Buildings are no longer drawn here. In the top-down view every institution
-// is a real floor plan generated by village.js's buildPlans(), so there is
-// nothing left for a per-project draw pass to add.
-
-/** The town's build programme, and what each project changes. */
 function renderBuildings(day) {
   const el = document.getElementById('buildBody');
   if (!el) return;
-  // Count what has actually OPENED, not what was merely wanted by now - the
-  // two differ whenever the treasury could not afford a project on schedule.
   const done = BUILD_PROJECTS.filter(b => day >= openedOn(b.zone));
   const rows = BUILD_PROJECTS.map(b => {
     const opened = openedOn(b.zone);
@@ -2333,7 +1942,6 @@ function renderBuildings(day) {
       Object.values(BUILD_UPKEEP_SIM).reduce((a, c) => a + c, 0).toLocaleString() + ' sim/day upkeep</div>' + rows;
 }
 
-/** Alive / ill / dead at a glance, plus what the hospital changes. */
 function renderHealth(day) {
   const el = document.getElementById('healthBody');
   if (!el) return;
@@ -2386,7 +1994,6 @@ function renderHealth(day) {
     r.addEventListener('click', () => selectAgent(r.dataset.id)));
 }
 
-/** What the town is doing right now, aggregated. */
 function renderWork(hourFrac) {
   const el = document.getElementById('workBody');
   if (!el) return;
@@ -2414,7 +2021,6 @@ function renderWork(hourFrac) {
       '<span class="occ-n">' + n + '</span></div>').join('');
 }
 
-// ---- census -------------------------------------------------------------
 function renderCensus() {
   const bar = (label, n, max, colour) =>
     '<div class="bar-row"><span class="bar-lbl">' + label + '</span>' +
@@ -2427,9 +2033,6 @@ function renderCensus() {
   const oc = document.getElementById('occChart');
   if (oc) oc.innerHTML = occRows.map(([o, n]) => bar(OCC_LABEL(o), n, occMax, 'var(--brick)')).join('');
 
-  // A8: a minor who has crossed eighteen counts as working-age from that
-  // hour, so the age chart shows the roster actually filling over time
-  // (section 26) rather than the genesis snapshot forever.
   const br = { working: 0, minor: 0, elderly: 0 };
   AGENTS.filter(isAlive).forEach(a => br[bracketAt(a, state.hourFrac)]++);
   const ac = document.getElementById('ageChart');
@@ -2454,11 +2057,6 @@ function renderCensus() {
   if (rc) rc.innerHTML = relRows.map(([r, n]) => bar(r, n, relMax, 'var(--good)')).join('');
 }
 
-// ---- clock + loop -------------------------------------------------------
-// `?t=13.5` opens the page at that hour of day, and `?speed=6` sets the rate.
-// Useful for linking someone straight to a particular moment - and it is the
-// only way to inspect a given time in a headless screenshot, where the frame
-// clock does not advance on its own.
 const _params = typeof location !== 'undefined' && location.search
   ? new URLSearchParams(location.search) : null;
 const _startHour = _params && _params.get('t') !== null ? parseFloat(_params.get('t')) : NaN;
@@ -2496,9 +2094,6 @@ function tick(ts) {
   updatePositions(state.hourFrac);
   tickConversations(state.hourFrac);
   render(ts / 1000, state.hourFrac);
-  // Panel DOM updates are throttled: they rebuild innerHTML over the whole
-  // population, and none of these numbers move fast enough to justify doing
-  // that 60 times a second. The canvas still redraws every frame.
   if (ts - _lastPanelRender > 400) {
     _lastPanelRender = ts;
     renderOccupancy();
@@ -2506,8 +2101,6 @@ function tick(ts) {
     renderWork(state.hourFrac);
   }
   if (day !== _lastRenderedDay) {
-    // These only change on a day boundary, so they do not belong in a 60fps
-    // loop - re-rendering them every frame was measurable and pointless.
     _lastRenderedDay = day;
     renderHealth(day - 1);
     renderBuildings(day - 1);
@@ -2529,7 +2122,6 @@ function tick(ts) {
   requestAnimationFrame(tick);
 }
 
-// ---- controls + picking -------------------------------------------------
 function wireControls() {
   const play = document.getElementById('playBtn');
   if (play) play.addEventListener('click', () => {
@@ -2555,20 +2147,14 @@ function wireControls() {
       if (d < bestD) { bestD = d; best = a; }
     }
     if (best) {
-      // Same path as every other way of opening a resident, minus the reveal:
-      // this used to be a hand-copied selectAgent with the openModal left out,
-      // which is why the two drifted apart.
       selectAgent(best.id, { reveal: false });
     } else {
-      hideMapCard();                // clicking empty ground dismisses it
+      hideMapCard();
     }
   });
   canvas.addEventListener('wheel', ev => {
     ev.preventDefault();
     const f = ev.deltaY < 0 ? 1.12 : 0.89;
-    // Floor the zoom just below whatever it takes to fit the whole map, so
-    // you can always scroll out far enough to see the entire village - and
-    // no further, which would leave it a speck in a sea of sky.
     const floor = Math.min(0.4, fitZoom() * 0.92);
     camera.zoom = Math.min(2.6, Math.max(floor, camera.zoom * f));
     updateZoomLabel();
@@ -2582,17 +2168,13 @@ function wireControls() {
     camera.oy = camera.drag.oy + (ev.clientY - camera.drag.y);
   });
   window.addEventListener('mouseup', () => { camera.drag = null; });
-  // Theme toggle. The page opens bright (a town-builder should), and this
-  // switches to the fully-designed dark palette rather than following the OS.
-  // Roofs on = the town as a diorama; roofs off = the same buildings opened
-  // up so you can see the furnished rooms and who is standing in them.
   const roofBtn = document.getElementById('roofBtn');
   if (roofBtn) roofBtn.addEventListener('click', () => {
     const on = roofBtn.textContent.indexOf('Roofs') !== -1 && roofBtn.dataset.off !== '1';
     setRoofs(!on);
     roofBtn.dataset.off = on ? '1' : '';
     roofBtn.textContent = on ? '🏚️ Interiors' : '🏠 Roofs';
-    groundCache.key = '';                 // the cached scene must be repainted
+    groundCache.key = '';
   });
 
   const themeBtn = document.getElementById('themeBtn');
@@ -2610,8 +2192,6 @@ function wireControls() {
     const on = panel.classList.toggle('fullscreen');
     document.body.classList.toggle('map-fullscreen', on);
     fs.textContent = on ? '⛶ Exit fullscreen' : '⛶ Fullscreen map';
-    // The canvas backing store must be resized to the new box before the
-    // camera is refitted, or the map renders at the old resolution.
     requestAnimationFrame(() => { resizeCanvas(); fitCamera(); });
   });
   window.addEventListener('keydown', ev => {
@@ -2625,12 +2205,8 @@ function wireControls() {
     }
   });
 
-  // Zoom buttons. They step the same camera the wheel drives and obey the
-  // same floor, so you can always reach "whole village" with the − button and
-  // never zoom past what the map can show.
   function zoomBy(f) {
     const w = canvas.clientWidth || 1, h2 = canvas.clientHeight || 1;
-    // keep the centre of the viewport fixed while zooming
     const u = (w / 2 - camera.ox) / ((TILE_W / 2) * camera.zoom);
     const v = (h2 / 2 - camera.oy) / ((TILE_H / 2) * camera.zoom);
     const cx = (u + v) / 2, cy = (v - u) / 2;
@@ -2646,10 +2222,6 @@ function wireControls() {
 
   const rc = document.getElementById('recentreBtn');
   if (rc) rc.addEventListener('click', () => { resizeCanvas(); fitCamera(); });
-  // Resizing must not throw away where you were looking. Keep the tile the
-  // camera is centred on and the current zoom, and just re-fit the canvas
-  // around them - the old handler called centreCamera() and snapped the view
-  // back to the default every time the window changed size.
   window.addEventListener('resize', () => {
     const w = canvas.clientWidth || 1, h = canvas.clientHeight || 1;
     const u = (w / 2 - camera.ox) / ((TILE_W / 2) * camera.zoom);
@@ -2660,7 +2232,6 @@ function wireControls() {
   });
 }
 
-// ---- boot ---------------------------------------------------------------
 buildVillage();
 assignHomes();
 assignShifts();
@@ -2682,14 +2253,8 @@ renderWork(state.hourFrac);
 renderOccupancy();
 renderGovernment(state.hourFrac);
 renderScoreboard(state.hourFrac);
-// `?open=a0039` opens straight to that resident's file - handy for linking
-// someone to a specific person, and the only way to capture the popup in a
-// headless screenshot.
 if (_params && _params.get('fit') === '1') { resizeCanvas(); fitCamera(); }
 if (_params && _params.get('open') && AGENT_BY_ID[_params.get('open')]) {
-  // Show them on the map, where the link is pointing. Opening the full record
-  // as well would scroll the page away from the map, which is the opposite of
-  // what "look at this person" should do.
   const target = AGENT_BY_ID[_params.get('open')];
   selectedId = target.id;
   renderInspector(target, state.hourFrac);

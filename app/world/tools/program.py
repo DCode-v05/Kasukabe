@@ -135,45 +135,15 @@ def _cap(name: str, default: int) -> int:
     return value
 
 
-# Twelve steps. Long enough for the audit's own example (walk, take,
-# walk, stock, post is five) plus a read and a guard on either side of
-# it, and short enough to keep the whole of a program on one screen for
-# whoever has to read it back.
-#
-# Nobody in the town can read it back yet, and that is worth saying
-# rather than assuming: `describe_primitives` lists an invented tool's
-# name, description, parameters and price, and not its steps. So a
-# resident can call somebody else's program and cannot learn from it,
-# which is a diffusion gap (T5, already 1 by construction) and not a
-# programmatic-calling one. Left alone here deliberately - serving every
-# step of every invented tool in the listing is a payload decision, and
-# ENG-03 cut that payload from 14K to 7.6K for a reason.
 PROGRAM_MAX_STEPS = _cap("KASUKABE_PROGRAM_MAX_STEPS", 12)
 
-# One step may repeat twenty times. Chosen against `keep_doing`, which
-# already lets a resident repeat one action without thinking and is
-# bounded by dusk rather than by a count: twenty is more than any single
-# harvest-and-carry needs and far less than a day.
 PROGRAM_MAX_REPEAT = _cap("KASUKABE_PROGRAM_MAX_REPEAT", 20)
 
-# Forty dispatches for the whole program, loops expanded. The per-step
-# cap does not imply this one: twelve steps repeating twenty times each
-# is two hundred and forty acts bought with one model call, which is not
-# a program, it is a day.
 PROGRAM_MAX_CALLS = _cap("KASUKABE_PROGRAM_MAX_CALLS", 40)
 
-# A program may spend at most this share of the sim the caller held when
-# it started. Percent rather than a float so the operator knob is an
-# integer like the others. Fifty percent is deliberately generous: the
-# job of this ceiling is not to make programs cheap, it is to make
-# "spent its whole wallet in one turn" impossible.
 PROGRAM_WALLET_SHARE_PERCENT = _cap("KASUKABE_PROGRAM_WALLET_SHARE_PERCENT", 50)
 
 
-# What an author needs in order to get a program right on the second
-# try, carried on the refusal rather than crammed into its message. Same
-# reason `skillify`'s refusals carry theirs: an author whose retry is as
-# blind as its first attempt has paid two turns for one lesson.
 PROGRAM_HELP_CONTEXT: dict[str, Any] = {
     "conditions_available": sorted(CONDITION_OPS),
     "max_steps": PROGRAM_MAX_STEPS,
@@ -213,15 +183,6 @@ class UnknownStepReferenceError(ToolError):
         self.context = {"bound_so_far": sorted(bound)}
 
 
-# Why a program stopped, in the resident's own second person. Every one
-# of these is a ceiling being enforced, never an error, so each says what
-# was done rather than what was refused.
-# TOOL-31. How many layers of invented tools one may stand on. A tool may
-# be a step of a tool - that is what makes a library possible - and the
-# ceiling is what keeps the promise checkable: flattening a composition to
-# its primitives is the proof it adds no physics, and an unbounded tower
-# is an unbounded proof and an unbounded bill. Three is deep enough for
-# `find_food` -> `look_here` -> `look_around` with a layer to spare.
 MAX_TOOL_DEPTH = _cap("KASUKABE_MAX_TOOL_DEPTH", 3)
 
 
@@ -282,28 +243,12 @@ class ProgramRun:
     steps_run: int = 0
     steps_skipped: int = 0
     calls_made: int = 0
-    # TRADE-04 meets PROG-01. A repeated READ inside one tick is answered
-    # from what the world already said, is not charged, and - because
-    # `dispatch` returns before it appends - leaves no row in the
-    # invocation log. So it is not an act, and counting it as one would
-    # put the wrapper's own `calls_made` permanently one ahead of the
-    # rows a report can see, which is the two-numbers-that-disagree shape
-    # this project has already shipped twice (the price table's fields,
-    # the wire counters nothing read). Counted here instead, under its
-    # own name, so the program can still say the resident asked.
     repeats_folded: int = 0
-    # Trips through the registry, acts and folded repeats alike. The
-    # number the ceiling is enforced against, and therefore the number
-    # the "you stopped" note has to quote - quoting the act count would
-    # tell a resident it stopped after nine when it had made forty trips.
     dispatches: int = 0
     sim_spent: int = 0
     stopped_early: str | None = None
     stopped_at_step: int | None = None
     bindings: dict[str, Any] = field(default_factory=dict)
-    # TOOL-31. What the program was asked to answer with, resolved from
-    # the bindings once the steps have run. Empty unless `returns` was
-    # filed, so every program written before this reads exactly as it did.
     answer: dict[str, Any] = field(default_factory=dict)
     last_result: dict[str, Any] = field(default_factory=dict)
 
@@ -317,8 +262,6 @@ class ProgramRun:
             "last_step_result": self.last_result,
         }
         if self.answer:
-            # First key a reader meets after the ids: a tool that was asked
-            # a question answers it, and the account of the run is context.
             result["answer"] = self.answer
         if self.repeats_folded:
             result["repeats_folded"] = self.repeats_folded
@@ -327,8 +270,6 @@ class ProgramRun:
             result["stopped_at_step"] = self.stopped_at_step
             result["note"] = STOP_REASONS[self.stopped_early].format(
                 calls=self.dispatches or self.calls_made,
-                # Each stop quotes the ceiling it actually hit; "forty" in a
-                # note about layers would send the reader to the wrong knob.
                 limit=MAX_TOOL_DEPTH if self.stopped_early == "depth" else PROGRAM_MAX_CALLS,
                 spent=self.sim_spent,
             )
@@ -471,10 +412,6 @@ def _compare(left: Any, op: str, right: Any) -> bool:
     return False
 
 
-# TOOL-31. The three answers a selector may give. A closed set for the
-# same reason `CONDITION_OPS` is closed: the difference between data the
-# world replays and code it runs is whether what it can do is finite and
-# written down.
 TAKES = frozenset({"all", "first", "count"})
 
 
@@ -731,9 +668,6 @@ def program_step_problems(
             check_reference(step.when.left, f"{where} `when.left`")
             check_reference(step.when.right, f"{where} `when.right`")
         for key, value in (step.params or {}).items():
-            # `@` only. A `$` inside params is `validate_steps`' to
-            # report and it already does; saying it twice would put the
-            # same complaint in one refusal under two headings.
             if isinstance(value, str) and value.startswith("@"):
                 check_reference(value, f"{where} param {key!r}")
         if isinstance(step.repeat, str):
@@ -759,21 +693,11 @@ def program_step_problems(
             else:
                 bound.add(step.bind)
 
-    # The floor of what this program will cost in dispatches, with every
-    # literal loop expanded. Not the exact number - a guarded step may be
-    # skipped and a `$repeat` is not known until the call - but a program
-    # whose FLOOR is already over the ceiling can never finish, and
-    # letting that be filed means finding out at run time, mid-turn,
-    # after it has already spent.
     floor = 0
     for step in steps:
         if isinstance(step.repeat, int) and step.repeat > 0:
             floor += min(step.repeat, PROGRAM_MAX_REPEAT)
         else:
-            # A `$repeat` is unknown until the call, and an absent
-            # one is one. Both count as one here, so the floor stays
-            # a floor rather than a guess that could refuse a
-            # program that would have fitted.
             floor += 1
     if floor > PROGRAM_MAX_CALLS:
         reasons.append(
@@ -813,18 +737,6 @@ async def run_program(
     events: list[Any] = []
     bindings: dict[str, Any] = {}
 
-    # TOOL-31. The outermost program owns the ceilings; a nested one - a
-    # step that is itself an invented tool - inherits them, so a tower
-    # shares one budget instead of multiplying it.
-    #
-    # None means "the balance could not be read", which is the only case
-    # in which this ceiling is not applied. Zero means "may spend
-    # nothing" and IS applied - an operator who sets the share to 0% is
-    # asking for programs that cannot spend, and a ceiling that read that
-    # as "no ceiling" would invert the one knob whose whole job is
-    # safety. The same reasoning covers a resident holding nothing: it
-    # cannot pay for a step, and stopping before the first charge says so
-    # more usefully than an ActionUnaffordableError from inside a loop.
     budget: ProgramBudget | None = getattr(world, "program_budget", None)
     if budget is None:
         wallet_ceiling: int | None
@@ -841,8 +753,6 @@ async def run_program(
     wallet_ceiling = budget.wallet_ceiling
     dispatches = 0
 
-    # The tower is bounded at run time as well as at filing, because a
-    # tool filed three deep can be revised after the fact.
     budget.depth += 1
     if budget.depth > MAX_TOOL_DEPTH:
         budget.depth -= 1
@@ -866,12 +776,6 @@ async def run_program(
 
         times = resolve_repeat(step.repeat, call_params, bindings)
         for _ in range(times):
-            # Against DISPATCHES, not against acts. A folded repeat costs
-            # nothing and changes nothing, so it is not an act - but it
-            # is still a trip through the registry, and a ceiling that
-            # only counted the acts would let a program make twelve steps
-            # of twenty folded reads and call it one call. The ceiling
-            # bounds the work; `calls_made` reports the economics.
             if budget.dispatches >= PROGRAM_MAX_CALLS:
                 run.stopped_early = "calls"
                 run.stopped_at_step = index
@@ -882,10 +786,6 @@ async def run_program(
                 break
 
             resolved = resolve_params(step.params, call_params, bindings)
-            # PROG-01. The frame the invocation record reads. Pushed
-            # immediately before the dispatch and popped immediately
-            # after, in a `finally`, so a step that REFUSES cannot leave
-            # the next program's calls filed under this one.
             world.program_stack.append((program_id, index))
             try:
                 outcome = await registry.dispatch(
@@ -916,8 +816,6 @@ async def run_program(
     run.sim_spent = spent_so_far()
     run.dispatches = dispatches
     run.bindings = bindings
-    # Resolved from whatever the steps that DID run bound, so a program
-    # stopped by a ceiling still answers with what it managed to find.
     run.answer = resolve_answer(returns, call_params, bindings)
     budget.depth -= 1
     return run, events

@@ -7,25 +7,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Archivo:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<style>
-  /* The observatory reads the trace database directly, so it still answers
-     "is this run believable" when the WORLD is the thing that is broken.
-     The page is styled to match the township instrument rather than to be
-     pretty on its own: same graphite chrome, same four signal hues, same
-     three faces. A researcher moving between the two should not feel they
-     have changed application.
-
-     Committed to dark. The previous sheet was light by default with a dark
-     media query, which meant the same run looked like two different tools
-     depending on an OS setting nobody set deliberately. */
-  :root{
+<style>  :root{
     color-scheme: dark;
     --ground:#070A0E; --surface:#10161E; --sunk:#161E28;
     --ink:#E8E3D8; --muted:#A3AEBB; --faint:#6B7885;
     --rule:#253140; --rule-soft:#1A232E; --rule-lit:#3A4B5E;
-    /* The four signals carry the same meanings as the township:
-       mint = real/alive/good, brass = watch, rust = critical,
-       ember = money in motion. Nothing here is decorative. */
     --accent:#4ADE9B; --accent-soft:#072016; --accent-dim:#2A8159;
     --warn:#DCA945;  --warn-soft:#251C08;
     --bad:#E85C50;   --bad-soft:#2A0F0D; --bad-dim:#8C332C;
@@ -48,9 +34,6 @@
      color:var(--faint);font-weight:500;margin:38px 0 12px;
      padding-bottom:8px;border-bottom:1px solid var(--rule-soft)}
 
-  /* Believability goes FIRST on the page, not last: a run at 39% dispatch
-     success is a broken instrument, not a finding about society, and the
-     researcher has to see that before reading anything below it. */
   .card{background:var(--surface);border:1px solid var(--rule-soft);
         border-radius:10px;padding:18px 20px;
         box-shadow:inset 0 1px 0 rgba(255,255,255,.045)}
@@ -76,12 +59,9 @@
   td{padding:10px;border-bottom:1px solid var(--rule-soft);vertical-align:top}
   tr:last-child td{border-bottom:0}
   tbody tr:hover td{background:var(--sunk)}
-  /* Figures are tabular so a column of counts stays a column as it ticks. */
   .num{font-family:var(--mono);font-variant-numeric:tabular-nums;
        text-align:right;white-space:nowrap;color:var(--ink)}
   .key{font-family:var(--mono);font-size:12px;color:var(--muted)}
-  /* A missing VERB is the row that closes the loop with toolify: a capability
-     gap with a name and a headcount is the prompt for an invention. */
   .verb{color:var(--accent);font-weight:600}
   .note{color:var(--faint);font-size:12px;margin:10px 0 0;line-height:1.6}
   .empty{color:var(--faint);font-size:13px;padding:10px 0;font-style:italic}

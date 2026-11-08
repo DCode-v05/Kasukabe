@@ -23,7 +23,6 @@ import pytest
 from src.sandbox.executor import SandboxExecutor, DEFAULT_MAX_OUTPUT
 from src.sandbox.policy import SandboxPolicy
 
-# Only meaningful where the inner sandbox actually runs.
 probe = SandboxExecutor(session_id="isospec-probe")
 HAS_BWRAP = probe.uses_bubblewrap
 probe.cleanup()
@@ -36,9 +35,6 @@ pytestmark = pytest.mark.skipif(
 
 def make_ex(session: str, **kw) -> SandboxExecutor:
     return SandboxExecutor(session_id=session, policy=SandboxPolicy.default(), **kw)
-
-
-# ── Containment ───────────────────────────────────────────────────────
 
 
 class TestContainment:
@@ -99,7 +95,6 @@ class TestContainment:
         from inside the sandbox even though bwrap itself used it to get here."""
         ex = make_ex("iso-seccomp")
         try:
-            # unshare(CLONE_NEWUSER=0x10000000) via libc; EPERM(1) when seccomp blocks it.
             code = (
                 "import ctypes\n"
                 "libc = ctypes.CDLL(None, use_errno=True)\n"
@@ -108,12 +103,9 @@ class TestContainment:
             )
             res = await ex.run_python(code, timeout=15)
             assert "RC 0" not in res.stdout, f"unshare was NOT blocked: {res.to_str()}"
-            assert "ERRNO 1" in res.stdout, res.to_str()  # EPERM
+            assert "ERRNO 1" in res.stdout, res.to_str()
         finally:
             ex.cleanup()
-
-
-# ── Secret hygiene (trusted/untrusted split) ──────────────────────────
 
 
 class TestSecretHygiene:
@@ -137,9 +129,6 @@ class TestSecretHygiene:
         finally:
             os.environ.pop("AWS_SECRET_ACCESS_KEY", None)
             os.environ.pop("ANTHROPIC_API_KEY", None)
-
-
-# ── Operational behaviour: persistence, concurrency, timeout ──────────
 
 
 class TestOperationalBehaviour:
@@ -201,10 +190,9 @@ class TestOperationalBehaviour:
         the sandbox stays usable and context doesn't blow up."""
         ex = make_ex("iso-bigout")
         try:
-            # ~30k lines would be ~330KB; the executor must bound what it captures.
             res = await ex.run_bash("for i in $(seq 1 30000); do echo line-$i; done", timeout=30)
-            assert "line-1\n" in res.stdout  # produced output
-            assert len(res.stdout) <= DEFAULT_MAX_OUTPUT  # bounded at capture
-            assert "line-30000" not in res.stdout  # tail truncated, not all 30k kept
+            assert "line-1\n" in res.stdout
+            assert len(res.stdout) <= DEFAULT_MAX_OUTPUT
+            assert "line-30000" not in res.stdout
         finally:
             ex.cleanup()

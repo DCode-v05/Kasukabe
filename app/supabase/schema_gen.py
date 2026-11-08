@@ -67,12 +67,6 @@ from typing import Any, get_args, get_origin, get_type_hints
 
 from broker.trace import BrokerEvent, TraceRecord
 
-# Ticks per game-day (DESIGN.md section 1), matching every other
-# *_game_day generated column in sqlite_schema.sql. Not imported from
-# research/parquet_export.py's own TICKS_PER_GAME_DAY constant (that
-# would make supabase/ depend on research/, backwards per
-# app/CONVENTIONS.md) - both are 144 because DESIGN.md section 1 is 144,
-# not because one imports the other.
 TICKS_PER_GAME_DAY = 144
 
 
@@ -85,17 +79,6 @@ class SchemaGenError(ValueError):
     """
 
 
-# ── Python type -> SQLite column type ──────────────────────────────────
-
-# SQLite's own type affinities (INTEGER/REAL/TEXT), keyed by the "base"
-# Python type once Optional has been unwrapped. `bool` maps to the same
-# `integer` affinity as `int` - SQLite has no boolean storage class - and
-# every bool-typed column additionally gets a `check (col in (0, 1))`
-# constraint, matching every other boolean column in sqlite_schema.sql
-# (see column_ddl below). `dict` (always `dict[str, Any]` in these two
-# dataclasses) maps to `text`: JSON-encoded, exactly how
-# supabase/sqlite_client.py's SQLITE_JSON_COLUMNS already treats every
-# other jsonb-shaped column in this schema.
 SQLITE_TYPE_BY_PY_BASE: dict[Any, str] = {
     str: "text",
     int: "integer",
@@ -161,11 +144,6 @@ def column_ddl(name: str, py_type: Any, *, primary_key: bool = False, foreign_ke
     primary key, references, check.
     """
     tokens = [name, sqlite_column_type(py_type)]
-    # Every non-Optional field is NOT NULL, including the primary key -
-    # SQLite, unlike most databases, does NOT imply NOT NULL for a
-    # non-INTEGER PRIMARY KEY column (only an INTEGER PRIMARY KEY, which
-    # aliases rowid, gets that for free), so `str`-typed id columns need
-    # it spelled out explicitly or a NULL id would silently be legal.
     if not is_nullable_field(py_type):
         tokens.append("not null")
     if primary_key:
@@ -254,73 +232,22 @@ def bool_columns(dataclass_type: type) -> frozenset[str]:
     return frozenset(f.name for f in fields(dataclass_type) if is_bool_field(hints[f.name]))
 
 
-# ── llm_calls (TraceRecord) ─────────────────────────────────────────────
-# llm_calls has exactly one writer (broker/app.py's SqliteTraceSink,
-# "llm_calls" - see grep of the repo cited in this module's docstring: no
-# other package inserts into it), so every column below is a pure,
-# unwidened function of TraceRecord's own field types - no cross-writer
-# nullability compromise is needed here the way events.py's is.
-
-# Deliberately EMPTY. llm_calls is broker-owned (see broker/trace.py's
-# module docstring: "world owns world STATE, broker owns the record of its
-# own Bedrock calls"), and broker is a separate process that never writes
-# the world-owned `agents` table. A foreign key from here into `agents`
-# therefore cannot hold: observed live on 2026-07-31, every insert failed
-# with "FOREIGN KEY constraint failed", the writer halted after 3
-# consecutive failures exactly as designed, and 122 real agent decisions
-# were dropped. An agent_id here is a reference to an agent by id, not a
-# database-enforced relationship across a process boundary whose insert
-# ordering nothing guarantees.
 LLM_CALLS_FOREIGN_KEYS: dict[str, str] = {}
 
 LLM_CALLS_COLUMN_OVERRIDES: dict[str, str] = {
-    # TraceRecord.created_at is always a real Python float (trace.py's
-    # now_s() = time.time()) at every call site that builds one today, so
-    # this default is a pure safety net (a hand-built repair-script row
-    # that forgets to set it still gets a timestamp), never something a
-    # real broker-authored row relies on. REAL, not the ISO8601 TEXT
-    # every other table's created_at uses: translating a Python float to
-    # a formatted string at the schema boundary would itself be exactly
-    # the kind of assumed-contract seam this module exists to eliminate,
-    # so this column stores exactly what TraceRecord actually carries.
     "created_at": "created_at real not null default (cast(strftime('%s', 'now') as real))",
-    # Every one of these is a count/cost/duration - never legitimately
-    # negative. `int` alone does not encode that (schema_gen has no
-    # generic "non-negative int" type), so it is spelled out per-field
-    # here, matching the >= 0 checks the schema this replaces already
-    # had on its equivalent columns (request_tokens/response_tokens/
-    # cost_usd_cents) - a real data-integrity net, not new behavior.
     "input_tokens": "input_tokens integer not null check (input_tokens >= 0)",
     "output_tokens": "output_tokens integer not null check (output_tokens >= 0)",
     "cost_nano_dollars": "cost_nano_dollars integer not null check (cost_nano_dollars >= 0)",
     "cents_debited": "cents_debited integer not null check (cents_debited >= 0)",
     "latency_ms": "latency_ms integer not null check (latency_ms >= 0)",
     "rate_limit_wait_ms": "rate_limit_wait_ms integer not null check (rate_limit_wait_ms >= 0)",
-    # Optional (see module docstring), but never negative when present.
     "tick": "tick integer check (tick is null or tick >= 0)",
 }
 
-# `tick` (added to TraceRecord alongside this fix - see trace.py's own
-# module docstring for why it is Optional) has no live writer yet:
-# broker has no access to world's current tick today (broker/ledger.py's
-# HttpLedgerClient contract, confirmed against world/main.py's real
-# /ledger/payer and /ledger/debit routes, carries no tick field). Nullable
-# game_day/game_minute_of_day tolerate that honestly (NULL tick -> NULL
-# generated columns -> the row simply never matches a Parquet game-day
-# export's WHERE clause) rather than defaulting tick to a false 0 that
-# would silently mis-bucket every call into "day zero" forever.
 LLM_CALLS_EXTRA_COLUMNS: list[str] = [
     "game_day integer generated always as (tick / 144) stored",
     "game_minute_of_day integer generated always as ((tick % 144) * 10) stored",
-    # INFRA-08. Where the FULL prompt and response were archived, when the
-    # row itself holds a truncated copy. Extra columns rather than
-    # TraceRecord fields because no writer sets them on the record:
-    # `broker/trace.py`'s archive step writes them into the row dict after
-    # comparing what was stored against what was sent, so the record never
-    # carries them and adding them there would create a field nobody fills.
-    #
-    # NULL means "not archived", which is a different fact from "archived
-    # somewhere you cannot find" - see that function's docstring.
 
     "request_archive_key text",
     "response_archive_key text",
@@ -337,35 +264,11 @@ def llm_calls_ddl() -> str:
     )
 
 
-# ── events (BrokerEvent + world/wiring.py's WorldEvent rows) ───────────
-# Two real writers into one physical table (see this module's docstring):
-# broker/app.py's SqliteTraceSink("events", broker_event_to_row) and
-# world/wiring.py's TraceStore.record_event. BrokerEvent types agent_id
-# and model as plain `str` (broker never omits either), but world's real
-# insert dict never includes `model` at all and explicitly sends
-# `agent_id: None` for a non-agent-scoped event - both overridden to
-# nullable here so the schema matches the union of what BOTH writers
-# actually produce, not just one dataclass's own idea of required.
-
-# Empty for the same reason as LLM_CALLS_FOREIGN_KEYS above: broker writes
-# events for its own broker.* call lifecycle before world has necessarily
-# seeded an `agents` row, and the two live in different processes.
 EVENTS_FOREIGN_KEYS: dict[str, str] = {}
 
 EVENTS_COLUMN_OVERRIDES: dict[str, str] = {
-    # See module docstring: world/wiring.py's record_event() never sets
-    # target_agent_id/agent_id for e.g. "world.tick.advanced", and never
-    # sets "model" (a broker-only concept) at all.
     "agent_id": "agent_id text",
     "model": "model text",
-    # SQLite GLOB has no bounded-repetition operator, so this cannot
-    # mirror migrations/20260730120900_events.sql's Postgres regex
-    # exactly (2 or 3 lowercase snake_case segments); it checks the
-    # properties app/CONVENTIONS.md's naming scheme actually requires
-    # instead: all-lowercase, starts with a letter, at least one dot, no
-    # leading/trailing/doubled dot. Unchanged from the schema this
-    # replaces - supabase/tests/test_schema_gen.py proves it still
-    # accepts every example in CONVENTIONS.md's event table.
     "type": (
         "type text not null check ("
         "type = lower(type) "
@@ -375,24 +278,12 @@ EVENTS_COLUMN_OVERRIDES: dict[str, str] = {
         "and type not glob '*..*'"
         ")"
     ),
-    # Same reasoning as LLM_CALLS_COLUMN_OVERRIDES['created_at'] above:
-    # REAL epoch seconds (what BrokerEvent.created_at actually is), with
-    # a database-side default so world's rows (which never set this
-    # field at all) still get a real timestamp.
     "created_at": "created_at real not null default (cast(strftime('%s', 'now') as real))",
-    # BrokerEvent.payload is `dict[str, Any]`, never Optional, and every
-    # real writer (both of them) always supplies it - this default is a
-    # pure safety net matching the pre-existing schema's own
-    # `default '{}'`, not something either writer depends on.
     "payload": "payload text not null default '{}'",
-    # Optional (see module docstring), but never negative when present.
     "tick": "tick integer check (tick is null or tick >= 0)",
 }
 
 EVENTS_EXTRA_COLUMNS: list[str] = [
-    # split_part() has no SQLite equivalent; substr/instr reproduces
-    # "everything before the first dot" instead. Unchanged from the
-    # schema this replaces.
     "domain text generated always as (substr(type, 1, instr(type, '.') - 1)) stored",
     "game_day integer generated always as (tick / 144) stored",
     "game_minute_of_day integer generated always as ((tick % 144) * 10) stored",
@@ -410,13 +301,6 @@ def events_ddl() -> str:
 
 
 if __name__ == "__main__":
-    # Regeneration aid for a human keeping sqlite_schema.sql's checked-in
-    # DDL in sync by hand: `python -m supabase.schema_gen` prints both
-    # blocks so they can be pasted in. Not run automatically at import or
-    # test time - supabase/tests/test_schema_gen.py is what actually
-    # enforces the two stay identical (see this module's docstring), by
-    # applying both to real SQLite connections and diffing PRAGMA
-    # table_info, not by trusting a human re-pasted correctly.
     print("-- llm_calls " + "-" * 60)
     print(llm_calls_ddl())
     print()

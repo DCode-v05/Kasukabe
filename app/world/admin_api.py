@@ -96,13 +96,6 @@ logger = logging.getLogger(__name__)
 ADMIN_PREFIX = "/admin"
 
 
-# ── wire contract: independent copies of game/console/schemas.py's models
-# (that module's own docstring: "each side owns its own copy of the type
-# ... world/ is free to rename a field on its side" - world/ does not
-# import game/, game/ does not import world/, see app/CONVENTIONS.md's
-# module boundaries) ─────────────────────────────────────────────────────
-
-
 class DisasterType(str, Enum):
     CROP_BLIGHT = "crop_blight"
     STORM = "storm"
@@ -144,16 +137,6 @@ class ApprovePetitionRequest(BaseModel):
     depth: int = Field(gt=0)
     new_sector_name: str | None = None
     arena_names: list[str] | None = None
-    # GROW-13. What the strip is for. `farmland`, `forest`, `ore`,
-    # `residential`, `civic`, `industrial` - or None, which grows bare
-    # ground exactly as before.
-    #
-    # It is optional because the operator is the one approving, and a
-    # required field would make every existing caller of this route
-    # invalid. It matters because expansion used to carve a sector and
-    # stop: no resource zone, so a "farmland" strip grew nothing; no
-    # ownership record, so `require_tile` read every new tile as
-    # government-owned by accident rather than by decision.
     purpose: str | None = None
 
 
@@ -180,10 +163,6 @@ class BuildingSiteView(BaseModel):
     plot_id: str
     started_tick: int
     completion_tick: int
-    # GROW-18's labour, so a site reads as a job in progress rather than a
-    # countdown. `labour_remaining` is what tells an operator whether a
-    # site has stalled - a deadline that has passed with work outstanding
-    # is a crew that stopped turning up.
     labour_ticks_required: int
     labour_ticks_done: int
     labour_remaining: int
@@ -394,18 +373,6 @@ class SpendStatusView(BaseModel):
     treasury_usd_cents: int = Field(ge=0)
     wallets_usd_cents: int = Field(ge=0)
     budget_total_usd_cents: int = Field(gt=0)
-    # UI-16. What THIS RUN is allowed to spend, which is not the same
-    # number as the $1000 ledger pool above and was never reported.
-    #
-    # The console drew its spend bar against a hard-coded
-    # `RUN_BUDGET_CAP_USD_CENTS = 40000` - $400 - while real runs have been
-    # capped at $1 to $10. So the bar read 1% full on a run that was
-    # actually finished, and the note under it said "of $400 cap" on every
-    # run this project has ever done.
-    #
-    # Optional because a host that has no governor (a fixture, main.py)
-    # should say "unknown" rather than invent a number the console would
-    # then draw against.
     run_cap_usd_cents: int | None = None
     tick_index: int
     sampled_at: str
@@ -448,9 +415,6 @@ class CheckpointSummary(BaseModel):
     written_at: str
 
 
-# ── new admin-only event types (no owning module yet, see module
-# docstring's second bullet) ─────────────────────────────────────────────
-
 EVENT_BROADCAST_ISSUED = "politics.broadcast.issued"
 EVENT_HONOR_GRANTED = "politics.honor.granted"
 EVENT_MIRACLE_CAST = "religion.miracle.cast"
@@ -459,44 +423,13 @@ EVENT_DISASTER_RECORDED = "world.disaster.recorded"
 EVENT_SIM_PAUSED = "system.sim.paused"
 EVENT_SIM_RESUMED = "system.sim.resumed"
 
-# ASSUMPTION (no DESIGN.md-pinned number for either): a "spike" is 5+
-# crime.case.opened events still inside the event bus's own 2000-entry
-# replay buffer (world/core/events.py); "cult centralization" is one
-# non-government organization holding at least a fifth of the living
-# population (and never fewer than 10 members, so a 12-agent early game
-# does not trip on its first 3-member club). Both are deliberately
-# low bars so the alerts feed proves itself real against a live run
-# instead of staying empty for hours - see this module's own docstring
-# and game/console/README.md's "once the emitting systems exist" note on
-# why no direct alert-shaped event exists for either yet.
 CRIME_SPIKE_THRESHOLD = 5
 
-# UI-32. A spike is a rate, and this had no denominator.
-#
-# `list_alerts` counted every `crime.case.opened` in the whole replay ring
-# and raised CRIME_SPIKE at five. The ring is 2,000 events, and CORE-09
-# grows it to `agents * 200` - 50,000 at the 250-resident target - so "5
-# cases recently" actually meant "5 cases in the last fifty thousand
-# events", which a normal town crosses once and then never falls back
-# below. The alarm latches on and stays on for the rest of the run, which
-# is the same as having no alarm.
-#
-# 200 ticks is roughly a game day at the pacing every run has used. A
-# spike is five cases inside one day; five cases spread across a week is
-# a town with crime in it, which the operator can already see in the
-# justice panel and does not need to be alarmed about.
 CRIME_SPIKE_WINDOW_TICKS = 200
 
-# The cap on WorldState.raised_alerts. Deliberately well above the 50 the
-# console asks for: the point of keeping them is that an alert survives
-# long enough to be read, and a 500-deep history costs a few kilobytes.
 MAX_RAISED_ALERTS = 500
 CULT_MEMBER_FRACTION_THRESHOLD = 0.2
 CULT_MEMBER_MIN_COUNT = 10
-
-
-# ── real pause/resume gate (task spec: "a real total freeze: ticks halt
-# at a boundary, broker holds dispatch, timestamp frozen") ───────────────
 
 
 class SimControl:
@@ -599,23 +532,15 @@ def _seed_the_strips_purpose(world, expansion) -> None:
     )
 
     purpose = (expansion.purpose or "").strip().lower()
-    # Built from the same constants `seed_resource_zones` uses, not from
-    # numbers retyped here: a strip that regenerates at a different rate
-    # from the genesis fields is a second economy nobody decided to have.
     recipes = {
         "farmland": (ResourceZoneKind.FARMLAND, "wheat", DEFAULT_ZONE_YIELD),
         "ore": (ResourceZoneKind.ORE_OUTCROP, "iron_ore", DEFAULT_ZONE_YIELD),
-        # Forest yield is unbounded at genesis, and a grown forest is a
-        # forest.
         "forest": (ResourceZoneKind.FOREST, FOREST_RESOURCE, None),
     }
     if purpose not in recipes:
         return
     kind, item, yield_ = recipes[purpose]
     for name in expansion.new_sector_names or []:
-        # Keyed by the sector's OWN name - what `move` takes a resident to
-        # and what the gate folds. A name minted here would be a place
-        # nobody can walk to, which is the defect one layer along.
         if name in world.resource_zones:
             continue
         world.resource_zones[name] = ResourceZone(
@@ -687,18 +612,7 @@ class AdminDeps:
     extras: AdminExtras
     get_population_dials: Callable[[], PopulationDials]
     set_population_dials: Callable[[dict[str, Any]], PopulationDials]
-    # UI-16: the run's own spend cap in cents, or None on a host without
-    # one. A closure like the dials above, so each host points it at
-    # whatever its OWN governor reads.
     get_run_cap_usd_cents: "Callable[[], int | None] | None" = None
-
-
-# ── auth: one shared operator token, independently re-validated here
-# (game/console/README.md: "world independently re-validates instead of
-# trusting this proxy blindly"; auth.py's own docstring on the console
-# side says the same) - a deliberate second, independent copy of
-# game/console/auth.py's token-extraction logic, not an import (module
-# boundaries: world/ does not import game/) ──────────────────────────────
 
 
 def extract_operator_token(authorization: str | None, x_operator_token: str | None) -> str | None:
@@ -730,12 +644,6 @@ def check_operator_token(provided: str | None, expected: str) -> str:
     return provided
 
 
-# ── shared exception -> HTTP mapping (installed once by whichever host
-# constructs the FastAPI app; both world/main.py and run_genesis.py's
-# build_embedded_world_app call this instead of each hand-rolling their
-# own copy) ────────────────────────────────────────────────────────────
-
-
 def install_admin_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(OperatorAuthError)
     async def handle_operator_auth_error(request: Any, exc: OperatorAuthError) -> JSONResponse:
@@ -744,9 +652,6 @@ def install_admin_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(ToolError)
     async def handle_tool_error(request: Any, exc: ToolError) -> JSONResponse:
         body: dict[str, Any] = {"detail": str(exc), "kind": type(exc).__name__}
-        # Anything the refusal can teach the caller. See ToolError.context:
-        # a refusal that only says no costs the caller another turn to
-        # find out what would have worked.
         if getattr(exc, "context", None):
             body["context"] = exc.context
         return JSONResponse(status_code=400, content=body)
@@ -777,9 +682,6 @@ def build_control_status(world: WorldState, tick_engine: TickEngine, sim_control
         tick_index=world.current_tick,
         game_day=ts.game_day,
     )
-
-
-# ── the router ────────────────────────────────────────────────────────
 
 
 def build_admin_router(get_deps: Callable[[], AdminDeps]) -> APIRouter:
@@ -814,7 +716,6 @@ def build_admin_router(get_deps: Callable[[], AdminDeps]) -> APIRouter:
         token = extract_operator_token(authorization, x_operator_token)
         return check_operator_token(token, deps.extras.operator_token)
 
-    # -- President: land petitions ---------------------------------------
 
     @router.get("/president/public-works", response_model=PublicWorksView)
     async def public_works(
@@ -894,30 +795,10 @@ def build_admin_router(get_deps: Callable[[], AdminDeps]) -> APIRouter:
                 arena_names=req.arena_names,
                 purpose=req.purpose,
             )
-            # GROW-20: remember WHERE the town grew, so `require_tile` can
-            # answer "is this new land" and `auction_land` can scope itself
-            # to it. The rect is the one `expand_land` computed to carve the
-            # new sectors into (GROW-26).
             deps.world.expanded_rects.append(tuple(expansion.strip_rect))
-            # GROW-13: the strip is the government's, on the record.
-            #
-            # `require_tile` reads an unrecorded tile as government-owned,
-            # so this changed no answer - and that is exactly why it
-            # mattered: "nobody has said" and "the government holds it"
-            # were the same state, so `auction_land` could not tell which
-            # ground the town had grown from ground nobody had claimed.
-            # `from_expansion` is the field that separates them, and it
-            # had no writer.
             _record_the_new_ground(deps.world, expansion)
             expansion_view = LandExpansionSummary.model_validate(expansion.model_dump(mode="json"))
         else:
-            # run_genesis.py's embedded world has no MapService wired yet
-            # Since GROW-06 both hosts build a MapService at boot, so this
-            # branch means one thing only: the gitignored Ville assets are
-            # not on this machine. The petition decision itself is still
-            # fully real (charter state genuinely transitions to approved);
-            # only the physical tile growth is unavailable, logged loudly
-            # rather than silently skipped.
             logger.warning(
                 "land petition %s approved with no MapService wired - decision recorded, "
                 "no physical map growth applied (no Ville assets on this host)",
@@ -940,7 +821,6 @@ def build_admin_router(get_deps: Callable[[], AdminDeps]) -> APIRouter:
         )
         return LandPetitionView.model_validate(petition.model_dump(mode="json"))
 
-    # -- President: amendments -------------------------------------------
 
     @router.get("/president/amendments", response_model=list[AmendmentProposalView])
     async def list_amendments(
@@ -970,7 +850,6 @@ def build_admin_router(get_deps: Callable[[], AdminDeps]) -> APIRouter:
         )
         return AmendmentProposalView.model_validate(proposal.model_dump(mode="json"))
 
-    # -- President: address to the nation (event-log projection) --------
 
     @router.post("/president/broadcast", response_model=BroadcastView)
     async def broadcast_address(
@@ -986,10 +865,6 @@ def build_admin_router(get_deps: Callable[[], AdminDeps]) -> APIRouter:
                 "broadcast_id": broadcast_id,
                 "message": req.message,
                 "issued_tick": tick,
-                # Every living agent is a principal of a town-wide address
-                # (world/core/perception.py's involved_agent_ids interrupt
-                # key) - a broadcast is meant to reach everyone, not
-                # nobody, matching DESIGN.md section 8's "address-the-nation".
                 "involved_agent_ids": living_ids,
             },
         )
@@ -1009,7 +884,6 @@ def build_admin_router(get_deps: Callable[[], AdminDeps]) -> APIRouter:
             for e in events
         ]
 
-    # -- President: honors (event-log projection) ------------------------
 
     @router.post("/president/honors", response_model=HonorView)
     async def grant_honor(
@@ -1049,7 +923,6 @@ def build_admin_router(get_deps: Callable[[], AdminDeps]) -> APIRouter:
             for e in events
         ]
 
-    # -- God: prayer feed --------------------------------------------------
 
     @router.get("/god/prayers", response_model=list[PrayerView])
     async def list_prayers(
@@ -1090,21 +963,11 @@ def build_admin_router(get_deps: Callable[[], AdminDeps]) -> APIRouter:
         if prayer is None:
             raise ValueError(f"no prayer request {prayer_id!r}")
         tick = deps.world.tick()
-        # No target_agent_id / involved_agent_ids / location_id in the
-        # payload, on purpose: default_interrupt_policy
-        # (world/core/perception.py) only surfaces an event to an agent's
-        # perception via those keys, so leaving all three out is what
-        # makes DESIGN.md section 8's "silent-deny leaves NO trace visible
-        # to agents" actually true, not just a docstring promise - the
-        # event is still recorded (world/core/events.py's buffer + a
-        # future Supabase writer both still see it: "complete causal
-        # record", DESIGN.md section 2) but never reaches the requester.
         await deps.world.event_bus.emit("religion.prayer.denied", tick=tick, payload={"request_id": prayer_id})
         return PrayerDecisionView(
             prayer_id=prayer_id, decision="silently_denied", visible_to_agent=False, decided_tick=tick
         )
 
-    # -- God: baby blessing queue ------------------------------------------
 
     @router.get("/god/blessings", response_model=list[BirthRequestView])
     async def list_blessings(
@@ -1169,11 +1032,6 @@ def build_admin_router(get_deps: Callable[[], AdminDeps]) -> APIRouter:
             await deps.world.event_bus.publish(life_event_to_world_event(life_event, deps.world.tick()))
         return BirthDecisionView(request=BirthRequestView.model_validate(updated.model_dump(mode="json")))
 
-    # -- God: disasters (real numeric effect for plague/crop_blight,
-    # matching wiring.py's WorldServer god_disaster_* methods; storm/quake
-    # remain event-only - DESIGN.md names them but nothing in map/tools/
-    # models structural damage yet, same documented gap WorldServer's own
-    # docstring calls out) -------------------------------------------------
 
     @router.post("/god/disasters", response_model=DisasterView)
     async def trigger_disaster(
@@ -1271,7 +1129,6 @@ def build_admin_router(get_deps: Callable[[], AdminDeps]) -> APIRouter:
             )
         return result
 
-    # -- God: miracles and misfortunes (event-log projection) -------------
 
     @router.post("/god/miracles", response_model=MiracleView)
     async def cast_miracle(
@@ -1347,7 +1204,6 @@ def build_admin_router(get_deps: Callable[[], AdminDeps]) -> APIRouter:
             for e in events
         ]
 
-    # -- God: population dials --------------------------------------------
 
     @router.get("/god/population-dials", response_model=PopulationDialsView)
     async def get_population_dials_route(
@@ -1365,10 +1221,6 @@ def build_admin_router(get_deps: Callable[[], AdminDeps]) -> APIRouter:
         dials = deps.set_population_dials(updates)
         return PopulationDialsView.model_validate(dials.model_dump(mode="json"))
 
-    # -- Spend: live burn tracking (world.ledger.core.Ledger's three USD
-    # pools, per game/console/README.md - not the broker's own governor,
-    # which tracks a $400 inference sub-budget, not the $1000 system total
-    # SpendStatusView's own invariant check requires) ----------------------
 
     @router.get("/spend/status", response_model=SpendStatusView)
     async def spend_status(
@@ -1390,7 +1242,6 @@ def build_admin_router(get_deps: Callable[[], AdminDeps]) -> APIRouter:
             sampled_at=datetime.now(timezone.utc).isoformat(),
         )
 
-    # -- Alert feed ---------------------------------------------------------
 
     @router.get("/alerts", response_model=list[AlertView])
     async def list_alerts(
@@ -1421,9 +1272,6 @@ def build_admin_router(get_deps: Callable[[], AdminDeps]) -> APIRouter:
                     )
                 )
 
-        # UI-32: within a window, not across the whole buffer. See
-        # CRIME_SPIKE_WINDOW_TICKS for why the unwindowed count latched on
-        # and never cleared.
         now = deps.world.current_tick
         crime_events = [
             e
@@ -1471,16 +1319,6 @@ def build_admin_router(get_deps: Callable[[], AdminDeps]) -> APIRouter:
                     )
                 )
 
-        # UI-32: merge into the run's own history, then answer from that.
-        #
-        # Everything above derives alerts from a ring that forgets. This
-        # remembers: an alert keeps its identity through `alert_id`, so
-        # re-deriving it on the next poll updates nothing and adds nothing,
-        # and one that has aged out of the ring is still here.
-        #
-        # The cult and crime-spike alerts are deliberately re-keyed each
-        # time they fire rather than pinned to one event, so a condition
-        # that clears and returns raises a second, visibly separate alert.
         known = {a["alert_id"]: a for a in deps.world.raised_alerts}
         for alert in alerts:
             known.setdefault(alert.alert_id, alert.model_dump(mode="json"))
@@ -1488,7 +1326,6 @@ def build_admin_router(get_deps: Callable[[], AdminDeps]) -> APIRouter:
         deps.world.raised_alerts = history[:MAX_RAISED_ALERTS]
         return [AlertView.model_validate(a) for a in deps.world.raised_alerts[:limit]]
 
-    # -- Top-level dials: pause/resume, tick speed, checkpoint-now --------
 
     @router.get("/control/status", response_model=SimControlStatus)
     async def control_status(

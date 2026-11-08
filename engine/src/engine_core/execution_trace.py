@@ -136,9 +136,6 @@ class NodeTrace:
             action_name = getattr(tool_def, "action_name", "") or ""
             connection_id = getattr(tool_def, "connection_id", "") or ""
             if not server_name:
-                # No ToolDef to hand: the wire name is still exactly parseable
-                # because safe_server_name forbids dots in the server half, so
-                # the first dot always separates server from action.
                 bare = name[3:]
                 server_name, _, action_name = bare.partition(".")
             self.asset_calls.append(

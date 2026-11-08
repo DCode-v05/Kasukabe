@@ -22,12 +22,12 @@ def test_route_engine_turn_input_contains_no_craft_tag() -> None:
     msg = Coordinator.compose_block_input_message(
         "rebalance the fleet", {"stopped_trucks": ["t1", "t2"], "ratio": 0.3}
     )
-    assert "<craft" not in msg  # the engine input never re-emits a craft
-    assert "stopped_trucks" in msg  # but it does carry the component's state
+    assert "<craft" not in msg
+    assert "stopped_trucks" in msg
 
 
 def test_authoring_guide_states_the_no_reemit_rule() -> None:
     guide = compose_craft_guidance().lower()
-    assert "re-emit" in guide  # the rule is taught
-    assert "polling" in guide  # "its polling updates it"
-    assert "route:engine" in guide  # the state-in-value rule is taught
+    assert "re-emit" in guide
+    assert "polling" in guide
+    assert "route:engine" in guide

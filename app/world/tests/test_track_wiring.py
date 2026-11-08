@@ -31,8 +31,6 @@ from world.run_genesis import build_embedded_world_app
 from world.tests.test_run_genesis import make_runner
 
 
-# -- gap 4: every host serves the same read surface -----------------------
-
 TOWN_ROUTES = (
     "/family/agents",
     "/family/households",
@@ -85,8 +83,6 @@ async def test_world_main_serves_the_same_routes():
     for route in TOWN_ROUTES:
         assert route in served, f"{route} missing from world/main.py"
 
-
-# -- gap 1: the memory pipeline actually connects -------------------------
 
 @pytest.mark.asyncio
 async def test_a_memory_posted_by_an_engine_reaches_the_trace_store(tmp_path: Path):
@@ -152,8 +148,6 @@ def test_the_engine_side_sink_is_actually_attached():
     assert "sink=world.record_memory" in boot, "MemoryStreamWriter has no sink"
 
 
-# -- the boundary, and the deliberate duplicate it forces -----------------
-
 def test_world_never_imports_infra():
     """infra/README.md: "Never imported by world/, broker/, game/, or
     research/." A sys.path insert is still an import."""
@@ -163,9 +157,6 @@ def test_world_never_imports_infra():
     offenders = []
     for pkg in ("world", "broker", "game", "research"):
         for path in (root / pkg).rglob("*.py"):
-            # Production code only. A test may reach across the line - the
-            # parity check below has to import both watchdogs to compare
-            # them - and that is not what the boundary is protecting.
             if "tests" in path.parts:
                 continue
             text = path.read_text(encoding="utf-8", errors="replace")
@@ -187,7 +178,7 @@ def test_the_two_watchdogs_make_the_same_decision():
     from pathlib import Path as _Path
 
     sys.path.insert(0, str(_Path(__file__).resolve().parents[2] / "infra" / "firecracker"))
-    import supervisor as infra                      # test-only: see above
+    import supervisor as infra
 
     from world.run_genesis import (
         SupervisorWatchdog as LocalWatchdog,
@@ -224,8 +215,6 @@ def test_the_two_watchdogs_make_the_same_decision():
         assert got_local == expected, f"local watchdog disagrees on {label}"
         assert got_remote == expected, f"infra watchdog disagrees on {label}"
 
-
-# -- gaps 2 and 3: the life-cycle mechanics actually fire ------------------
 
 @pytest.mark.asyncio
 async def test_a_minor_who_turns_eighteen_stops_being_billed_to_a_parent(tmp_path: Path):
@@ -273,9 +262,6 @@ async def test_a_dead_owners_land_moves_to_their_heir(tmp_path: Path):
     world = runner.world_state
 
     owner_id, heir_id = list(world.agents)[:2]
-    # Genesis agents are married, and section 31.3's default is the NEAREST
-    # living relative - a spouse is nearer than a child. Clearing the spouse
-    # is what makes this a test of the child path rather than of that order.
     world.agents[owner_id] = world.agents[owner_id].model_copy(
         update={"children_ids": [heir_id], "spouse_id": None}
     )
@@ -341,13 +327,11 @@ async def test_a_death_still_succeeds_if_the_land_register_objects(tmp_path: Pat
     runner = make_runner(tmp_path)
     await runner.boot(resume=False)
     victim = next(iter(runner.world_state.agents))
-    runner.world_state.tile_owners = None            # break the register outright
+    runner.world_state.tile_owners = None
     updated, events = await runner.apply_death(runner.world_state.agents[victim], "terminal")
     assert updated.alive is False
     assert any(e.type == "agent.died" for e in events)
 
-
-# -- COGNITION_DELIVERY's four rows, each actually reachable ---------------
 
 @pytest.mark.asyncio
 async def test_say_produces_the_row_the_conversation_log_needs(tmp_path: Path):
@@ -399,7 +383,6 @@ def test_the_persona_file_is_written_before_the_engine_starts():
                 / "engine" / "src" / "sim" / "pinned_boot.py").read_text(encoding="utf-8")
     assert 'persona.txt' in runner_src, "run_genesis never writes persona.txt"
     assert 'persona.txt' in boot_src, "the engine never reads persona.txt"
-    # and it is written inside start_agents, before the subprocess spawns
     start = runner_src.index("async def start_agents")
     assert "persona.txt" in runner_src[start:start + 8000]
 
@@ -419,16 +402,6 @@ def test_every_registered_tool_has_a_price():
     registered = _asyncio.run(go())
     missing = registered - set(DEFAULT_SCHEDULE.rules)
     assert not missing, f"tools with no cost row: {sorted(missing)}"
-
-
-# -- gap 5: a route that is started but never stepped ----------------------
-# world.core.movement.MovementSystem's own docstring says advance() "is a
-# tick loop's job ... once a caller wires movement_system= into it - see
-# that module's docstring for the exact one-line change two composition
-# roots still need". Neither root passed it, so every route a `move` started
-# sat frozen at its first tile forever: world.agent_tiles never updated,
-# GET /agents' tile_x/tile_y never changed, and the only positions anything
-# downstream ever saw came from move_handler's instant-jump fallback.
 
 
 def test_both_composition_roots_hand_movement_to_the_tick_engine():
@@ -500,21 +473,6 @@ async def test_a_started_route_advances_one_tile_per_tick():
     )
 
 
-# -- gap 8: BOTH world hosts serve the tool registry ----------------------
-#
-# Found by booting a real September engine against the standalone world
-# server: it died at startup on
-#     httpx.HTTPStatusError: Client error '405 Method Not Allowed'
-#     for url 'http://world:8100/tools/registry'
-# The embedded app in run_genesis.py served GET /tools/registry; world/
-# main.py never did. `POST /tools/{tool_name}` matched the PATH, so the
-# failure surfaced as 405 ("wrong verb") rather than 404 ("no such route"),
-# which points the reader at the caller instead of the missing route.
-#
-# fetch_tool_registry is the FIRST thing an engine calls - before persona,
-# before memory, before a single tick - so a host missing this route can
-# never run an agent at all, no matter what else it mounts correctly.
-
 ENGINE_REGISTRY_KEYS = {"name", "description", "input_schema"}
 
 
@@ -557,13 +515,8 @@ def test_both_hosts_serve_the_registry_version_route():
     }
     assert "/tools/registry/version" in methods_by_path
     assert "GET" in methods_by_path["/tools/registry/version"]
-    # Same argument for the refusal log the observatory reads: a host missing
-    # it shows an EMPTY gaps view rather than an error, which is a silent
-    # wrong answer and therefore the worse failure of the two.
     assert "/world/refusals" in methods_by_path
 
-    # run_genesis.py builds its app inside a function, so there is no module
-    # -level route table to read - assert on the decorator instead.
     source = _Path("world/run_genesis.py").read_text(encoding="utf-8")
     tree = ast.parse(source)
     routes = {
@@ -636,9 +589,6 @@ def test_the_payload_matches_what_the_engine_parses():
         assert isinstance(row["input_schema"], dict)
 
 
-# -- gap 9: the credential that lost the agent's identity ----------------
-
-
 def test_unsigned_broker_token_still_carries_the_agent_id():
     """Whoever the credential names is who the ledger bills.
 
@@ -664,7 +614,6 @@ def test_unsigned_broker_token_still_carries_the_agent_id():
         if had is not None:
             os.environ["AUTH_SHARED_SECRET"] = had
 
-    # Parsed exactly as broker/auth.py parses it.
     parsed = token.split(".", 1)[0] if "." in token else token
     assert parsed == "a0001", f"credential names {parsed!r}, not the agent"
     assert token != "kasukabe-sim-broker"
@@ -688,9 +637,6 @@ def test_signed_broker_token_still_carries_the_agent_id():
 
     assert token.split(".", 1)[0] == "a0042"
     assert "." in token, "a configured secret must produce a signed token"
-
-
-# ── GOV-24: an engine with no production caller is a library ─────────
 
 
 class TestEveryGovernanceEngineHasACallerOnTheHostThatRuns:
@@ -769,8 +715,6 @@ class TestEveryGovernanceEngineHasACallerOnTheHostThatRuns:
         runner = await _booted(tmp_path)
         try:
             day = 3
-            # Three households exist; one was billed. That is a skipped
-            # day and the run must stop saying so.
             runner.day_jobs_ran[day] = {"households": 3, "head_tax": 1}
             runner.assert_the_day_was_charged(timestamp_for(TICKS_PER_DAY * day))
             assert runner.halt_reason, (
@@ -778,7 +722,6 @@ class TestEveryGovernanceEngineHasACallerOnTheHostThatRuns:
             )
             assert "head tax reached 1 of 3" in runner.halt_reason
 
-            # And a fully charged day does not.
             runner.halt_reason = None
             runner.day_jobs_ran[day + 1] = {"households": 3, "head_tax": 3}
             runner.assert_the_day_was_charged(timestamp_for(TICKS_PER_DAY * (day + 1)))

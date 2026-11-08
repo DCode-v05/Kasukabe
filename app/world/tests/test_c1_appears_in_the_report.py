@@ -27,7 +27,6 @@ def test_a_labelled_call_produces_a_c1_row():
     out = "\n".join(learning_section(calls))
     assert "C1" in out
     assert "farming" in out
-    # 3 calls across 2 residents on day 0 = 1.5 per resident.
     assert "1.5" in out, f"expected calls-per-resident in the table:\n{out}"
 
 

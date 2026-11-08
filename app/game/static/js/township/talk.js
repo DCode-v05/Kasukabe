@@ -1,36 +1,11 @@
-/* The Talk book — agent-to-agent speech, live.
- *
- * The one thing a running town produced that no surface showed. `say` emits
- * `agent.utterance.spoken`; only the trace store consumed it, so two residents
- * could hold a conversation and the viewer had no way to display it. A reader
- * watching a live run could see people walk to the same tile and nothing else.
- *
- * Also stamps the resident file with what that agent has AUTHORED — skills
- * written with `skillify`, tools invented with `toolify` — because "is this
- * town inventing anything" is answerable from the Workshop book, while "did
- * THIS person invent it" was not answerable anywhere.
- *
- * Polls /api/town/talk and /api/town/authored on the same 5s beat. Both
- * degrade with a reason rather than an empty list, for the reason the Workshop
- * already does: a silent town and a broken pipe must not look identical.
- */
 (function () {
   'use strict';
 
   var TALK_MS = 5000;
   var state = { talk: null, authored: null };
 
-  /* The world server cannot name a speaker: AgentLifeRecord has no name
-   * field - names live in genesis, not in world state - so /world/utterances
-   * honestly returns the agent id. The viewer already holds the roster, so
-   * resolution happens here rather than by teaching the world a fact it does
-   * not have. */
   function nameOf(agentId) {
     if (!agentId) return null;
-    /* The RUNNING genesis wins. agents.js is a different draw of the town and
-     * gives the same id a different name - a0064 was "Lior Jarrah" to the
-     * world and "Hector Stone" to the cast. Preferring the world means the
-     * Talk feed, the Authored book and the Workshop all say the same thing. */
     try {
       var n = state.authored && state.authored.names;
       if (n && n[agentId]) return n[agentId];
@@ -41,29 +16,10 @@
           if (AGENTS[i].id === agentId) return AGENTS[i].n || agentId;
         }
       }
-    } catch (e) { /* roster not loaded yet */ }
+    } catch (e) {  }
     return agentId;
   }
 
-  /* IST, 12-hour, with seconds - matching the run report, so a line in the
-   * browser and the same line in docs/runs/ read identically.
-   *
-   * The panel showed only a tick number, which locates a remark inside the
-   * simulation and nowhere inside the run: a reader could not line a
-   * conversation up against anything that happened in the world outside it.
-   */
-  /* UI-24. UTC, not the operator's timezone.
-   *
-   * This rendered every timestamp in IST - a hard-coded +330 here and an
-   * 'Asia/Kolkata' locale in groupchat.js. Correct for this operator and
-   * wrong for anybody else reading the same transcript, including the
-   * paper's readers: two people looking at one conversation saw two
-   * different clocks and neither was told which.
-   *
-   * UTC is the one answer that is the same everywhere, and it is what the
-   * trace store's own `created_at` is written in, so a reader can line a
-   * remark up against the row that recorded it.
-   */
   function istTime(secs) {
     if (!secs) return '';
     var d = new Date(secs * 1000);
@@ -85,16 +41,9 @@
       '<span class="dim">' + esc(why) + '</span></div>';
   }
 
-  /* One utterance. Public speech and a directed remark read differently, so
-   * they look different: "to X" only appears when there really is a listener,
-   * rather than inventing an audience for a line said to the room. */
   function lineHtml(u) {
     var speaker = u.speaker_name || nameOf(u.speaker_agent_id);
     var listener = u.listener_agent_id ? nameOf(u.listener_agent_id) : null;
-    /* An agent that addressed its own id is thinking out loud, not holding a
-     * conversation. Shown as "aloud" rather than "to themselves", which would
-     * read as a rendering bug rather than what it is - a model naming the
-     * wrong listener. */
     var selfTalk = u.listener_agent_id && u.listener_agent_id === u.speaker_agent_id;
     var to = (listener && !selfTalk)
       ? '<span class="talk-to">to ' + esc(listener) + '</span>'
@@ -111,28 +60,6 @@
     '</div>';
   }
 
-  /* Group speech into exchanges rather than listing lines.
-   *
-   * A flat feed cannot show a conversation: "who spoke to who, and what did
-   * the other person say back" is the question, and consecutive lines by the
-   * same two people at the same place ARE the answer — they just have to be
-   * put next to each other.
-   *
-   * Grouped by `conversation_id` now that one means something.
-   *
-   * This used to group by (place, overlapping people, tick gap) because
-   * `say` minted a fresh id per utterance, so every reply was otherwise a
-   * thread of one. A conversation id is now the ROOM's conversation:
-   * everyone speaking in one place inside the window shares it.
-   *
-   * The old overlap rule cannot show a group. Four residents talked on one
-   * street inside two ticks - Liora asking Perrin why he had not answered,
-   * Marta telling Tobias to sit down, Tobias apologising to Liora, Perrin
-   * answering her - and because Marta and Tobias overlapped with neither of
-   * the first two, it drew three conversations out of one.
-   *
-   * The heuristic stays as a fallback for rows with no id: older runs, and
-   * anything replayed from a trace written before this changed. */
   var THREAD_GAP_TICKS = 6;
 
   function threads(rows) {
@@ -185,13 +112,6 @@
         (t.lines.length && t.lines[0].said_at
           ? '<span class="th-clock">' + esc(istTime(t.lines[0].said_at)) + ' IST</span>' : '') +
       '</div>' +
-      /* Who said it, to whom, and whether it was an answer.
-       *
-       * Every line rendered identically, so an exchange read as two people
-       * talking past each other - "who spoke to who and what did they say
-       * back" was exactly what the panel could not show. A line whose
-       * speaker is the previous line's listener IS the reply, and it is
-       * marked and indented as one. */
       t.lines.map(function (u, i) {
         var prev = i > 0 ? t.lines[i - 1] : null;
         var isReply = !!(prev && prev.listener_agent_id
@@ -218,17 +138,11 @@
         '<span class="dim">Not an error: residents talk when they have a reason to, ' +
         'and a town that has just woken up has not found one.</span></div>';
     }
-    var t = threads(rows);        // built in spoken order so replies follow
-    t.reverse();                  // newest exchange first
+    var t = threads(rows);
+    t.reverse();
     return '<div class="talk-feed">' + t.map(threadHtml).join('') + '</div>';
   }
 
-  /* The Authored book: WHO reached for skillify and toolify.
-   *
-   * The Workshop book answers "what does the town have". This answers "which
-   * residents are authoring", which is the different and more interesting
-   * question in a run where most agents never invent anything: the split
-   * between authors and everyone else is the finding, not the totals. */
   function authoredHtml(d) {
     if (!d || !d.available) return unavailable(d, 'Authored');
     var skills = d.skills || [], tools = d.tools || [];
@@ -239,7 +153,6 @@
         'that is the honest state, not a broken panel.</span></div>';
     }
 
-    // By author, because the question is who - not what.
     var by = {};
     function slot(id) {
       if (!by[id]) by[id] = { id: id, skills: [], tools: [] };
@@ -295,21 +208,6 @@
     stampResidentFile();
   }
 
-  /* What this resident has AUTHORED, stamped into the open resident file.
-   *
-   * Appended rather than woven into part-e.js's Skills tab so the two
-   * cannot fight over the same node: that tab owns proficiency, this owns
-   * provenance.
-   *
-   * UI-25: that sentence was not true. This strip rendered a Proficiency
-   * row as well, off its own poll, beside part-e.js's proficiency bars off
-   * theirs - two owners of one fact on two independent timers, so the same
-   * resident's proficiency could read 3 in one place and 4 an inch below
-   * it, and neither number was wrong when it was fetched.
-   *
-   * The split is now real. Provenance here: what this resident invented
-   * and wrote. Proficiency there, in the Skills tab, where the bar and the
-   * repetition count already live. */
   function stampResidentFile() {
     var panel = document.getElementById('profilePanel');
     if (!panel || panel.hidden) return;

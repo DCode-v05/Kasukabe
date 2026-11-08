@@ -38,9 +38,6 @@ from world.map.tiled_json import (
 GenesisZonesFixture = tuple[WorldMap, GenesisZoneIds, int, int]
 
 
-# -- split_span -------------------------------------------------------------
-
-
 def test_split_span_divides_evenly() -> None:
     assert split_span(30, 10) == [(i * 3, i * 3 + 3) for i in range(10)]
 
@@ -59,9 +56,6 @@ def test_split_span_rejects_more_parts_than_units() -> None:
 def test_split_span_rejects_non_positive_parts() -> None:
     with pytest.raises(ValueError):
         split_span(10, 0)
-
-
-# -- single_arena_rect_bands / carve_sector on the tiny fixture -----------
 
 
 def test_single_arena_rect_bands_splits_along_the_depth(tiny_blocks: SpecialBlockTables) -> None:
@@ -107,9 +101,6 @@ def test_next_available_id_continues_past_the_highest_existing_id() -> None:
     assert next_available_id({900_005: ("a", "b")}, floor=900_000) == 900_006
 
 
-# -- approve_land_petition, transactional growth on the tiny fixture -----
-
-
 @pytest.mark.asyncio
 async def test_approve_land_petition_grows_south_and_leaves_original_untouched(
     tiny_tiled: dict[str, Any], tiny_blocks: SpecialBlockTables
@@ -118,7 +109,7 @@ async def test_approve_land_petition_grows_south_and_leaves_original_untouched(
     grown_tiled, grown_blocks, world, result = await approve_land_petition(
         tiny_tiled, tiny_blocks, edge=Edge.SOUTH, depth=3
     )
-    assert tiny_tiled["height"] == original_height  # caller's dict is untouched
+    assert tiny_tiled["height"] == original_height
     assert grown_tiled["height"] == original_height + 3
     assert world.height == original_height + 3
     assert result.previous_height == original_height
@@ -151,7 +142,7 @@ async def test_approve_land_petition_carves_a_named_sector_into_the_new_land(
     )
     sector = world.find_sector("New Docks")
     assert sector is not None
-    assert sector.active is False  # newly carved sectors are not genesis-classified here
+    assert sector.active is False
     assert len(sector.arena_ids) == 2
     assert result.new_sector_names == ["New Docks"]
 
@@ -175,9 +166,6 @@ async def test_two_successive_petitions_never_collide_ids(tiny_tiled: dict[str, 
     assert result_1.new_sector_ids[0] != result_2.new_sector_ids[0]
     assert world_2.find_sector("Zone One") is not None
     assert world_2.find_sector("Zone Two") is not None
-
-
-# -- append_kasukabe_genesis_zones, integration against the real Ville data --
 
 
 @pytest.fixture(scope="session")

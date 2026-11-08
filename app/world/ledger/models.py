@@ -44,53 +44,11 @@ class TransactionReason(str, enum.Enum):
     INFERENCE_BURN = "inference_burn"
     BLESSING = "blessing"
     TRANSFER = "transfer"
-    # A two-sided swap between two residents standing together, distinct
-    # from TRANSFER (money with nothing coming back) and from a shop's
-    # buy/sell. Its own reason so a settlement - a price agreed in speech
-    # and then actually paid - is queryable in the trace, which is the
-    # clearest evidence there is that talking changed the world.
     TRADE = "trade"
-    # Money across a shop counter, in each direction. Both used to be
-    # TRANSFER, which maps to the same schema value as `transfer` itself -
-    # the tool for giving money away for nothing - so the record could not
-    # tell a purchase from a handout. Measured on final1: two successful
-    # `sell` calls and a trace holding only `burn` and `transfer`.
-    #
-    # This is the defect that already cost this project six invisible
-    # trades. Same argument as TRADE above: a bargain settled at the
-    # bakery counter is the clearest evidence there is that talking
-    # changed the world, and it cannot be counted while it looks identical
-    # to somebody handing over money for nothing.
     PURCHASE = "purchase"
     SALE = "sale"
-    # An owner moving money between their own hand and their own till
-    # (TOOL-03). Its own reason for the same argument PURCHASE/SALE make
-    # above: a shopkeeper banking the day's takings and a shopkeeper
-    # handing a stranger money for nothing are not the same act, and a
-    # trace that files both as TRANSFER cannot tell a business that
-    # trades from one that is being emptied.
     TILL = "till"
-    # GOV-15. A fine was booked as TAX, so `treasury_view.
-    # tax_collected_sim` counted every penalty the courts levied as tax
-    # revenue and no query could separate what the town RAISED from what
-    # it PUNISHED. The trace schema already has a "fine" tx_type; only the
-    # ledger's own vocabulary was missing it.
     FINE = "fine"
-    # ECON-03. Seven kinds of money movement that were all filed as
-    # TRANSFER with a memo, so the trace could not tell a BILL from a
-    # HANDOUT.
-    #
-    # The consequence was not theoretical. `build_transaction_row` writes
-    # `reason = transaction.reason.value`, and `run_report._transactions`
-    # queries `where reason = 'daily_upkeep'` - a string no row ever held,
-    # because upkeep was booked as `transfer`. So the report asked for the
-    # upkeep and got nothing back, and run 23 printed "no upkeep charged"
-    # over ninety sim per household per day of real money.
-    #
-    # `EXCHANGE` already exists for the sim/USD swap itself; ENERGY_EXCHANGE
-    # is the resident-facing `buy_energy` act that wraps one, which the
-    # research counts separately because it is a decision rather than a
-    # mechanism.
     UPKEEP = "daily_upkeep"
     ACTION_COST = "action_cost"
     REFUND = "refund"
@@ -146,9 +104,6 @@ class Transaction(BaseModel):
     amount: int
     from_account: str
     to_account: str
-    # Set when a debit was resolved away from the named agent (parent-debit
-    # for a minor's USD spend): from_account is who actually paid,
-    # on_behalf_of is whose activity caused the spend.
     on_behalf_of: str | None = None
     memo: str = ""
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

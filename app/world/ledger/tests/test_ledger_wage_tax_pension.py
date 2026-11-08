@@ -14,9 +14,6 @@ async def test_pay_wage_from_a_business_account_to_its_employee() -> None:
     ledger = await build_genesis_ledger(["owner", "employee"], agent_usd_cents=200)
     ledger.accounts["owner"].sim_units = 10_000
     await ledger.register_business("bakery", "owner", fee_sim=1_000, tick=0)
-    # Stand in for prior sales revenue, which is out of this module's
-    # scope (trade/buy/sell primitives belong to the tool registry) but
-    # a business still needs sim on hand to pay a wage out of.
     ledger.accounts["bakery"].sim_units = 5_000
 
     await ledger.pay_wage("bakery", "employee", 500, tick=1)
@@ -53,7 +50,7 @@ async def test_private_pension_pays_25_percent_of_last_salary() -> None:
 
     transaction = await ledger.pay_pension("retiree", 72, 4_000, "private", tick=1)
 
-    assert transaction.amount == 1_000  # 25% of 4,000
+    assert transaction.amount == 1_000
     assert PENSION_PRIVATE_PCT == 25
     assert ledger.sim_balance("retiree") == 1_000
 
@@ -65,7 +62,7 @@ async def test_government_pension_pays_50_percent_of_last_salary() -> None:
 
     transaction = await ledger.pay_pension("retiree", 70, 4_000, "government", tick=1)
 
-    assert transaction.amount == 2_000  # 50% of 4,000
+    assert transaction.amount == 2_000
     assert PENSION_GOVERNMENT_PCT == 50
     assert ledger.sim_balance("retiree") == 2_000
 

@@ -52,9 +52,6 @@ async def _shop_with_staff(
     return business
 
 
-# ── the promise ───────────────────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_promise_is_not_a_payment(world: WorldState, registry) -> None:
     """The spec's first named test, and the design in one assertion."""
@@ -109,9 +106,6 @@ async def test_promises_are_made_on_the_premises(world: WorldState, registry) ->
         })
 
 
-# ── the payment, and the gap ──────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_missed_payday_shows_up_as_a_debt_on_both_sides(
     world: WorldState, registry
@@ -128,7 +122,7 @@ async def test_a_missed_payday_shows_up_as_a_debt_on_both_sides(
 
     employee = await registry.execute(world, "n14", "check_debts", {})
     owed_to_them = [r for r in employee.result["owed_to_you"] if r["kind"] == "wage"]
-    assert owed_to_them and owed_to_them[0]["sim"] == 80  # two days
+    assert owed_to_them and owed_to_them[0]["sim"] == 80
 
     employer = await registry.execute(world, "n05", "check_debts", {})
     owed_by_them = [r for r in employer.result["owed_by_you"] if r["kind"] == "wage"]
@@ -174,7 +168,6 @@ async def test_paying_more_than_owed_clears_the_debt_and_records_the_gift(
 
     assert outcome.result["owed_after"] == 0
     assert outcome.result["gift_sim"] == 60
-    # And next period still comes due in full.
     world.accrue_wages(game_day=2, now_tick=TICKS_PER_DAY * 2)
     assert world.wage_promises["b_bakery|n14"].owed_sim == 40
 
@@ -251,9 +244,6 @@ async def test_accruing_twice_for_the_same_day_does_not_bill_twice(
     world.accrue_wages(game_day=1, now_tick=TICKS_PER_DAY)
 
     assert world.wage_promises["b_bakery|n14"].owed_sim == 40
-
-
-# ── loans, and the 400-sim story ──────────────────────────────────────
 
 
 @pytest.mark.asyncio

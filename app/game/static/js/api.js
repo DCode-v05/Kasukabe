@@ -1,7 +1,3 @@
-// Thin fetch wrappers for game/server.py's browser-facing REST surface.
-// Same-origin (the FastAPI app serves both these routes and this file),
-// so plain relative paths - no base URL configuration needed client side.
-
 export async function fetchSnapshot() {
   const response = await fetch("/api/snapshot");
   if (!response.ok) {

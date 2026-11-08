@@ -39,11 +39,6 @@ from world.tools.bootstrap import build_world
 from world.tools.tests.conftest import spawn_agent
 from world.tools.tests.conftest import needs_the_map
 
-# TOOL-27. Every test here needs the Ville map assets, which live in the
-# sibling `smallville/` checkout, are gitignored, and are absent on any
-# host that did not clone them. Without them these FAILED rather than
-# skipped - and red for environment hides real regressions inside the
-# noise, which is how TOOL-09 stayed invisible.
 pytestmark = needs_the_map
 
 
@@ -69,11 +64,6 @@ async def drive_journey_to_completion(world, agent_id: str) -> int:
     return tick
 
 
-# -- the pre-walking contract, updated (task's own instruction: this test
-# "currently locks the instant jump in as the contract" and must change
-# to lock in genuine ticked walking instead) -----------------------------
-
-
 @pytest.mark.asyncio
 async def test_move_updates_location_index(world, registry) -> None:
     """A `move` call to a real map sector starts a route instead of
@@ -88,17 +78,13 @@ async def test_move_updates_location_index(world, registry) -> None:
     result = await registry.execute(world, "a1", "move", {"destination_location_id": "Oak Hill College"})
 
     assert result.result["walking"] is True
-    assert world.location_of("a1") == "Johnson Park"  # not there yet
+    assert world.location_of("a1") == "Johnson Park"
     assert world.movement.has_active_journey("a1")
-    assert result.events == []  # no agent.moved yet - not one tile crossed
+    assert result.events == []
 
     tick = await drive_journey_to_completion(world, "a1")
 
     assert world.location_of("a1") == "Oak Hill College"
-    # Was "> 50 ticks". That assertion WAS the defect being repaired: fifty
-    # ticks is over eight game-hours, and the worst route on this map took
-    # 404. A walk must still be a walk - several ticks, watchable, never
-    # instant - and must fit the town's travel budget.
     assert 1 < tick <= 12, f"cross-town walk took {tick} ticks"
 
 
@@ -106,9 +92,6 @@ async def test_move_updates_location_index(world, registry) -> None:
 async def test_move_has_no_location_gate(world, registry) -> None:
     await spawn_agent(world, "a1", "forest")
     result = await registry.execute(world, "a1", "move", {"destination_location_id": "temple"})
-    # TOOL-05: an opaque jump now says it is one. Keys rather than the
-    # whole dict, so a later addition to the shape does not have to come
-    # back and edit this assertion again.
     assert result.result["location_id"] == "temple"
     assert result.result["walked"] is False
 
@@ -120,9 +103,6 @@ async def test_move_rejects_empty_destination(world, registry) -> None:
     await spawn_agent(world, "a1", "park")
     with pytest.raises(ToolValidationError):
         await registry.execute(world, "a1", "move", {"destination_location_id": ""})
-
-
-# -- the full proof, through the real tool-call seam ----------------------
 
 
 @pytest.mark.asyncio
@@ -145,7 +125,7 @@ async def test_move_through_registry_walks_across_town_contiguous_and_collision_
 
     journey = world.movement.journey_for("walker")
     assert journey is not None
-    assert len(journey.path) > 50  # genuinely far apart, not a toy hop
+    assert len(journey.path) > 50
     assert_contiguous_and_collision_free(world_map, journey.path)
 
     tiles_visited: list[TileCoord] = [journey.path[0]]
@@ -156,22 +136,12 @@ async def test_move_through_registry_walks_across_town_contiguous_and_collision_
             await world.event_bus.publish(event)
             step_tile = TileCoord(event.payload["tile_x"], event.payload["tile_y"])
             tiles_visited.append(step_tile)
-            # reported location matches its tile at every single step,
-            # not just at the end - re-read straight off WorldState's own
-            # LocationIndex, the same read every other tool's location
-            # gate uses.
             assert world.location_of("walker") == event.payload["location_id"]
             assert world_map.is_walkable(step_tile)
 
     assert tiles_visited == journey.path
-    # Was "> 50 ticks". That assertion WAS the defect being repaired: fifty
-    # ticks is over eight game-hours, and the worst route on this map took
-    # 404. A walk must still be a walk - several ticks, watchable, never
-    # instant - and must fit the town's travel budget.
     assert 1 < tick <= 12, f"cross-town walk took {tick} ticks"
     assert world.location_of("walker") == "Oak Hill College"
-    # world.agent_tiles (bootstrap.attach_tile_tracking) stayed in sync
-    # with every real step too, not just the final LocationIndex string.
     assert world.agent_tiles["walker"] == (journey.path[-1].x, journey.path[-1].y)
 
 
@@ -188,7 +158,6 @@ async def test_move_already_at_destination_is_zero_tick_but_still_real(world, re
 
     assert result.result["location_id"] == "Johnson Park"
     assert result.result["walking"] is False
-    # TOOL-05: a real, zero-tick arrival - walked, not jumped.
     assert result.result["walked"] is True
     assert len(result.events) == 1
     payload = result.events[0].payload
@@ -209,8 +178,8 @@ async def test_move_falls_back_to_opaque_jump_when_destination_is_not_a_real_map
     unchanged, so every other primitive/test still depending on that
     contract (world/tools/tests/test_bootstrap_integration.py's farm-to-
     table chain, for one) does not regress."""
-    assert world.movement is not None  # the real map IS loaded here...
-    await spawn_agent(world, "a1", "home:hh-1")  # ...but this string is not a sector on it
+    assert world.movement is not None
+    await spawn_agent(world, "a1", "home:hh-1")
 
     result = await registry.execute(world, "a1", "move", {"destination_location_id": "mill"})
 
@@ -223,31 +192,12 @@ async def test_move_falls_back_to_opaque_jump_when_destination_is_not_a_real_map
     payload = result.events[0].payload
     assert payload["agent_id"] == "a1"
     assert payload["location_id"] == "mill"
-    # TOOL-05(a): arriving wakes you. `default_interrupt_policy` reads
-    # `target_agent_id`, and `agent.moved` carried `agent_id` only - so
-    # arriving anywhere had never interrupted the scheduler, and a
-    # resident that jumped somewhere waited for its next scheduled turn
-    # to notice.
     assert payload["target_agent_id"] == "a1"
     assert payload["walked"] is False
     assert not world.movement.has_active_journey("a1")
     assert world.location_of("a1") == "mill"
 
 
-# -- resolve_current_tile's three branches, in isolation -------------------
-#
-# tiny_world: a hand-built 5x3 map (matching world/core/tests/
-# test_world_core_movement.py's own detour_world shape/rationale: a wall
-# directly between the two named sectors, so any code that skipped
-# pathfinding would visibly cross it), with two named one-tile sectors at
-# the far ends so both "Start Room" and "Dest Room" resolve via
-# WorldMap.entry_point exactly like a real Ville sector would - unlike
-# detour_world, which is deliberately all-street (sector 0) and so
-# useless for entry_point-based tests.
-#
-#   y0: # # # # #
-#   y1: S . # . D   (S = "Start Room", D = "Dest Room", both sector-named)
-#   y2: . . . . .
 TINY_WIDTH = 5
 TINY_HEIGHT = 3
 TINY_COLLISION = [
@@ -306,23 +256,23 @@ async def test_move_again_mid_journey_resumes_from_the_current_tile_not_the_orig
     start_journey's own "a fresh destination simply is a fresh journey"
     contract, exercised through move_handler twice in a row."""
     world, registry = await build_world(seed=1, world_map=build_tiny_world())
-    await spawn_agent(world, "a1", "Start Room")  # entry_point -> (0, 1)
+    await spawn_agent(world, "a1", "Start Room")
 
     await registry.execute(world, "a1", "move", {"destination_location_id": "Dest Room"})
     tick = 0
     tick += 1
-    for event in world.movement.advance(tick):  # exactly one step down the detour
+    for event in world.movement.advance(tick):
         await world.event_bus.publish(event)
     mid_journey = world.movement.journey_for("a1")
     assert mid_journey is not None
     current_tile = mid_journey.current_tile
-    assert current_tile != TileCoord(0, 1)  # genuinely moved off the start tile
+    assert current_tile != TileCoord(0, 1)
 
     await registry.execute(world, "a1", "move", {"destination_location_id": "Start Room"})
 
     new_journey = world.movement.journey_for("a1")
     assert new_journey is not None
-    assert new_journey.path[0] == current_tile  # resumed from here, not re-teleported to start
+    assert new_journey.path[0] == current_tile
 
 
 @pytest.mark.asyncio
@@ -336,12 +286,12 @@ async def test_move_resumes_from_last_recorded_tile_after_a_cancelled_journey(on
     await spawn_agent(world, "a1", "Start Room")
 
     await registry.execute(world, "a1", "move", {"destination_location_id": "Dest Room"})
-    for event in world.movement.advance(1):  # one real step, onto a street tile
+    for event in world.movement.advance(1):
         await world.event_bus.publish(event)
-    assert world.location_of("a1") == "street"  # confirms entry_point("street") cannot resolve
+    assert world.location_of("a1") == "street"
     recorded_tile = TileCoord(*world.agent_tiles["a1"])
 
-    world.movement.cancel_journey("a1")  # freezes the agent here, no active journey left
+    world.movement.cancel_journey("a1")
     assert not world.movement.has_active_journey("a1")
 
     await registry.execute(world, "a1", "move", {"destination_location_id": "Dest Room"})
@@ -351,11 +301,6 @@ async def test_move_resumes_from_last_recorded_tile_after_a_cancelled_journey(on
     assert resumed_journey.path[0] == recorded_tile
 
 
-# -- a real, named, but unreachable destination never teleports ------------
-#
-# disconnected_world: two one-tile sectors with a sealed wall between them
-# and only one row (no detour possible) - "Right Room" is a real map
-# location that genuinely cannot be reached from "Left Room".
 DISCONNECTED_WIDTH = 5
 DISCONNECTED_HEIGHT = 1
 DISCONNECTED_COLLISION = [0, 0, 1, 0, 0]
@@ -392,7 +337,7 @@ async def test_move_to_a_real_but_unreachable_destination_does_not_teleport() ->
     assert "error" in result.result
     assert result.events == []
     assert not world.movement.has_active_journey("a1")
-    assert world.location_of("a1") == "Left Room"  # never moved - no teleport
+    assert world.location_of("a1") == "Left Room"
 
 
 @pytest.mark.asyncio
@@ -435,7 +380,6 @@ async def test_moving_again_to_the_same_place_does_not_restart_the_walk(one_tile
         assert still.step_index >= progress_before, (
             "re-issuing the same move threw away the walking already done"
         )
-    # And the agent has to be TOLD, or it will keep asking.
     assert "already" in str(again.result).lower(), (
         f"result gave the agent no reason to stop repeating itself: {again.result}"
     )

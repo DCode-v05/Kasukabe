@@ -23,32 +23,22 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
 
 MAX_ITERATIONS: int = 10
 MAX_RECURSION_DEPTH: int = 64
 
 DANGEROUS_CATEGORIES: frozenset[str] = frozenset({"Cf", "Co", "Cn"})
 
-# Explicit ranges as defense-in-depth against unicodedata version skew.
-# Overlaps with the category check intentionally.
 EXPLICIT_DANGEROUS: re.Pattern[str] = re.compile(
-    "[\u200b-\u200f]"  # zero-width spaces, LTR/RTL marks
-    "|[\u202a-\u202e]"  # directional formatting (LRE, RLE, PDF, LRO, RLO)
-    "|[\u2066-\u2069]"  # directional isolates (LRI, RLI, FSI, PDI)
-    "|\ufeff"  # byte order mark
-    "|[\ue000-\uf8ff]"  # BMP private use area
-    "|[\U000e0000-\U000e007f]"  # tag characters — THE ASCII Smuggling vector (HackerOne #3086545)
-    "|[\U000f0000-\U000ffffd]"  # supplementary private use area-A (plane 15)
-    "|[\U00100000-\U0010fffd]"  # supplementary private use area-B (plane 16)
+    "[\u200b-\u200f]"
+    "|[\u202a-\u202e]"
+    "|[\u2066-\u2069]"
+    "|\ufeff"
+    "|[\ue000-\uf8ff]"
+    "|[\U000e0000-\U000e007f]"
+    "|[\U000f0000-\U000ffffd]"
+    "|[\U00100000-\U0010fffd]"
 )
-
-
-# ---------------------------------------------------------------------------
-# Core sanitizer
-# ---------------------------------------------------------------------------
 
 
 def sanitize_unicode(text: str) -> str:
@@ -64,8 +54,6 @@ def sanitize_unicode(text: str) -> str:
     if not text:
         return text
 
-    # Null bytes are Cc category (not caught by Cf/Co/Cn) and
-    # "\x00".isascii() is True — must strip before the ASCII fast path.
     if "\x00" in text:
         text = text.replace("\x00", "")
         if not text:
@@ -95,11 +83,6 @@ def sanitize_unicode(text: str) -> str:
         )
 
     return current
-
-
-# ---------------------------------------------------------------------------
-# Recursive walker
-# ---------------------------------------------------------------------------
 
 
 def sanitize_value(value: Any, depth: int = 0) -> Any:
@@ -133,11 +116,6 @@ def sanitize_value(value: Any, depth: int = 0) -> Any:
         return tuple(sanitize_value(item, depth + 1) for item in value)
 
     return value
-
-
-# ---------------------------------------------------------------------------
-# ASGI middleware
-# ---------------------------------------------------------------------------
 
 
 async def read_body(receive: Any) -> bytes:
@@ -182,10 +160,6 @@ class UnicodeSanitizationMiddleware:
     def __init__(self, app: Any) -> None:
         self.app = app
 
-    # Paths that authenticate via HMAC over the raw request body. Mutating
-    # the body here would invalidate the signature, so we skip them
-    # entirely. They run their own input validation (HMAC + timestamp
-    # freshness + signature compare) which is stricter than this layer.
     HMAC_BYPASS_PATHS: frozenset[str] = frozenset()
 
     async def __call__(self, scope: dict, receive: Any, send: Any) -> None:
@@ -205,7 +179,7 @@ class UnicodeSanitizationMiddleware:
                 if not decoded_qs.isascii():
                     scope["query_string"] = sanitize_unicode(decoded_qs).encode("utf-8")
             except UnicodeDecodeError:
-                pass  # non-UTF-8 query strings pass through
+                pass
 
         if scope.get("method", "") not in ("POST", "PUT", "PATCH"):
             return await self.app(scope, receive, send)
@@ -222,8 +196,6 @@ class UnicodeSanitizationMiddleware:
 
             return await self.app(scope, empty_receive, send)
 
-        # Cannot skip parse for ASCII bodies — JSON escape sequences
-        # (\u200b) are ASCII bytes but decode to dangerous Unicode.
         try:
             parsed = json.loads(body)
         except (json.JSONDecodeError, UnicodeDecodeError):
@@ -268,8 +240,6 @@ class UnicodeSanitizationMiddleware:
         if get_header(scope, b"content-length") is not None:
             update_content_length(scope, len(sanitized_body))
 
-        # After body is delivered, delegate to original receive so downstream
-        # handlers can still detect http.disconnect from the client.
         body_sent = False
 
         async def sanitized_receive() -> dict:

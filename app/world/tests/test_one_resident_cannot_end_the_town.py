@@ -46,7 +46,6 @@ class QuietGateway:
         return _any
 
 
-
 async def _town(tmp_path) -> GenesisRunner:
     runner = GenesisRunner(GenesisRunnerConfig(
         mock_mode=True, checkpoint_dir=tmp_path / "c", world_mode="embedded",
@@ -63,10 +62,6 @@ async def test_a_broken_resident_costs_one_turn_not_the_run(tmp_path) -> None:
     world = runner.world_state
     victim = next(iter(world.agents))
 
-    # Exactly what the real run hit: a resident working "until dusk", and
-    # a `satisfied()` that raises. Reached from `one()` before any
-    # perception is built, which is why it killed the tick rather than
-    # one turn.
     world.continuing[victim] = ContinuingAction(
         tool="harvest", params={"item": "wheat"}, until={"dusk": True},
         started_tick=0, location_id="sector:farm",
@@ -78,8 +73,6 @@ async def test_a_broken_resident_costs_one_turn_not_the_run(tmp_path) -> None:
 
     type(world).is_daytime = explode
     try:
-        # Must not raise. Before the fix this propagated out of the
-        # gather, out of the tick, and out of the runner.
         await runner.dispatch_due_agents(
             TickResult(tick=timestamp_for(60), due_agents=[victim])
         )

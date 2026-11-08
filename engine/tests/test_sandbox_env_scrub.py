@@ -26,17 +26,12 @@ def reset_state():
 
 @pytest.fixture
 def seeded_env(monkeypatch):
-    # engine_core (stripped in default + strict)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "anthropic-sentinel")
     monkeypatch.setenv("DATABASE_URL", "postgres://sentinel")
-    # strict-only (stripped in strict, since sandbox uses strict regardless)
     monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "aws-sentinel")
     monkeypatch.setenv("ACTIONS_RUNTIME_TOKEN", "runtime-sentinel")
-    # allowlist (preserved in all tiers)
     monkeypatch.setenv("GITHUB_TOKEN", "gh-sentinel")
-    # GHA INPUT_ duplicate (stripped because base is scrubbed)
     monkeypatch.setenv("INPUT_ANTHROPIC_API_KEY", "input-sentinel")
-    # user's own INPUT_ var (preserved — base not in scrub set)
     monkeypatch.setenv("INPUT_MY_CUSTOM_FLAG", "true")
 
 
@@ -75,8 +70,6 @@ async def test_sandbox_background_exec_strips_secrets(seeded_env):
     """The `exec_background` path must not leak secrets."""
     ex = SandboxExecutor(session_id="scrub-bg")
     try:
-        # Long yield_ms so the short echo completes within the yield window
-        # and we get the captured output back instead of a session id.
         result = await ex.run_bash(CHECK_CMD, background=True, yield_ms=5000)
         assert_scrubbed(result.stdout)
     finally:
@@ -96,7 +89,6 @@ async def test_parent_retains_secrets_after_sandbox_spawn(seeded_env):
     finally:
         ex.cleanup()
 
-    # Parent env is unchanged — secrets still readable for lazy credential reads.
     assert os.environ.get("ANTHROPIC_API_KEY") == "anthropic-sentinel"
     assert os.environ.get("AWS_SECRET_ACCESS_KEY") == "aws-sentinel"
     assert dict(os.environ) == before

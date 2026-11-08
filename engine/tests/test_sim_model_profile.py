@@ -41,7 +41,7 @@ def test_assert_allowed_passes_for_the_one_model():
         "gpt-4o-mini",
         "claude-opus-4-8",
         "gpt-5.4-mini",
-        "kimi-k2.5",  # the bare id, without the moonshotai. provider prefix
+        "kimi-k2.5",
         "kimi-k2",
         "deepseek-v3.2",
         "deepseek.v3.2",
@@ -81,14 +81,12 @@ def test_guarded_create_llm_rejects_a_second_model(monkeypatch):
     settings = Settings.build_from_env({"CDT_URL": "http://broker.test", "CDT_KEY": "k"})[0]
     with pytest.raises(SimModelNotAllowed):
         guarded_create_llm(settings, "claude-opus-4-8")
-    # herald.create_llm must never even be called for a disallowed id - the
-    # guard fires before any adapter construction is attempted.
     assert calls == []
 
 
 def test_register_into_catalog_overlay_seeds_exactly_one_priced_model():
     catalog_sync.runtime_overlay.clear()
-    catalog_sync.runtime_overlay["stale-model"] = object()  # anything pre-existing is wiped
+    catalog_sync.runtime_overlay["stale-model"] = object()
 
     overlay = register_into_catalog_overlay()
 
@@ -96,16 +94,12 @@ def test_register_into_catalog_overlay_seeds_exactly_one_priced_model():
     kimi = overlay[MODEL_ID]
     assert kimi.cost.input_per_1m == pytest.approx(0.36)
     assert kimi.cost.output_per_1m == pytest.approx(1.80)
-    # Also reflected through herald's own catalog helpers, not just the raw dict.
     from src.herald.catalog import estimate_cost, get_model
 
     assert get_model(MODEL_ID) is kimi
     assert estimate_cost(MODEL_ID, 1_000_000, 1_000_000) == pytest.approx(0.36 + 1.80)
     assert get_model("claude-opus-4-8") is None
     assert get_model("deepseek-v3.2") is None
-
-
-# ── the context budget is what decides compaction ───────────────────────
 
 
 def test_the_registered_window_is_what_needs_compaction_reads():
@@ -151,13 +145,10 @@ def test_an_ordinary_turn_no_longer_compacts_at_all():
     def tokens(kilobytes: int) -> int:
         return kilobytes * 1024 // 4
 
-    # The measured median body over 510 live calls was 65 KB.
     assert not needs_compaction(tokens(65), window), (
         "a median-sized real turn still trips compaction; the seam's bound "
         "is not doing its job and the engine is rewriting the prefix"
     )
-    # And the worst one seen, 357 KB, still should - the bound is a bound,
-    # not an invitation to send anything.
     assert needs_compaction(tokens(2_000), window)
 
 def test_the_budget_clears_a_single_turn_several_times_over():
@@ -177,10 +168,6 @@ def test_the_budget_clears_a_single_turn_several_times_over():
     assert compaction_point > largest_single_turn, (
         "compaction fires inside one turn: a conversation cannot be one"
     )
-    # The margin, not the number. At the old 12,500 window this was 1.1x -
-    # about one and a half turns - which is what made every call an
-    # emergency. Now it is comfortable, and asserting the ratio means the
-    # next re-window is checked on the property that matters.
     assert compaction_point >= largest_single_turn * 3, (
         f"only {compaction_point / largest_single_turn:.1f} turns fit before "
         "compaction; the seam's bound is the mechanism now, but the engine "
@@ -214,7 +201,7 @@ def test_the_skill_metadata_budget_is_now_tight_and_this_is_the_known_cost():
     from src.sim.model_profile import SIM_CONTEXT_WINDOW
 
     budget = skill_metadata_budget(SIM_CONTEXT_WINDOW)
-    roughly_one_entry = 40  # name + short description
+    roughly_one_entry = 40
     entries = budget // roughly_one_entry
     assert entries >= 25, (
         f"the skill list holds about {entries} entries. Below ~25 a town "

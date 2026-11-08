@@ -35,8 +35,6 @@ class _CountingWorld:
 
     async def get_snapshot(self) -> Snapshot:
         self.snapshots += 1
-        # Slow enough that a second caller arrives while this is in
-        # flight - the case a plain TTL cache does not cover.
         await asyncio.sleep(0.05)
         return Snapshot(tick=self.snapshots, map_tiled_json={}, agents=[])
 

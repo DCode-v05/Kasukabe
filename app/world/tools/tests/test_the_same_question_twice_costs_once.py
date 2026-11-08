@@ -48,7 +48,6 @@ async def test_a_repeated_look_is_answered_and_not_charged(world, registry):
     repeat = before - world.ledger.sim_balance("n01")
 
     assert repeat == 0, f"the same question cost {repeat} the second time"
-    # Answered, not refused. The resident still gets what it asked for.
     assert again.result["repeat_of_this_turn"] is True
     assert "nothing has changed since" in again.result["note"]
 
@@ -170,9 +169,6 @@ def test_every_name_on_the_list_is_a_tool_that_exists():
         )
 
 
-# ── TRADE-06, second attempt: priced, not folded ─────────────────────
-
-
 @pytest.mark.asyncio
 async def test_a_journey_of_zero_tiles_is_free(world, registry):
     """`move` was the most repeated verb in run `deni-a6f9eb4-5h` — 64
@@ -191,7 +187,6 @@ async def test_a_journey_of_zero_tiles_is_free(world, registry):
     outcome = await registry.execute(world, "n01", "move", {"destination_location_id": here})
 
     assert world.ledger.sim_balance("n01") == before, "a walk of zero tiles was billed"
-    # And the wire survives - this is what the first attempt broke.
     assert outcome.events, "the arrival published nothing; the map cannot see it"
     assert any(e.type == "agent.moved" for e in outcome.events)
 

@@ -79,11 +79,6 @@ async def seed_clean_signals(store: SignalStore) -> None:
     )
 
 
-# ---------------------------------------------------------------------------
-# Canned LLM adapter
-# ---------------------------------------------------------------------------
-
-
 class CannedLLM:
     """Minimal dispatcher that returns pre-set JSON keyed on system prompt.
 
@@ -109,7 +104,6 @@ class CannedLLM:
         self.calls: list[str] = []
 
     async def generate(self, messages, system=None) -> str:  # type: ignore[no-untyped-def]
-        # Flatten SystemPromptBlock list to string for matching
         if isinstance(system, list):
             sys_text = " ".join(getattr(b, "text", "") for b in system)
         else:
@@ -130,7 +124,6 @@ class CannedLLM:
         self.calls.append("unknown")
         return '{"key": null, "description": null}'
 
-    # Satisfy protocol surface — LC only calls generate().
     async def stream(self, messages, system=None):  # pragma: no cover
         raise NotImplementedError
 
@@ -156,11 +149,6 @@ async def run_pipeline(
     return await pipeline.run_batch()
 
 
-# ---------------------------------------------------------------------------
-# Baseline: clean LLM output flows through normally
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_clean_llm_output_writes_normally(
     memory_system,
@@ -168,20 +156,13 @@ async def test_clean_llm_output_writes_normally(
     db,
 ):
     await seed_clean_signals(signal_store)
-    llm = CannedLLM()  # all defaults are clean
+    llm = CannedLLM()
     result = await run_pipeline(memory_system, signal_store, db, llm)
 
     assert result.secrets_blocked == 0
     assert result.signals_processed == 3
-    # Episode and knowledge writes should succeed now that the arity bug
-    # is fixed — clean content flows through to the stores.
     assert result.episodes_created == 1
     assert result.knowledge_written >= 1
-
-
-# ---------------------------------------------------------------------------
-# Knowledge write path — LLM injects a secret into the extracted entry
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
@@ -208,7 +189,6 @@ async def test_knowledge_write_blocks_on_secret_in_content(
 
     assert result.secrets_blocked >= 1
     assert result.knowledge_written == 0
-    # Knowledge store must be empty.
     kcount = await db.fetchval("SELECT count(*) FROM knowledge_store")
     assert int(kcount or 0) == 0
 
@@ -237,11 +217,6 @@ async def test_knowledge_write_blocks_on_secret_in_subject(
 
     assert result.secrets_blocked >= 1
     assert result.knowledge_written == 0
-
-
-# ---------------------------------------------------------------------------
-# Social graph write path — edge relationship carries a secret
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
@@ -277,7 +252,6 @@ async def test_social_edge_blocks_on_secret_in_relationship(
 
     assert result.secrets_blocked >= 1
     assert result.social_edges_written == 0
-    # But the clean nodes should still have been enriched.
     assert result.social_nodes_enriched >= 1
 
 
@@ -309,11 +283,6 @@ async def test_social_node_blocks_on_secret_in_attribute_value(
     assert result.social_nodes_enriched == 0
 
 
-# ---------------------------------------------------------------------------
-# Soul write path — consolidation returns a trait with a leaked key
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_soul_update_blocks_on_secret_in_value(
     memory_system,
@@ -343,11 +312,6 @@ async def test_soul_update_blocks_on_secret_in_value(
     assert result.soul_traits_updated == 0
 
 
-# ---------------------------------------------------------------------------
-# Cross-batch knowledge inference write path
-# ---------------------------------------------------------------------------
-
-
 @pytest.mark.asyncio
 async def test_cross_batch_knowledge_blocks_on_secret(
     memory_system,
@@ -374,11 +338,6 @@ async def test_cross_batch_knowledge_blocks_on_secret(
 
     assert result.secrets_blocked >= 1
     assert result.cross_batch_written == 0
-
-
-# ---------------------------------------------------------------------------
-# Multiple write-paths block counter accumulates
-# ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
@@ -416,7 +375,6 @@ async def test_multiple_paths_blocked_counter_accumulates(
     llm = CannedLLM(knowledge=dirty_knowledge, social=dirty_social)
     result = await run_pipeline(memory_system, signal_store, db, llm)
 
-    # At minimum one block from knowledge, one from social.
     assert result.secrets_blocked >= 2
     kcount = await db.fetchval("SELECT count(*) FROM knowledge_store")
     assert int(kcount or 0) == 0

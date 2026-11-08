@@ -43,7 +43,6 @@ async def test_a_second_start_turn_destroys_the_first(tmp_path):
     await w._on_event(ToolExecution(
         thread_id="t", tool_name="world_harvest", phase="call",
         params={"crop": "wheat"}, source="platform"))
-    # A second tick lands before the first turn's summary.
     w.start_turn("It is game-day 0, 06:50.")
     await w._on_event(summary())
 
@@ -66,7 +65,7 @@ async def test_serialised_turns_keep_their_work(tmp_path):
             await w._on_event(ToolExecution(
                 thread_id="t", tool_name=tool, phase="call",
                 params={}, source="platform"))
-            await asyncio.sleep(0)  # let the other tick try to interleave
+            await asyncio.sleep(0)
             await w._on_event(TextDelta(thread_id="t", text=f"did {tool}"))
             await w._on_event(summary(tools=1))
 
@@ -91,8 +90,6 @@ def test_send_tick_holds_a_lock_across_the_whole_turn():
 
     from src.sim.pinned_boot import SimEngineState
 
-    # Comments in this method discuss handle_input and start_turn by name,
-    # so match the CODE: strip comment lines before looking at the order.
     source = inspect.getsource(SimEngineState.send_tick)
     code = "\n".join(
         line for line in source.splitlines() if not line.strip().startswith("#")

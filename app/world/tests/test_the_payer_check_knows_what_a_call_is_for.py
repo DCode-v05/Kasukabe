@@ -29,9 +29,6 @@ FLUSH = "auto:summarizer.working_memory"
 A_TURN = "auto:agent_turn"
 
 
-# ── the ledger's one answer ───────────────────────────────────────────
-
-
 @pytest.mark.asyncio
 async def test_the_ledger_names_the_treasury_for_a_broke_residents_learning() -> None:
     ledger = await build_genesis_ledger(["n01"])
@@ -56,9 +53,6 @@ async def test_a_resident_who_can_pay_is_its_own_payer_for_learning_too() -> Non
     ledger = await build_genesis_ledger(["n01"])
 
     assert ledger.payer_for("n01", 5, LEARNING) == "n01"
-
-
-# ── the route the broker asks before every call ───────────────────────
 
 
 def _client_for(ledger):
@@ -140,9 +134,6 @@ def test_the_embedded_world_serves_the_same_answer() -> None:
     twin = source[source.index('@app.get("/ledger/payer/{agent_id}")'):]
     twin = twin[:twin.index("@app.", 10)]
     assert "payer_for" in twin
-
-
-# ── the broker asks the question ──────────────────────────────────────
 
 
 @pytest.mark.asyncio

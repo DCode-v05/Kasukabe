@@ -80,17 +80,8 @@ class TickEngine:
             hearing_window_ticks=hearing_window_ticks,
         )
         self.checkpoints = CheckpointManager(checkpoint_sink)
-        # See module docstring's "Movement" section: None (the default)
-        # reproduces today's exact behavior with no movement wiring at
-        # all - every existing caller/test that never passes this stays
-        # unaffected.
         self.movement = movement_system
 
-        # Event-driven wiring: locations track themselves from agent.*
-        # events, and any event naming an agent (per perception.py's
-        # payload key convention) can interrupt that agent's schedule -
-        # both happen automatically from here on, with no further calls
-        # required as other world/ submodules publish their own events.
         self.locations.attach(self.event_bus)
         self.perception.attach(self.scheduler)
 
@@ -98,13 +89,6 @@ class TickEngine:
         self.checkpoints.register("scheduler", self.scheduler)
         self.checkpoints.register("locations", self.locations)
         if self.movement is not None:
-            # MovementSystem already implements the Checkpointable shape
-            # (its own module docstring: "Forward-compatible with
-            # CheckpointManager.register('movement', ...)") - registering
-            # it here means a day-boundary checkpoint (and a resume)
-            # covers every in-progress journey too, with no separate
-            # adapter needed the way run_genesis.py needed one for
-            # ledger/charter (those live outside world/core entirely).
             self.checkpoints.register("movement", self.movement)
 
         self.pacing = PacingController(self.tick, pacing_config)

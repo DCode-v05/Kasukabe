@@ -18,42 +18,32 @@ logger = logging.getLogger(__name__)
 
 
 class ErrorCode(str, enum.Enum):
-    # Auth
     INVALID_KEY = "invalid_key"
     KEY_NOT_CONFIGURED = "key_not_configured"
 
-    # Engine state
     ENGINE_NOT_OPERATIONAL = "engine_not_operational"
     SUBSYSTEM_UNAVAILABLE = "subsystem_unavailable"
 
-    # Execution
     EXECUTION_FAILED = "execution_failed"
     LLM_UNAVAILABLE = "llm_unavailable"
     TOOL_FAILED = "tool_failed"
     MEDIA_CONTENT_ERROR = "media_content_error"
     CONTEXT_OVERFLOW_UNRECOVERABLE = "context_overflow_unrecoverable"
 
-    # User input
     INPUT_TIMEOUT = "input_timeout"
     INPUT_NOT_FOUND = "input_not_found"
 
-    # Generic request validation (STATUS_TO_CODE's 422 target)
     INVALID_PARAMS = "invalid_params"
 
-    # Rate limiting
     RATE_LIMITED = "rate_limited"
     QUOTA_EXHAUSTED = "quota_exhausted"
     BUDGET_EXHAUSTED = "budget_exhausted"
     SUBSCRIPTION_SUSPENDED = "subscription_suspended"
 
-    # Key rotation
     ROTATION_IN_PROGRESS = "rotation_in_progress"
 
-    # Catch-all
     INTERNAL_ERROR = "internal_error"
 
-    # Generic transport-level codes — used when an HTTP status has no
-    # domain-specific code (unmatched-route 404s, ad-hoc HTTPExceptions).
     BAD_REQUEST = "bad_request"
     UNAUTHORIZED = "unauthorized"
     FORBIDDEN = "forbidden"
@@ -62,7 +52,6 @@ class ErrorCode(str, enum.Enum):
     SERVICE_UNAVAILABLE = "service_unavailable"
 
 
-# Maps error code → (HTTP status, retryable, default message)
 ERROR_META: dict[ErrorCode, tuple[int, bool, str]] = {
     ErrorCode.INVALID_KEY: (401, False, "Invalid engine API key"),
     ErrorCode.KEY_NOT_CONFIGURED: (503, True, "Engine key not configured"),
@@ -115,10 +104,6 @@ ERROR_META: dict[ErrorCode, tuple[int, bool, str]] = {
 }
 
 
-# Maps a transport-level HTTP status → the generic ErrorCode used when no
-# domain-specific code applies (an unmatched-route 404, or an ad-hoc
-# HTTPException raised with a plain-string detail). Statuses absent here fall
-# back to INTERNAL_ERROR in engine_error_from_status().
 STATUS_TO_CODE: dict[int, "ErrorCode"] = {
     400: ErrorCode.BAD_REQUEST,
     401: ErrorCode.UNAUTHORIZED,
@@ -156,8 +141,6 @@ class EngineError(Exception):
                 self.message = default_msg
             self.retryable = retryable
             self.http_status = status
-        # Seed Exception.args so str(exc) and tracebacks carry the message
-        # (the dataclass __init__ otherwise leaves args empty).
         super().__init__(self.message)
 
     def to_dict(self) -> dict[str, Any]:
@@ -177,8 +160,6 @@ def error_from_exception(exc: Exception) -> EngineError:
     Unknown exceptions become INTERNAL_ERROR with a sanitized message.
     Full stack traces are logged server-side — never sent to the client.
     """
-    # An EngineError raised directly is already the structured error — pass
-    # it through unchanged (don't collapse it to INTERNAL_ERROR below).
     if isinstance(exc, EngineError):
         return exc
 
@@ -220,7 +201,6 @@ def error_from_exception(exc: Exception) -> EngineError:
     if isinstance(exc, asyncio.TimeoutError):
         return EngineError(code=ErrorCode.INPUT_TIMEOUT)
 
-    # Sanitize: never expose raw exception messages to clients
     logger.exception("Unhandled exception mapped to INTERNAL_ERROR")
     return EngineError(code=ErrorCode.INTERNAL_ERROR)
 
@@ -241,5 +221,4 @@ def engine_error_from_status(status: int, message: str | None = None) -> EngineE
     return err
 
 
-# Needs asyncio for TimeoutError check above
 import asyncio  # noqa: E402

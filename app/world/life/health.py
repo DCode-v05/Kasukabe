@@ -29,8 +29,6 @@ from world.life.constants import (
 from world.life.models import Ailment, AgentLifeRecord, AilmentKind, HealthState, LifeEvent
 from world.life.ports import EconomyPort
 
-# Rarest first, so the cumulative band for a rare, severe ailment isn't
-# crowded out by a common, mild one landing on the same draw.
 INCIDENCE_ROLL_ORDER: tuple[AilmentKind, ...] = (
     AilmentKind.TERMINAL,
     AilmentKind.LONG,
@@ -193,7 +191,7 @@ async def treat_at_pharmacy(
         raise ValueError(refusal)
 
     ailment = agent.health.current_ailment
-    assert ailment is not None  # guarded by pharmacy_refusal
+    assert ailment is not None
     await economy.debit_sim(
         agent.agent_id, PHARMACY_SHORT_TREATMENT_COST_SIM, reason="pharmacy_treatment"
     )

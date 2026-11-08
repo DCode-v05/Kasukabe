@@ -99,7 +99,6 @@ class Findings:
         """
         return 1 if self.failed else 0
 
-    # ---- rendering -----------------------------------------------------
 
     def matrix(self, *, show: str = "all") -> str:
         """The human-readable table. `show` is 'all', 'unproven' or

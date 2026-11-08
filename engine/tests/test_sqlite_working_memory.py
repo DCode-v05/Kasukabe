@@ -263,7 +263,6 @@ class TestClearAndCleanup:
             try:
                 wm = SqliteWorkingMemory(db, "sess1")
                 await wm.write("task1", EntryType.MESSAGE_USER, "old entry")
-                # Backdate the entry
                 await db.execute(
                     "UPDATE working_memory_log SET created_at = ?",
                     (time.time() - 100_000,),

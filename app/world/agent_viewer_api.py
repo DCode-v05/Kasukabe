@@ -55,8 +55,6 @@ from world.core.engine import TickEngine
 from world.life.models import Genesis
 from world.tools.state import WorldState
 
-# ── deps ──────────────────────────────────────────────────────────────
-
 
 @dataclass
 class AgentViewerDeps:
@@ -65,8 +63,6 @@ class AgentViewerDeps:
     tick_engine: TickEngine
     trace: SupabaseClient
 
-
-# ── agent finder ─────────────────────────────────────────────────────────
 
 AgentLifeStatus = Literal["alive", "dormant", "dead"]
 
@@ -131,10 +127,6 @@ def build_finder_rows(deps: AgentViewerDeps) -> list[AgentFinderRow]:
     for genesis_agent in deps.genesis.agents:
         agent = deps.world.agents.get(genesis_agent.agent_id)
         if agent is None:
-            # Genesis listed them but the live world never registered them
-            # (should not happen post-boot - apply_genesis_population
-            # registers every genesis agent - but a defensive skip beats a
-            # 500 for the whole finder over one bad row).
             continue
         rows.append(
             AgentFinderRow(
@@ -157,9 +149,6 @@ def build_finder_rows(deps: AgentViewerDeps) -> list[AgentFinderRow]:
             )
         )
     return rows
-
-
-# ── agent activity ────────────────────────────────────────────────────
 
 
 class CoLocatedAgent(BaseModel):
@@ -256,9 +245,6 @@ def name_of(deps: AgentViewerDeps, agent_id: str) -> str:
     return genesis_agent.name if genesis_agent is not None else agent_id
 
 
-# ── agent reasoning ──────────────────────────────────────────────────────
-
-
 class LlmCallSummary(BaseModel):
     id: str
     model: str
@@ -288,7 +274,6 @@ def llm_call_summary(row: dict[str, Any]) -> LlmCallSummary:
         region=region,
         call_class=row["call_class"],
         purpose=row["purpose"],
-        # broker/lanes.py's own lane_id() convention: f"{model}@{region}".
         lane=f"{row['model']}@{region}" if region else row["model"],
         input_tokens=row["input_tokens"],
         output_tokens=row["output_tokens"],
@@ -362,8 +347,6 @@ class LlmCallDetail(LlmCallSummary):
     nearby_memories_note: str
 
 
-# ── the router ────────────────────────────────────────────────────────
-
 MATCHED_TOOL_CALLS_NOTE = (
     "Best-effort correlation by actor_id + exact tick match against "
     "world.tool_invocations (no direct llm_calls -> tool_invocations "
@@ -379,10 +362,6 @@ NEARBY_MEMORIES_NOTE = (
 )
 
 
-# List-valued fields (owns_business_ids, organizations) sort ill-defined
-# by design - "sort by which org" has no single answer for an agent in
-# three - so they are excluded from FINDER_SORT_FIELDS entirely rather
-# than silently sorting by list length or first element.
 FINDER_SORT_FIELDS: frozenset[str] = frozenset(AgentFinderRow.model_fields.keys()) - {
     "owns_business_ids", "organizations",
 }
@@ -419,7 +398,6 @@ async def add_cors_headers(response: Response) -> None:
 def build_agent_viewer_router(get_deps: Callable[[], AgentViewerDeps]) -> APIRouter:
     router = APIRouter(prefix="/agent-viewer", tags=["agent-viewer"], dependencies=[Depends(add_cors_headers)])
 
-    # -- agent finder ---------------------------------------------------------
 
     @router.get("/agents", response_model=AgentFinderPage)
     async def find_agents(
@@ -434,10 +412,6 @@ def build_agent_viewer_router(get_deps: Callable[[], AgentViewerDeps]) -> APIRou
         ablation_arm: str | None = None,
         sort_by: str = "name",
         sort_desc: bool = False,
-        # A PAGE SIZE, not a town size. It was 250 - exactly the old cast -
-        # so the finder appeared to list everyone right up until the town
-        # grew past it, at which point it silently dropped the 64
-        # institution staff off the end of the first page.
         limit: int = 1000,
         offset: int = 0,
     ) -> AgentFinderPage:
@@ -475,7 +449,6 @@ def build_agent_viewer_router(get_deps: Callable[[], AgentViewerDeps]) -> APIRou
         page = rows[offset : offset + limit]
         return AgentFinderPage(total=total, agents=page)
 
-    # -- agent activity -------------------------------------------------------
 
     @router.get("/agents/{agent_id}", response_model=AgentActivityView)
     async def agent_activity(agent_id: str) -> AgentActivityView:
@@ -580,7 +553,6 @@ def build_agent_viewer_router(get_deps: Callable[[], AgentViewerDeps]) -> APIRou
             recent_utterances=recent_utterances,
         )
 
-    # -- agent reasoning --------------------------------------------------------
 
     @router.get("/agents/{agent_id}/reasoning", response_model=list[LlmCallSummary])
     async def agent_reasoning_list(agent_id: str, limit: int = 100) -> list[LlmCallSummary]:
